@@ -51,7 +51,8 @@ process(Fname) ->
               end,
   {Code, Mod2} = lists:foldr(CompileFun, {[], Mod1}, Funs),
   Mod = asm_module:set_code(Code, Mod2),
-  io:format("Module ~p~n", [Mod]).
+  io:format("Module ~p~n", [Mod]),
+  ok = file:write_file(Fname ++ ".gleam", asm_module:to_binary(Mod)).
 
 %% @doc Predicate to separate fun headers
 not_func_header({function, _, _, _}) -> false;
