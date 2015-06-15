@@ -12,6 +12,7 @@
         , set_exports/2
         , set_code/2
         , find_or_create_atom/2
+        , find_or_create_literal/2
         , add_fun/4
         , to_binary/1
         ]).
@@ -23,8 +24,10 @@
                     , code = []
                     , funs = orddict:new()
                     , exports = orddict:new()
-                    , atom_counter = 0
+                    , atom_counter = -1
                     , atoms = orddict:new()
+                    , literal_counter = -1
+                    , literals = orddict:new()
                     }).
 
 new(Id) -> #asm_module{id=Id}.
@@ -57,6 +60,17 @@ find_or_create_atom(A, M=#asm_module{atoms=Atoms, atom_counter=Counter}) ->
       end,
   {Index, M#asm_module{atom_counter=Counter1, atoms=Atoms1}}.
 
+find_or_create_literal(Lit, M=#asm_module{ literals=Literals
+                                         , literal_counter=Counter}) ->
+  {Index, Counter1, Literals1}
+    = case orddict:find(Lit, Literals) of
+        {ok, I} -> {I, Counter, Literals};
+        error ->
+          I = Counter+1,
+          {I, I, orddict:store(Lit, I, Literals)}
+      end,
+  {Index, M#asm_module{literal_counter=Counter1, literals=Literals1}}.
+
 add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
   Funs1 = orddict:store({FunAtomIndex, Arity}, Label, Funs),
   MState#asm_module{funs = Funs1}.
@@ -83,6 +97,7 @@ to_binary({atoms, AtomsDict}) ->
 to_binary(#asm_module{code=Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
   %% Strip [{'OP', Code}] and get [Code]
   Code = lists:map(fun({_Op, C}) -> C end, lists:flatten(Code0)),
+  %% Module file is encoded as "GLEAM" + chunks (4 byte name, var_int byte_size)
   <<"GLEAM"
   , (to_binary({atoms, Atoms}))/binary
   , (to_binary({funs, Funs}))/binary

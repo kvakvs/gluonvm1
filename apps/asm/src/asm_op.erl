@@ -5,13 +5,14 @@
 -module(asm_op).
 
 %% API
--export(['LABEL'/1
+-export([ compile/1
         , integer/1
         , uint_enc/1
-        , 'LINE'/2
-        , 'MOVE'/2
-        , 'PUSH'/1
-        , 'POP'/1
+        , 'LABEL'/1
+        , 'LINE'/3
+        , 'MOVE'/3
+        , 'PUSH'/2
+        , 'POP'/2
         , 'CALL'/3
         , 'TAILCALL'/3
         , 'RET'/0
@@ -45,6 +46,8 @@
 -define(arg_stack,     1).
 -define(arg_literal,   2).
 -define(arg_immediate, 3).
+%% argument means amount of N live registers (for function calls)
+-define(arg_live_registers, 4).
 
 get_test_type(is_lt) ->         0;
 get_test_type(is_ge) ->         1;
@@ -98,33 +101,43 @@ opcode(_Group=?op_group_control, Op, DataType) ->
 
 %% @doc Encode {f,Label} as var-int Label, atom is encoded as reference to atom
 %% table in Module#asm_module{}
-label_enc(A, MState) when is_atom(A) -> atom_ref_enc(A, MState);
+label_enc(A, MState) when is_atom(A) ->
+  atom_ref_enc(A, MState);
 label_enc({extfunc, M, F, Arity}, MState) ->
   {MEnc, MState1} = atom_ref_enc(M, MState),
   {FEnc, MState2} = atom_ref_enc(F, MState1),
-  {<<?tag_mfarity:8, MEnc/binary, FEnc/binary, (uint_enc(Arity))/binary>>
-    , MState2};
+  %%{<<?tag_mfarity:8, MEnc/binary, FEnc/binary, (uint_enc(Arity))/binary>>
+  {{'$MFA', MEnc, FEnc, Arity}, MState2};
 label_enc({f, Lbl}, MState) ->
-  {<<?tag_label:8, (uint_enc(Lbl))/binary>>, MState}.
+  %%{<<?tag_label:8, (uint_enc(Lbl))/binary>>, MState}.
+  {{'$LABEL', Lbl}, MState}.
 
 %% @private
 atom_ref_enc(A, MState) ->
   {Index, Module1} = asm_module:find_or_create_atom(A, MState),
-  {<<?tag_atom:8, (uint_enc(Index))/binary>>, Module1}.
+  {{'$ATOM', Index}, Module1}.
+  %%{<<?tag_atom:8, (uint_enc(Index))/binary>>, Module1}.
 
-%% @doc Returns tuple {arg 3-bit tag for opcode, and encoded arg as integer}
-get_arg_type_and_encoded({x, Reg}) ->
-  {?arg_register, uint_enc(Reg)};
-get_arg_type_and_encoded({y, Stack}) ->
-  {?arg_stack, uint_enc(Stack)};
-get_arg_type_and_encoded({atom, _LiteralId}) -> % value is taken from table
-  {?arg_literal, uint_enc(0)};
-get_arg_type_and_encoded({integer, Imm}) -> % value is immediately encoded in code
-  {?arg_immediate, uint_enc(Imm)}.
+literal_ref_enc(L, MState) ->
+  {Index, Module1} = asm_module:find_or_create_literal(L, MState),
+  {{'$LIT', Index}, Module1}.
 
-arg_encode(Arg) ->
-  {T, Enc} = get_arg_type_and_encoded(Arg),
-  <<T:8, Enc/binary>>.
+%% @doc Encodes a tagged value to intermediate format, converts atoms to
+%% references to atom table for example
+value_enc({live_registers, Num}, MState) -> % number of live registers to save/restore
+  {{'$LIVE', Num}, MState};
+value_enc({x, Reg}, MState) -> % value is register cell
+  {{'$REG', Reg}, MState};
+value_enc({y, Stack}, MState) -> % value is stack cell
+  {{'$STACK', Stack}, MState};
+value_enc({atom, Atom}, MState) -> % value is reference to atom table
+  atom_ref_enc(Atom, MState);
+value_enc({integer, Imm}, MState) -> % value is immediately available in code
+  {{'$IMM', Imm}, MState}.
+
+%% arg_encode(Arg) ->
+%%   {T, Enc} = get_arg_type_and_encoded(Arg),
+%%   <<T:8, Enc/binary>>.
 
 %% arg_list_encode([], Accum) -> Accum;
 %% arg_list_encode([Arg | Tail], Accum) ->
@@ -135,52 +148,59 @@ arg_encode(Arg) ->
 %%% Specific opcodes
 %%%
 
-%% @doc Label is tagged with 1, followed by headerless varlength integer
-'LABEL'(N) ->
-  {'LABEL', <<(opcode(?op_group_control, ?label, 0))/binary
-            , (uint_enc(N))/binary>>}.
-
-%% @doc Line numbers information, marks line omitting the file (TODO: filename)
-'LINE'(_Filename, Line) ->
-  {'LINE', <<(opcode(?op_group_control, ?line_info, 0))/binary
-           , (uint_enc(Line))/binary>>}.
-
-%% @doc Label is tagged with 1, followed by headerless varlength integer
-'MOVE'(Src, Dst) ->
-  {SrcT, SrcEncoded} = get_arg_type_and_encoded(Src),
-  {DstT, DstEncoded} = get_arg_type_and_encoded(Dst),
-  {'MOVE', <<?op_group_move:2, SrcT:3, DstT:3
-           , SrcEncoded/binary, DstEncoded/binary>>}.
-
-'PUSH'(Src) ->
-  {SrcT, SrcEnc} = get_arg_type_and_encoded(Src),
-  {'PUSH', <<?op_group_control:2, ?push:3, SrcT:3, SrcEnc/binary>>}.
-
-'POP'(Dst) ->
-  {DstT, DstEnc} = get_arg_type_and_encoded(Dst),
-  {'POP', <<?op_group_control:2, ?pop:3, DstT:3, DstEnc/binary>>}.
-
+'LABEL'(N) -> {'LABEL', N}.
+'LINE'(Filename, Line, MState) ->
+  {FilenameEnc, MState1} = literal_ref_enc(Filename, MState),
+  {{'LINE', FilenameEnc, Line}, MState1}.
+'MOVE'(Src, Dst, MState) ->
+  {SrcEnc, MState1} = value_enc(Src, MState),
+  {DstEnc, MState2} = value_enc(Dst, MState1),
+  {{'MOVE', SrcEnc, DstEnc}, MState2}.
+'PUSH'(Src, MState) ->
+  {SrcEnc, MState1} = value_enc(Src, MState),
+  {{'PUSH', SrcEnc}, MState1}.
+'POP'(Dst, MState) ->
+  {DstEnc, MState1} = value_enc(Dst, MState),
+  {{'POP', DstEnc}, MState1}.
 'CALL'(Label, IsBif, MState) ->
-  {LabelEnc, Module1} = label_enc(Label, MState),
-  {{'CALL', <<?op_group_control:2, ?call:3, IsBif:3
-           , (LabelEnc)/binary>>
-   }, Module1}.
-
+  {LabelEnc, MState1} = label_enc(Label, MState),
+  {{'CALL', LabelEnc, IsBif}, MState1}.
 'TAILCALL'(Arity, Label, MState) ->
-  {LabelEnc, Module1} = label_enc(Label, MState),
-  {{'TAILCALL', <<?op_group_control:2, ?tailcall:3, 0:3
-                , (uint_enc(Arity))/binary
-                , (LabelEnc)/binary>>
-   }, Module1}.
-
-'RET'() ->
-  {'RET', <<?op_group_control:2, ?return:3, 0:3>>}.
-
+  {LabelEnc, MState1} = label_enc(Label, MState),
+  {{'TAILCALL', Arity, LabelEnc}, MState1}.
+'RET'() -> {'RET'}.
 'TEST'(Test, Label, Args, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
-  ArgsEnc = iolist_to_binary([arg_encode(A) || A <- Args]),
-  {{'TEST', <<?op_group_control:2, ?test:3, 0:3
-            , (get_test_type(Test)):8
-            , LabelEnc/binary
-            , ArgsEnc/binary>>
-   }, MState1}.
+  {ArgsEnc, MState2} = lists:foldr(fun fold_arg_enc/2, {[], MState1}, Args),
+  {{'TEST', Test, LabelEnc, ArgsEnc}, MState2}.
+
+fold_arg_enc(Arg, {Acc, MState}) ->
+  {Encoded, MState1} = value_enc(Arg, MState),
+  {[Encoded | Acc], MState1}.
+
+compile({'LABEL', N}) ->
+  <<(opcode(?op_group_control, ?label, 0))/binary, (uint_enc(N))/binary>>;
+compile({'LINE', _Filename, Line}) ->
+  <<(opcode(?op_group_control, ?line_info, 0))/binary, (uint_enc(Line))/binary>>;
+%% compile({'MOVE', Src, Dst}) ->
+%%   {SrcT, SrcEncoded} = get_arg_type_and_encoded(Src),
+%%   {DstT, DstEncoded} = get_arg_type_and_encoded(Dst),
+%%   <<?op_group_move:2, SrcT:3, DstT:3, SrcEncoded/binary, DstEncoded/binary>>;
+%% compile({'PUSH', Src}) ->
+%%   {SrcT, SrcEnc} = get_arg_type_and_encoded(Src),
+%%   <<?op_group_control:2, ?push:3, SrcT:3, SrcEnc/binary>>;
+%% compile({'POP', Dst}) ->
+%%   {DstT, DstEnc} = get_arg_type_and_encoded(Dst),
+%%   <<?op_group_control:2, ?pop:3, DstT:3, DstEnc/binary>>;
+compile({'CALL', LabelEnc, IsBif}) ->
+  <<?op_group_control:2, ?call:3, IsBif:3, (compile(LabelEnc))/binary>>;
+compile({'TAILCALL', Arity, LabelEnc}) ->
+  <<?op_group_control:2, ?tailcall:3, 0:3
+    , (uint_enc(Arity))/binary, (compile(LabelEnc))/binary>>;
+compile({'RET'}) ->
+  <<?op_group_control:2, ?return:3, 0:3>>;
+compile({'TEST', Test, LabelEnc, ArgsEnc}) ->
+  <<?op_group_control:2, ?test:3, 0:3
+    , (get_test_type(Test)):8
+    , (compile(LabelEnc))/binary
+    , (compile(ArgsEnc))/binary>>.

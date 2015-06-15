@@ -73,24 +73,29 @@ compile_one_fun({F, Arity, Code}, MState) ->
   MState3 = asm_module:add_fun(FunAtomIndex, Arity, FLabel, MState2),
   {Ops, MState3}.
 
-%% @doc Compiles individual opcodes
+%% @doc Compiles individual opcodes to Gluon Intermediate
 c_op({label, L}, {Acc, MState}) -> {[asm_op:'LABEL'(L) | Acc], MState};
 c_op({func_info, _A1, _A2, _N}, {Acc, MState}) -> {Acc, MState}; % NO OP
 c_op({line, Props}, {Acc, MState}) ->
-  Acc1 = case asm_module:get_option(line_numbers, MState) of
-           true -> case lists:keyfind(location, 1, Props) of
-                     false -> Acc;
-                     {location, F, L} -> [asm_op:'LINE'(F, L) | Acc]
-                   end;
-           false -> Acc
-         end,
-  {Acc1, MState};
+  case asm_module:get_option(line_numbers, MState) of
+     true -> case lists:keyfind(location, 1, Props) of
+               false -> {Acc, MState};
+               {location, F, L} ->
+                 {Op, MState1} = asm_op:'LINE'(F, L, MState),
+                 {[Op | Acc], MState1}
+             end;
+     false -> {Acc, MState}
+  end;
 c_op({move, Src, Dst}, {Acc, MState}) ->
-  {[asm_op:'MOVE'(Src, Dst) | Acc], MState};
-c_op({gc_bif, Lbl, Live, Bif, Args, Reg}, {Acc, Module}) ->
-  {CallOp, Module1} = asm_op:'CALL'(Lbl, Bif, Module),
-  Acc1 = [asm_op:'PUSH'(A) || A <- Args] ++ [CallOp | Acc],
-  {Acc1, Module1};
+  {MoveOp, MState1} = asm_op:'MOVE'(Src, Dst, MState),
+  {[MoveOp | Acc], MState1};
+c_op({gc_bif, Lbl, Live, Bif, Args, _Reg}, {Acc, MState}) ->
+  {CallOp, MState1} = asm_op:'CALL'(Lbl, Bif, MState),
+  Acc1 = [CallOp | Acc],
+  {Acc2, MState2} = lists:foldr(fun fold_push_argument/2
+                               , {Acc1, MState1}
+                               , [{live_registers, Live} | Args]),
+  {Acc2, MState2};
 c_op({call_only, Arity, Label}, {Acc, Module}) ->
   {CallOp, Module1} = asm_op:'TAILCALL'(Arity, Label, Module),
   {[CallOp | Acc], Module1};
@@ -103,3 +108,7 @@ c_op({test, Test, Label, Args}, {Acc, Module}) ->
 c_op(return, {Acc, Module}) ->
   {[asm_op:'RET'() | Acc], Module};
 c_op(UnkOp, {Acc, MState}) -> {[{unknown, UnkOp} | Acc], MState}.
+
+fold_push_argument(Arg, {Acc, MState}) ->
+  {Op, MState1} = asm_op:'PUSH'(Arg, MState),
+  {[Op | Acc], MState1}.
