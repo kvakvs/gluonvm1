@@ -11,12 +11,15 @@
         , set_feature/2
         , set_exports/2
         , set_code/2
-        , find_or_create_atom/2]).
+        , find_or_create_atom/2
+        , add_fun/4
+        ]).
 
 -record(asm_module, { id
                     , options = orddict:from_list([{line_numbers, true}])
                     , features = ordsets:new()
                     , code = []
+                    , funs = orddict:new()
                     , exports = orddict:new()
                     , atom_counter = 0
                     , atoms = orddict:new()
@@ -51,3 +54,7 @@ find_or_create_atom(A, M=#asm_module{atoms=Atoms, atom_counter=Counter}) ->
           {I, I, orddict:store(A, I, Atoms)}
       end,
   {Index, M#asm_module{atom_counter=Counter1, atoms=Atoms1}}.
+
+add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
+  Funs1 = orddict:store({FunAtomIndex, Arity}, Label, Funs),
+  MState#asm_module{funs = Funs1}.

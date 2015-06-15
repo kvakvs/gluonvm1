@@ -66,7 +66,11 @@ split_funs([{function, FName, FArity, _} | Code], Accum) ->
 
 compile_one_fun({F, Arity, Code}, MState) ->
   {Ops, MState1} = lists:foldr(fun c_op/2, {[], MState}, Code),
-  {{F, Arity, Ops}, MState1}.
+  %% First opcode in function is always label, get it
+  {label, FLabel} = hd(Code),
+  {FunAtomIndex, MState2} = asm_module:find_or_create_atom(F, MState1),
+  MState3 = asm_module:add_fun(FunAtomIndex, Arity, FLabel, MState2),
+  {Ops, MState3}.
 
 %% @doc Compiles individual opcodes
 c_op({label, L}, {Acc, MState}) -> {[asm_op:'LABEL'(L) | Acc], MState};
@@ -89,4 +93,12 @@ c_op({gc_bif, Lbl, Live, Bif, Args, Reg}, {Acc, Module}) ->
 c_op({call_only, Arity, Label}, {Acc, Module}) ->
   {CallOp, Module1} = asm_op:'TAILCALL'(Arity, Label, Module),
   {[CallOp | Acc], Module1};
+c_op({call_ext_only, Arity, Label}, {Acc, Module}) ->
+  {CallOp, Module1} = asm_op:'TAILCALL'(Arity, Label, Module),
+  {[CallOp | Acc], Module1};
+c_op({test, Test, Label, Args}, {Acc, Module}) ->
+  {TestOp, Module1} = asm_op:'TEST'(Test, Label, Args, Module),
+  {[TestOp | Acc], Module1};
+c_op(return, {Acc, Module}) ->
+  {[asm_op:'RET'() | Acc], Module};
 c_op(UnkOp, {Acc, MState}) -> {[{unknown, UnkOp} | Acc], MState}.

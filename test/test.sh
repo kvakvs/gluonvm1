@@ -2,5 +2,5 @@
 
 erlc -S init.erl
 erlc init.erl
-gdb ../_build/gluonvm
+#gdb ../_build/gluonvm
 
