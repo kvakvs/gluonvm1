@@ -15,6 +15,7 @@
         , find_or_create_literal/2
         , add_fun/4
         , to_binary/1
+        , write_ir/2
         ]).
 
 %% funs contains {F,Arity} -> Label mapping where F is reference to atoms table
@@ -28,6 +29,7 @@
                     , atoms = orddict:new()
                     , literal_counter = -1
                     , literals = orddict:new()
+                    %, referred_labels = ordsets:new()
                     }).
 
 new(Id) -> #asm_module{id=Id}.
@@ -96,7 +98,7 @@ to_binary({atoms, AtomsDict}) ->
     , Out/binary>>;
 to_binary(#asm_module{code=Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
   %% Strip [{'OP', Code}] and get [Code]
-  Code = lists:map(fun({_Op, C}) -> C end, lists:flatten(Code0)),
+  Code = lists:map(fun(Op) -> asm_op:compile(Op) end, lists:flatten(Code0)),
   %% Module file is encoded as "GLEAM" + chunks (4 byte name, var_int byte_size)
   <<"GLEAM"
   , (to_binary({atoms, Atoms}))/binary
@@ -104,3 +106,9 @@ to_binary(#asm_module{code=Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
   , (to_binary({exports, Exports}))/binary
   , (to_binary({code, iolist_to_binary(Code)}))/binary>>.
 
+write_ir(Filename, #asm_module{code=IR, atoms=At, literals=Lit, funs=Funs}) ->
+  Out = [ {code, IR}
+        , {literals, Lit}
+        , {atoms, At}
+        , {funs, Funs}],
+  file:write_file(Filename, io_lib:format("~p.~n", [Out])).

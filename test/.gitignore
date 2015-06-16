@@ -1,2 +1,4 @@
 *.S
 *.beam
+*.ir
+*.gleam

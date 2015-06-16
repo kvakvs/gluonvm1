@@ -50,9 +50,9 @@ process(Fname) ->
                 {Accum1, MState1}
               end,
   {Code, Mod2} = lists:foldr(CompileFun, {[], Mod1}, Funs),
-  Mod = asm_module:set_code(Code, Mod2),
+  Mod = asm_module:set_code(lists:flatten(Code), Mod2),
   io:format("Module ~p~n", [Mod]),
-  ok = file:write_file(Fname ++ ".gleam", asm_module:to_binary(Mod)).
+  ok = asm_module:write_ir(Fname ++ ".ir", Mod).
 
 %% @doc Predicate to separate fun headers
 not_func_header({function, _, _, _}) -> false;
@@ -89,12 +89,12 @@ c_op({line, Props}, {Acc, MState}) ->
 c_op({move, Src, Dst}, {Acc, MState}) ->
   {MoveOp, MState1} = asm_op:'MOVE'(Src, Dst, MState),
   {[MoveOp | Acc], MState1};
-c_op({gc_bif, Lbl, Live, Bif, Args, _Reg}, {Acc, MState}) ->
+c_op({gc_bif, Lbl, _OnFail, Bif, Args, _Reg}, {Acc, MState}) ->
   {CallOp, MState1} = asm_op:'CALL'(Lbl, Bif, MState),
   Acc1 = [CallOp | Acc],
   {Acc2, MState2} = lists:foldr(fun fold_push_argument/2
                                , {Acc1, MState1}
-                               , [{live_registers, Live} | Args]),
+                               , Args),
   {Acc2, MState2};
 c_op({call_only, Arity, Label}, {Acc, Module}) ->
   {CallOp, Module1} = asm_op:'TAILCALL'(Arity, Label, Module),
