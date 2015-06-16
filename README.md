@@ -4,7 +4,7 @@
 A configurable and small virtual machine which runs bytecode derived and very
 similar to Erlang BEAM. VM is kept as small as possible at the cost of
 speed and features (configurable per build), the goal is to go smaller than
-several tens of kilobytes.
+several tens of kilobytes (oh well, under megabyte would be cool probably.
 
 ## asm &mdash; assembler tool
 
