@@ -1,4 +1,5 @@
-# GluonVM and Gluon Erlang Abstract Machine
+## THE NEXT ~~BIG~~ small THING™
+# Gluon Erlang Abstract Machine
 
 A configurable and small virtual machine which runs bytecode derived and very
 similar to Erlang BEAM. VM is kept as small as possible at the cost of
