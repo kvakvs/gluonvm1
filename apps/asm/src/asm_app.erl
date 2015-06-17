@@ -74,7 +74,10 @@ compile_one_fun({F, Arity, Code}, MState) ->
   {Ops, MState3}.
 
 %% @doc Compiles individual opcodes to Gluon Intermediate
-c_op({label, L}, {Acc, MState}) -> {[asm_op:'LABEL'(L) | Acc], MState};
+c_op({label, L}, {Acc, MState}) ->
+  %%{[asm_op:'LABEL'(L) | Acc], MState}
+  MState1 = asm_module:register_label(L, length(Acc), MState),
+  {[asm_op:comment([label, L]) | Acc], MState1};
 c_op({func_info, _A1, _A2, _N}, {Acc, MState}) -> {Acc, MState}; % NO OP
 c_op({line, Props}, {Acc, MState}) ->
   case asm_module:get_option(line_numbers, MState) of

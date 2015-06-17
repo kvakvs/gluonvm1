@@ -16,7 +16,7 @@
         , add_fun/4
         , to_binary/1
         , write_ir/2
-        ]).
+        , register_label/3, read_ir/1]).
 
 %% funs contains {F,Arity} -> Label mapping where F is reference to atoms table
 -record(asm_module, { id
@@ -29,7 +29,7 @@
                     , atoms = orddict:new()
                     , literal_counter = -1
                     , literals = orddict:new()
-                    %, referred_labels = ordsets:new()
+                    , labels = ordsets:new()
                     }).
 
 new(Id) -> #asm_module{id=Id}.
@@ -106,9 +106,25 @@ to_binary(#asm_module{code=Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
   , (to_binary({exports, Exports}))/binary
   , (to_binary({code, iolist_to_binary(Code)}))/binary>>.
 
-write_ir(Filename, #asm_module{code=IR, atoms=At, literals=Lit, funs=Funs}) ->
+write_ir(Filename, #asm_module{code=IR, atoms=At, literals=Lit
+                              , funs=Funs, labels=Labels}) ->
   Out = [ {code, IR}
         , {literals, Lit}
         , {atoms, At}
-        , {funs, Funs}],
+        , {funs, Funs}
+        , {labels, Labels}
+        ],
   file:write_file(Filename, io_lib:format("~p.~n", [Out])).
+
+read_ir(Str) ->
+  {ok, [IRFile]} = file:consult(Str),
+  IR = proplists:get_value(code, IRFile, []),
+  Lit = proplists:get_value(literals, IRFile, []),
+  At = proplists:get_value(atoms, IRFile, []),
+  Funs = proplists:get_value(funs, IRFile, []),
+  Labels = proplists:get_value(labels, IRFile, []),
+  #asm_module{code=IR, atoms=At, literals=Lit, funs=Funs, labels=Labels}.
+
+register_label(Label, Position, #asm_module{labels=Labels}=M) ->
+  Labels1 = orddict:store(Label, Position, Labels),
+  M#asm_module{labels=Labels1}.

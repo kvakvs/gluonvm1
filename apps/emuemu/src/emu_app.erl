@@ -3,25 +3,30 @@
 %% @end
 %%%-------------------------------------------------------------------
 
--module('emuemu_app').
+-module(emu_app).
 
 -behaviour(application).
 
 %% Application callbacks
 -export([start/2
-        ,stop/1]).
+        , stop/1, start/0]).
 
 %%====================================================================
 %% API
 %%====================================================================
 
+start() ->
+  simulate("test/init.S.ir").
+
 start(_StartType, _StartArgs) ->
-    'emuemu_sup':start_link().
+  emu_sup:start_link().
 
 %%--------------------------------------------------------------------
 stop(_State) ->
-    ok.
+  ok.
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
+simulate(Str) ->
+  asm_module:read_ir(Str).

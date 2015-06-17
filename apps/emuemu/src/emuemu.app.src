@@ -1,8 +1,8 @@
 {application, 'emuemu',
- [{description, "An OTP application"},
+ [{description, "Erlang simulator for running GluonVM intermediate representation"},
   {vsn, "0.1.0"},
   {registered, []},
-  {mod, {'emuemu_app', []}},
+  {mod, {'emu_app', []}},
   {applications,
    [kernel,
     stdlib

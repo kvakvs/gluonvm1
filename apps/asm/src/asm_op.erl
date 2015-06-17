@@ -5,10 +5,10 @@
 -module(asm_op).
 
 %% API
--export([ compile/1
+-export([compile/1
         , integer/1
         , uint_enc/1
-        , 'LABEL'/1
+        , comment/1
         , 'LINE'/3
         , 'MOVE'/3
         , 'PUSH'/2
@@ -148,7 +148,9 @@ value_enc({integer, Imm}, MState) -> % value is immediately available in code
 %%% Specific opcodes
 %%%
 
-'LABEL'(N) -> {'LABEL', N}.
+%'LABEL'(N) -> {'LABEL', N}.
+comment(Args) -> list_to_tuple(['%' | Args]).
+
 'LINE'(Filename, Line, MState) ->
   {FilenameEnc, MState1} = literal_ref_enc(Filename, MState),
   {{'LINE', FilenameEnc, Line}, MState1}.

@@ -3,7 +3,7 @@
 %% @end
 %%%-------------------------------------------------------------------
 
--module('emuemu_sup').
+-module(emu_sup).
 
 -behaviour(supervisor).
 
