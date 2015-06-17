@@ -1,10 +1,11 @@
-## THE NEXT ~~BIG~~ small THING™
+## THE NEXT <span style="color:silver">~~BIG~~</span> small THING™
 # Gluon Erlang Abstract Machine
 
-A configurable and small virtual machine which runs bytecode derived and very
-similar to Erlang BEAM. VM is kept as small as possible at the cost of
-speed and features (configurable per build), the goal is to go smaller than
-several tens of kilobytes (oh well, under megabyte would be cool probably.
+A configurable and small virtual machine which runs bytecode derived from and 
+very similar to Erlang BEAM. VM runtime is rebuilt for features of your code to
+be as small as possible. The goal is to go smaller than several tens of kilobytes 
+(oh well, under megabyte would be cool, probably, but running in 32-64kb chip
+will be a win).
 
 ## asm &mdash; assembler tool
 
@@ -16,13 +17,20 @@ It is designed to track features used by your code and allows you to specify tho
 features you really want in your VM. Error will generated if code uses something
 over your requirements.
 
-## emuemu &mdash; emulator for the emulator
-
-A high level interpreter for GluonVM intermediate representation (IR), which
-simulates properties of GluonVM (registers, stack, memory, instruction set, etc).
-
-## Build
+### Building asm
 
 Dependencies: rebar3.
 
-Run `rebar3 compile` or `make`.
+Run: `make asm`
+
+## emuemu &mdash; emulator for the emulator
+
+A high level interpreter for GluonVM intermediate representation (IR), which
+simulates properties of Erlang VM (memory, instruction set, etc) and processes
+(registers, stack, process execution state) and allows to run some code.
+
+### Building emuemu
+
+Dependencies: rebar3.
+
+Run: `make emu`

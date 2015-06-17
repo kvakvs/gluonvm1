@@ -16,7 +16,7 @@
 %%====================================================================
 
 start() ->
-  simulate("test/init.S.ir").
+  simulate().
 
 start(_StartType, _StartArgs) ->
   emu_sup:start_link().
@@ -29,4 +29,6 @@ stop(_State) ->
 %% Internal functions
 %%====================================================================
 simulate(Str) ->
-  asm_module:read_ir(Str).
+  M0 = emu_machine:new(),
+  M1 = emu_machine:load_module(init, "test/init.S.ir", M0),
+  E0 = emu_machine:.
