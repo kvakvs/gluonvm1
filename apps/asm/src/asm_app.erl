@@ -50,7 +50,7 @@ process(Fname) ->
                 {Accum1, MState1}
               end,
   {Code, Mod2} = lists:foldr(CompileFun, {[], Mod1}, Funs),
-  Mod = asm_module:set_code(lists:flatten(Code), Mod2),
+  Mod = asm_module:set_ir(lists:flatten(Code), Mod2),
   io:format("Module ~p~n", [Mod]),
   ok = asm_module:write_ir(Fname ++ ".ir", Mod).
 

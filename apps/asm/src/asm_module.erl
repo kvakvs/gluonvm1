@@ -10,19 +10,23 @@
         , has_feature/2
         , set_feature/2
         , set_exports/2
-        , set_code/2
+        , set_ir/2
+        , get_ir/1
         , find_or_create_atom/2
         , find_or_create_literal/2
         , add_fun/4
         , to_binary/1
+        , register_label/3
         , write_ir/2
-        , register_label/3, read_ir/1]).
+        , read_ir/1
+        , get_name/1
+        ]).
 
 %% funs contains {F,Arity} -> Label mapping where F is reference to atoms table
--record(asm_module, { id
+-record(asm_module, {name
                     , options = orddict:from_list([{line_numbers, true}])
                     , features = ordsets:new()
-                    , code = []
+                    , ir = []
                     , funs = orddict:new()
                     , exports = orddict:new()
                     , atom_counter = -1
@@ -32,7 +36,7 @@
                     , labels = ordsets:new()
                     }).
 
-new(Id) -> #asm_module{id=Id}.
+new(Id) -> #asm_module{name =Id}.
 
 get_option(Key, #asm_module{options=Opt}) ->
   case orddict:find(Key, Opt) of
@@ -50,7 +54,10 @@ set_feature(Key, M=#asm_module{features = Ft}) ->
   M#asm_module{features = orddict:store(Key, true, Ft)}.
 
 set_exports(Exports, M) -> M#asm_module{exports = Exports}.
-set_code(Code, M) -> M#asm_module{code = Code}.
+
+set_ir(IR, M) -> M#asm_module{ir = IR}.
+get_ir(#asm_module{ir=IR}) -> IR.
+get_name(#asm_module{name=Name}) -> Name.
 
 find_or_create_atom(A, M=#asm_module{atoms=Atoms, atom_counter=Counter}) ->
   {Index, Counter1, Atoms1}
@@ -96,7 +103,7 @@ to_binary({atoms, AtomsDict}) ->
     , (asm_op:uint_enc(byte_size(Out)))/binary
     , (asm_op:uint_enc(length(Atoms)))/binary
     , Out/binary>>;
-to_binary(#asm_module{code=Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
+to_binary(#asm_module{ir =Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
   %% Strip [{'OP', Code}] and get [Code]
   Code = lists:map(fun(Op) -> asm_op:compile(Op) end, lists:flatten(Code0)),
   %% Module file is encoded as "GLEAM" + chunks (4 byte name, var_int byte_size)
@@ -106,9 +113,9 @@ to_binary(#asm_module{code=Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
   , (to_binary({exports, Exports}))/binary
   , (to_binary({code, iolist_to_binary(Code)}))/binary>>.
 
-write_ir(Filename, #asm_module{code=IR, atoms=At, literals=Lit
+write_ir(Filename, #asm_module{ir =IR, atoms=At, literals=Lit
                               , funs=Funs, labels=Labels}) ->
-  Out = [ {code, IR}
+  Out = [ {ir, IR}
         , {literals, Lit}
         , {atoms, At}
         , {funs, Funs}
@@ -118,12 +125,12 @@ write_ir(Filename, #asm_module{code=IR, atoms=At, literals=Lit
 
 read_ir(Str) ->
   {ok, [IRFile]} = file:consult(Str),
-  IR = proplists:get_value(code, IRFile, []),
+  IR = proplists:get_value(ir, IRFile, []),
   Lit = proplists:get_value(literals, IRFile, []),
   At = proplists:get_value(atoms, IRFile, []),
   Funs = proplists:get_value(funs, IRFile, []),
   Labels = proplists:get_value(labels, IRFile, []),
-  #asm_module{code=IR, atoms=At, literals=Lit, funs=Funs, labels=Labels}.
+  #asm_module{ir =IR, atoms=At, literals=Lit, funs=Funs, labels=Labels}.
 
 register_label(Label, Position, #asm_module{labels=Labels}=M) ->
   Labels1 = orddict:store(Label, Position, Labels),

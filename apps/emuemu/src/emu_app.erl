@@ -28,7 +28,7 @@ stop(_State) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-simulate(Str) ->
-  M0 = emu_machine:new(),
-  M1 = emu_machine:load_module(init, "test/init.S.ir", M0),
-  E0 = emu_machine:.
+simulate() ->
+  {ok, VM} = emu_machine:start_link(),
+  emu_machine:load_module(VM, init, "test/init.S.ir"),
+  {ok, _MainThread} = emu_machine:spawn(init, test, []).
