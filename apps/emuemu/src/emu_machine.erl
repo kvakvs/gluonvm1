@@ -22,7 +22,7 @@
 -record(machine, { modules = orddict:new()
                  , pid_counter = 0
                  , processes = orddict:new()
-                 , code_tab = ets:new(code, [ordered_set])
+                 , code_server = emu_code_server:start_link()
                  }).
 
 %%====================================================================
@@ -50,9 +50,9 @@ init([]) -> {ok, #machine{}}.
 
 handle_call({load_module, Name, Filename}, _From
            , State=#machine{modules=Modules}) ->
-  M = asm_module:read_ir(Filename),
-  Modules1 = orddict:store(Name, M, Modules),
-  store_code(M, State),
+  Mod = asm_module:read_ir(Filename),
+  Modules1 = orddict:store(Name, Mod, Modules),
+  emu_code_server:store_code(State#machine.code_server, Mod),
   {reply, ok, State#machine{modules=Modules1}};
 handle_call({spawn, M, F, Args}, _From
            , State=#machine{ pid_counter=Counter
@@ -75,15 +75,3 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-store_code(Mod, #machine{code_tab=CodeT}) ->
-  IR = asm_module:get_ir(Mod),
-  Modname = asm_module:get_name(Mod),
-  %% Use {Modname, Offset} as key for opcodes. Skip comment irops
-  StoreFun = fun
-    (X, Offset) when element(1,X) =:= '//' -> Offset;
-    (IROp, Offset) ->
-      Offset1 = Offset + 1,
-      ets:insert(CodeT, {{Modname, Offset1}, IROp}),
-      Offset1
-    end,
-  lists:foreach(StoreFun, IR).
