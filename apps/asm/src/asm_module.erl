@@ -20,6 +20,8 @@
         , write_ir/2
         , read_ir/1
         , get_name/1
+        , funarity_to_label/2
+        , label_to_offset/2
         ]).
 
 %% funs contains {F,Arity} -> Label mapping where F is reference to atoms table
@@ -113,9 +115,10 @@ to_binary(#asm_module{ir =Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
   , (to_binary({exports, Exports}))/binary
   , (to_binary({code, iolist_to_binary(Code)}))/binary>>.
 
-write_ir(Filename, #asm_module{ir =IR, atoms=At, literals=Lit
+write_ir(Filename, #asm_module{name=Name, ir=IR, atoms=At, literals=Lit
                               , funs=Funs, labels=Labels}) ->
-  Out = [ {ir, IR}
+  Out = [ {name, Name}
+        , {ir, IR}
         , {literals, Lit}
         , {atoms, At}
         , {funs, Funs}
@@ -125,13 +128,48 @@ write_ir(Filename, #asm_module{ir =IR, atoms=At, literals=Lit
 
 read_ir(Str) ->
   {ok, [IRFile]} = file:consult(Str),
-  IR = proplists:get_value(ir, IRFile, []),
-  Lit = proplists:get_value(literals, IRFile, []),
-  At = proplists:get_value(atoms, IRFile, []),
-  Funs = proplists:get_value(funs, IRFile, []),
+  Name  = proplists:get_value(name, IRFile),
+  IR    = proplists:get_value(ir, IRFile, []),
+  Lit   = proplists:get_value(literals, IRFile, []),
+  Atoms = proplists:get_value(atoms, IRFile, []),
+  Funs  = read_ir_resolve_funs(proplists:get_value(funs, IRFile, []), Atoms),
+%%   io:format("~p~n", [Funs]),
   Labels = proplists:get_value(labels, IRFile, []),
-  #asm_module{ir =IR, atoms=At, literals=Lit, funs=Funs, labels=Labels}.
+  #asm_module{name=Name
+             , ir=IR
+             , atoms=Atoms
+             , literals=Lit
+             , funs=Funs
+             , labels=Labels}.
+
+%% @private
+read_ir_resolve_funs(Funs, Atoms) ->
+  ResolveFun = fun({{FunAtom, Arity}, FunIndex}) ->
+      case lists:keyfind(FunAtom, 2, Atoms) of
+        false ->
+          erlang:error({broken_ir_file
+                       , 'cant resolve atom in fun name'
+                       , {atom, FunAtom, arity, Arity}
+                       });
+        {Atom, _AtomIndex} -> {{Atom, Arity}, FunIndex}
+      end
+    end,
+  lists:map(ResolveFun, Funs).
 
 register_label(Label, Position, #asm_module{labels=Labels}=M) ->
   Labels1 = orddict:store(Label, Position, Labels),
   M#asm_module{labels=Labels1}.
+
+funarity_to_label(#asm_module{funs=Funs}, {F, Arity}) ->
+  case lists:keyfind({F, Arity}, 1, Funs) of
+    false -> {error, not_found};
+    {{F, Arity}, Label} -> {ok, Label}
+  end.
+
+label_to_offset(_, {error,_}=E) -> E; % sprinkle with a pinch of monad
+label_to_offset(M, {ok,L}) -> label_to_offset(M, L);
+label_to_offset(#asm_module{labels=Labels}, Label) ->
+  case lists:keyfind(Label, 1, Labels) of
+    false -> {error, not_found};
+    {Label, Offset} -> {ok, Offset}
+  end.

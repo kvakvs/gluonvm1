@@ -19,10 +19,9 @@
 
 -define(SERVER, ?MODULE).
 
--record(machine, { modules = orddict:new()
-                 , pid_counter = 0
+-record(machine, { pid_counter = 0
                  , processes = orddict:new()
-                 , code_server = emu_code_server:start_link()
+                 , code_server :: pid()
                  }).
 
 %%====================================================================
@@ -40,27 +39,26 @@ load_module(VM, Name, Filename) ->
 spawn(VM, M, F, Args) ->
   gen_server:call(VM, {spawn, M, F, Args}).
 
-code_find_mfa(VM, M, F, Arity) ->
-  gen_server:call(VM, {code_find_mfa, M, F, Arity}).
-
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
-init([]) -> {ok, #machine{}}.
+init([]) ->
+  {ok, CodeSrv} = emu_code_server:start_link(),
+  {ok, #machine{code_server=CodeSrv}}.
 
-handle_call({load_module, Name, Filename}, _From
-           , State=#machine{modules=Modules}) ->
+handle_call({load_module, _Name, Filename}, _From
+           , State) ->
   Mod = asm_module:read_ir(Filename),
-  Modules1 = orddict:store(Name, Mod, Modules),
-  emu_code_server:store_code(State#machine.code_server, Mod),
-  {reply, ok, State#machine{modules=Modules1}};
+  emu_code_server:add_code(State#machine.code_server, Mod),
+  {reply, ok, State};
 handle_call({spawn, M, F, Args}, _From
            , State=#machine{ pid_counter=Counter
-                           , processes=Procs}) ->
+                           , processes=Procs
+                           , code_server=CodeSrv}) ->
   Counter1 = Counter + 1,
-  {ok, Proc} = emu_proc:start_link(self()),
-  %% FIXME TODO: This will deadlock while call requests back VM for code address
+  {ok, Proc} = emu_proc:start_link(self(), CodeSrv),
   emu_proc:call(Proc, M, F, Args),
+  emu_proc:tick(Proc), % start the execution (ticking clock)
   Procs1 = orddict:store(Counter1, Proc, Procs),
   {reply, {ok, Counter1}, State#machine{ pid_counter=Counter1
                                        , processes=Procs1}};

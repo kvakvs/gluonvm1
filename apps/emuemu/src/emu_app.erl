@@ -31,4 +31,4 @@ stop(_State) ->
 simulate() ->
   {ok, VM} = emu_machine:start_link(),
   emu_machine:load_module(VM, init, "test/init.S.ir"),
-  {ok, _MainThread} = emu_machine:spawn(init, test, []).
+  {ok, _MainThread} = emu_machine:spawn(VM, init, test, []).
