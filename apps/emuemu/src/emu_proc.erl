@@ -17,8 +17,7 @@
 
 -define(NUM_REGS, 32).
 
--record(proc, { module :: atom()
-              , vm :: pid()
+-record(proc, { vm :: pid()
               , code_server :: pid()
               , ip = {undefined, 0} :: {atom(), non_neg_integer()}
               , registers = array:new(?NUM_REGS)
@@ -93,7 +92,30 @@ fetch(#proc{code_server=CodeSvr, ip=IP}) ->
 step(N, State=#proc{ip=IP}) ->
   State#proc{ip=emu_code_server:step(N, IP)}.
 
+%% @doc Resets pointer to a new location (local or far jump)
+jump({'$LABEL', L}, State=#proc{ip=IP, code_server=CodeSrv}) ->
+  {ok, N} = emu_code_server:label_to_offset(CodeSrv, current_module(State), L),
+  io:format("action: jump to label ~p (offset ~p)~n", [L, N]),
+  State#proc{ip=emu_code_server:jump(N, IP)}.
+
+%% @doc Calculates value based on its tag ($IMM, $REG, $STACK... etc)
+evaluate({'$IMM', X}, State) -> {ok, X, State}.
+
+%% @doc Puts a value (untagged by evaluate) to some destination
+move(Value, {'$REG', R}, State=#proc{registers=Regs}) ->
+  io:format("action: move ~p to register ~p~n", [Value, R]),
+  Regs1 = array:set(R, Value, Regs),
+  {ok, State#proc{registers=Regs1}}.
+
 execute_op({'LINE', _FileLiteral, _Line}, State) -> step(1, State);
-execute_op(Instr, State) ->
+execute_op({'MOVE', TaggedValue, Dst}, State) ->
+  {ok, Value, State1} = evaluate(TaggedValue, State),
+  {ok, State2} = move(Value, Dst, State1),
+  step(1, State2);
+execute_op({'TAILCALL', _Live, Dst}, State) ->
+  jump(Dst, State);
+execute_op(Instr, _State) ->
   io:format("~s unknown instr ~p~n", [?MODULE_STRING, Instr]),
   erlang:throw('BAD_INSTR').
+
+current_module(#proc{ip=IP}) -> emu_code_server:get_module(IP).

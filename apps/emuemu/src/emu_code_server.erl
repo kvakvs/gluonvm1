@@ -15,11 +15,14 @@
         , find_mfa/2
         , fetch/2
         , step/2
+        , label_to_offset/3
+        , jump/2
+        , get_module/1
         ]).
 
 -export_type([code_pointer/0]).
 
--record(code_server, {modules = orddict:new()
+-record(code_server, { modules = orddict:new()
                      , code = ets:new(?MODULE, [ordered_set]) :: ets:tab()
                      }).
 
@@ -54,6 +57,14 @@ fetch(CodeSrv, IP) when is_pid(CodeSrv) ->
 step(N, #code_pointer{offset=Offset}=IP) ->
   IP#code_pointer{offset=Offset+N}.
 
+jump(N, #code_pointer{}=IP) ->
+  IP#code_pointer{offset=N}.
+
+get_module(#code_pointer{module=M}) -> M.
+
+label_to_offset(CodeSrv, Mod, Label) when is_pid(CodeSrv), is_atom(Mod) ->
+  gen_server:call(CodeSrv, {label_to_offset, Mod, Label}).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -79,6 +90,10 @@ handle_call({find_mfa, {M, F, Arity}}, _From, State) ->
 handle_call({fetch, IP}, _From, State=#code_server{code=Ets}) ->
   [{_Key, Instr}] = ets:lookup(Ets, {IP#code_pointer.module, IP#code_pointer.offset}),
   {reply, {ok, Instr}, State};
+handle_call({label_to_offset, Mod, Label}, _From, State) ->
+  AsmMod = orddict:fetch(Mod, State#code_server.modules),
+  {ok, Offset} = asm_module:label_to_offset(AsmMod, Label),
+  {reply, {ok, Offset}, State};
 handle_call(Request, _From, State) ->
   {reply, {?MODULE, bad_request, Request}, State}.
 

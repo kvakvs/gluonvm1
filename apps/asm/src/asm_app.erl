@@ -32,6 +32,11 @@ stop(_State) ->
 %% Internal functions
 %%====================================================================
 
+-record(compile_state, { %fun_offset :: integer()
+                        accum = []
+                       , mod
+                       }).
+
 %% @doc Loads beam S assembly and runs compile on it
 process(Fname) ->
   {ok, Asm} = file:consult(Fname),
@@ -44,12 +49,9 @@ process(Fname) ->
   Mod0 = asm_module:new(init),
   Mod1 = asm_module:set_exports(proplists:get_value(exports, Asm), Mod0),
 
-  CompileFun = fun(F, {Accum, MState}) ->
-                {Piece, MState1} = compile_one_fun(F, MState),
-                Accum1 = [Piece | Accum],
-                {Accum1, MState1}
-              end,
-  {Code, Mod2} = lists:foldr(CompileFun, {[], Mod1}, Funs),
+  CompileState = #compile_state{mod = Mod1},
+  #compile_state{accum=Code, mod=Mod2}
+    = lists:foldr(fun compile_one_fun/2, CompileState, Funs),
   Mod = asm_module:set_ir(lists:flatten(Code), Mod2),
   io:format("Module ~p~n", [Mod]),
   ok = asm_module:write_ir(Fname ++ ".ir", Mod).
@@ -65,56 +67,60 @@ split_funs([{function, FName, FArity, _} | Code], Accum) ->
   {Fun, Remaining} = lists:splitwith(fun not_func_header/1, Code),
   split_funs(Remaining, [{FName, FArity, Fun} | Accum]).
 
-compile_one_fun({F, Arity, Code}, MState) ->
-  {Ops0, MState1} = lists:foldl(fun c_op/2, {[], MState}, Code),
-  Ops = lists:reverse(Ops0),
+compile_one_fun({F, Arity, Code}, CState) ->
+  CState1 = lists:foldl(fun c_op/2, CState, Code),
   %% First opcode in function is always label, get it
   {label, FLabel} = hd(Code),
-  {FunAtomIndex, MState2} = asm_module:find_or_create_atom(F, MState1),
-  MState3 = asm_module:add_fun(FunAtomIndex, Arity, FLabel, MState2),
-  {Ops, MState3}.
+  M1 = CState1#compile_state.mod,
+  {FunAtomIndex, M2} = asm_module:find_or_create_atom(F, M1),
+  M3 = asm_module:add_fun(FunAtomIndex, Arity, FLabel, M2),
+  CState1#compile_state{mod=M3}.
 
 %% @doc Compiles individual opcodes to Gluon Intermediate
-c_op({label, L}, {Acc, MState}) ->
-  %%{[asm_op:'LABEL'(L) | Acc], MState}
-  %%io:format("acc: ~p~n", [Acc]),
-  MState1 = asm_module:register_label(L, length(Acc), MState),
-  %{[asm_op:comment([label, L]) | Acc], MState1};
-  {Acc, MState1};
-c_op({func_info, _A1, _A2, _N}, {Acc, MState}) -> {Acc, MState}; % NO OP
-c_op({line, Props}, {Acc, MState}) ->
-  case asm_module:get_option(line_numbers, MState) of
+%% CState = compiler state, namely function base offset for labels
+c_op({label, L}, #compile_state{mod=Mod0, accum=Acc}=CState) ->
+  Mod1 = asm_module:register_label(L, length(Acc), Mod0),
+  CState#compile_state{mod=Mod1};
+c_op({func_info, _A1, _A2, _N}, CState=#compile_state{}) -> CState; % NO OP
+c_op({line, Props}, CState=#compile_state{mod=Mod0}) ->
+  case asm_module:get_option(line_numbers, Mod0) of
      true -> case lists:keyfind(location, 1, Props) of
-               false -> {Acc, MState};
+               false -> CState;
                {location, F, L} ->
-                 {Op, MState1} = asm_op:'LINE'(F, L, MState),
-                 {[Op | Acc], MState1}
+                 {Op, Mod1} = asm_op:'LINE'(F, L, Mod0),
+                 emit(Op, CState#compile_state{mod=Mod1})
              end;
-     false -> {Acc, MState}
+     false -> CState
   end;
-c_op({move, Src, Dst}, {Acc, MState}) ->
-  {MoveOp, MState1} = asm_op:'MOVE'(Src, Dst, MState),
-  {[MoveOp | Acc], MState1};
-c_op({gc_bif, Lbl, _OnFail, Bif, Args, _Reg}, {Acc, MState}) ->
-  {CallOp, MState1} = asm_op:'CALL'(Lbl, Bif, MState),
-  Acc1 = [CallOp | Acc],
-  {Acc2, MState2} = lists:foldr(fun fold_push_argument/2
-                               , {Acc1, MState1}
-                               , Args),
-  {Acc2, MState2};
-c_op({call_only, Arity, Label}, {Acc, Module}) ->
-  {CallOp, Module1} = asm_op:'TAILCALL'(Arity, Label, Module),
-  {[CallOp | Acc], Module1};
-c_op({call_ext_only, Arity, Label}, {Acc, Module}) ->
-  {CallOp, Module1} = asm_op:'TAILCALL'(Arity, Label, Module),
-  {[CallOp | Acc], Module1};
-c_op({test, Test, Label, Args}, {Acc, Module}) ->
-  {TestOp, Module1} = asm_op:'TEST'(Test, Label, Args, Module),
-  {[TestOp | Acc], Module1};
-c_op(return, {Acc, Module}) ->
-  {[asm_op:'RET'() | Acc], Module};
-c_op(UnkOp, {Acc, MState}) -> {[{unknown, UnkOp} | Acc], MState}.
+c_op({move, Src, Dst}, CState = #compile_state{mod=Mod0}) ->
+  {MoveOp, Mod1} = asm_op:'MOVE'(Src, Dst, Mod0),
+  emit(MoveOp, CState#compile_state{mod=Mod1});
+c_op({gc_bif, Lbl, _OnFail, Bif, Args, _Reg}, CState=#compile_state{mod=Mod0}) ->
+  {PushArgs, Mod1} = lists:foldl(fun fold_push_argument/2
+                                , {[], Mod0}
+                                , Args),
+  {CallOp, Mod2} = asm_op:'CALL'(Lbl, Bif, Mod1),
+  emit(PushArgs ++ [CallOp], CState#compile_state{mod=Mod2});
+c_op({call_only, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
+  {CallOp, Mod1} = asm_op:'TAILCALL'(Arity, Label, Mod0),
+  emit(CallOp, CState#compile_state{mod=Mod1});
+c_op({call_ext_only, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
+  {CallOp, Mod1} = asm_op:'TAILCALL'(Arity, Label, Mod0),
+  emit(CallOp, CState#compile_state{mod=Mod1});
+c_op({test, Test, Label, Args}, CState=#compile_state{mod=Mod0}) ->
+  {TestOp, Mod1} = asm_op:'TEST'(Test, Label, Args, Mod0),
+  emit(TestOp, CState#compile_state{mod=Mod1});
+c_op(return, CState=#compile_state{}) ->
+  emit(asm_op:'RET'(), CState);
+c_op(UnkOp, {_Acc, _MState, _CState}) ->
+  erlang:error({unknown_op, UnkOp}).
+  %{[{unknown, UnkOp} | Acc], MState, CState}.
 
 fold_push_argument(Arg, {Acc, MState}) ->
   {Op, MState1} = asm_op:'PUSH'(Arg, MState),
   {[Op | Acc], MState1}.
+
+emit(Op, CState) when not is_list(Op) -> emit([Op], CState);
+emit(Ops, CState = #compile_state{accum = Acc0}) ->
+  %% TODO: this is O(N)
+  CState#compile_state{accum = Acc0 ++ Ops}.
