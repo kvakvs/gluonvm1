@@ -79,9 +79,9 @@ dbg_state(#proc{}=P) ->
 %% @doc Fetch an instruction and do a step
 -spec tick_i(#proc{}) -> {noreply, #proc{}}.
 tick_i(State = #proc{}) ->
-  Instr = fetch_next(State),
-  State1 = execute_op(Instr, State),
-  {noreply, State1}.
+  {Instr, State1} = fetch_next(State),
+  State2 = execute_op(Instr, State1),
+  {noreply, State2}.
 
 %% @doc Calls code server to get next instruction
 -spec fetch_next(#proc{}) -> {emu_code_server:code_pointer(), #proc{}}.

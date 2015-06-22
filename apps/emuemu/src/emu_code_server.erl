@@ -64,10 +64,9 @@ handle_call({add_code, AsmM}, _From
   StoreFun = fun
     (X, Offset) when element(1,X) =:= '//' -> Offset; % Skip comment irops
     (IROp, Offset) ->
-      Offset1 = Offset + 1,
       %% Use {Modname, Offset} as key for opcodes.
-      ets:insert(Ets, {{Modname, Offset1}, IROp}),
-      Offset1
+      ets:insert(Ets, {{Modname, Offset}, IROp}),
+      Offset + 1
   end,
   lists:foldl(StoreFun, 0, IR),
   Modules1 = orddict:store(Modname, AsmM, Modules),

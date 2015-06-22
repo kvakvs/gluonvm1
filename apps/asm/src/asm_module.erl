@@ -133,7 +133,6 @@ read_ir(Str) ->
   Lit   = proplists:get_value(literals, IRFile, []),
   Atoms = proplists:get_value(atoms, IRFile, []),
   Funs  = read_ir_resolve_funs(proplists:get_value(funs, IRFile, []), Atoms),
-%%   io:format("~p~n", [Funs]),
   Labels = proplists:get_value(labels, IRFile, []),
   #asm_module{name=Name
              , ir=IR
@@ -157,6 +156,7 @@ read_ir_resolve_funs(Funs, Atoms) ->
   lists:map(ResolveFun, Funs).
 
 register_label(Label, Position, #asm_module{labels=Labels}=M) ->
+  error = orddict:find(Label, Labels),
   Labels1 = orddict:store(Label, Position, Labels),
   M#asm_module{labels=Labels1}.
 

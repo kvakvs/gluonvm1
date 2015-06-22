@@ -66,7 +66,8 @@ split_funs([{function, FName, FArity, _} | Code], Accum) ->
   split_funs(Remaining, [{FName, FArity, Fun} | Accum]).
 
 compile_one_fun({F, Arity, Code}, MState) ->
-  {Ops, MState1} = lists:foldr(fun c_op/2, {[], MState}, Code),
+  {Ops0, MState1} = lists:foldl(fun c_op/2, {[], MState}, Code),
+  Ops = lists:reverse(Ops0),
   %% First opcode in function is always label, get it
   {label, FLabel} = hd(Code),
   {FunAtomIndex, MState2} = asm_module:find_or_create_atom(F, MState1),
@@ -76,8 +77,10 @@ compile_one_fun({F, Arity, Code}, MState) ->
 %% @doc Compiles individual opcodes to Gluon Intermediate
 c_op({label, L}, {Acc, MState}) ->
   %%{[asm_op:'LABEL'(L) | Acc], MState}
+  %%io:format("acc: ~p~n", [Acc]),
   MState1 = asm_module:register_label(L, length(Acc), MState),
-  {[asm_op:comment([label, L]) | Acc], MState1};
+  %{[asm_op:comment([label, L]) | Acc], MState1};
+  {Acc, MState1};
 c_op({func_info, _A1, _A2, _N}, {Acc, MState}) -> {Acc, MState}; % NO OP
 c_op({line, Props}, {Acc, MState}) ->
   case asm_module:get_option(line_numbers, MState) of
