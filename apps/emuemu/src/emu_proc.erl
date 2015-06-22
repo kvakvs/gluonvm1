@@ -99,7 +99,9 @@ jump({'$LABEL', L}, State=#proc{ip=IP, code_server=CodeSrv}) ->
   State#proc{ip=emu_code_server:jump(N, IP)}.
 
 %% @doc Calculates value based on its tag ($IMM, $REG, $STACK... etc)
-evaluate({'$IMM', X}, State) -> {ok, X, State}.
+evaluate({'$IMM', X}, _State) -> {ok, X};
+evaluate({'$REG', R}, #proc{registers=Regs}) ->
+  {ok, array:get(R, Regs)}.
 
 %% @doc Puts a value (untagged by evaluate) to some destination
 move(Value, {'$REG', R}, State=#proc{registers=Regs}) ->
@@ -107,13 +109,28 @@ move(Value, {'$REG', R}, State=#proc{registers=Regs}) ->
   Regs1 = array:set(R, Value, Regs),
   {ok, State#proc{registers=Regs1}}.
 
+test_op(is_lt, [A0, B0], State) ->
+  {ok, A} = evaluate(A0, State),
+  {ok, B} = evaluate(B0, State),
+  A < B.
+
 execute_op({'LINE', _FileLiteral, _Line}, State) -> step(1, State);
 execute_op({'MOVE', TaggedValue, Dst}, State) ->
-  {ok, Value, State1} = evaluate(TaggedValue, State),
-  {ok, State2} = move(Value, Dst, State1),
-  step(1, State2);
+  {ok, Value} = evaluate(TaggedValue, State),
+  {ok, State1} = move(Value, Dst, State),
+  step(1, State1);
 execute_op({'TAILCALL', _Live, Dst}, State) ->
   jump(Dst, State);
+execute_op({'TEST', TestOp, Label, Args}, State) ->
+  TestResult = test_op(TestOp, Args, State),
+  io:format("action: test ~s for ~p = ~p~n", [TestOp, Args, TestResult]),
+  case TestResult of
+    true  -> step(1, State);
+    false -> jump(Label, State)
+  end;
+execute_op({'PUSH', TaggedValue}, State=#proc{stack=Stack}) ->
+  {ok, Value} = evaluate(TaggedValue, State),
+  step(1, State#proc{stack=[Value | Stack]});
 execute_op(Instr, _State) ->
   io:format("~s unknown instr ~p~n", [?MODULE_STRING, Instr]),
   erlang:throw('BAD_INSTR').
