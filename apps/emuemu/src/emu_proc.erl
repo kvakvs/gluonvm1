@@ -79,16 +79,21 @@ dbg_state(#proc{}=P) ->
 %% @doc Fetch an instruction and do a step
 -spec tick_i(#proc{}) -> {noreply, #proc{}}.
 tick_i(State = #proc{}) ->
-  {Instr, State1} = fetch_next(State),
-  State2 = execute_op(Instr, State1),
-  {noreply, State2}.
+  {ok, Instr} = fetch(State),
+  State1 = execute_op(Instr, State),
+  ?MODULE:tick(self()),
+  {noreply, State1}.
 
 %% @doc Calls code server to get next instruction
--spec fetch_next(#proc{}) -> {emu_code_server:code_pointer(), #proc{}}.
-fetch_next(State=#proc{code_server=CodeSvr, ip=IP}) ->
-  {IP1, Instr} = emu_code_server:fetch_next(CodeSvr, IP),
-  {Instr, State#proc{ip=IP1}}.
+-spec fetch(#proc{}) -> {emu_code_server:code_pointer(), #proc{}}.
+fetch(#proc{code_server=CodeSvr, ip=IP}) ->
+  emu_code_server:fetch(CodeSvr, IP).
 
+%% @doc Advances pointer by N instructions forward
+step(N, State=#proc{ip=IP}) ->
+  State#proc{ip=emu_code_server:step(N, IP)}.
+
+execute_op({'LINE', _FileLiteral, _Line}, State) -> step(1, State);
 execute_op(Instr, State) ->
   io:format("~s unknown instr ~p~n", [?MODULE_STRING, Instr]),
-  State.
+  erlang:throw('BAD_INSTR').

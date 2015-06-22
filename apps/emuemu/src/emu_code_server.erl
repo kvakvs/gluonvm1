@@ -13,7 +13,8 @@
 -export([start_link/0
         , add_code/2
         , find_mfa/2
-        , fetch_next/2
+        , fetch/2
+        , step/2
         ]).
 
 -export_type([code_pointer/0]).
@@ -22,7 +23,7 @@
                      , code = ets:new(?MODULE, [ordered_set]) :: ets:tab()
                      }).
 
--record(code_pointer, {code_server :: pid()
+-record(code_pointer, { code_server :: pid()
                       , offset :: non_neg_integer()
                       , module :: atom()
                       }).
@@ -47,9 +48,11 @@ add_code(CodeSrv, AsmM) when is_pid(CodeSrv) ->
 find_mfa(CodeSrv, {M, F, Arity}) when is_pid(CodeSrv) ->
   gen_server:call(CodeSrv, {find_mfa, {M, F, Arity}}).
 
-fetch_next(CodeSrv, IP) when is_pid(CodeSrv) ->
-  gen_server:call(CodeSrv, {fetch_next, IP}).
+fetch(CodeSrv, IP) when is_pid(CodeSrv) ->
+  gen_server:call(CodeSrv, {fetch, IP}).
 
+step(N, #code_pointer{offset=Offset}=IP) ->
+  IP#code_pointer{offset=Offset+N}.
 
 %%====================================================================
 %% gen_server callbacks
@@ -73,9 +76,9 @@ handle_call({add_code, AsmM}, _From
   {reply, ok, State#code_server{modules = Modules1}};
 handle_call({find_mfa, {M, F, Arity}}, _From, State) ->
   {reply, find_mfa_i({M, F, Arity}, State), State};
-handle_call({fetch_next, IP}, _From, State=#code_server{code=Ets}) ->
-  [Instr] = ets:lookup(Ets, {IP#code_pointer.module, IP#code_pointer.offset}),
-  {reply, Instr, State};
+handle_call({fetch, IP}, _From, State=#code_server{code=Ets}) ->
+  [{_Key, Instr}] = ets:lookup(Ets, {IP#code_pointer.module, IP#code_pointer.offset}),
+  {reply, {ok, Instr}, State};
 handle_call(Request, _From, State) ->
   {reply, {?MODULE, bad_request, Request}, State}.
 
