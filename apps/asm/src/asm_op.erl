@@ -164,6 +164,8 @@ comment(Args) -> list_to_tuple(['%' | Args]).
 'POP'(Dst, MState) ->
   {DstEnc, MState1} = value_enc(Dst, MState),
   {{'POP', DstEnc}, MState1}.
+%% TODO: Separate shorter call instructions when ResultDst is {x,0}
+%% TODO: Maybe separate opcode for bif/nonbif call?
 'CALL'(Label, Arity, IsBif, ResultDst, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
   {ResultDstEnc, MState2} = value_enc(ResultDst, MState1),
