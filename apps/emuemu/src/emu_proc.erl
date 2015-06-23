@@ -93,9 +93,20 @@ step(N, State=#proc{ip=IP}) ->
   State#proc{ip=emu_code_server:step(N, IP)}.
 
 %% @doc Resets pointer to a new location (local or far jump)
-jump({'$LABEL', L}, State=#proc{ip=IP, code_server=CodeSrv}) ->
+jump({{'$ATOM', FunAtomIndex}, Arity, non_bif}, State=#proc{code_server=CodeSrv}) ->
+  %% Local jump to function
+  M = current_module(State),
+  {ok, FunAtom} = emu_code_server:find_atom(CodeSrv, M, FunAtomIndex),
+  {ok, IP} = emu_code_server:find_mfa(CodeSrv, {M, FunAtom, Arity}),
+  io:format("action: jump to fun ~p/~p (~p)~n", [FunAtom, Arity, IP]),
+  State#proc{ip=IP};
+jump({'$LABEL', L}, State=#proc{code_server=CodeSrv}) ->
+  %% Local jump to label
   {ok, N} = emu_code_server:label_to_offset(CodeSrv, current_module(State), L),
   io:format("action: jump to label ~p (offset ~p)~n", [L, N]),
+  jump(N, State);
+jump(N, State=#proc{ip=IP}) when is_integer(N) ->
+  %% Local jump to numeric offset
   State#proc{ip=emu_code_server:jump(N, IP)}.
 
 %% @doc Calculates value based on its tag ($IMM, $REG, $STACK... etc)
@@ -114,6 +125,33 @@ test_op(is_lt, [A0, B0], State) ->
   {ok, B} = evaluate(B0, State),
   A < B.
 
+push(Value, State = #proc{stack=Stack}) ->
+  io:format("action: push ~p~n", [Value]),
+  State#proc{stack=[Value | Stack]}.
+
+-spec pop(#proc{}) -> {ok, any(), #proc{}}.
+pop(State = #proc{stack=[]}) ->
+  erlang:error(stack_underflow);
+pop(State = #proc{stack=[Value|Stack]}) ->
+  io:format("action: pop value ~p, remaining: ~p~n", [Value, Stack]),
+  {ok, Value, State#proc{stack=Stack}}.
+
+call_bif({{'$ATOM', FunAtomIndex}, Arity, bif}, ResultDst
+        , State=#proc{code_server=CodeSrv}) ->
+  %% Calling a builtin
+  M = current_module(State),
+  {ok, FunAtom} = emu_code_server:find_atom(CodeSrv, M, FunAtomIndex),
+  %% Pop args for builtin
+  {Args, State1} = lists:foldl(
+    fun(_Seq, {A, St}) ->
+      {ok, Arg, St1} = pop(St),
+      {[Arg | A], St1}
+    end, {[], State}, lists:seq(1, Arity)),
+  io:format("action: bif ~p/~p args ~p~n", [FunAtom, Arity, Args]),
+  Result = apply(erlang, FunAtom, Args),
+  {ok, State2} = move(Result, ResultDst, State1),
+  State2.
+
 execute_op({'LINE', _FileLiteral, _Line}, State) -> step(1, State);
 execute_op({'MOVE', TaggedValue, Dst}, State) ->
   {ok, Value} = evaluate(TaggedValue, State),
@@ -121,6 +159,12 @@ execute_op({'MOVE', TaggedValue, Dst}, State) ->
   step(1, State1);
 execute_op({'TAILCALL', _Live, Dst}, State) ->
   jump(Dst, State);
+execute_op({'CALL', Dst, Arity, IsBif, ResultDst}, State = #proc{ip=IP}) ->
+  %% save next instruction after current and jump (or not save for bif)
+  case IsBif of
+    bif     -> step(1, call_bif({Dst, Arity, IsBif}, ResultDst, State));
+    non_bif -> push({return, emu_code_server:step(1, IP)}, State)
+  end;
 execute_op({'TEST', TestOp, Label, Args}, State) ->
   TestResult = test_op(TestOp, Args, State),
   io:format("action: test ~s for ~p = ~p~n", [TestOp, Args, TestResult]),
@@ -128,9 +172,9 @@ execute_op({'TEST', TestOp, Label, Args}, State) ->
     true  -> step(1, State);
     false -> jump(Label, State)
   end;
-execute_op({'PUSH', TaggedValue}, State=#proc{stack=Stack}) ->
+execute_op({'PUSH', TaggedValue}, State=#proc{}) ->
   {ok, Value} = evaluate(TaggedValue, State),
-  step(1, State#proc{stack=[Value | Stack]});
+  step(1, push(Value, State));
 execute_op(Instr, _State) ->
   io:format("~s unknown instr ~p~n", [?MODULE_STRING, Instr]),
   erlang:throw('BAD_INSTR').

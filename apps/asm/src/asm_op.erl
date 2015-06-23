@@ -13,7 +13,7 @@
         , 'MOVE'/3
         , 'PUSH'/2
         , 'POP'/2
-        , 'CALL'/3
+        , 'CALL'/5
         , 'TAILCALL'/3
         , 'RET'/0
         , 'TEST'/4
@@ -164,9 +164,10 @@ comment(Args) -> list_to_tuple(['%' | Args]).
 'POP'(Dst, MState) ->
   {DstEnc, MState1} = value_enc(Dst, MState),
   {{'POP', DstEnc}, MState1}.
-'CALL'(Label, IsBif, MState) ->
+'CALL'(Label, Arity, IsBif, ResultDst, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
-  {{'CALL', LabelEnc, IsBif}, MState1}.
+  {ResultDstEnc, MState2} = value_enc(ResultDst, MState1),
+  {{'CALL', LabelEnc, Arity, IsBif, ResultDstEnc}, MState2}.
 'TAILCALL'(Arity, Label, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
   {{'TAILCALL', Arity, LabelEnc}, MState1}.

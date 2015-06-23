@@ -12,6 +12,7 @@
         , set_exports/2
         , set_ir/2
         , get_ir/1
+        , find_atom/2
         , find_or_create_atom/2
         , find_or_create_literal/2
         , add_fun/4
@@ -70,6 +71,10 @@ find_or_create_atom(A, M=#asm_module{atoms=Atoms, atom_counter=Counter}) ->
           {I, I, orddict:store(A, I, Atoms)}
       end,
   {Index, M#asm_module{atom_counter=Counter1, atoms=Atoms1}}.
+
+find_atom(AtomIndex, M=#asm_module{atoms=Atoms}) ->
+  {value, {Atom, _}} = lists:keysearch(AtomIndex, 2, Atoms),
+  {ok, Atom}.
 
 find_or_create_literal(Lit, M=#asm_module{ literals=Literals
                                          , literal_counter=Counter}) ->

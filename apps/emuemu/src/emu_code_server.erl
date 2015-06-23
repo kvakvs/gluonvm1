@@ -18,6 +18,7 @@
         , label_to_offset/3
         , jump/2
         , get_module/1
+        , find_atom/3
         ]).
 
 -export_type([code_pointer/0]).
@@ -53,6 +54,9 @@ find_mfa(CodeSrv, {M, F, Arity}) when is_pid(CodeSrv) ->
 
 fetch(CodeSrv, IP) when is_pid(CodeSrv) ->
   gen_server:call(CodeSrv, {fetch, IP}).
+
+find_atom(CodeSrv, Module, AtomIndex) when is_pid(CodeSrv) ->
+  gen_server:call(CodeSrv, {find_atom, Module, AtomIndex}).
 
 step(N, #code_pointer{offset=Offset}=IP) ->
   IP#code_pointer{offset=Offset+N}.
@@ -94,6 +98,8 @@ handle_call({label_to_offset, Mod, Label}, _From, State) ->
   AsmMod = orddict:fetch(Mod, State#code_server.modules),
   {ok, Offset} = asm_module:label_to_offset(AsmMod, Label),
   {reply, {ok, Offset}, State};
+handle_call({find_atom, Module, AtomIndex}, _From, State) ->
+  {reply, find_atom_i(Module, AtomIndex, State), State};
 handle_call(Request, _From, State) ->
   {reply, {?MODULE, bad_request, Request}, State}.
 
@@ -105,6 +111,10 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+find_atom_i(Module, AtomIndex, #code_server{modules=Modules}) ->
+  AsmM = orddict:fetch(Module, Modules),
+  asm_module:find_atom(AtomIndex, AsmM).
 
 find_mfa_i({M, F, Arity}, #code_server{modules=Modules}) ->
   AsmM = orddict:fetch(M, Modules),

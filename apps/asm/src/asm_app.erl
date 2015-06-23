@@ -95,11 +95,13 @@ c_op({line, Props}, CState=#compile_state{mod=Mod0}) ->
 c_op({move, Src, Dst}, CState = #compile_state{mod=Mod0}) ->
   {MoveOp, Mod1} = asm_op:'MOVE'(Src, Dst, Mod0),
   emit(MoveOp, CState#compile_state{mod=Mod1});
-c_op({gc_bif, Lbl, _OnFail, Bif, Args, _Reg}, CState=#compile_state{mod=Mod0}) ->
-  {PushArgs, Mod1} = lists:foldl(fun fold_push_argument/2
+c_op({gc_bif, Lbl, _OnFail, Bif, Args, ResultDst}
+    , CState=#compile_state{mod=Mod0}) ->
+  {PushArgs, Mod1} = lists:foldr(fun fold_push_argument/2
                                 , {[], Mod0}
                                 , Args),
-  {CallOp, Mod2} = asm_op:'CALL'(Lbl, Bif, Mod1),
+  BifFlag = case Bif of 1 -> bif; 0 -> non_bif end,
+  {CallOp, Mod2} = asm_op:'CALL'(Lbl, length(Args), BifFlag, ResultDst, Mod1),
   emit(PushArgs ++ [CallOp], CState#compile_state{mod=Mod2});
 c_op({call_only, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
   {CallOp, Mod1} = asm_op:'TAILCALL'(Arity, Label, Mod0),
