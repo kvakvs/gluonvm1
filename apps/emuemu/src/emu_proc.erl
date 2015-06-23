@@ -19,7 +19,8 @@
 
 -record(proc, { vm :: pid()
               , code_server :: pid()
-              , ip = {undefined, 0} :: {atom(), non_neg_integer()}
+              , ip = undefined :: emu_code_server:code_pointer()
+              , cp = undefined :: emu_code_server:code_pointer()
               , registers = array:new(?NUM_REGS)
               , stack = []
               , heap = orddict:new()
@@ -130,7 +131,7 @@ push(Value, State = #proc{stack=Stack}) ->
   State#proc{stack=[Value | Stack]}.
 
 -spec pop(#proc{}) -> {ok, any(), #proc{}}.
-pop(State = #proc{stack=[]}) ->
+pop(#proc{stack=[]}) ->
   erlang:error(stack_underflow);
 pop(State = #proc{stack=[Value|Stack]}) ->
   io:format("action: pop value ~p, remaining: ~p~n", [Value, Stack]),
@@ -152,6 +153,8 @@ call_bif({{'$ATOM', FunAtomIndex}, Arity, bif}, ResultDst
   {ok, State2} = move(Result, ResultDst, State1),
   State2.
 
+set_cp(CP, State=#proc{}) -> State#proc{cp = CP}.
+
 execute_op({'LINE', _FileLiteral, _Line}, State) -> step(1, State);
 execute_op({'MOVE', TaggedValue, Dst}, State) ->
   {ok, Value} = evaluate(TaggedValue, State),
@@ -163,7 +166,7 @@ execute_op({'CALL', Dst, Arity, IsBif, ResultDst}, State = #proc{ip=IP}) ->
   %% save next instruction after current and jump (or not save for bif)
   case IsBif of
     bif     -> step(1, call_bif({Dst, Arity, IsBif}, ResultDst, State));
-    non_bif -> push({return, emu_code_server:step(1, IP)}, State)
+    non_bif -> set_cp(emu_code_server:step(1, IP), State)
   end;
 execute_op({'TEST', TestOp, Label, Args}, State) ->
   TestResult = test_op(TestOp, Args, State),
@@ -175,6 +178,13 @@ execute_op({'TEST', TestOp, Label, Args}, State) ->
 execute_op({'PUSH', TaggedValue}, State=#proc{}) ->
   {ok, Value} = evaluate(TaggedValue, State),
   step(1, push(Value, State));
+execute_op({'RET'}, #proc{cp=undefined}=State) ->
+  {ok, R0} = evaluate({'$REG', 0}, State),
+  io:format("action: return to undefined, R0=~p, end program~n", [R0]),
+  erlang:error('PROGRAM_END');
+execute_op({'RET'}, State=#proc{cp=CP}) ->
+  io:format("action: return to ~p~n", [CP]),
+  set_cp(undefined, State#proc{ip=CP});
 execute_op(Instr, _State) ->
   io:format("~s unknown instr ~p~n", [?MODULE_STRING, Instr]),
   erlang:throw('BAD_INSTR').

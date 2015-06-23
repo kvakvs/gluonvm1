@@ -1,0 +1,359 @@
+%% Taken from https://github.com/kaladis/99-problems-erlang
+-module(listfuns).
+-export([my_last/1, my_last2/1, my_but_last/1, my_but_last2/1,
+	 element_at/2, len/1, rev/1, is_palindrome/1, my_flatten/1,
+	 compress/1, pack/1, encode/1, encode_modified/1,
+	 decode_modified/1, timesof/2, dupli/1, repli/2, drop/2,
+	 split/2, slice/3, rotate/2, remove_at/2 ]).
+
+%% P01 (*) Find the last box of a list.
+%%     Example:
+%%     * (my-last '(a b c d))
+%%     (D)
+%% With using list reverse
+my_last([])->
+    false;
+my_last([H|[]])->
+    H;
+my_last(L) ->
+    R = lists:reverse(L),
+    [H|_T] = R,
+    H.
+%% Without using list reverse
+my_last2([]) ->
+    false;
+my_last2([H|[]]) ->
+    H;
+my_last2([_H|T]) when length(T) == 1 -> 
+    [H1|[]] = T,
+    H1;
+my_last2([_H|T]) ->
+    my_last2(T).
+
+%% P02 (*) Find the last but one box of a list.
+%%     Example:
+%%     * (my-but-last '(a b c d))
+%%     (C D)
+%% with using list reverse
+my_but_last([])->
+    false;
+my_but_last([_H|[]]) ->
+    fase;
+my_but_last(L) ->
+    R = lists:reverse(L),
+    [_H|[H1|_T]] = R,
+    H1.
+%% without using list reverse 
+my_but_last2([])->
+    false;
+my_but_last2([_H|[]]) ->
+    false;
+my_but_last2([H|T]) when length(T) == 1 ->
+    H;
+my_but_last2([_H|T]) ->
+    my_but_last2(T).
+
+%% P03 (*) Find the K'th element of a list.
+%%     The first element in the list is number 1.
+%%     Example:
+%%     * (element-at '(a b c d e) 3)
+%%     C
+%% Find the K'th element of a list (not zero based)
+element_at(K,L) when length(L) < K ->
+    false;
+element_at(K,L)->
+    element_at(K,L,1).
+element_at(K,[H|_T],C) when C == K->
+    H;
+element_at(K,[_H|T],C) ->
+    element_at(K,T,C+1).
+
+%% P04 (*) Find the number of elements of a list.
+len([])->
+    0;
+len(L) ->
+    len(L,0).
+
+len([],Count) ->
+    Count;
+len([_H|T],Count)->
+    len(T,Count+1).
+
+%% P05 (*) Reverse a list.
+rev([])->
+    [];
+rev(L) ->
+    rev(L,[]).
+rev([],R)->
+    R;
+rev([H|T],R)->
+    rev(T,[H|R]).
+
+%% P06 (*) Find out whether a list is a palindrome.
+is_palindrome([])-> 
+    false;
+is_palindrome(L) when length(L) == 1 ->
+    false;
+is_palindrome(L) ->
+    case L == lists:reverse(L) of
+	true ->
+	    true;
+	false ->
+	    false
+    end.
+
+%% P07 (**) Flatten a nested list structure.
+%%     Transform a list, possibly holding lists as elements into a
+%%     flat list by each list with its elements (recursively).
+%%     Example:
+%%     * (my-flatten '(a (b (c d) e)))
+%%     (A B C D E)
+my_flatten([])->
+    [];
+my_flatten(L) ->
+    my_flatten(L,[]).
+
+my_flatten([],Acc)->
+    lists:reverse(Acc);
+my_flatten([H|T],Acc) ->
+    case is_list(H) of
+	true ->
+	    my_flatten(T, H ++ Acc);
+	false ->
+	    my_flatten(T,[H|Acc])
+    end.
+
+%% P08 (**) Eliminate consecutive duplicates of list elements.  If a
+%% contains repeated elements they should be replaced with a single
+%% copy of the element. The order of the elements should not be
+%% changed.
+%%     Example:
+%%     * (compress '(a a a a b c c a a d e e e e))
+%%     (A B C A D E)
+
+compress([])->
+    [];
+compress(L)->
+    compress(L,[]).
+
+compress([H|[]],[H1|T1]) when H == H1 ->
+    lists:reverse([H1|T1]);
+
+compress([H|[]],Acc) ->
+    lists:reverse([H|Acc]);
+
+compress([H|T],[H1|T1]) when H == H1 -> 
+    compress(T,[H1|T1]);
+compress([H|T],Acc) ->
+    compress(T,[H|Acc]).
+
+%% P09 (**) Pack consecutive duplicates of list elements into sublists.
+%%     If a list contains repeated elements they should be placed in separate
+%%     sublists.
+%%     Example:
+%%     * (pack '(a a a a b c c a a d e e e e))
+%%     ((A A A A) (B) (C C) (A A) (D) (E E E E))
+pack([])->
+    [];
+pack([H|[]]) ->
+    [H];
+pack([H|T]) ->
+    pack(T,[H],[]).
+
+pack([],Temp,Acc) ->
+    lists:reverse([Temp|Acc]);
+pack([H|T],Temp,Acc) when H == hd(Temp) ->
+    pack(T,[H|Temp],Acc);
+pack([H|T],Temp,Acc ) ->
+    pack(T,[H],[Temp|Acc]). 
+
+%% P10 (*) Run-length encoding of a list.
+%%     Use the result of problem P09 to implement the so-called run-length
+%%     encoding data compression method. Consecutive duplicates of elements
+%%     are encoded as lists (N E) where N is the number of duplicates of the
+%%     element E.
+%%     Example:
+%%     * (encode '(a a a a b c c a a d e e e e))
+%%     ((4 A) (1 B) (2 C) (2 A) (1 D)(4 E))
+encode([])->
+    [];
+encode([H|T]) ->
+    encode(T,H,1,[]).
+
+encode([],Prev,Count,Acc) ->
+    lists:reverse([[Count,Prev]|Acc]);
+encode([H|T],Prev,Count,Acc) when H == Prev ->
+    encode(T,Prev,Count+1,Acc);
+encode([H|T],Prev,Count,Acc) ->
+    encode(T,H,1,[[Count,Prev]|Acc]).
+
+%% P11 (*) Modified run-length encoding.
+%%     Modify the result of problem P10 in such a way that if an element has no
+%%     duplicates it is simply copied into the result list. Only elements with
+%%     duplicates are transferred as (N E) lists.
+%%     Example:
+%%     * (encode-modified '(a a a a b c c a a d e e e e))
+%%     ((4 A) B (2 C) (2 A) D (4 E))
+encode_modified([]) ->
+    [];
+encode_modified([H|T]) ->
+    encode_modified(T,H,1,[]).
+
+encode_modified([],Prev,Count,Acc) -> 
+    lists:reverse([[Count,Prev]|Acc]);
+encode_modified([H|T],Prev,Count, Acc) when H == Prev->
+    encode_modified(T,Prev,Count+1,Acc);
+encode_modified([H|T],Prev,Count,Acc) when Count > 1->
+    encode_modified(T,H,1,[[Count,Prev]|Acc]);
+encode_modified([H|T],Prev,_Count,Acc) ->
+    encode_modified(T,H,1,[Prev|Acc]).
+
+%% Decode a run-length encoded list.
+%% Given a run-length code list generated as specified in problem
+%% P11. Construct its uncompressed version.
+decode_modified([]) ->
+    [];
+decode_modified(L) ->
+    decode_modified(L,[]).
+
+decode_modified([],Acc) ->
+    lists:reverse(Acc);
+
+decode_modified([H|T], Acc) when is_list(H) == true ->
+    [N|C] = H,
+    [Ch|_] = C,
+    decode_modified(T,timesof(N,Ch)++ Acc);
+decode_modified([H|T],Acc) ->
+    decode_modified(T,[H|Acc]).
+
+timesof(Number,Char) ->
+    timesof(Number,Char,[]).
+timesof(Number,Char,Acc) when Number > 0 ->
+    timesof(Number-1,Char,[Char|Acc]);
+timesof(_Number,_Char,Acc) ->
+    Acc.
+
+%% P14 (*) Duplicate the elements of a list.
+%%     Example:
+%%     * (dupli '(a b c c d))
+%%     (A A B B C C C C D D)
+dupli([])->
+    [];
+dupli(L) ->
+    dupli(L,[]).
+
+dupli([],Acc) ->
+    lists:reverse(Acc);
+dupli([H|T],Acc)->
+    dupli(T,timesof(2,H) ++ Acc).
+
+%% P15 (**) Replicate the elements of a list a given number of times.
+%%     Example:
+%%     * (repli '(a b c) 3)
+%%     (A A A B B B C C C)
+repli([],_N)->
+    [];
+repli(L,N) ->
+    repli(L,N,[]).
+
+repli([],_N,Acc) ->
+    lists:reverse(Acc);
+repli([H|T],N,Acc) ->
+    repli(T,N,timesof(N,H) ++ Acc).
+
+%% P16 (**) Drop every N'th element from a list.
+%%    Example:
+%%    * (drop '(a b c d e f g h i k) 3)
+%%    (A B D E G H K)
+drop([],_N)->
+    [];
+drop(L,N) ->
+    drop(L,N,1,[]).
+
+drop([],_N,_Count,Acc) ->
+    lists:reverse(Acc);
+drop([_H|T],N,Count,Acc) when Count rem N == 0 ->
+    drop(T,N,Count+1,Acc);
+drop([H|T],N,Count,Acc) ->
+    drop(T,N,Count+1,[H|Acc]).
+
+%% P17 (*) Split a list into two parts; the length of the first part
+%%   is given.  Do not use any predefined predicates.
+%% Example:
+%% * (split '(a b c d e f g h i k) 3)
+%% ( (A B C) (D E F G H I K))
+
+split([],_N)->
+    [];
+split(L,0)->
+    [L,[]];
+split(L,N) when length(L) < N ->
+    [];
+split([H|T],N) ->
+    split(T,N,1,[H]).
+
+split(L,N,Count,Acc) when Count >= N ->
+    [lists:reverse(Acc),L];
+split([H|T],N,Count,Acc) ->
+    split(T,N,Count+1,[H|Acc]).
+
+%% P18 (**) Extract a slice from a list.  Given two indices, I and K,
+%% the slice is the list containing the elements between the I'th and
+%% K'th element of the original list (both limits included). Start
+%% counting the elements with 1.  Example:
+%% * (slice '(a b c d e f g h i k) 3 7)
+%%  (C D E F G)
+slice([],_S,_E) ->
+    [];
+slice(_,S,E) when S > E ->
+    [];
+slice(L,S,E) ->
+    slice(L,S,E,[],0).
+
+slice([_H|T],S,E,Acc,Count) when Count < S andalso Count < E ->
+    slice(T,S,E,Acc,Count+1);
+
+slice([H|T],S,E,Acc,Count) when Count >= S andalso Count =< E -> 
+    slice(T,S,E,[H|Acc],Count+1);
+slice(_L,S,E,Acc,Count) when Count > S andalso Count > E ->
+    lists:reverse(Acc).
+
+%% P19 (**) Rotate a list N places to the left.
+%% Examples:
+%% * (rotate '(a b c d e f g h) 3)
+%% (D E F G H A B C)
+%% * (rotate '(a b c d e f g h) -2)
+%% (G H A B C D E F)
+%% Hint: Use the predefined functions length and append, as well as
+%% the result of problem P17.
+rotate([],_N)->
+    [];
+
+rotate(L,N) when N >= 0 -> 
+    io:format("More N ~p~n ",[N]),
+    [Head|T] = split(L,N),
+    [Tail] = T,
+    Tail ++ Head;
+
+rotate(L,N) when N < 0 ->
+    Num = length(L) + N,
+    io:format("Num ~p~n",[Num]),
+    [Head|T] = split(L, Num),
+    [Tail] = T,
+    Tail ++ Head.
+
+%% P20 (*) Remove the K'th element from a list.
+%%   Example:
+%%   * (remove-at '(a b c d) 2)
+%%   (A C D)
+remove_at([],_N) ->
+    [];
+remove_at(L,N) when N > length(L)->
+    [];
+remove_at(L,N) ->
+    remove_at(L,N,1,[]).
+
+remove_at([H|T],N,Count,Acc) when Count < N ->
+    remove_at(T,N,Count+1,[H|Acc]);
+remove_at([_H|T],N,Count,Acc) when Count >= N ->
+    lists:reverse(Acc) ++ T.

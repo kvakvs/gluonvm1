@@ -2,7 +2,7 @@
 %%% @doc Opcodes for gluon
 %%% @end
 %%%-------------------------------------------------------------------
--module(asm_op).
+-module(asm_irop).
 
 %% API
 -export([compile/1
@@ -13,6 +13,7 @@
         , 'MOVE'/3
         , 'PUSH'/2
         , 'POP'/2
+        , 'CALL'/3
         , 'CALL'/5
         , 'TAILCALL'/3
         , 'RET'/0
@@ -124,6 +125,8 @@ literal_ref_enc(L, MState) ->
 
 %% @doc Encodes a tagged value to intermediate format, converts atoms to
 %% references to atom table for example
+value_enc(void, MState) ->
+  {'$VOID', MState}; % no destination given, drop result
 value_enc({live_registers, Num}, MState) -> % number of live registers to save/restore
   {{'$LIVE', Num}, MState};
 value_enc({x, Reg}, MState) -> % value is register cell
@@ -170,6 +173,9 @@ comment(Args) -> list_to_tuple(['%' | Args]).
   {LabelEnc, MState1} = label_enc(Label, MState),
   {ResultDstEnc, MState2} = value_enc(ResultDst, MState1),
   {{'CALL', LabelEnc, Arity, IsBif, ResultDstEnc}, MState2}.
+'CALL'(Label, Arity, MState) ->
+  {LabelEnc, MState1} = label_enc(Label, MState),
+  {{'CALL', LabelEnc, Arity}, MState1}.
 'TAILCALL'(Arity, Label, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
   {{'TAILCALL', Arity, LabelEnc}, MState1}.

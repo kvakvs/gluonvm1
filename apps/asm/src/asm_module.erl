@@ -92,7 +92,7 @@ add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
   MState#asm_module{funs = Funs1}.
 
 to_binary({code, Code}) when is_binary(Code) ->
-  <<"Code", (asm_op:uint_enc(byte_size(Code)))/binary, Code/binary>>;
+  <<"Code", (asm_irop:uint_enc(byte_size(Code)))/binary, Code/binary>>;
 to_binary({funs, _FunDict}) -> <<"FunT", 0>>;
 to_binary({exports, _ExportDict}) -> <<"ExpT", 0>>;
 to_binary({atoms, AtomsDict}) ->
@@ -100,19 +100,19 @@ to_binary({atoms, AtomsDict}) ->
   %% then each atom is encoded as var_int Bytes + utf8 Atom
   AtomEnc = fun(Atm) ->
       ABin = atom_to_binary(Atm, utf8),
-      <<(asm_op:uint_enc(byte_size(ABin)))/binary
+      <<(asm_irop:uint_enc(byte_size(ABin)))/binary
         , ABin/binary>>
     end,
   %% ASSUMPTION: orddict:to_list gives sorted ascending order without skips
   Atoms = orddict:to_list(AtomsDict),
   Out = iolist_to_binary([AtomEnc(Atom) || {Atom, _} <- Atoms]),
   <<"Atom"
-    , (asm_op:uint_enc(byte_size(Out)))/binary
-    , (asm_op:uint_enc(length(Atoms)))/binary
+    , (asm_irop:uint_enc(byte_size(Out)))/binary
+    , (asm_irop:uint_enc(length(Atoms)))/binary
     , Out/binary>>;
 to_binary(#asm_module{ir =Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
   %% Strip [{'OP', Code}] and get [Code]
-  Code = lists:map(fun(Op) -> asm_op:compile(Op) end, lists:flatten(Code0)),
+  Code = lists:map(fun(Op) -> asm_irop:compile(Op) end, lists:flatten(Code0)),
   %% Module file is encoded as "GLEAM" + chunks (4 byte name, var_int byte_size)
   <<"GLEAM"
   , (to_binary({atoms, Atoms}))/binary

@@ -1,6 +1,8 @@
 #!/bin/sh
 
-erlc -S init.erl
-erlc init.erl
+for f in `ls *.erl`; do
+    erlc -S $f.erl
+    erlc $f.erl
+done
 #gdb ../_build/gluonvm
 
