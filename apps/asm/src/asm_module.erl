@@ -14,6 +14,7 @@
         , get_ir/1
         , find_atom/2
         , find_or_create_atom/2
+        , find_literal/2
         , find_or_create_literal/2
         , add_fun/4
         , to_binary/1
@@ -72,7 +73,7 @@ find_or_create_atom(A, M=#asm_module{atoms=Atoms, atom_counter=Counter}) ->
       end,
   {Index, M#asm_module{atom_counter=Counter1, atoms=Atoms1}}.
 
-find_atom(AtomIndex, M=#asm_module{atoms=Atoms}) ->
+find_atom(AtomIndex, #asm_module{atoms=Atoms}) ->
   {value, {Atom, _}} = lists:keysearch(AtomIndex, 2, Atoms),
   {ok, Atom}.
 
@@ -86,6 +87,10 @@ find_or_create_literal(Lit, M=#asm_module{ literals=Literals
           {I, I, orddict:store(Lit, I, Literals)}
       end,
   {Index, M#asm_module{literal_counter=Counter1, literals=Literals1}}.
+
+find_literal(LitIndex, #asm_module{literals=Literals}) ->
+  {value, {Lit, _}} = lists:keysearch(LitIndex, 2, Literals),
+  {ok, Lit}.
 
 add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
   Funs1 = orddict:store({FunAtomIndex, Arity}, Label, Funs),

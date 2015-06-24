@@ -2,10 +2,11 @@
 -export([test/0
         , my_last/1, my_last2/1]).
 
-test() -> recurse(10).
+%%test() -> recurse(10).
+test() -> my_last([1,2,3,4]).
 
-recurse(X) when X > 0 -> recurse(X-1);
-recurse(X) -> X.
+%%recurse(X) when X > 0 -> recurse(X-1);
+%%recurse(X) -> X.
 
 %% From 99 problems: P01 (*) Find the last box of a list.
 %%     Example:

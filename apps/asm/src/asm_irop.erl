@@ -136,7 +136,9 @@ value_enc({y, Stack}, MState) -> % value is stack cell
 value_enc({atom, Atom}, MState) -> % value is reference to atom table
   atom_ref_enc(Atom, MState);
 value_enc({integer, Imm}, MState) -> % value is immediately available in code
-  {{'$IMM', Imm}, MState}.
+  {{'$IMM', Imm}, MState};
+value_enc({literal, Value}, MState) -> % value is immediately available in code
+  literal_ref_enc(Value, MState).
 
 %% arg_encode(Arg) ->
 %%   {T, Enc} = get_arg_type_and_encoded(Arg),

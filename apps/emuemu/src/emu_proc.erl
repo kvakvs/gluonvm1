@@ -113,7 +113,9 @@ jump(N, State=#proc{ip=IP}) when is_integer(N) ->
 %% @doc Calculates value based on its tag ($IMM, $REG, $STACK... etc)
 evaluate({'$IMM', X}, _State) -> {ok, X};
 evaluate({'$REG', R}, #proc{registers=Regs}) ->
-  {ok, array:get(R, Regs)}.
+  {ok, array:get(R, Regs)};
+evaluate({'$LIT', L}, State=#proc{code_server=CodeSrv}) ->
+  emu_code_server:get_literal(CodeSrv, current_module(State), L).
 
 %% @doc Puts a value (untagged by evaluate) to some destination
 move(Value, {'$REG', R}, State=#proc{registers=Regs}) ->
@@ -124,7 +126,10 @@ move(Value, {'$REG', R}, State=#proc{registers=Regs}) ->
 test_op(is_lt, [A0, B0], State) ->
   {ok, A} = evaluate(A0, State),
   {ok, B} = evaluate(B0, State),
-  A < B.
+  A < B;
+test_op(is_nonempty_list, [L0], State) ->
+  {ok, L} = evaluate(L0, State),
+  is_list(L) andalso length(L) > 0.
 
 push(Value, State = #proc{stack=Stack}) ->
   io:format("action: push ~p~n", [Value]),
@@ -149,9 +154,14 @@ call_bif({{'$ATOM', FunAtomIndex}, Arity, bif}, ResultDst
       {[Arg | A], St1}
     end, {[], State}, lists:seq(1, Arity)),
   io:format("action: bif ~p/~p args ~p~n", [FunAtom, Arity, Args]),
-  Result = apply(erlang, FunAtom, Args),
-  {ok, State2} = move(Result, ResultDst, State1),
-  State2.
+  {Result, State2} = find_and_call_bif(FunAtom, Args, State1),
+  {ok, State3} = move(Result, ResultDst, State2),
+  State3.
+
+find_and_call_bif(gluon_get_list, Args, State) -> g_get_list(Args, State);
+find_and_call_bif(gluon_allocate, Args, State) -> g_allocate(Args, State);
+find_and_call_bif(gluon_deallocate, Args, State) -> g_deallocate(Args, State);
+find_and_call_bif(F, Args, _State) -> apply(erlang, F, Args).
 
 set_cp(CP, State=#proc{}) -> State#proc{cp = CP}.
 
