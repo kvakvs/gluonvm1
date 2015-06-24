@@ -111,6 +111,7 @@ jump(N, State=#proc{ip=IP}) when is_integer(N) ->
   State#proc{ip=emu_code_server:jump(N, IP)}.
 
 %% @doc Calculates value based on its tag ($IMM, $REG, $STACK... etc)
+evaluate({'$REF', X}, _State) -> {ok, X}; % do not evaluate, unwrap ref
 evaluate({'$IMM', X}, _State) -> {ok, X};
 evaluate({'$REG', R}, #proc{registers=Regs}) ->
   {ok, array:get(R, Regs)};
@@ -118,6 +119,7 @@ evaluate({'$LIT', L}, State=#proc{code_server=CodeSrv}) ->
   emu_code_server:get_literal(CodeSrv, current_module(State), L).
 
 %% @doc Puts a value (untagged by evaluate) to some destination
+move('$VOID', _, State) -> {ok, State}; % void does not go anywhere
 move(Value, {'$REG', R}, State=#proc{registers=Regs}) ->
   io:format("action: move ~p to register ~p~n", [Value, R]),
   Regs1 = array:set(R, Value, Regs),
@@ -129,7 +131,10 @@ test_op(is_lt, [A0, B0], State) ->
   A < B;
 test_op(is_nonempty_list, [L0], State) ->
   {ok, L} = evaluate(L0, State),
-  is_list(L) andalso length(L) > 0.
+  is_list(L) andalso length(L) > 0;
+test_op(is_nil, [N0], State) ->
+  {ok, N} = evaluate(N0, State),
+  N =:= '$NIL'.
 
 push(Value, State = #proc{stack=Stack}) ->
   io:format("action: push ~p~n", [Value]),
@@ -158,14 +163,40 @@ call_bif({{'$ATOM', FunAtomIndex}, Arity, bif}, ResultDst
   {ok, State3} = move(Result, ResultDst, State2),
   State3.
 
-find_and_call_bif(gluon_get_list, Args, State) -> g_get_list(Args, State);
-find_and_call_bif(gluon_allocate, Args, State) -> g_allocate(Args, State);
-find_and_call_bif(gluon_deallocate, Args, State) -> g_deallocate(Args, State);
-find_and_call_bif(F, Args, _State) -> apply(erlang, F, Args).
+find_and_call_bif(gluon_hd_tl, Args, PState) -> g_hd_tl(Args, PState);
+find_and_call_bif(gluon_allocate, Args, PState) -> g_allocate(Args, PState);
+find_and_call_bif(gluon_deallocate, Args, PState) -> g_deallocate(Args, PState);
+find_and_call_bif(F, Args, PState) -> {apply(erlang, F, Args), PState}.
 
 set_cp(CP, State=#proc{}) -> State#proc{cp = CP}.
 
-execute_op({'LINE', _FileLiteral, _Line}, State) -> step(1, State);
+g_hd_tl([Src, Hd, Tl], PState=#proc{}) ->
+  %% Get the head and tail (or car and cdr) parts of a list (a cons cell) from
+  %% Source and put them into the registers Head and Tail.
+  {ok, PState1} = move(hd(Src), Hd, PState),
+  {ok, PState2} = move(tl(Src), Tl, PState1),
+  {'$VOID', PState2}.
+
+g_allocate([StackNeed, _Live], PState=#proc{}) ->
+  %% Allocate space for StackNeed words on the stack. If a GC is needed
+  %% during allocation there are Live number of live X registers. Also save the
+  %% continuation pointer (CP) on the stack.
+  PState1 = lists:foldl( fun(_, Proc) -> push('$NIL', Proc) end
+                       , PState
+                       , lists:seq(1, StackNeed)),
+  PState2 = push(PState1#proc.cp, PState1),
+  {'$VOID', PState2#proc{cp = undefined}}.
+
+g_deallocate([N], PState=#proc{}) ->
+  %% Restore the continuation pointer (CP) from the stack and deallocate
+  %% N+1 words from the stack (the + 1 is for the CP).
+  PState1 = PState#proc{cp = pop(PState)},
+  PState2 = lists:foldl( fun(_, Proc) -> pop(Proc) end
+                       , PState1
+                       , lists:seq(1, N)),
+  {'$VOID', PState2}.
+
+  execute_op({'LINE', _FileLiteral, _Line}, State) -> step(1, State);
 execute_op({'MOVE', TaggedValue, Dst}, State) ->
   {ok, Value} = evaluate(TaggedValue, State),
   {ok, State1} = move(Value, Dst, State),

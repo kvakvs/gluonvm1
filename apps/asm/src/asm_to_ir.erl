@@ -91,20 +91,15 @@ c_op({test, Test, Label, Args}, CState=#compile_state{mod=Mod0}) ->
 c_op(return, CState=#compile_state{}) ->
   emit(asm_irop:'RET'(), CState);
 c_op({get_list, Src, Head, Tail}, CState=#compile_state{}) ->
-  emit_bif_call(gluon_get_list, [Src, Head, Tail], {x,0}, CState);
+  emit_bif_call(gluon_hd_tl, [Src, ref(Head), ref(Tail)], {x,0}, CState);
 c_op({badmatch, Value}, CState=#compile_state{}) ->
-  emit_bif_call(error, [{atom, badmatch}, Value], void, CState);
+  emit_bif_call(error, [{atom, badmatch}, Value], '$VOID', CState);
 c_op({allocate, StackNeed, Live}, CState=#compile_state{}) ->
-  %% Allocate space for StackNeed words on the stack. If a GC is needed
-  %% during allocation there are Live number of live X registers. Also save the
-  %% continuation pointer (CP) on the stack.
   emit_bif_call(gluon_allocate, [{integer, StackNeed}, {integer, Live}]
-               , void, CState);
+               , '$VOID', CState);
   % TODO asm opcode maybe: emit(asm_op:'ALLOCATE'(StackNeed, Live), CState);
 c_op({deallocate, N}, CState=#compile_state{}) ->
-  %% Restore the continuation pointer (CP) from the stack and deallocate
-  %% N+1 words from the stack (the + 1 is for the CP).
-  emit_bif_call(gluon_deallocate, [{integer, N}], void, CState);
+  emit_bif_call(gluon_deallocate, [{integer, N}], '$VOID', CState);
 c_op(UnkOp, {_Acc, _MState, _CState}) ->
   erlang:error({unknown_op, UnkOp}).
   %{[{unknown, UnkOp} | Acc], MState, CState}.
@@ -123,3 +118,5 @@ emit(Op, CState) when not is_list(Op) -> emit([Op], CState);
 emit(Ops, CState = #compile_state{accum = Acc0}) ->
   %% TODO: this is O(N)
   CState#compile_state{accum = Acc0 ++ Ops}.
+
+ref(X) -> {'$REF', X}.

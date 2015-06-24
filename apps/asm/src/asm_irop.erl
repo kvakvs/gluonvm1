@@ -125,8 +125,11 @@ literal_ref_enc(L, MState) ->
 
 %% @doc Encodes a tagged value to intermediate format, converts atoms to
 %% references to atom table for example
-value_enc(void, MState) ->
-  {'$VOID', MState}; % no destination given, drop result
+value_enc('$VOID', MState) ->
+  {'$VOID', MState};
+value_enc({'$REF', X}, MState) ->
+  {X1, MState1} = value_enc(X, MState),
+  {{'$REF', X1}, MState1}; % reference to something, encode inner value
 value_enc({live_registers, Num}, MState) -> % number of live registers to save/restore
   {{'$LIVE', Num}, MState};
 value_enc({x, Reg}, MState) -> % value is register cell
