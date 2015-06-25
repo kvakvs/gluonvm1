@@ -7,6 +7,8 @@
 %% API
 -export([process/1]).
 
+-include("../../emuemu/src/emu.hrl").
+
 -record(compile_state, { %fun_offset :: integer()
                         accum = []
                        , mod
@@ -93,13 +95,13 @@ c_op(return, CState=#compile_state{}) ->
 c_op({get_list, Src, Head, Tail}, CState=#compile_state{}) ->
   emit_bif_call(gluon_hd_tl, [Src, ref(Head), ref(Tail)], {x,0}, CState);
 c_op({badmatch, Value}, CState=#compile_state{}) ->
-  emit_bif_call(error, [{atom, badmatch}, Value], '$VOID', CState);
+  emit_bif_call(error, [{atom, badmatch}, Value], ?nil, CState);
 c_op({allocate, StackNeed, Live}, CState=#compile_state{}) ->
   emit_bif_call(gluon_allocate, [{integer, StackNeed}, {integer, Live}]
-               , '$VOID', CState);
+               , ?nil, CState);
   % TODO asm opcode maybe: emit(asm_op:'ALLOCATE'(StackNeed, Live), CState);
 c_op({deallocate, N}, CState=#compile_state{}) ->
-  emit_bif_call(gluon_deallocate, [{integer, N}], '$VOID', CState);
+  emit_bif_call(gluon_deallocate, [{integer, N}], ?nil, CState);
 c_op(UnkOp, {_Acc, _MState, _CState}) ->
   erlang:error({unknown_op, UnkOp}).
   %{[{unknown, UnkOp} | Acc], MState, CState}.
@@ -116,7 +118,7 @@ fold_set_arg(Arg, {Acc, MState}) ->
 
 emit(Op, CState) when not is_list(Op) -> emit([Op], CState);
 emit(Ops, CState = #compile_state{accum = Acc0}) ->
-  %% TODO: this is O(N)
+  %% TODO: this is O(N^2)
   CState#compile_state{accum = Acc0 ++ Ops}.
 
 ref(X) -> {'$REF', X}.

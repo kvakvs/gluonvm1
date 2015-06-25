@@ -16,16 +16,16 @@
         , call/4, tick/1]).
 
 -define(NUM_REGS, 32).
+-include("emu.hrl").
 
 -record(proc, { vm :: pid()
               , code_server :: pid()
-              , ip = undefined :: emu_code_server:code_pointer()
-              , cp = undefined :: emu_code_server:code_pointer()
+              , ip = ?nil :: emu_code_server:code_pointer()
+              , cp = ?nil :: emu_code_server:code_pointer()
               , registers = array:new(?NUM_REGS)
               , stack = []
               , heap = orddict:new()
               }).
-
 
 -define(SERVER, ?MODULE).
 
@@ -119,7 +119,7 @@ evaluate({'$LIT', L}, State=#proc{code_server=CodeSrv}) ->
   emu_code_server:get_literal(CodeSrv, current_module(State), L).
 
 %% @doc Puts a value (untagged by evaluate) to some destination
-move('$VOID', _, State) -> {ok, State}; % void does not go anywhere
+move(?nil, _, State) -> {ok, State}; % void does not go anywhere
 move(Value, {'$REG', R}, State=#proc{registers=Regs}) ->
   io:format("action: move ~p to register ~p~n", [Value, R]),
   Regs1 = array:set(R, Value, Regs),
@@ -134,7 +134,7 @@ test_op(is_nonempty_list, [L0], State) ->
   is_list(L) andalso length(L) > 0;
 test_op(is_nil, [N0], State) ->
   {ok, N} = evaluate(N0, State),
-  N =:= '$NIL'.
+  N =:= ?nil.
 
 push(Value, State = #proc{stack=Stack}) ->
   io:format("action: push ~p~n", [Value]),
@@ -153,15 +153,18 @@ call_bif({{'$ATOM', FunAtomIndex}, Arity, bif}, ResultDst
   M = current_module(State),
   {ok, FunAtom} = emu_code_server:find_atom(CodeSrv, M, FunAtomIndex),
   %% Pop args for builtin
-  {Args, State1} = lists:foldl(
-    fun(_Seq, {A, St}) ->
-      {ok, Arg, St1} = pop(St),
-      {[Arg | A], St1}
-    end, {[], State}, lists:seq(1, Arity)),
+  {Args, State1} = pop_n_args(Arity, State),
   io:format("action: bif ~p/~p args ~p~n", [FunAtom, Arity, Args]),
   {Result, State2} = find_and_call_bif(FunAtom, Args, State1),
   {ok, State3} = move(Result, ResultDst, State2),
   State3.
+
+pop_n_args(N, State) ->
+  %% {Args, State1} =
+  lists:foldl(fun(_Seq, {A, St}) ->
+                {ok, Arg, St1} = pop(St),
+                {[Arg | A], St1}
+              end, {[], State}, lists:seq(1, N)).
 
 find_and_call_bif(gluon_hd_tl, Args, PState) -> g_hd_tl(Args, PState);
 find_and_call_bif(gluon_allocate, Args, PState) -> g_allocate(Args, PState);
@@ -175,17 +178,17 @@ g_hd_tl([Src, Hd, Tl], PState=#proc{}) ->
   %% Source and put them into the registers Head and Tail.
   {ok, PState1} = move(hd(Src), Hd, PState),
   {ok, PState2} = move(tl(Src), Tl, PState1),
-  {'$VOID', PState2}.
+  {?nil, PState2}.
 
 g_allocate([StackNeed, _Live], PState=#proc{}) ->
   %% Allocate space for StackNeed words on the stack. If a GC is needed
   %% during allocation there are Live number of live X registers. Also save the
   %% continuation pointer (CP) on the stack.
-  PState1 = lists:foldl( fun(_, Proc) -> push('$NIL', Proc) end
+  PState1 = lists:foldl( fun(_, Proc) -> push(?nil, Proc) end
                        , PState
                        , lists:seq(1, StackNeed)),
   PState2 = push(PState1#proc.cp, PState1),
-  {'$VOID', PState2#proc{cp = undefined}}.
+  {?nil, PState2#proc{cp = undefined}}.
 
 g_deallocate([N], PState=#proc{}) ->
   %% Restore the continuation pointer (CP) from the stack and deallocate
@@ -194,7 +197,7 @@ g_deallocate([N], PState=#proc{}) ->
   PState2 = lists:foldl( fun(_, Proc) -> pop(Proc) end
                        , PState1
                        , lists:seq(1, N)),
-  {'$VOID', PState2}.
+  {?nil, PState2}.
 
   execute_op({'LINE', _FileLiteral, _Line}, State) -> step(1, State);
 execute_op({'MOVE', TaggedValue, Dst}, State) ->
@@ -208,6 +211,23 @@ execute_op({'CALL', Dst, Arity, IsBif, ResultDst}, State = #proc{ip=IP}) ->
   case IsBif of
     bif     -> step(1, call_bif({Dst, Arity, IsBif}, ResultDst, State));
     non_bif -> set_cp(emu_code_server:step(1, IP), State)
+  end;
+execute_op({'CALL', IrMfa, _Arity}, State = #proc{ip=IP, code_server=CodeSrv}) ->
+  %% Check if this is our module or library
+  {'$MFA', M0, F0, Arity} = IrMfa,
+  CurrentM = current_module(State),
+  %% TODO: RESOLVE ATOMS ON LOAD, NOT IN RUNTIME
+  {ok, M} = emu_code_server:find_atom(CodeSrv, CurrentM, M0),
+  {ok, F} = emu_code_server:find_atom(CodeSrv, CurrentM, F0),
+  case find_mfa({M, F, Arity}, State) of
+    {error, _} ->
+      {Args, State1} = pop_n_args(Arity, State),
+      io:format("action: call host ~p:~p/~p args ~p~n", [M, F, Arity, Args]),
+      State2 = move(apply(M, F, Args), {'$REG', 0}, State1),
+      step(1, State2);
+    {ok, IP}   ->
+      State1 = set_cp(emu_code_server:step(1, IP), State),
+      jump(IP, State1)
   end;
 execute_op({'TEST', TestOp, Label, Args}, State) ->
   TestResult = test_op(TestOp, Args, State),
@@ -231,3 +251,7 @@ execute_op(Instr, _State) ->
   erlang:throw('BAD_INSTR').
 
 current_module(#proc{ip=IP}) -> emu_code_server:get_module(IP).
+
+%% Returns {ok, IP} or {error, _}
+find_mfa(CodeSrv, {M, F, Arity}) ->
+  emu_code_server:find_mfa(CodeSrv, {M, F, Arity}).

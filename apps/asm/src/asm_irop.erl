@@ -20,6 +20,8 @@
         , 'TEST'/4
         ]).
 
+-include("../../emuemu/src/emu.hrl").
+
 -define(label,      0).
 -define(line_info,  1).
 -define(push,       2).
@@ -125,8 +127,8 @@ literal_ref_enc(L, MState) ->
 
 %% @doc Encodes a tagged value to intermediate format, converts atoms to
 %% references to atom table for example
-value_enc('$VOID', MState) ->
-  {'$VOID', MState};
+value_enc(?nil, MState) ->
+  {?nil, MState};
 value_enc({'$REF', X}, MState) ->
   {X1, MState1} = value_enc(X, MState),
   {{'$REF', X1}, MState1}; % reference to something, encode inner value

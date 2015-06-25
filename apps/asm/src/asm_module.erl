@@ -74,8 +74,10 @@ find_or_create_atom(A, M=#asm_module{atoms=Atoms, atom_counter=Counter}) ->
   {Index, M#asm_module{atom_counter=Counter1, atoms=Atoms1}}.
 
 find_atom(AtomIndex, #asm_module{atoms=Atoms}) ->
-  {value, {Atom, _}} = lists:keysearch(AtomIndex, 2, Atoms),
-  {ok, Atom}.
+  case lists:keysearch(AtomIndex, 2, Atoms) of
+    {value, {Atom, _}} -> {ok, Atom};
+    false -> {error, not_found}
+  end.
 
 find_or_create_literal(Lit, M=#asm_module{ literals=Literals
                                          , literal_counter=Counter}) ->
