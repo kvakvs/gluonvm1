@@ -74,6 +74,8 @@ find_or_create_atom(A, M=#asm_module{atoms=Atoms, atom_counter=Counter}) ->
   {Index, M#asm_module{atom_counter=Counter1, atoms=Atoms1}}.
 
 find_atom(AtomIndex, #asm_module{atoms=Atoms}) ->
+  find_atom(AtomIndex, Atoms);
+find_atom(AtomIndex, Atoms) ->
   case lists:keysearch(AtomIndex, 2, Atoms) of
     {value, {Atom, _}} -> {ok, Atom};
     false -> {error, not_found}
@@ -146,12 +148,28 @@ read_ir(Str) ->
   Atoms = proplists:get_value(atoms, IRFile, []),
   Funs  = read_ir_resolve_funs(proplists:get_value(funs, IRFile, []), Atoms),
   Labels = proplists:get_value(labels, IRFile, []),
-  #asm_module{name=Name
-             , ir=IR
+  IR1 = read_ir_resolve_atoms(IR, Atoms, []),
+  #asm_module{ name=Name
+             , ir=IR1
              , atoms=Atoms
              , literals=Lit
              , funs=Funs
              , labels=Labels}.
+
+%% @private
+read_ir_resolve_atoms([], _Atoms, Accum) -> lists:reverse(Accum);
+read_ir_resolve_atoms([IrOp0 | Tail], Atoms, Accum) ->
+  ResolveFun
+    = fun({'$ATOM', A}) ->
+          {ok, Atom} = find_atom(A, Atoms),
+          Atom;
+        ({'$MFA', M0, F0, A}) ->
+          [{M, F}] = read_ir_resolve_atoms([{M0, F0}], Atoms, []),
+          {'$MFA', M, F, A};
+        (X) -> X
+      end,
+  IrOp1 = lists:map(ResolveFun, tuple_to_list(IrOp0)),
+  read_ir_resolve_atoms(Tail, Atoms, [list_to_tuple(IrOp1) | Accum]).
 
 %% @private
 read_ir_resolve_funs(Funs, Atoms) ->

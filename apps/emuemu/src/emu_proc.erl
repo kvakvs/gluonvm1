@@ -111,6 +111,7 @@ jump(N, State=#proc{ip=IP}) when is_integer(N) ->
   State#proc{ip=emu_code_server:jump(N, IP)}.
 
 %% @doc Calculates value based on its tag ($IMM, $REG, $STACK... etc)
+evaluate(X, _State) when is_atom(X) -> {ok, X}; % do not evaluate
 evaluate({'$REF', X}, _State) -> {ok, X}; % do not evaluate, unwrap ref
 evaluate({'$IMM', X}, _State) -> {ok, X};
 evaluate({'$REG', R}, #proc{registers=Regs}) ->
@@ -147,11 +148,11 @@ pop(State = #proc{stack=[Value|Stack]}) ->
   io:format("action: pop value ~p, remaining: ~p~n", [Value, Stack]),
   {ok, Value, State#proc{stack=Stack}}.
 
-call_bif({{'$ATOM', FunAtomIndex}, Arity, bif}, ResultDst
-        , State=#proc{code_server=CodeSrv}) ->
+call_bif({FunAtom, Arity, bif}, ResultDst
+        , State=#proc{}) ->
   %% Calling a builtin
-  M = current_module(State),
-  {ok, FunAtom} = emu_code_server:find_atom(CodeSrv, M, FunAtomIndex),
+  %M = current_module(State),
+  %{ok, FunAtom} = emu_code_server:find_atom(CodeSrv, M, FunAtomIndex),
   %% Pop args for builtin
   {Args, State1} = pop_n_args(Arity, State),
   io:format("action: bif ~p/~p args ~p~n", [FunAtom, Arity, Args]),
@@ -214,11 +215,8 @@ execute_op({'CALL', Dst, Arity, IsBif, ResultDst}, State = #proc{ip=IP}) ->
   end;
 execute_op({'CALL', IrMfa, _Arity}, State = #proc{ip=IP, code_server=CodeSrv}) ->
   %% Check if this is our module or library
-  {'$MFA', M0, F0, Arity} = IrMfa,
-  CurrentM = current_module(State),
-  %% TODO: RESOLVE ATOMS ON LOAD, NOT IN RUNTIME
-  {ok, M} = emu_code_server:find_atom(CodeSrv, CurrentM, M0),
-  {ok, F} = emu_code_server:find_atom(CodeSrv, CurrentM, F0),
+  {'$MFA', M, F, Arity} = IrMfa,
+  %CurrentM = current_module(State),
   case find_mfa({M, F, Arity}, State) of
     {error, _} ->
       {Args, State1} = pop_n_args(Arity, State),
@@ -253,5 +251,10 @@ execute_op(Instr, _State) ->
 current_module(#proc{ip=IP}) -> emu_code_server:get_module(IP).
 
 %% Returns {ok, IP} or {error, _}
-find_mfa(CodeSrv, {M, F, Arity}) ->
-  emu_code_server:find_mfa(CodeSrv, {M, F, Arity}).
+find_mfa({M, F, Arity}, #proc{code_server = CodeSrv}) ->
+  code:ensure_loaded(M),
+  case erlang:function_exported(M, F, Arity) of
+    true -> {error, exists_in_host_system};
+    false -> % exists in emuemu
+      emu_code_server:find_mfa(CodeSrv, {M, F, Arity})
+  end.

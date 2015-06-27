@@ -97,6 +97,7 @@ handle_call({find_mfa, {M, F, Arity}}, _From, State) ->
   {reply, find_mfa_i({M, F, Arity}, State), State};
 handle_call({fetch, IP}, _From, State=#code_server{code=Ets}) ->
   [{_Key, Instr}] = ets:lookup(Ets, {IP#code_pointer.module, IP#code_pointer.offset}),
+  io:format("fetch -> ~p~n", [Instr]),
   {reply, {ok, Instr}, State};
 handle_call({label_to_offset, Mod, Label}, _From, State) ->
   AsmMod = orddict:fetch(Mod, State#code_server.modules),
