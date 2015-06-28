@@ -112,8 +112,8 @@ emit_bif_call(Lbl, Args, ResultDst, CState=#compile_state{mod=Mod0}) ->
   emit(SetArgs ++ [CallOp], CState#compile_state{mod=Mod2}).
 
 fold_set_arg(Arg, {Acc, MState}) ->
-  {Op, MState1} = asm_irop:'PUSH'(Arg, MState),
-  %{Op, MState1} = asm_op:'MOVE'(Arg, {x, length(Acc)}, MState),
+  %{Op, MState1} = asm_irop:'PUSH'(Arg, MState),
+  {Op, MState1} = asm_irop:'MOVE'(Arg, {x, length(Acc)}, MState),
   {[Op | Acc], MState1}.
 
 emit(Op, CState) when not is_list(Op) -> emit([Op], CState);

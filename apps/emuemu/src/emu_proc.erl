@@ -154,18 +154,20 @@ call_bif({FunAtom, Arity, bif}, ResultDst
   %M = current_module(State),
   %{ok, FunAtom} = emu_code_server:find_atom(CodeSrv, M, FunAtomIndex),
   %% Pop args for builtin
-  {Args, State1} = pop_n_args(Arity, State),
+  {Args, State1} = fetch_n_args(Arity, State),
   io:format("action: bif ~p/~p args ~p~n", [FunAtom, Arity, Args]),
   {Result, State2} = find_and_call_bif(FunAtom, Args, State1),
   {ok, State3} = move(Result, ResultDst, State2),
   State3.
 
-pop_n_args(N, State) ->
+fetch_n_args(N, State) ->
   %% {Args, State1} =
-  lists:foldl(fun(_Seq, {A, St}) ->
-                {ok, Arg, St1} = pop(St),
-                {[Arg | A], St1}
-              end, {[], State}, lists:seq(1, N)).
+  Args = lists:foldl(fun(Seq, A) ->
+                %{ok, Arg, St1} = pop(St),
+                {ok, Arg} = evaluate({'$REG', Seq-1}, State),
+                [Arg | A]
+              end, [], lists:seq(1, N)),
+  {Args, State}.
 
 find_and_call_bif(gluon_hd_tl, Args, PState) -> g_hd_tl(Args, PState);
 find_and_call_bif(gluon_allocate, Args, PState) -> g_allocate(Args, PState);
@@ -219,7 +221,7 @@ execute_op({'CALL', IrMfa, _Arity}, State = #proc{ip=IP, code_server=CodeSrv}) -
   %CurrentM = current_module(State),
   case find_mfa({M, F, Arity}, State) of
     {error, _} ->
-      {Args, State1} = pop_n_args(Arity, State),
+      {Args, State1} = fetch_n_args(Arity, State),
       io:format("action: call host ~p:~p/~p args ~p~n", [M, F, Arity, Args]),
       State2 = move(apply(M, F, Args), {'$REG', 0}, State1),
       step(1, State2);
