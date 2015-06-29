@@ -19,7 +19,7 @@
 
 start() ->
   %application:start(asm)
-  asm_to_ir:process("test/init.S").
+  asm_to_ir:process("test/g_test1.S").
 
 start(_StartType, _StartArgs) ->
   'asm_sup':start_link().

@@ -59,66 +59,79 @@ c_op({label, L}, #compile_state{mod=Mod0, accum=Acc}=CState) ->
   Mod1 = asm_module:register_label(L, length(Acc), Mod0),
   CState#compile_state{mod=Mod1};
 c_op({func_info, _A1, _A2, _N}, CState=#compile_state{}) -> CState; % NO OP
-c_op({line, Props}, CState=#compile_state{mod=Mod0}) ->
+c_op(BeamSrc={line, Props}, CState=#compile_state{mod=Mod0}) ->
   case asm_module:get_option(line_numbers, Mod0) of
      true -> case lists:keyfind(location, 1, Props) of
                false -> CState;
                {location, F, L} ->
                  {Op, Mod1} = asm_irop:'LINE'(F, L, Mod0),
-                 emit(Op, CState#compile_state{mod=Mod1})
+                 emit(Op, BeamSrc, CState#compile_state{mod=Mod1})
              end;
      false -> CState
   end;
-c_op({move, Src, Dst}, CState = #compile_state{mod=Mod0}) ->
+c_op(BeamS={move, Src, Dst}, CState = #compile_state{mod=Mod0}) ->
   {MoveOp, Mod1} = asm_irop:'MOVE'(Src, Dst, Mod0),
-  emit(MoveOp, CState#compile_state{mod=Mod1});
-c_op({gc_bif, Lbl, _OnFail, _Bif, Args, ResultDst}, CState=#compile_state{}) ->
-  emit_bif_call(Lbl, Args, ResultDst, CState);
-c_op({call_only, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
+  emit(MoveOp, BeamS, CState#compile_state{mod=Mod1});
+c_op(BeamSrc={gc_bif, Lbl, _OnFail, _Bif, Args, ResultDst}, CState=#compile_state{}) ->
+  emit_bif_call(Lbl, Args, ResultDst, BeamSrc, CState);
+c_op(BeamSrc={call_only, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
   %% Do a tail recursive call to the function at Label. Do not update the CP reg.
   {CallOp, Mod1} = asm_irop:'TAILCALL'(Arity, Label, Mod0),
-  emit(CallOp, CState#compile_state{mod=Mod1});
-c_op({call_ext, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
+  emit(CallOp, BeamSrc, CState#compile_state{mod=Mod1});
+c_op(BeamSrc={call_ext, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
   %% Call the function of arity Arity pointed to by Destination.
   %% Save the next instruction as the return address in the CP register.
   {CallOp, Mod1} = asm_irop:'CALL'(Label, Arity, Mod0),
-  emit(CallOp, CState#compile_state{mod=Mod1});
-c_op({call_ext_only, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
+  emit(CallOp, BeamSrc, CState#compile_state{mod=Mod1});
+c_op(BeamSrc={call_ext_only, Arity, Label}, CState=#compile_state{mod=Mod0}) ->
   %% Do a tail recursive call to the function at Label. Do not update the CP reg.
   {CallOp, Mod1} = asm_irop:'TAILCALL'(Arity, Label, Mod0),
-  emit(CallOp, CState#compile_state{mod=Mod1});
-c_op({test, Test, Label, Args}, CState=#compile_state{mod=Mod0}) ->
+  emit(CallOp, BeamSrc, CState#compile_state{mod=Mod1});
+c_op(BeamS={test, Test, Label, Args}, CState=#compile_state{mod=Mod0}) ->
   {TestOp, Mod1} = asm_irop:'TEST'(Test, Label, Args, Mod0),
-  emit(TestOp, CState#compile_state{mod=Mod1});
-c_op(return, CState=#compile_state{}) ->
-  emit(asm_irop:'RET'(), CState);
-c_op({get_list, Src, Head, Tail}, CState=#compile_state{}) ->
-  emit_bif_call(gluon_hd_tl, [Src, ref(Head), ref(Tail)], {x,0}, CState);
-c_op({badmatch, Value}, CState=#compile_state{}) ->
-  emit_bif_call(error, [{atom, badmatch}, Value], ?nil, CState);
-c_op({allocate, StackNeed, Live}, CState=#compile_state{}) ->
+  emit(TestOp, BeamS, CState#compile_state{mod=Mod1});
+c_op(BeamSrc= return, CState=#compile_state{}) ->
+  emit(asm_irop:'RET'(), BeamSrc, CState);
+c_op(BeamSrc={get_list, Src, OutHead, OutTail}, CState=#compile_state{mod=Mod0}) ->
+  %%emit_bif_call(gluon_hd_tl, [Src], [ref(Head), ref(Tail)], BeamSrc, CState);
+  {Op, Mod1} = asm_irop:'GET_LIST'(Src, OutHead, OutTail, Mod0),
+  emit(Op, BeamSrc, CState#compile_state{mod=Mod1});
+c_op(BeamSrc={badmatch, Value}, CState=#compile_state{}) ->
+  emit_bif_call(error, [{atom, badmatch}, Value], ?nil, BeamSrc, CState);
+c_op(BeamS={allocate, StackNeed, Live}, CState=#compile_state{}) ->
   emit_bif_call(gluon_allocate, [{integer, StackNeed}, {integer, Live}]
-               , ?nil, CState);
+               , ?nil, BeamS, CState);
   % TODO asm opcode maybe: emit(asm_op:'ALLOCATE'(StackNeed, Live), CState);
-c_op({deallocate, N}, CState=#compile_state{}) ->
-  emit_bif_call(gluon_deallocate, [{integer, N}], ?nil, CState);
+c_op(BeamSrc={deallocate, N}, CState=#compile_state{}) ->
+  emit_bif_call(gluon_deallocate, [{integer, N}], ?nil, BeamSrc, CState);
 c_op(UnkOp, {_Acc, _MState, _CState}) ->
   erlang:error({unknown_op, UnkOp}).
   %{[{unknown, UnkOp} | Acc], MState, CState}.
 
-emit_bif_call(Lbl, Args, ResultDst, CState=#compile_state{mod=Mod0}) ->
-  {SetArgs, Mod1} = lists:foldr(fun fold_set_arg/2, {[], Mod0}, Args),
+emit_bif_call(Lbl, Args, ResultDst, BeamSrc, CState=#compile_state{mod=Mod0})->
+  {SetArgs, _, Mod1} = lists:foldl(fun fold_set_arg/2, {[], 0, Mod0}, Args),
+  SetArgs1 = lists:reverse(SetArgs),
   {CallOp, Mod2} = asm_irop:'CALL'(Lbl, length(Args), bif, ResultDst, Mod1),
-  emit(SetArgs ++ [CallOp], CState#compile_state{mod=Mod2}).
+  emit(SetArgs1 ++ [CallOp], BeamSrc, CState#compile_state{mod=Mod2}).
 
-fold_set_arg(Arg, {Acc, MState}) ->
+fold_set_arg(Arg, {Acc, Reg, MState}) ->
   %{Op, MState1} = asm_irop:'PUSH'(Arg, MState),
-  {Op, MState1} = asm_irop:'MOVE'(Arg, {x, length(Acc)}, MState),
-  {[Op | Acc], MState1}.
+  {Op, MState1} = asm_irop:'MOVE'(Arg, {x, Reg}, MState),
+  {[Op | Acc], Reg+1, MState1}.
 
-emit(Op, CState) when not is_list(Op) -> emit([Op], CState);
-emit(Ops, CState = #compile_state{accum = Acc0}) ->
-  %% TODO: this is O(N^2)
-  CState#compile_state{accum = Acc0 ++ Ops}.
+%% emit(Op, CState) when not is_list(Op) -> emit([Op], CState);
+%% emit(Ops, CState = #compile_state{accum = Acc0}) ->
+%%   %% TODO: ++ is O(N^2)
+%%   CState#compile_state{accum = Acc0 ++ Ops}.
 
-ref(X) -> {'$REF', X}.
+emit(nop, _, State) -> State;
+emit(Op, BeamSrc, CState = #compile_state{accum = Acc0}) when not is_list(Op) ->
+  Op1 = maps:put(src, BeamSrc, Op),
+  %% TODO: ++ is O(N^2)
+  CState#compile_state{accum = Acc0 ++ [Op1]};
+emit(Ops0, BeamSrc, CState = #compile_state{accum = Acc0}) ->
+  Ops1 = lists:filter(fun(X) -> X =/= nop end, Ops0),
+  Ops2 = #{src => BeamSrc, irops => Ops1},
+  %% TODO: ++ is O(N^2)
+  CState#compile_state{accum = Acc0 ++ [Ops2]}.
+

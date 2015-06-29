@@ -18,6 +18,7 @@
         , 'TAILCALL'/3
         , 'RET'/0
         , 'TEST'/4
+        , 'GET_LIST'/4
         ]).
 
 -include("../../emuemu/src/emu.hrl").
@@ -127,11 +128,13 @@ literal_ref_enc(L, MState) ->
 
 %% @doc Encodes a tagged value to intermediate format, converts atoms to
 %% references to atom table for example
+value_enc(L, MState) when is_list(L) ->
+  lists:foldl(fun(Val, {Acc, MSt}) ->
+                {Val1, MSt1} = value_enc(Val, MSt),
+                {[Val1 | Acc], MSt1}
+              end, {[], MState}, L);
 value_enc(?nil, MState) ->
   {?nil, MState};
-value_enc({'$REF', X}, MState) ->
-  {X1, MState1} = value_enc(X, MState),
-  {{'$REF', X1}, MState1}; % reference to something, encode inner value
 value_enc({live_registers, Num}, MState) -> % number of live registers to save/restore
   {{'$LIVE', Num}, MState};
 value_enc({x, Reg}, MState) -> % value is register cell
@@ -163,38 +166,55 @@ comment(Args) -> list_to_tuple(['%' | Args]).
 
 'LINE'(Filename, Line, MState) ->
   {FilenameEnc, MState1} = literal_ref_enc(Filename, MState),
-  {{'LINE', FilenameEnc, Line}, MState1}.
+  {#{irop => {'LINE', FilenameEnc, Line}}
+  , MState1}.
+'MOVE'(Src, Src, MState) -> {nop, MState};
 'MOVE'(Src, Dst, MState) ->
   {SrcEnc, MState1} = value_enc(Src, MState),
   {DstEnc, MState2} = value_enc(Dst, MState1),
-  {{'MOVE', SrcEnc, DstEnc}, MState2}.
+  {#{irop => {'MOVE', SrcEnc, DstEnc}}
+  , MState2}.
 'PUSH'(Src, MState) ->
   {SrcEnc, MState1} = value_enc(Src, MState),
-  {{'PUSH', SrcEnc}, MState1}.
+  {#{irop => {'PUSH', SrcEnc}}
+  , MState1}.
 'POP'(Dst, MState) ->
   {DstEnc, MState1} = value_enc(Dst, MState),
-  {{'POP', DstEnc}, MState1}.
+  {#{irop => {'POP', DstEnc}}
+  , MState1}.
 %% TODO: Separate shorter call instructions when ResultDst is {x,0}
 %% TODO: Maybe separate opcode for bif/nonbif call?
 'CALL'(Label, Arity, IsBif, ResultDst, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
   {ResultDstEnc, MState2} = value_enc(ResultDst, MState1),
-  {{'CALL', LabelEnc, Arity, IsBif, ResultDstEnc}, MState2}.
+  {#{irop => {'CALL', LabelEnc, Arity, IsBif, ResultDstEnc}}
+  , MState2}.
 'CALL'(Label, Arity, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
-  {{'CALL', LabelEnc, Arity}, MState1}.
+  {#{irop => {'CALL', LabelEnc, Arity}}
+  , MState1}.
 'TAILCALL'(Arity, Label, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
-  {{'TAILCALL', Arity, LabelEnc}, MState1}.
-'RET'() -> {'RET'}.
+  {#{irop => {'TAILCALL', Arity, LabelEnc}}
+  , MState1}.
+'RET'() -> #{irop => 'RET'}.
 'TEST'(Test, Label, Args, MState) ->
   {LabelEnc, MState1} = label_enc(Label, MState),
   {ArgsEnc, MState2} = lists:foldr(fun fold_arg_enc/2, {[], MState1}, Args),
-  {{'TEST', Test, LabelEnc, ArgsEnc}, MState2}.
+  {#{irop => {'TEST', Test, LabelEnc, ArgsEnc}}
+   , MState2}.
+'GET_LIST'(Src, OutHead, OutTail, MState) ->
+  {SrcEnc,     MState1} = value_enc(Src, MState),
+  {OutHeadEnc, MState2} = value_enc(OutHead, MState1),
+  {OutTailEnc, MState3} = value_enc(OutTail, MState2),
+  {#{irop => {'GET_LIST', SrcEnc, OutHeadEnc, OutTailEnc}}
+  , MState3}.
 
 fold_arg_enc(Arg, {Acc, MState}) ->
   {Encoded, MState1} = value_enc(Arg, MState),
   {[Encoded | Acc], MState1}.
+
+%% ref(X) -> {'$REF', X}.
 
 compile({'LABEL', N}) ->
   <<(opcode(?op_group_control, ?label, 0))/binary, (uint_enc(N))/binary>>;

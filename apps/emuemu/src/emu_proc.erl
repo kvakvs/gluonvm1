@@ -122,9 +122,16 @@ evaluate({'$LIT', L}, State=#proc{code_server=CodeSrv}) ->
 %% @doc Puts a value (untagged by evaluate) to some destination
 move(?nil, _, State) -> {ok, State}; % void does not go anywhere
 move(Value, {'$REG', R}, State=#proc{registers=Regs}) ->
-  io:format("action: move ~p to register ~p~n", [Value, R]),
   Regs1 = array:set(R, Value, Regs),
+  io:format("action: move ~p to R~p~n", [Value, R]),
+  dbg_regs(Regs1),
   {ok, State#proc{registers=Regs1}}.
+
+dbg_regs(R) ->
+  [io:format("~s=~p; "
+            , [list_to_atom([$R, $0+I])
+              , array:get(I, R)]) || I <- lists:seq(0, 9)],
+  io:format("~n", []).
 
 test_op(is_lt, [A0, B0], State) ->
   {ok, A} = evaluate(A0, State),
@@ -138,7 +145,7 @@ test_op(is_nil, [N0], State) ->
   N =:= ?nil.
 
 push(Value, State = #proc{stack=Stack}) ->
-  io:format("action: push ~p~n", [Value]),
+  io:format("action: push ~p | ~p~n", [Value, Stack]),
   State#proc{stack=[Value | Stack]}.
 
 -spec pop(#proc{}) -> {ok, any(), #proc{}}.
@@ -215,7 +222,7 @@ execute_op({'CALL', Dst, Arity, IsBif, ResultDst}, State = #proc{ip=IP}) ->
     bif     -> step(1, call_bif({Dst, Arity, IsBif}, ResultDst, State));
     non_bif -> set_cp(emu_code_server:step(1, IP), State)
   end;
-execute_op({'CALL', IrMfa, _Arity}, State = #proc{ip=IP, code_server=CodeSrv}) ->
+execute_op({'CALL', IrMfa, _Arity}, State = #proc{ip=IP}) ->
   %% Check if this is our module or library
   {'$MFA', M, F, Arity} = IrMfa,
   %CurrentM = current_module(State),

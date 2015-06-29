@@ -1,6 +1,8 @@
--module(init).
+-module(g_test1).
 -export([test/0
-        , my_last/1, my_last2/1]).
+        , my_last/1
+        %, my_last2/1
+        ]).
 
 %%test() -> recurse(10).
 test() -> my_last([1,2,3,4]).
@@ -22,12 +24,12 @@ my_last(L) ->
     [H|_T] = R,
     H.
 %% Without using list reverse
-my_last2([]) ->
-    false;
-my_last2([H|[]]) ->
-    H;
-my_last2([_H|T]) when length(T) == 1 -> 
-    [H1|[]] = T,
-    H1;
-my_last2([_H|T]) ->
-    my_last2(T).
+%my_last2([]) ->
+%    false;
+%my_last2([H|[]]) ->
+%    H;
+%my_last2([_H|T]) when length(T) == 1 -> 
+%    [H1|[]] = T,
+%    H1;
+%my_last2([_H|T]) ->
+%    my_last2(T).
