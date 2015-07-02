@@ -157,19 +157,26 @@ read_ir(Str) ->
              , labels=Labels}.
 
 %% @private
+resolve_irop_piece({'$ATOM', A}, Atoms) ->
+  {ok, Atom} = find_atom(A, Atoms),
+  Atom;
+resolve_irop_piece({'$MFA', M0, F0, A}, Atoms) ->
+  [{M, F}] = read_ir_resolve_atoms([{M0, F0}], Atoms, []),
+  {'$MFA', M, F, A};
+resolve_irop_piece(X, _) -> X.
+
+%% @private
+resolve_irop(#{irop := Irop} = Line, Atoms) ->
+  maps:put(irop, resolve_irop_piece(Irop, Atoms), Line);
+resolve_irop(#{irops := IropList} = Line, Atoms) ->
+  ResolveEach = fun(X) -> resolve_irop(X, Atoms) end,
+  maps:put(irops, lists:map(ResolveEach, IropList), Line).
+
+%% @private
 read_ir_resolve_atoms([], _Atoms, Accum) -> lists:reverse(Accum);
-read_ir_resolve_atoms([IrOp0 | Tail], Atoms, Accum) ->
-  ResolveFun
-    = fun({'$ATOM', A}) ->
-          {ok, Atom} = find_atom(A, Atoms),
-          Atom;
-        ({'$MFA', M0, F0, A}) ->
-          [{M, F}] = read_ir_resolve_atoms([{M0, F0}], Atoms, []),
-          {'$MFA', M, F, A};
-        (X) -> X
-      end,
-  IrOp1 = lists:map(ResolveFun, tuple_to_list(IrOp0)),
-  read_ir_resolve_atoms(Tail, Atoms, [list_to_tuple(IrOp1) | Accum]).
+read_ir_resolve_atoms([Line | Tail], Atoms, Accum) ->
+  Line1 = resolve_irop(Line, Atoms),
+  read_ir_resolve_atoms(Tail, Atoms, [Line1 | Accum]).
 
 %% @private
 read_ir_resolve_funs(Funs, Atoms) ->
