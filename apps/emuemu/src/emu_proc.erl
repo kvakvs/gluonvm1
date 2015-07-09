@@ -58,7 +58,7 @@ handle_call({call, M, F, Args}, _From
                         }) ->
   {ok, IP} = emu_code_server:find_mfa(CodeSrv, {M, F, length(Args)}),
   State1 = State#proc{stack=[IP0 | Stack], ip=IP},
-  io:format("proc call ~p~n", [dbg_state(State1)]),
+  io:format("proc call ~p:~p, args ~p~n", [M, F, Args]),
   {reply, ok, State1};
 handle_call(Request, _From, State) ->
   {reply, {?MODULE, bad_request, Request}, State}.
@@ -73,8 +73,8 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
-dbg_state(#proc{}=P) ->
-  lists:zip(record_info(fields, proc), tl(tuple_to_list(P))).
+%% dbg_state(#proc{}=P) ->
+%%   lists:zip(record_info(fields, proc), tl(tuple_to_list(P))).
 
 %% @doc Fetch an instruction and do a step
 -spec tick_i(#proc{}) -> {noreply, #proc{}}.
@@ -246,11 +246,11 @@ execute_op({'TEST', TestOp, Label, Args}, State) ->
 execute_op({'PUSH', TaggedValue}, State=#proc{}) ->
   {ok, Value} = evaluate(TaggedValue, State),
   step(1, push(Value, State));
-execute_op({'RET'}, #proc{cp=undefined}=State) ->
+execute_op('RET', #proc{cp=undefined}=State) ->
   {ok, R0} = evaluate({'$REG', 0}, State),
   io:format("action: return to undefined, R0=~p, end program~n", [R0]),
   erlang:error('PROGRAM_END');
-execute_op({'RET'}, State=#proc{cp=CP}) ->
+execute_op('RET', State=#proc{cp=CP}) ->
   io:format("action: return to ~p~n", [CP]),
   set_cp(undefined, State#proc{ip=CP});
 execute_op(Instr, _State) ->

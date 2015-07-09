@@ -1,14 +1,17 @@
 -module(g_test1).
--export([test/0
+-export([test1/0, test2/0, f_test/0
         , my_last/1
         %, my_last2/1
         ]).
 
-%%test() -> recurse(10).
-test() -> my_last([1,2,3,4]).
+test1() -> recurse(10).
+test2() -> my_last([1,2,3,4]).
+f_test() ->
+    F = fun(X) -> X * 2 end,
+    F(2).
 
-%%recurse(X) when X > 0 -> recurse(X-1);
-%%recurse(X) -> X.
+recurse(X) when X > 0 -> recurse(X-1);
+recurse(X) -> X.
 
 %% From 99 problems: P01 (*) Find the last box of a list.
 %%     Example:

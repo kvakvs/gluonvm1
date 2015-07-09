@@ -19,6 +19,7 @@
         , 'RET'/0
         , 'TEST'/4
         , 'GET_LIST'/4
+        , 'LABEL'/1
         ]).
 
 -include("../../emuemu/src/emu.hrl").
@@ -161,7 +162,7 @@ value_enc({literal, Value}, MState) -> % value is immediately available in code
 %%% Specific opcodes
 %%%
 
-%'LABEL'(N) -> {'LABEL', N}.
+'LABEL'(N) -> #{irop => {'LABEL', N}}.
 comment(Args) -> list_to_tuple(['%' | Args]).
 
 'LINE'(Filename, Line, MState) ->

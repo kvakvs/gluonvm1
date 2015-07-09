@@ -1,0 +1,12 @@
+{application, 'prototype',
+ [{description, "A prototype BEAM/GluonVM runner"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {'prototype_app', []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []}
+ ]}.

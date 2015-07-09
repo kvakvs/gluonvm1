@@ -55,9 +55,10 @@ compile_one_fun({F, Arity, Code}, CState) ->
 
 %% @doc Compiles individual opcodes to Gluon Intermediate
 %% CState = compiler state, namely function base offset for labels
-c_op({label, L}, #compile_state{mod=Mod0, accum=Acc}=CState) ->
-  Mod1 = asm_module:register_label(L, length(Acc), Mod0),
-  CState#compile_state{mod=Mod1};
+c_op(BeamSrc={label, L}, #compile_state{}=CState) ->
+  %%Mod1 = asm_module:register_label(L, length(Acc), Mod0),
+  %%CState#compile_state{mod=Mod1};
+  emit(asm_irop:'LABEL'(L), BeamSrc, CState);
 c_op({func_info, _A1, _A2, _N}, CState=#compile_state{}) -> CState; % NO OP
 c_op(BeamSrc={line, Props}, CState=#compile_state{mod=Mod0}) ->
   case asm_module:get_option(line_numbers, Mod0) of

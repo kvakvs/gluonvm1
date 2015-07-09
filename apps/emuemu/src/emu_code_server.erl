@@ -78,19 +78,22 @@ label_to_offset(CodeSrv, Mod, Label) when is_pid(CodeSrv), is_atom(Mod) ->
 %%====================================================================
 init([]) -> {ok, #code_server{}}.
 
+add_irop_fun(X, {_M, _Ets, _O}=State)
+  when element(1,X) =:= '//' ->
+    State; % Skip comment irops
+add_irop_fun(#{irop:=IROp}, {Modname, Ets, Offset}) ->
+  %% Use {Modname, Offset} as key for opcodes.
+  ets:insert(Ets, {{Modname, Offset}, IROp}),
+  {Modname, Ets, Offset + 1};
+add_irop_fun(#{irops:=Irops}, {_M, _Ets, _O} = State) ->
+  lists:foldl(fun add_irop_fun/2, State, Irops).
+
 handle_call({add_code, AsmM}, _From
            , State=#code_server{ code=Ets
                                , modules=Modules}) ->
   IR      = asm_module:get_ir(AsmM),
   Modname = asm_module:get_name(AsmM),
-  StoreFun = fun
-    (X, Offset) when element(1,X) =:= '//' -> Offset; % Skip comment irops
-    (IROp, Offset) ->
-      %% Use {Modname, Offset} as key for opcodes.
-      ets:insert(Ets, {{Modname, Offset}, IROp}),
-      Offset + 1
-  end,
-  lists:foldl(StoreFun, 0, IR),
+  lists:foldl(fun add_irop_fun/2, {Modname, Ets, 0}, IR),
   Modules1 = orddict:store(Modname, AsmM, Modules),
   {reply, ok, State#code_server{modules = Modules1}};
 handle_call({find_mfa, {M, F, Arity}}, _From, State) ->
