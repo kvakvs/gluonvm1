@@ -252,8 +252,8 @@ int_code_end(S) ->
 %% @doc opcode=4
 %%
 call(S, _Arity, {f,I}) ->
-    Ys = [S#state.i+1 | S#state.stack],
-    vm_do_step(S#state{ i=I, stack =Ys}).
+  Ys = [S#state.i+1 | S#state.stack],
+  vm_do_step(S#state{ i=I, stack =Ys}).
 
 %%
 %% @spec call_last(_S::beam_state,Arity::arity(),Label::label(),Dealloc::non_negative_integer()) -> void()
@@ -1283,8 +1283,12 @@ bs_private_append(_S, _Fail, _Arg2, _U, _Arg4, {field_flags,_Flags}, _Arg6) ->
 %%
 %% @doc opcode=136
 %%
-trim(_S,_N,_Remaining) ->
-    {not_implemented,136}.
+trim(S,N,_Remaining) ->
+  {CP, S1} = vm_pop(S),
+  {_Drop, S2} = vm_pop_n(N, S1),
+  S3 = vm_push(CP, S2),
+  vm_next(S3).
+
 %%
 %% @doc opcode=137
 %%
@@ -1470,8 +1474,17 @@ vm_map_funs([_ | Tail], Map, Index) ->
 vm_next(S) ->
   vm_do_step(S#state{ i=S#state.i + 1 }).
 
-vm_push_ip(S=#state{stack =Y, i=I}) ->
-  S#state{stack =[I+1 | Y]}.
+vm_push_ip(S=#state{i=I}) -> vm_push(I+1, S).
+vm_push(Value, S=#state{stack=Y}) -> S#state{stack=[Value | Y]}.
+vm_pop(S=#state{stack=[Top | Y]}) -> {Top, S#state{stack=Y}}.
+
+vm_pop_n(N, S=#state{stack=Y}) ->
+  {TopN, Y1} = lists:split(N, Y),
+  {TopN, S#state{stack=Y1}}.
+
+%% @doc watch out order of N is not reversed! N is prepended to stack
+vm_prepend_to_stack(TopN, S=#state{stack=Y}) ->
+  S#state{stack=[TopN | Y]}.
 
 vm_jump(Ip, S=#state{}) ->
   io:format("jump to ~p~n", [Ip]),
