@@ -12,6 +12,7 @@
         , set_exports/2
         , set_ir/2
         , get_ir/1
+        , set_bin/2
         , find_atom/2
         , find_or_create_atom/2
         , find_literal/2
@@ -30,7 +31,8 @@
 -record(asm_module, {name
                     , options = orddict:from_list([{line_numbers, true}])
                     , features = ordsets:new()
-                    , ir = []
+                    , ir = []     % ir made of homogenized erlang asm(.S) tuples
+                    , bin = <<>>  % binary gleam/beam code
                     , funs = orddict:new()
                     , exports = orddict:new()
                     , atom_counter = -1
@@ -40,7 +42,7 @@
                     , labels = ordsets:new()
                     }).
 
-new(Id) -> #asm_module{name =Id}.
+new(Id) -> #asm_module{name=Id}.
 
 get_option(Key, #asm_module{options=Opt}) ->
   case orddict:find(Key, Opt) of
@@ -48,7 +50,7 @@ get_option(Key, #asm_module{options=Opt}) ->
     error -> undefined
   end.
 
-has_feature(Key, #asm_module{features = Ft}) ->
+has_feature(Key, #asm_module{features=Ft}) ->
   orddict:is_key(Key, Ft).
 
 %% @doc Registers a feature as used (can't be unregistered). Features are
@@ -61,6 +63,9 @@ set_exports(Exports, M) -> M#asm_module{exports = Exports}.
 
 set_ir(IR, M) -> M#asm_module{ir = IR}.
 get_ir(#asm_module{ir=IR}) -> IR.
+
+set_bin(Bin, M) -> M#asm_module{bin=Bin}.
+
 get_name(#asm_module{name=Name}) -> Name.
 
 find_or_create_atom(A, M=#asm_module{atoms=Atoms, atom_counter=Counter}) ->
@@ -119,15 +124,13 @@ to_binary({atoms, AtomsDict}) ->
     , (asm_irop:uint_enc(byte_size(Out)))/binary
     , (asm_irop:uint_enc(length(Atoms)))/binary
     , Out/binary>>;
-to_binary(#asm_module{ir =Code0, exports=Exports, atoms=Atoms, funs=Funs}) ->
-  %% Strip [{'OP', Code}] and get [Code]
-  Code = lists:map(fun(Op) -> asm_irop:compile(Op) end, lists:flatten(Code0)),
+to_binary(#asm_module{bin=Bin, exports=Exports, atoms=Atoms, funs=Funs}) ->
   %% Module file is encoded as "GLEAM" + chunks (4 byte name, var_int byte_size)
   <<"GLEAM"
   , (to_binary({atoms, Atoms}))/binary
   , (to_binary({funs, Funs}))/binary
   , (to_binary({exports, Exports}))/binary
-  , (to_binary({code, iolist_to_binary(Code)}))/binary>>.
+  , (to_binary({code, Bin}))/binary>>.
 
 write_ir(Filename, #asm_module{name=Name, ir=IR, atoms=At, literals=Lit
                               , funs=Funs, labels=Labels}) ->

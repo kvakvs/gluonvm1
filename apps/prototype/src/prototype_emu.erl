@@ -243,8 +243,8 @@ func_info(S, M,F,Arity) ->
 %%   End interpreted code
 %%
 int_code_end(S) ->
-    io:format("meta op: int_code_end\n"),  %% exit?
-    vm_next(S).
+  io:format("meta op: int_code_end\n"),  %% exit?
+  vm_next(S).
 
 %%
 %% @spec call(_S::beam_state(), Arity::arity(),Label::label()) -> void()
@@ -252,23 +252,25 @@ int_code_end(S) ->
 %% @doc opcode=4
 %%
 call(S, _Arity, {f,I}) ->
-  Ys = [S#state.i+1 | S#state.stack],
-  vm_do_step(S#state{ i=I, stack =Ys}).
+  S1 = vm_save_cp(S),
+  S2 = vm_jump(I, S1),
+  vm_dispatch(S2).
 
 %%
 %% @spec call_last(_S::beam_state,Arity::arity(),Label::label(),Dealloc::non_negative_integer()) -> void()
 %%
 %% @doc opcode=5
 %%
-call_last(S, _Arity, {f,I}, Dealloc) ->
-    Ys = vm_dealloc(Dealloc, S#state.stack),
-    vm_do_step(S#state{ i=I, stack =Ys}).
+call_last(S, _Arity, {f, I}, Dealloc) ->
+  Ys = vm_dealloc(Dealloc, S#state.stack),
+  vm_dispatch(S#state{i = I, stack = Ys}).
 
 %%
 %% @doc opcode=6
 %%
 call_only(S, _Arity,{f,I1}) ->
-    vm_do_step(S#state{ i=I1}).
+  %% tail call - jump
+  vm_dispatch(vm_jump(I1, S)).
 
 %%
 %% @doc opcode=7
@@ -277,7 +279,7 @@ call_only(S, _Arity,{f,I1}) ->
 %%   and pass context, push code together with the return position.
 %%
 call_ext(S, Arity,{extfunc,Mod,Fun,Arity}) ->
-    vm_call_ext(S, Mod,Fun,Arity).
+  vm_call_ext(S, Mod,Fun,Arity).
 
 %%
 %% @doc opcode=8
@@ -307,12 +309,12 @@ bif1(S, Bif, Fail, A1, Dst) ->
 %% @doc opcode=11
 %%
 bif2(S, Bif, Fail, A1, A2, Dst) ->
-    case catch apply(erlang,Bif,[vm_get(A1,S), vm_get(A2,S)]) of
-        {'EXIT',Reason} ->
-            vm_fail(S, Fail,exit,Reason);
-        Val ->
-            vm_next(vm_set(Dst,Val,S))
-    end.
+  case catch apply(erlang, Bif, [vm_get(A1, S), vm_get(A2, S)]) of
+    {'EXIT', Reason} ->
+      vm_fail(S, Fail, exit, Reason);
+    Val ->
+      vm_next(vm_set(Dst, Val, S))
+  end.
 
 %% @hidden
 %%  entry point from beam_load (maybe translate)
@@ -323,38 +325,42 @@ bif(S,Bif,Fail,[A1,A2],Dst) -> bif2(S,Bif,Fail,A1,A2,Dst).
 %%
 %% @doc opcode=12
 %%
-allocate(S, StackNeed,_Live) ->
-    %% FIXME: maybe kill some regs
-    Ys = vm_alloc(StackNeed,[],S#state.stack),
-    vm_next(S#state{ stack = Ys }).
+allocate(S, StackNeed, _Live) ->
+  %% FIXME: maybe kill some regs
+  S1 = vm_alloc_stack(StackNeed, [], S),
+  S2 = vm_push_cp(S1),
+  vm_next(S2).
 
 %%
 %% @doc opcode=13
 %%
-allocate_heap(S, StackNeed,_HeapNeed,_Live) ->
-    %% FIXME: maybe kill some regs
-    Ys = vm_alloc(StackNeed,[],S#state.stack),
-    vm_next(S#state{ stack = Ys }).
+allocate_heap(S, StackNeed, _HeapNeed, _Live) ->
+  %% FIXME: maybe kill some regs
+  S1 = vm_alloc_stack(StackNeed, [], S),
+  S2 = vm_push_cp(S1),
+  vm_next(S2).
 
 %%
 %% @doc opcode=14
 %%
-allocate_zero(S,StackNeed,_Live) ->
-    %% FIXME: maybe kill some regs
-    Ys = vm_alloc(StackNeed,?BLANK,S#state.stack),
-    vm_next(S#state{ stack = Ys }).
+allocate_zero(S, StackNeed, _Live) ->
+  %% FIXME: maybe kill some regs
+  S1 = vm_alloc_stack(StackNeed, ?BLANK, S),
+  S2 = vm_push_cp(S1),
+  vm_next(S2).
 
 %% @doc opcode=15
-allocate_heap_zero(S,StackNeed,_HeapNeed,_Live) ->
-    %% FIXME: maybe kill some regs
-    Ys = vm_alloc(StackNeed,?BLANK,S#state.stack),
-    vm_next(S#state{ stack = Ys }).
+allocate_heap_zero(S, StackNeed, _HeapNeed, _Live) ->
+  %% FIXME: maybe kill some regs
+  S1 = vm_alloc_stack(StackNeed, ?BLANK, S),
+  S2 = vm_push_cp(S1),
+  vm_next(S2).
 
 %% @doc opcode=16
-test_heap(S,{alloc,[{words,_N},{floats,_F}]},_Live) ->
-    %% FIXME: emulate this better
-    %% heap and float are dynamic
-    vm_next(S);
+test_heap(S, {alloc, [{words, _N}, {floats, _F}]}, _Live) ->
+  %% FIXME: emulate this better
+  %% heap and float are dynamic
+  vm_next(S);
 %%
 %% @doc opcode=16
 %%
@@ -371,62 +377,64 @@ init(S,Dst) ->
 %% @doc opcode=18
 %%
 deallocate(S,Deallocate) ->
-    Ys = vm_dealloc(Deallocate, S#state.stack),
-    vm_next(S#state{ stack = Ys }).
+  S1 = vm_take_cp(S),
+  S2 = vm_drop_n(Deallocate, S1),
+  vm_next(S2).
+  %Ys = vm_dealloc(Deallocate, S#state.stack),
+  %vm_next(S#state{ stack = Ys }).
 
 %%
 %% @doc opcode=19
 %%   return value
 %% @todo check if IRet is on form {Pos,Code} then install the code!
 %%
-return(S) ->
-    case S#state.stack of
-        [IRet|Ys] ->
-            vm_do_step(S#state{i=IRet, stack =Ys});
-        [] ->
-            vm_get({x,0},S)
-    end.
+return(S=#state{non_value=Non}) ->
+  {CP, S1} = vm_take_cp(S),
+  case CP of
+    Non  -> vm_get({x, 0}, S1);
+    IRet -> vm_dispatch(vm_jump(IRet, S1))
+  end.
 
 %%
 %% @doc opcode=20
 %%
 send(S) ->
-    Result = (vm_get({x,0},S) ! vm_get({x,1},S)),
-    S1 = vm_set({x,0}, Result, S),
-    vm_next(S1).
+  Result = (vm_get({x, 0}, S) ! vm_get({x, 1}, S)),
+  S1 = vm_set({x, 0}, Result, S),
+  vm_next(S1).
 
 %%
 %% @doc opcode=21
 %%
 remove_message(S) ->
-    message:remove(),
-    vm_next(S).
+  message:remove(),
+  vm_next(S).
 
 %%
 %% @doc opcode=22
 %%
 timeout(S) ->
-    message:first(), %% restart scanning
-    vm_next(S).
+  message:first(), %% restart scanning
+  vm_next(S).
 
 %%
 %% @doc opcode=23
 %%
-loop_rec(S,{f,IL},Dst) ->
-    case message:current() of
-        empty ->
-            %% jump to wait or wait_timeout
-            vm_do_step(S#state{ i=IL});
-        {message,M} ->
-            vm_next(vm_set(Dst,M,S))
-    end.
+loop_rec(S, {f, IL}, Dst) ->
+  case message:current() of
+    empty ->
+      %% jump to wait or wait_timeout
+      vm_dispatch(vm_jump(IL, S));
+    {message, M} ->
+      vm_next(vm_set(Dst, M, S))
+  end.
 
 %%
 %% @doc opcode=24
 %%
 loop_rec_end(S,{f,IL}) ->
     _Ignore = message:next(),
-    vm_do_step(S#state{i=IL}).
+    vm_dispatch(S#state{i=IL}).
 
 %%
 %% @doc opcode=25
@@ -444,14 +452,14 @@ wait_timeout(S,{f,IL},Src) ->
             Tmo = vm_get(Src,S),
             if Tmo == infinity ->
                     message:next(),
-                    vm_do_step(S#state{i=IL});
+                    vm_dispatch(S#state{i=IL});
                Tmo >= 0, Tmo =< 16#ffffffff ->
                     Timer = erlang:start_timer(Tmo,undefined,tmo),
                     case message:next(Tmo) of
                         timeout ->
                             vm_next(S);
                         {message,_} ->
-                            vm_do_step(S#state{i=IL,timer=Timer})
+                            vm_dispatch(S#state{i=IL,timer=Timer})
                     end;
                true ->
                     vm_fail(S,{f,0},error,timeout_value)
@@ -465,7 +473,7 @@ wait_timeout(S,{f,IL},Src) ->
                 timeout ->
                     vm_next(S#state{ timer=undefined });
                 {message,_} ->
-                    vm_do_step(S#state{i=IL})
+                    vm_dispatch(S#state{i=IL})
             end
     end.
 
@@ -659,7 +667,7 @@ test_arity(S,Fail,Src,Size) ->
 select_val(S,Val,Fail,{list,Pairs}) ->
     case select_val(vm_get(Val,S), Pairs) of
         {f,I1} ->
-            vm_do_step(S#state{i=I1});
+            vm_dispatch(S#state{i=I1});
         false ->
             fail(S,Fail)
     end.
@@ -672,7 +680,7 @@ select_tuple_arity(S,Val,Fail,{list,Pairs}) ->
     if is_tuple(T) ->
             case select_val(size(T), Pairs) of
                 {f,I1} ->
-                    vm_do_step(S#state{i=I1});
+                    vm_dispatch(S#state{i=I1});
                 false ->
                     fail(S,Fail)
             end;
@@ -684,7 +692,7 @@ select_tuple_arity(S,Val,Fail,{list,Pairs}) ->
 %% @doc opcode=61
 %%
 jump(S,{f,I1}) ->
-    vm_do_step(S#state{i=I1}).
+    vm_dispatch(S#state{i=I1}).
 
 %%
 %% @spec catch(_S::beam_state(),Dst::register(),Fail::label()) -> void()
@@ -813,7 +821,7 @@ case_end(S,CaseVal) ->
 %% @doc opcode=75
 %%
 call_fun(S,Arity) ->
-  As = vm_fetch_n_registers(Arity, S),
+  As = vm_fetch_args(Arity, S),
   Fun = vm_get({x, Arity}, S),
   Ret0 = case Fun of
            {funobject, #{m := _M, f := F, arity := Arity}} ->
@@ -1117,7 +1125,7 @@ bs_add(S,_Fail,[Src1,Src2,Unit],Dest) ->
 
 %% @doc opcode=112
 apply(S,Arity) ->
-    As = vm_fetch_n_registers(Arity,S),
+    As = vm_fetch_args(Arity,S),
     Mod = vm_get({x,Arity},S),
     Fun = vm_get({x,Arity+1},S),
     case catch apply(Mod,Fun,As) of
@@ -1129,7 +1137,7 @@ apply(S,Arity) ->
 
 %% @doc opcode=113
 apply_last(S,Arity,U) ->
-    As = vm_fetch_n_registers(Arity,S),
+    As = vm_fetch_args(Arity,S),
     Mod = vm_get({x,Arity},S),
     Fun = vm_get({x,Arity+1},S),
     case catch apply(Mod,Fun,As) of
@@ -1140,7 +1148,7 @@ apply_last(S,Arity,U) ->
                 [IRet|Ys] ->
                     S1 = S#state{ stack =Ys },
                     S2 = vm_set({x,0},Ret,S1),
-                    vm_do_step(S2#state{i=IRet }); %% was S?
+                    vm_dispatch(S2#state{i=IRet }); %% was S?
                 [] ->
                     Ret  %% ?
             end
@@ -1245,11 +1253,11 @@ put_literal(_S, _Index, _Dst) ->
 %%
 %% @doc opcode=129
 %%
-is_bitstr(S,Fail,A1) ->
-    case is_bitstr(vm_get(A1,S)) of
-        false -> fail(S,Fail);
-        true -> vm_next(S)
-    end.
+is_bitstr(S, Fail, A1) ->
+  case erlang:is_bitstr(vm_get(A1, S)) of
+    false -> fail(S, Fail);
+    true -> vm_next(S)
+  end.
 %%
 %% @doc opcode=130
 %%
@@ -1283,9 +1291,11 @@ bs_private_append(_S, _Fail, _Arg2, _U, _Arg4, {field_flags,_Flags}, _Arg6) ->
 %%
 %% @doc opcode=136
 %%
-trim(S,N,_Remaining) ->
+trim(S=#state{}, N, _Remaining) ->
+  %io:format("trim stack=~p~n", [Stack]),
   {CP, S1} = vm_pop(S),
-  {_Drop, S2} = vm_pop_n(N, S1),
+  %{_Drop, S2} = vm_pop_n(N, S1),
+  S2 = vm_drop_n(N, S1),
   S3 = vm_push(CP, S2),
   vm_next(S3).
 
@@ -1442,10 +1452,12 @@ run(File, F, Args) when is_list(File), is_atom(F), is_list(Args) ->
 
 %% @private
 vm_new(Args) ->
+  Non = make_ref(),
   #state{ x = list_to_tuple(Args)
         , f = {0.0, 0.0}
         , stack = []
-        , non_value = make_ref()    %% must be different from other terms!
+        , non_value = Non %% must be different from other terms!
+        , cp = Non
         }.
 
 %% @doc Takes argument of make_fun and returns fun object
@@ -1460,9 +1472,9 @@ vm_enter_code(I, C, Args) ->
 vm_set_code_and_jump(I, C, S) ->
   FI = vm_map_funs( tuple_to_list(C), orddict:new(), 0),
   erlang:display(FI),
-  vm_do_step(S#state{ i=I
-                    , code=C
-                    , fun_index=FI }).
+  vm_dispatch(S#state{ i = I
+                     , code = C
+                     , fun_index = FI}).
 
 vm_map_funs([], M, _Index) -> M;
 vm_map_funs([{func_info, [{atom, _Mod}, {atom, F}, A]} | Tail], Map, Index) ->
@@ -1472,25 +1484,40 @@ vm_map_funs([_ | Tail], Map, Index) ->
 
 %% @private
 vm_next(S) ->
-  vm_do_step(S#state{ i=S#state.i + 1 }).
+  vm_dispatch(S#state{ i=S#state.i + 1 }).
 
 vm_push_ip(S=#state{i=I}) -> vm_push(I+1, S).
 vm_push(Value, S=#state{stack=Y}) -> S#state{stack=[Value | Y]}.
+
+vm_pop(#state{stack=[]}) -> erlang:error(stack_underflow);
 vm_pop(S=#state{stack=[Top | Y]}) -> {Top, S#state{stack=Y}}.
 
-vm_pop_n(N, S=#state{stack=Y}) ->
-  {TopN, Y1} = lists:split(N, Y),
-  {TopN, S#state{stack=Y1}}.
+vm_drop_n(0, S) -> S;
+vm_drop_n(N, S) ->
+  {_, S1} = vm_pop(S),
+  vm_drop_n(N-1, S1).
 
-%% @doc watch out order of N is not reversed! N is prepended to stack
-vm_prepend_to_stack(TopN, S=#state{stack=Y}) ->
-  S#state{stack=[TopN | Y]}.
+vm_save_cp(S=#state{i=I}) -> S#state{cp = I}.
+
+vm_push_cp(S=#state{}) ->
+  {CP, S1} = vm_take_cp(S),
+  vm_push(CP, S1).
+
+%% @doc Read CP and clear CP in state
+vm_take_cp(S=#state{cp=CP, non_value=Non}) -> {CP, S#state{cp=Non}}.
+
+%% @%doc just read CP, no clearing
+%vm_get_cp(#state{cp=CP}) -> CP.
+
+%% @ doc watch out order of N is not reversed! N is prepended to stack
+%% vm_prepend_to_stack(TopN, S=#state{stack=Y}) ->
+%%   S#state{stack=[TopN | Y]}.
 
 vm_jump(Ip, S=#state{}) ->
-  io:format("jump to ~p~n", [Ip]),
+%%   io:format("jump to ~p~n", [Ip]),
   S#state{i=Ip}.
 
-vm_find_fun(Fun, Arity, S=#state{fun_index = FI}) ->
+vm_find_fun(Fun, Arity, #state{fun_index = FI}) ->
   case orddict:find({Fun, Arity}, FI) of
     error -> {error, not_found};
     {ok, Value} -> {ok, Value}
@@ -1498,7 +1525,7 @@ vm_find_fun(Fun, Arity, S=#state{fun_index = FI}) ->
 
 %% @private
 %% dispatch the instruction
-vm_do_step(S) ->
+vm_dispatch(S) ->
   {Op, Args} = element(S#state.i, S#state.code),
   erlang:display({level(), S#state.i, {Op, Args}}),
   apply(?MODULE, Op, [S | Args]).
@@ -1546,38 +1573,38 @@ vm_test(S,Fail,A1,Op) ->
     end.
 
 %% @private
-vm_call_ext(S,erlang,'throw',1) ->
-    vm_fail(S,{f,0},thrown, vm_get({x,0},S));
-vm_call_ext(S,erlang,'exit',1) ->
-    vm_fail(S,{f,0},exit, vm_get({x,0},S));
-vm_call_ext(S,beam_emu,F,0) when F==level; F==level0 ->
-    Ret = level()+1,
-    vm_next(vm_set({x,0},Ret,S));
-vm_call_ext(S,Mod,Fun,Arity) ->
-    As = vm_fetch_n_registers(Arity,S),
-    case catch erlang:apply(Mod,Fun,As) of
-        {'EXIT',Reason} ->
-            vm_fail(S,{f,0},exit,Reason);
-        Ret ->
-            vm_next(vm_set({x,0},Ret,S))
-    end.
+vm_call_ext(S, erlang, 'throw', 1) ->
+  vm_fail(S, {f, 0}, thrown, vm_get({x, 0}, S));
+vm_call_ext(S, erlang, 'exit', 1) ->
+  vm_fail(S, {f, 0}, exit, vm_get({x, 0}, S));
+vm_call_ext(S, beam_emu, F, 0) when F == level; F == level0 ->
+  Ret = level() + 1,
+  vm_next(vm_set({x, 0}, Ret, S));
+vm_call_ext(S, Mod, Fun, Arity) ->
+  As = vm_fetch_args(Arity, S),
+  case catch erlang:apply(Mod, Fun, As) of
+    {'EXIT', Reason} ->
+      vm_fail(S, {f, 0}, exit, Reason);
+    Ret ->
+      vm_next(vm_set({x, 0}, Ret, S))
+  end.
 
-vm_call_ext_tco(S,erlang,'throw',1,_Dealloc) ->
-    vm_fail(S,{f,0},thrown, vm_get({x,0},S));
-vm_call_ext_tco(S,erlang,'exit',1,_Dealloc) ->
-    vm_fail(S,{f,0},exit, vm_get({x,0},S));
-vm_call_ext_tco(S,beam_emu,F,0,Dealloc) when  F==level; F==level0 ->
-    Ret = level()+1,
-    case vm_dealloc(Dealloc, S#state.stack) of
-        [IRet|Ys] ->
-            S1 = S#state{ stack =Ys },
-            S2 = vm_set({x,0},Ret,S1),
-            vm_do_step(S2#state{ i=IRet});
-        [] ->
-            Ret
-    end;
+vm_call_ext_tco(S, erlang, 'throw', 1, _Dealloc) ->
+  vm_fail(S, {f, 0}, thrown, vm_get({x, 0}, S));
+vm_call_ext_tco(S, erlang, 'exit', 1, _Dealloc) ->
+  vm_fail(S, {f, 0}, exit, vm_get({x, 0}, S));
+vm_call_ext_tco(S, beam_emu, F, 0, Dealloc) when F == level; F == level0 ->
+  Ret = level() + 1,
+  case vm_dealloc(Dealloc, S#state.stack) of
+    [IRet | Ys] ->
+      S1 = S#state{stack = Ys},
+      S2 = vm_set({x, 0}, Ret, S1),
+      vm_dispatch(S2#state{i = IRet});
+    [] ->
+      Ret
+  end;
 vm_call_ext_tco(S, Mod, Fun, Arity, Dealloc) ->
-  As = vm_fetch_n_registers(Arity, S),
+  As = vm_fetch_args(Arity, S),
   case catch apply(Mod, Fun, As) of
     {'EXIT', Reason} ->
       vm_fail(S, {f, 0}, exit, Reason);
@@ -1586,7 +1613,7 @@ vm_call_ext_tco(S, Mod, Fun, Arity, Dealloc) ->
         [IRet | Ys] ->
           S1 = S#state{stack = Ys},
           S2 = vm_set({x, 0}, Ret, S1),
-          vm_do_step(S2#state{i = IRet});
+          vm_dispatch(S2#state{i = IRet});
         [] ->
           Ret
       end
@@ -1617,8 +1644,8 @@ vm_get_i(Src, S) ->
 %%    [].
 
 %% fetch sequence of N registers {x,0} .. {x,N-1}
-vm_fetch_n_registers(0, _S) -> [];
-vm_fetch_n_registers(N, S) -> vm_fetch_n_registers_i(N-1, S, []).
+vm_fetch_args(0, _S) -> [];
+vm_fetch_args(N, S) -> vm_fetch_n_registers_i(N-1, S, []).
 
 vm_fetch_n_registers_i(0, S, Regs) ->
     [vm_get({x,0},S)|Regs];
@@ -1662,8 +1689,11 @@ vm_fill_regs(1,_D,V) -> [V];
 vm_fill_regs(I,D,V) -> [D | vm_fill_regs(I-1,D,V)].
 
 %% @private
-vm_alloc(0,_D,Ys) -> Ys;
-vm_alloc(I,D,Ys) -> [D | vm_alloc(I-1,D,Ys)].
+%% vm_alloc(0,_D,Ys) -> Ys;
+%% vm_alloc(I,D,Ys) -> [D | vm_alloc(I-1,D,Ys)].
+vm_alloc_stack(0,_Data,S=#state{}) -> S;
+vm_alloc_stack(I,Data,S=#state{stack=Stack}) ->
+  vm_alloc_stack(I-1, Data, S#state{stack=[Data | Stack]}).
 
 %% @private
 vm_dealloc(0, Ys) -> Ys;
@@ -1679,7 +1709,7 @@ vm_fail(S, {f, 0}, Class, Reason) ->
       S0 = vm_set({x, 0}, ?BLANK, S),
       S1 = vm_set({x, 1}, Class, S0),
       S2 = vm_set({x, 2}, Reason, S1),
-      vm_do_step(S2#state{i = If, stack = Ys}); %% was S?
+      vm_dispatch(S2#state{i = If, stack = Ys}); %% was S?
     [] ->
       if Class == thrown ->
         exit(no_catch);
@@ -1690,10 +1720,10 @@ vm_fail(S, {f, 0}, Class, Reason) ->
       end
   end;
 vm_fail(S, {f, I1}, _Class, _Reason) ->
-  vm_do_step(S#state{i = I1}).
+  vm_dispatch(S#state{i = I1}).
 
 fail(S, {f,I1}) ->
-    vm_do_step(S#state{ i=I1 }).
+    vm_dispatch(S#state{ i=I1 }).
 
 
 select_val(Val, [Val,Jump|_]) ->
