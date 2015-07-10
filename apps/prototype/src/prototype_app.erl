@@ -20,10 +20,10 @@
 start() ->
 %%   prototype_emu:run("test/g_test1.beam", test2, []).
 
-  prototype_emu:run("test/g_test1.beam", f_test, []).
+%%  prototype_emu:run("test/g_test1.beam", f_test, []).
 
-%%   J1 = {struct, [{"hello", "world"}, {"test", 123}]},
-%%   prototype_emu:run("test/mochijson.beam", encode, [J1]).
+   J1 = {struct, [{"hello", "world"}, {"test", 123}]},
+   prototype_emu:run("test/mochijson.beam", encode, [J1]).
 
 start(_StartType, _StartArgs) ->
   ok.

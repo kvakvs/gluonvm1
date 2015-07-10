@@ -81,7 +81,9 @@ file(File) when is_list(File) ->
                                   {ok,Pos} ->  {{F,A},Pos}
                               end
                       end, B#beam_file.labeled_exports),
-            {ok,{B#beam_file.module,Exp,LCode}};
+            #{module => B#beam_file.module,
+              exports => Exp,
+              code => LCode};
         Err ->
             Err
     end.
