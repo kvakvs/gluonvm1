@@ -139,6 +139,7 @@ encode_atom(A, Mod0) ->
   {<<?tag_atom:8, (uint_enc(Index))/binary>>, Mod}.
 
 encode_arg({x, X}, Mod) when is_integer(X), X >= 0 ->
+  %% TODO: Shorten this for low values of X to 1 byte
   {<<?tag_register:8, (uint_enc(X))/binary>>, Mod};
 encode_arg({y, Y}, Mod) when is_integer(Y), Y >= 0 ->
   {<<?tag_stack:8, (uint_enc(Y))/binary>>, Mod};
