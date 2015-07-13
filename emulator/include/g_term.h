@@ -4,11 +4,11 @@
 
 namespace gluon {
 
-// This wrap is here to make strong type difference between vmword (which is
-// just a machine size unsigned integer) and term type, which is complex
-// bitfield structure.
-// Wrapping an integer with class is efficient if all members are inline and
-// optimizations are on.
+// This wrap is here to make strong type difference between hardware hw::Word
+// (which is just a machine size unsigned integer) and term type, which is
+// complex bitfield structure.
+// Note: Wrapping an integer with class is efficient if all members are inline
+// and optimizations are on.
 class Term {
 private:
   hw::Word m_val;

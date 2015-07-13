@@ -2,6 +2,7 @@
 
 #include "g_defs.h"
 #include "g_term.h"
+#include "g_error.h"
 
 namespace gluon {
 
@@ -17,6 +18,7 @@ private:
 
 public:
   static void init();
+  static MaybeError load_module(const Str &filename);
 };
 
 } // ns gluon

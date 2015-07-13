@@ -1,6 +1,7 @@
 #pragma once
 
 #include "g_defs.h"
+#include "g_term.h"
 
 #include <stdint.h>
 
@@ -20,7 +21,7 @@ private:
 
 public:
   static void init();
-  //static void load_module(const Str &name);
+  static void load_module(Term name);
 };
 
 } // ns gluon

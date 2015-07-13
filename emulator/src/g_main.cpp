@@ -1,9 +1,11 @@
 #include "g_vm.h"
 
+using vm = gluon::VM;
+
 int main(int argc, const char *argv[]) {
 
-  // VM has all static members, do not instantiate
-  gluon::VM::init();
+  vm::init();
+  vm::load_module("../test/g_test1.S.gleam");
 
   return 0;
 }

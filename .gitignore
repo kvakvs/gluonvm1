@@ -23,3 +23,4 @@ rebar.lock
 *.iml
 .idea
 .idea/*
+*.user
