@@ -14,8 +14,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/
     )
 add_definitions(
-    -O0
-    -g -ggdb
+    -O0 -g -ggdb
+    #-Os
     )
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}
     -std=c++11
@@ -31,6 +31,7 @@ set(SRC_LIST
     include/g_sys_stdlib.h
 
     src/g_codeserver.cpp include/g_codeserver.h
+    src/g_gleam_loader.cpp
     src/g_main.cpp
     src/g_module.cpp include/g_module.h
     src/g_term.cpp include/g_term.h

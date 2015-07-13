@@ -15,10 +15,15 @@ private:
   VM() = delete;
   static str_atom_map_t g_atoms;
   static atom_str_map_t g_atoms_reverse;
+  static word_t g_atom_counter;
 
 public:
   static void init();
   static MaybeError load_module(const Str &filename);
+
+  static Term to_atom(const Str &s);
+  static Term to_existing_atom(const Str &s);
+  static Term new_atom(const Str &s);
 };
 
 } // ns gluon

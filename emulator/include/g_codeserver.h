@@ -21,7 +21,8 @@ private:
 
 public:
   static void init();
-  static void load_module(Term name);
+  // Pass nil as name to take name automatically from the module
+  static void load_module(Term name_atom, const u8_t *bytes, word_t size);
 };
 
 } // ns gluon

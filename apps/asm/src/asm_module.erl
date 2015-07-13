@@ -113,24 +113,43 @@ to_binary({atoms, AtomsDict}) ->
   %% Atom table is encoded as "Atom" + var_int BytesLength + var_int AtomsCount,
   %% then each atom is encoded as var_int Bytes + utf8 Atom
   AtomEnc = fun(Atm) ->
-      ABin = atom_to_binary(Atm, utf8),
-      <<(asm_irop:uint_enc(byte_size(ABin)))/binary
-        , ABin/binary>>
-    end,
+    ABin = atom_to_binary(Atm, utf8),
+    <<(asm_irop:uint_enc(byte_size(ABin)))/binary
+    , ABin/binary>>
+  end,
   %% ASSUMPTION: orddict:to_list gives sorted ascending order without skips
   Atoms = orddict:to_list(AtomsDict),
   Out = iolist_to_binary([AtomEnc(Atom) || {Atom, _} <- Atoms]),
   <<"Atom"
+  , (asm_irop:uint_enc(byte_size(Out)))/binary
+  , (asm_irop:uint_enc(length(Atoms)))/binary
+  , Out/binary>>;
+to_binary({literals, LitDict}) ->
+  %% Literal table is encoded as "LitT" + var_int BytesLength + var_int Count,
+  %% then each literal is encoded as external term format
+  %% ASSUMPTION: orddict:to_list gives sorted ascending order without skips
+  Literals = orddict:to_list(LitDict),
+  Enc = fun(L) ->
+          LBin = term_to_binary(L),
+          <<(asm_irop:uint_enc(byte_size(LBin)))/binary, LBin/binary>>
+        end,
+  Out = iolist_to_binary([Enc(L) || {L, _} <- Literals]),
+  <<"LitT"
     , (asm_irop:uint_enc(byte_size(Out)))/binary
-    , (asm_irop:uint_enc(length(Atoms)))/binary
+    , (asm_irop:uint_enc(length(Literals)))/binary
     , Out/binary>>;
-to_binary(#asm_module{bin=Bin, exports=Exports, atoms=Atoms, funs=Funs}) ->
-  %% Module file is encoded as "GLEAM" + chunks (4 byte name, var_int byte_size)
+to_binary(#asm_module{name=Name, bin=Bin, literals=Lit
+                     , exports=Exports, atoms=Atoms, funs=Funs}) ->
+  ModName = atom_to_binary(Name, utf8),
+  %% Module file is encoded as "GLEAM" + module name length + module name
+  %%   + chunks (4 byte name, var_int byte_size)
   <<"GLEAM"
-  , (to_binary({atoms, Atoms}))/binary
-  , (to_binary({funs, Funs}))/binary
-  , (to_binary({exports, Exports}))/binary
-  , (to_binary({code, Bin}))/binary>>.
+    , (byte_size(ModName)):8, ModName/binary
+    , (to_binary({atoms, Atoms}))/binary
+    , (to_binary({funs, Funs}))/binary
+    , (to_binary({exports, Exports}))/binary
+    , (to_binary({code, Bin}))/binary
+    , (to_binary({literals, Lit}))/binary>>.
 
 write_ir(Filename, #asm_module{name=Name, ir=IR, atoms=At, literals=Lit
                               , funs=Funs, labels=Labels}) ->
