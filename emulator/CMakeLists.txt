@@ -26,12 +26,15 @@ set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS}
 set(SRC_LIST
     include/g_defs.h
     include/g_error.h
+    include/g_reader.h
     include/g_sys_fs.h
     include/g_sys_mem.h
     include/g_sys_stdlib.h
 
     src/g_codeserver.cpp include/g_codeserver.h
+    src/g_ext_term.cpp   include/g_ext_term.h
     src/g_gleam_loader.cpp
+    src/g_heap.cpp       include/g_heap.h
     src/g_main.cpp
     src/g_module.cpp include/g_module.h
     src/g_term.cpp include/g_term.h

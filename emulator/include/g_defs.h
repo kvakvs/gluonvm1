@@ -10,6 +10,10 @@
 #define G_HAVE_EXCEPTIONS 0
 #define G_HARDWARE_BITS   (8*sizeof(void*))
 
+#define FEATURE_BIGNUM    0
+#define FEATURE_FLOAT     0
+#define FEATURE_ERL_DIST  0 /*Distribution features*/
+
 namespace gluon {
   // An STL-compatible string of char and unsigned char
   using Str = std::basic_string<char>;
@@ -64,7 +68,7 @@ namespace gluon {
 
 // TODO: debug macro goes here
 #if G_DEBUG
-#   define G_FAIL(MSG) ::fprintf(stderr, "ASSERTION: %s\n", MSG); ::abort();
+#   define G_FAIL(MSG) ::fprintf(stderr, "FAIL: %s\n", MSG); ::abort();
 #   define G_ASSERT(X) if (!(X)) { G_FAIL(#X); }
 #   define G_ASSERT_MSG(X, MSG) if (!(X)) { G_FAIL(MSG); }
 #   define G_TODO(what) {                    \

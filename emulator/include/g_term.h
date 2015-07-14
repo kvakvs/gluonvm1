@@ -149,11 +149,10 @@ public:
   //
   // Bit/arithmetic/comparisons
   //
-
   inline void set(word_t x) { m_val = x; }
   inline void set(const Term &t) { m_val = t.m_val; }
 
-  inline Term operator <<(word_t bits) const { return Term(m_val << bits); }
+  //inline Term operator <<(word_t bits) const { return Term(m_val << bits); }
   inline word_t value() const { return m_val; }
   inline bool operator <(const Term &x) const { return m_val < x.m_val; }
   inline bool operator ==(const Term &x) const { return m_val == x.m_val; }
@@ -163,6 +162,32 @@ public:
   inline bool is_nil() const { return m_val == NIL; }
   inline bool is_non_value() const { return m_val == THE_NON_VALUE; }
   inline bool is_value() const { return m_val != THE_NON_VALUE; }
+
+  //
+  // Pointer magic
+  //
+  inline static Term make_boxed(Term *x) {
+    return Term(
+          compress_pointer(x).value()
+          + term_tag::PRIMARY_BOXED
+          );
+  }
+  inline bool is_not_boxed() const {
+    return m_val & (term_tag::PRIMARY_MASK - term_tag::PRIMARY_BOXED);
+  }
+  inline bool is_boxed() const { return !is_not_boxed(); }
+  inline static Term compress_pointer(Term *term_ptr) {
+    return Term(reinterpret_cast<word_t>(term_ptr));
+  }
+  inline void set_compress_pointer(Term *term_ptr) {
+    m_val = reinterpret_cast<word_t>(term_ptr);
+  }
+  inline Term *expand_pointer() {
+    return reinterpret_cast<Term *>(m_val);
+  }
+  inline static Term *expand_pointer(word_t x) {
+    return reinterpret_cast<Term *>(x);
+  }
 
   //
   // Atoms
@@ -176,6 +201,46 @@ public:
   inline word_t atom_val() const {
     return m_val >> term_tag::IMMED2_SIZE;
   }
+
+  //
+  // Small Integer
+  //
+  static const word_t SMALL_BITS = sizeof(word_t)*8 - 4;
+  static const word_t MAX_SMALL = (1L << (SMALL_BITS-1))-1;
+  static const word_t MIN_SMALL = -(1L << (SMALL_BITS-1));
+  static constexpr Term make_small(word_t x) {
+    return Term((x << term_tag::IMMED1_SIZE) + term_tag::IMMED1_SMALL);
+  }
+  template <typename N>
+  static constexpr is_big(N n) {
+    return n >= MIN_SMALL && n <= MAX_SMALL;
+  }
+
+#if FEATURE_BIGNUM
+  //
+  // Big integer (bignum)
+  //
+  inline bool is_big() const {
+    return is_boxed() && boxed_val()->is_bignum_header();
+  }
+  inline Term *boxed_val() const {
+    return expand_pointer(m_val - term_tag::PRIMARY_BOXED);
+  }
+  inline bool is_bignum_header() const {
+    return (m_val & (term_tag::HEADER_MASK - term_tag::BIG_SIGN_BIT))
+            == term_tag::HEADER_POS_BIG;
+  }
+  inline word_t bignum_header_arity() const {
+    return (m_val >> term_tag::HEADER_ARITY_OFFS);
+  }
+  inline word_t big_arity() const {
+    return boxed_val()->bignum_header_arity();
+  }
+  inline bignum::digit_t big_v() const {
+    return *(bignum::digit_t *)(boxed_val()+1);
+  }
+#endif
+
 };
 
 } // ns gluon
