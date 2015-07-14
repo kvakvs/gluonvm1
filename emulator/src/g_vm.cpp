@@ -2,15 +2,19 @@
 #include "g_codeserver.h"
 #include "g_sys_fs.h"
 #include "g_sys_mem.h"
+#include "g_dist.h"
 
 namespace gluon {
 
 str_atom_map_t VM::g_atoms;
 atom_str_map_t VM::g_atoms_reverse;
 word_t VM::g_atom_counter = 0;
+Node *VM::g_this_node = nullptr;
 
 void VM::init()
 {
+  g_this_node = new Node;
+
   CodeServer::init();
 }
 
@@ -53,6 +57,13 @@ Term VM::new_atom(const Str &s) {
   g_atoms_reverse[new_a] = s;
   g_atom_counter++;
   return new_a;
+}
+
+Node *VM::dist_this_node() {
+#if FEATURE_ERL_DIST
+  G_TODO("implement Node and this node variable")
+#endif
+  return g_this_node;
 }
 
 } // ns gluon

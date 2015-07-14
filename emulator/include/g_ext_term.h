@@ -21,6 +21,9 @@ namespace etf {
     REFERENCE_EXT = 101,        // encoded make_ref()
     PORT_EXT = 102,             // port, similar to ref()
     PID_EXT = 103,
+    SMALL_TUPLE_EXT = 104,
+    LARGE_TUPLE_EXT = 105,
+    SMALL_ATOM_EXT = 115,
   };
 
   // Term will be parsed and stored on heap

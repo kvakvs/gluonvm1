@@ -8,13 +8,30 @@
 
 #define G_DEBUG           1
 #define G_HAVE_EXCEPTIONS 0
-#define G_HARDWARE_BITS   (8*sizeof(void*))
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#   define G_BIGENDIAN      0
+#else
+#   define G_BIGENDIAN      1
+#endif
+
+#if __GNUC__
+#   if __x86_64__ || __ppc64__
+#       define G_HARDWARE_BITS 64
+#   else
+#       define G_HARDWARE_BITS 32
+#   endif
+#endif
 
 #define FEATURE_BIGNUM    0
 #define FEATURE_FLOAT     0
 #define FEATURE_ERL_DIST  0 /*Distribution features*/
 
 namespace gluon {
+  constexpr unsigned int get_hardware_bits() {
+    return (8*sizeof(void*));
+  }
+
   // An STL-compatible string of char and unsigned char
   using Str = std::basic_string<char>;
   //using UStr = std::basic_string<u8_t>;

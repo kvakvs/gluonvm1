@@ -32,6 +32,7 @@ set(SRC_LIST
     include/g_sys_stdlib.h
 
     src/g_codeserver.cpp include/g_codeserver.h
+    src/g_dist.cpp       include/g_dist.h
     src/g_ext_term.cpp   include/g_ext_term.h
     src/g_gleam_loader.cpp
     src/g_heap.cpp       include/g_heap.h
