@@ -2,6 +2,7 @@
 
 #include "g_defs.h"
 #include "g_term.h"
+#include "g_error.h"
 
 #include <stdint.h>
 
@@ -22,7 +23,7 @@ private:
 public:
   static void init();
   // Pass nil as name to take name automatically from the module
-  static void load_module(Term name_atom, const u8_t *bytes, word_t size);
+  static MaybeError load_module(Term name_atom, const u8_t *bytes, word_t size);
 };
 
 } // ns gluon

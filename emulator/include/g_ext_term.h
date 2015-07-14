@@ -3,15 +3,19 @@
 #include "g_defs.h"
 #include "g_term.h"
 #include "g_reader.h"
-#include "g_heap.h"
+#include "g_error.h"
 
 namespace gluon {
+  class Heap;
+
 namespace etf {
+
 
   const u8_t ETF_MARKER = 131;
   enum {
     DIST_HEADER           = 68, // contains atom cache
     IEEE_FLOAT_EXT        = 70, // 8-byte double
+    BIT_BINARY_EXT        = 77,
     COMPRESSED            = 80,
     ATOM_CACHE_REF        = 82, // used with dist header
     SMALL_INTEGER_EXT     = 97, // 8bit integer
@@ -26,14 +30,19 @@ namespace etf {
     NIL_EXT         = 106,      // empty list []
     STRING_EXT      = 107,      // 16bit size + bytes
     LIST_EXT        = 108,      // 32bit length, elements, tail (or nil)
-    SMALL_ATOM_EXT  = 115,
-    MAP_EXT         = 116,
+    BINARY_EXT      = 109,
+    SMALL_BIG_EXT   = 110,
+    LARGE_BIG_EXT   = 111,
+    SMALL_ATOM_EXT      = 115,
+    MAP_EXT             = 116,
+    ATOM_UTF8_EXT       = 118,
+    SMALL_ATOM_UTF8_EXT = 119,
   };
 
   // Term will be parsed and stored on heap (reads byte=131 first as an ETF tag)
-  Term read_ext_term(Heap *heap, tool::Reader &r);
+  Result<Term> read_ext_term(Heap *heap, tool::Reader &r);
   // Term will be parsed and stored on heap (reads type tag first)
-  Term read_ext_term2(Heap *heap, tool::Reader &r);
+  Result<Term> read_ext_term2(Heap *heap, tool::Reader &r);
 
 } // ns etf
 } // ns gluon

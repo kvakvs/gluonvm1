@@ -1,5 +1,6 @@
 #include "g_vm.h"
 #include "g_ext_term.h"
+#include "g_heap.h"
 
 namespace gluon {
 namespace etf {
@@ -40,47 +41,48 @@ Node *get_node(Term /*sysname*/, dist::creation_t /*creation*/) {
 }
 
 
-Term make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
+Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
   if ( !Term::is_valid_pid_id(id)
     || !Term::is_valid_pid_serial(serial)) {
-    return Term::make_nil();
+    return error<Term>("bad pid");
   }
   // TODO: check valid creation
   word_t data = Term::make_pid_data(serial, id);
   auto node = get_node(sysname, creation);
 
   if (node == VM::dist_this_node()) {
-    return Term::make_short_pid(data);
+    return success(Term::make_short_pid(data));
   }
 #if FEATURE_ERL_DIST
   G_TODO("distribution support pid etf");
 #endif
-  return Term::make_nil(); // distribution disabled, no want remote pids
+  // distribution disabled, no want remote pids
+  return error<Term>("FEATURE_ERL_DIST");
 }
 
 
-Term read_tuple(Heap *heap, tool::Reader &r, word_t n_elements) {
+Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t n_elements) {
   if (n_elements == 0) {
-    return Term::make_zero_tuple();
+    return success(Term::make_zero_tuple());
   }
 
   Term *elements = Heap::alloc<Term>(heap, n_elements+1);
 
   // fill elements or die horribly if something does not decode
   for (auto i = 0; i < n_elements; ++i) {
-    auto elem = read_ext_term2(heap, r);
-    if (elem.is_non_value()) {
+    auto elem_result = read_ext_term2(heap, r);
+    if (elem_result.is_error()) {
       Heap::free_terms(heap, elements, n_elements);
-      return Term::make_nil();
+      return elem_result;
     }
-    elements[i] = elem;
+    elements[i] = elem_result.get_result();
   }
 
-  return Term::make_tuple(elements, n_elements);
+  return success(Term::make_tuple(elements, n_elements));
 }
 
 
-Term read_ext_term(Heap *heap, tool::Reader &r) {
+Result<Term> read_ext_term(Heap *heap, tool::Reader &r) {
   r.assert_byte(ETF_MARKER);
   return read_ext_term2(heap, r);
 }
@@ -130,7 +132,7 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
   return result;
 }
 
-Term read_list_ext(Heap *heap, tool::Reader &r) {
+Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
   word_t length = r.read_bigendian_i32();
 
   Term result = Term::make_nil();
@@ -138,40 +140,42 @@ Term read_list_ext(Heap *heap, tool::Reader &r) {
 
   for (int i = length - 1; i >= 0; i--) {
     Term *cons = Heap::alloc<Term>(heap, 2); // TODO: more efficient allocation
-    Term v = read_ext_term2(heap, r);
-    if (v.is_non_value()) {
-      return v;
+
+    auto v_result = read_ext_term2(heap, r);
+    if (v_result.is_error()) {
+      return v_result;
     }
-    cons[0] = v;
+
+    cons[0] = v_result.get_result();
     *ref = Term::make_cons(cons);
     ref = &cons[1];
   }
 
-  Term tail = read_ext_term2(heap, r);
-  if (tail.is_non_value()) {
-    return tail;
+  auto tail_result = read_ext_term2(heap, r);
+  if (tail_result.is_error()) {
+    return tail_result;
   }
-  *ref = tail;
+  *ref = tail_result.get_result();
 
-  return result;
+  return success(result);
 }
 
 
-Term read_ext_term2(Heap *heap, tool::Reader &r) {
+Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
   switch (r.read_byte()) {
   case COMPRESSED:
     // =80; 4 bytes size; compressed data
     G_TODO("compressed etf");
 
   case SMALL_INTEGER_EXT:
-    return Term::make_small(r.read_byte());
+    return success(Term::make_small(r.read_byte()));
 
   case INTEGER_EXT: {
       // 32-bit integer
       word_t n = r.read_bigendian_i32();
       if (get_hardware_bits() > 32) {
         // fits into small_int if platform is x64
-        return Term::make_small(n);
+        return success(Term::make_small(n));
       } else { // hardware bits = 32
 #if FEATURE_BIGNUM
       if (Term::is_big(n)) {
@@ -181,29 +185,27 @@ Term read_ext_term2(Heap *heap, tool::Reader &r) {
       }
 #else
       // no bignum, and hardware bits not enough: much fail here
-      return Term::make_nil();
+      return error<Term>("FEATURE_BIGNUM");
 #endif
       } // hardware bits = 32
     } // integer_ext
 
+#if FEATURE_FLOAT
   case OLD_FLOAT_STRING_EXT: {
-#if FEATURE_FLOAT
     G_TODO("parse float string etf");
-#else
-    return Term::make_nil(); // sorry no floats
-#endif
     } // old string float_ext
-
-  case IEEE_FLOAT_EXT: {
-#if FEATURE_FLOAT
-      G_TODO("make ieee 8byte double etf");
-#else
-      return Term::make_nil();
 #endif
-    } // new 8byte double float_ext
 
-  case ATOM_EXT: return read_atom_string_i16(r);
-  case SMALL_ATOM_EXT: return read_atom_string_i8(r);
+#if FEATURE_FLOAT
+  case IEEE_FLOAT_EXT: {
+      G_TODO("make ieee 8byte double etf");
+    } // new 8byte double float_ext
+#endif
+
+  case ATOM_UTF8_EXT:   // fall through
+  case ATOM_EXT:        return success(read_atom_string_i16(r));
+  case SMALL_ATOM_UTF8_EXT: // fall through
+  case SMALL_ATOM_EXT:  return success(read_atom_string_i8(r));
 
   case REFERENCE_EXT: {
       // format: N atom string, 4byte id, 1byte creation
@@ -233,20 +235,27 @@ Term read_ext_term2(Heap *heap, tool::Reader &r) {
   case SMALL_TUPLE_EXT: return read_tuple(heap, r, r.read_byte());
   case LARGE_TUPLE_EXT: return read_tuple(heap, r, r.read_bigendian_i32());
 
-  case MAP_EXT:
 #if FEATURE_MAPS
+  case MAP_EXT:
     return read_map(heap, r);
-#else
-    return Term::make_nil();
 #endif
 
-  case NIL_EXT:     return Term::make_nil();
-  case STRING_EXT:  return read_string_ext(heap, r);
+  case NIL_EXT:     return success(Term::make_nil());
+  case STRING_EXT:  return success(read_string_ext(heap, r));
   case LIST_EXT:    return read_list_ext(heap, r);
 
-  } // switch tag
+#if FEATURE_BINARY
+  case BINARY_EXT:  G_TODO("read binary etf");
+  case BIT_BINARY_EXT:  G_TODO("read bit-binary etf");
+#endif
 
-  G_TODO("something not finished etf")
+#if FEATURE_BIGNUM
+  case SMALL_BIG_EXT: G_TODO("read small-big etf");
+  case LARGE_BIG_EXT: G_TODO("read large-big etf");
+#endif
+
+  default: return error<Term>("bad etf tag");
+  } // switch tag
 } // parse function
 
 
