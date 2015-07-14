@@ -4,6 +4,8 @@
 
 namespace gluon {
 
+class Term;
+
 class Heap {
 public:
   Heap() = delete;
@@ -20,9 +22,14 @@ public:
   static void free_bytes(Heap *h, u8_t *p);
 
   template <typename T>
-  void free(Heap *h, T *p) {
+  static void free(Heap *h, T *p) {
     // NOTE: does not call dtor
     return free_bytes(h, reinterpret_cast<u8_t *>(p));
+  }
+  // Marks nested terms as unused (assuming no references to them)
+  static void free_terms(Heap *h, Term *terms, word_t count) {
+    // TODO: marking
+    free(h, terms);
   }
 };
 

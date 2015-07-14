@@ -26,8 +26,10 @@ namespace etf {
     SMALL_ATOM_EXT = 115,
   };
 
-  // Term will be parsed and stored on heap
+  // Term will be parsed and stored on heap (reads byte=131 first as an ETF tag)
   Term read_ext_term(Heap *heap, tool::Reader &r);
+  // Term will be parsed and stored on heap (reads type tag first)
+  Term read_ext_term2(Heap *heap, tool::Reader &r);
 
 } // ns etf
 } // ns gluon

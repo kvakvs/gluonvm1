@@ -59,20 +59,33 @@ Term make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
 }
 
 
-Term read_tuple(tool::Reader &r, word_t size) {
-  if (size == 0) {
+Term read_tuple(Heap *heap, tool::Reader &r, word_t n_elements) {
+  if (n_elements == 0) {
     return Term::make_zero_tuple();
   }
+
+  Term *elements = Heap::alloc<Term>(heap, n_elements+1);
+
+  // fill elements or die horribly if something does not decode
+  for (auto i = 0; i < n_elements; ++i) {
+    auto elem = read_ext_term2(heap, r);
+    if (elem.is_nil()) {
+      Heap::free_terms(heap, elements, n_elements);
+      return Term::make_nil();
+    }
+  }
+
+  return Term::make_tuple(elements, n_elements);
 }
 
 
-Term read_ext_term(Heap *heap, tool::Reader &r)
-{
+Term read_ext_term(Heap *heap, tool::Reader &r) {
   r.assert_byte(ETF_MARKER);
+  return read_ext_term2(heap, r);
+}
 
-  u8_t tag = r.read_byte();
-
-  switch (tag) {
+Term read_ext_term2(Heap *heap, tool::Reader &r) {
+  switch (r.read_byte()) {
   case COMPRESSED:
     // =80; 4 bytes size; compressed data
     G_TODO("compressed etf");
@@ -144,8 +157,8 @@ Term read_ext_term(Heap *heap, tool::Reader &r)
       return make_pid(node, id, serial, creation);
     } // end reference_ext
 
-  case SMALL_TUPLE_EXT: return read_tuple(r, r.read_byte());
-  case LARGE_TUPLE_EXT: return read_tuple(r, r.read_bigendian_i32());
+  case SMALL_TUPLE_EXT: return read_tuple(heap, r, r.read_byte());
+  case LARGE_TUPLE_EXT: return read_tuple(heap, r, r.read_bigendian_i32());
 
   } // switch tag
 

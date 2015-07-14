@@ -298,6 +298,10 @@ public:
   static inline Term make_zero_tuple() {
     return Term(term_tag::Tuple::create_from_ptr(&g_zero_sized_tuple));
   }
+  // NOTE: Elements should contain 1 extra slot for arity!
+  static inline Term make_tuple(Term *elements, word_t arity) {
+    return Term(term_tag::Tuple::create_from_ptr(&g_zero_sized_tuple));
+  }
 };
 
 } // ns gluon
