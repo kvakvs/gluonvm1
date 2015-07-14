@@ -40,16 +40,17 @@ Node *get_node(Term /*sysname*/, dist::creation_t /*creation*/) {
 }
 
 
-Term make_pid(Term sysname, word_t num, word_t serial, u8_t creation) {
-  // TODO: check id vs. erts_max_pid_number
-  // TODO: check serial vs. erts_max_pid_serial
+Term make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
+  if ( !Term::is_valid_pid_id(id)
+    || !Term::is_valid_pid_serial(serial)) {
+    return Term::make_nil();
+  }
   // TODO: check valid creation
-  word_t data = Term::make_pid_data(serial, num);
+  word_t data = Term::make_pid_data(serial, id);
   auto node = get_node(sysname, creation);
 
-
   if (node == VM::dist_this_node()) {
-    return Term::make_internal_pid(data);
+    return Term::make_short_pid(data);
   }
 #if FEATURE_ERL_DIST
   G_TODO("distribution support pid etf");
