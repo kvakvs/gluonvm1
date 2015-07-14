@@ -25,6 +25,7 @@ namespace etf {
     LARGE_TUPLE_EXT = 105,
     NIL_EXT         = 106,      // empty list []
     STRING_EXT      = 107,      // 16bit size + bytes
+    LIST_EXT        = 108,      // 32bit length, elements, tail (or nil)
     SMALL_ATOM_EXT  = 115,
     MAP_EXT         = 116,
   };

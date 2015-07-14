@@ -4,6 +4,8 @@
 
 namespace gluon {
 
+class Heap;
+
 namespace term_tag {
 
 //  const word_t IMMED1_SIZE   = 6;
@@ -275,9 +277,11 @@ public:
 
   //
   // Cons
+  // Cons is a boxed value pointing at two words in memory: a head and a tail
   //
-  inline static Term make_cons(Term *x) {
-    return Term(term_tag::Cons::create_from_ptr<Term>(x));
+  static Term allocate_cons(Heap *heap, Term head, Term tail);
+  inline static Term make_cons(Term *box) {
+    return Term(term_tag::Cons::create_from_ptr<Term>(box));
   }
   inline bool is_cons() const {
     return term_tag::Cons::check(m_val);

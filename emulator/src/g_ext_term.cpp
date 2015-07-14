@@ -97,12 +97,12 @@ Term read_map(Heap *heap, tool::Reader &r) {
   for (auto i = 0; i < arity; ++i) {
     Term key = read_ext_term2(heap, r);
     if (key.is_non_value()) {
-      return Term::make_nil();
+      return key;
     }
 
     Term val = read_ext_term2(heap, r);
     if (val.is_non_value()) {
-      return Term::make_nil();
+      return val;
     }
   }
 }
@@ -116,6 +116,7 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
   }
 
   Term result = Term::make_nil();
+  // TODO: this should allocate on long heap like in other vm loaders
   Term *elements = Heap::alloc<Term>(heap, length * 2);
   Term *write_p = elements;
 
@@ -125,6 +126,32 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
     *write_p++ = result;
     result = cons;
   }
+
+  return result;
+}
+
+Term read_list_ext(Heap *heap, tool::Reader &r) {
+  word_t length = r.read_bigendian_i32();
+
+  Term result = Term::make_nil();
+  Term *ref = &result;
+
+  for (int i = length - 1; i >= 0; i--) {
+    Term *cons = Heap::alloc<Term>(heap, 2); // TODO: more efficient allocation
+    Term v = read_ext_term2(heap, r);
+    if (v.is_non_value()) {
+      return v;
+    }
+    cons[0] = v;
+    *ref = Term::make_cons(cons);
+    ref = &cons[1];
+  }
+
+  Term tail = read_ext_term2(heap, r);
+  if (tail.is_non_value()) {
+    return tail;
+  }
+  *ref = tail;
 
   return result;
 }
@@ -213,8 +240,9 @@ Term read_ext_term2(Heap *heap, tool::Reader &r) {
     return Term::make_nil();
 #endif
 
-  case NIL_EXT: return Term::make_nil();
-  case STRING_EXT: return read_string_ext(heap, r);
+  case NIL_EXT:     return Term::make_nil();
+  case STRING_EXT:  return read_string_ext(heap, r);
+  case LIST_EXT:    return read_list_ext(heap, r);
 
   } // switch tag
 
