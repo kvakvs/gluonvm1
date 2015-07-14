@@ -25,9 +25,12 @@ public:
     auto b = read_byte();
     G_ASSERT(value == b);
   }
-  inline void assert_remaining_at_least(word_t n) {
+  inline void assert_remaining_at_least(word_t n) const {
     // TODO: make this runtime error, not assertion
-    G_ASSERT(m_limit - m_ptr > n);
+    G_ASSERT((m_limit - m_ptr) > n);
+  }
+  inline word_t get_remaining_count() const {
+    return (m_limit - m_ptr);
   }
   Str read_string(word_t size) {
     assert_remaining_at_least(size);

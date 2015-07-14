@@ -25,6 +25,7 @@
 
 #define FEATURE_BIGNUM    0
 #define FEATURE_FLOAT     0
+#define FEATURE_MAPS      0
 #define FEATURE_ERL_DIST  0 /*Distribution features*/
 
 namespace gluon {

@@ -134,6 +134,63 @@ namespace term_tag {
       return t >> L1_TAG_BITS;
     }
   };
+
+  //
+  // Boxed subtags
+  //
+  const word_t BOXED_SUBTAG_BITS = 4;
+  enum {
+    BOXED_POS_BIGNUM  = 0,
+    BOXED_NEG_BIGNUM  = 1,
+    BOXED_FLOAT       = 2,
+    BOXED_MAP         = 3,
+    BOXED_FUN         = 6,
+    BOXED_EXPORT      = 7,
+    BOXED_PID         = 8,
+    BOXED_OID         = 9,
+    BOXED_REF         = 10,
+    BOXED_RIP         = 11,
+    BOXED_PROC_BIN    = 12,
+    BOXED_HEAP_BIN    = 13,
+    BOXED_MATCH_CTX   = 14,
+    BOXED_SUB_BIN     = 15,
+  };
+
+  template <word_t SUBTAG> struct BOXED_SUBTAG {
+    // Takes a term value, and checks if it is boxed and points at SUBTAG
+    static inline bool check(word_t x) {
+      return Boxed::check(x) && get_boxed_subtag(x) == SUBTAG;
+    }
+    static inline word_t get_boxed_subtag(word_t x) {
+      return Boxed::value_ptr<word_t>(x);
+    }
+    template <typename T>
+    inline static word_t create_from_ptr(T *p) {
+      return Boxed::create_from_ptr<T>(p);
+    }
+    template <typename T>
+    inline static T *value_ptr(word_t x) {
+      return Boxed::value_ptr<T>(x);
+    }
+    static constexpr word_t create_subtag(word_t x) {
+      return (x << BOXED_SUBTAG_BITS) | SUBTAG;
+    }
+  };
+
+  typedef BOXED_SUBTAG<BOXED_POS_BIGNUM> BoxedPosBignum;
+  typedef BOXED_SUBTAG<BOXED_NEG_BIGNUM> BoxedNegBignum;
+  typedef BOXED_SUBTAG<BOXED_FLOAT> BoxedFloat;
+  typedef BOXED_SUBTAG<BOXED_MAP> BoxedMap;
+  typedef BOXED_SUBTAG<BOXED_FUN> BoxedFun;
+  typedef BOXED_SUBTAG<BOXED_EXPORT> BoxedExport;
+  typedef BOXED_SUBTAG<BOXED_PID> BoxedPid;
+  typedef BOXED_SUBTAG<BOXED_OID> BoxedOid;
+  typedef BOXED_SUBTAG<BOXED_REF> BoxedRef;
+  typedef BOXED_SUBTAG<BOXED_RIP> BoxedRIP;
+  typedef BOXED_SUBTAG<BOXED_PROC_BIN> BoxedProcBin;
+  typedef BOXED_SUBTAG<BOXED_HEAP_BIN> BoxedHeapBin;
+  typedef BOXED_SUBTAG<BOXED_MATCH_CTX> BoxedMatchCtx;
+  typedef BOXED_SUBTAG<BOXED_SUB_BIN> BoxedSubBin;
 } // ns term_tag
 
 namespace temporary {
@@ -213,7 +270,17 @@ public:
     return Term(term_tag::Boxed::create_from_ptr<Term>(x));
   }
   inline bool is_boxed() const {
-    return term_tag::Boxed::check(m_val) == false;
+    return term_tag::Boxed::check(m_val);
+  }
+
+  //
+  // Cons
+  //
+  inline static Term make_cons(Term *x) {
+    return Term(term_tag::Cons::create_from_ptr<Term>(x));
+  }
+  inline bool is_cons() const {
+    return term_tag::Cons::check(m_val);
   }
 
   //
@@ -294,14 +361,30 @@ public:
   //
   // Tuple
   //
-  static u32_t g_zero_sized_tuple;
+  static word_t g_zero_sized_tuple;
   static inline Term make_zero_tuple() {
     return Term(term_tag::Tuple::create_from_ptr(&g_zero_sized_tuple));
   }
   // NOTE: Elements should contain 1 extra slot for arity!
   static inline Term make_tuple(Term *elements, word_t arity) {
-    return Term(term_tag::Tuple::create_from_ptr(&g_zero_sized_tuple));
+    elements[0] = arity;
+    return Term(term_tag::Tuple::create_from_ptr(elements+1));
   }
+
+#if FEATURE_MAPS
+  //
+  // Map
+  //
+  static word_t g_zero_sized_map;
+  static inline Term make_zero_map() {
+    return Term(term_tag::Boxed::create_from_ptr(&g_zero_sized_map));
+  }
+  // NOTE: Elements should contain 1 extra slot for arity!
+  static inline Term make_map(Term *kv_pairs, word_t arity) {
+    kv_pairs[0] = arity;
+    return Term(term_tag::Tuple::create_from_ptr(kv_pairs+1));
+  }
+#endif
 };
 
 } // ns gluon

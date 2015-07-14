@@ -42,6 +42,7 @@ void CodeServer::load_module(Term name_atom, const u8_t *bytes, word_t size) {
   Term modname = VM::to_atom(modname_s);
 
   while (1) {
+    if (r.get_remaining_count() < 5) break;
     Str chunk = r.read_string(4);
     if (chunk == "Atom") { lstate.load_atom_table(r); }
     else if (chunk == "FunT") { lstate.load_fun_table(r); }
