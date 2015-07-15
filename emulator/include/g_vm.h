@@ -10,6 +10,8 @@ namespace gluon {
 using str_atom_map_t = Map<Str, Term>;
 using atom_str_map_t = Map<Term, Str>;
 
+class Heap;
+
 // Note: singleton, do not instantiate even
 class VM {
 private:
@@ -29,6 +31,13 @@ public:
   static Str find_atom(Term a);
 
   static Node *dist_this_node();
+
+  // Heap management
+  typedef enum {
+    HEAP_CODE,
+    HEAP_LOADER_TMP
+  } heap_t;
+  static Heap *get_heap(heap_t);
 };
 
 } // ns gluon

@@ -19,6 +19,13 @@ public:
     return reinterpret_cast<T *>(alloc_bytes(h, count * sizeof(T)));
   }
 
+  template <typename T>
+  static inline T *alloc_object(Heap *h) {
+    // NOTE: will call constructor
+    u8_t *bytes = alloc_bytes(h, sizeof(T));
+    return new(bytes)T;
+  }
+
   static void free_bytes(Heap *h, u8_t *p);
 
   template <typename T>

@@ -26,7 +26,6 @@ set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS}
 set(SRC_LIST
     include/g_defs.h
     include/g_error.h
-    include/g_genop.h # generate using Makefile in codegen/
     include/g_reader.h
     include/g_sys_fs.h
     include/g_sys_mem.h
@@ -35,6 +34,7 @@ set(SRC_LIST
     src/g_codeserver.cpp include/g_codeserver.h
     src/g_dist.cpp       include/g_dist.h
     src/g_ext_term.cpp   include/g_ext_term.h
+    src/g_genop.h # generate using Makefile in codegen/
     src/g_gleam_loader.cpp
     src/g_heap.cpp       include/g_heap.h
     src/g_main.cpp

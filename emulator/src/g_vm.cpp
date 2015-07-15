@@ -3,6 +3,7 @@
 #include "g_sys_fs.h"
 #include "g_sys_mem.h"
 #include "g_dist.h"
+#include "g_heap.h"
 
 namespace gluon {
 
@@ -73,6 +74,11 @@ Node *VM::dist_this_node() {
   G_TODO("implement Node and this node variable")
 #endif
   return g_this_node;
+}
+
+// For now all heaps are located in normal C++ heap
+Heap *VM::get_heap(VM::heap_t) {
+  return nullptr;
 }
 
 } // ns gluon

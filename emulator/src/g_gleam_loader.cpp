@@ -3,6 +3,7 @@
 #include "g_sys_mem.h"
 #include "g_reader.h"
 #include "g_ext_term.h"
+#include "g_heap.h"
 
 namespace gluon {
 
@@ -24,10 +25,15 @@ public:
     return success();
   }
   MaybeError load_code(tool::Reader &r);
-  MaybeError load_literal_table(tool::Reader &r);
+  MaybeError load_literal_table(Heap *heap, tool::Reader &r);
+
+  // Load finished, create a Module object and inform code server
+  Result<Module *> finalize(Term modname);
 };
 
-MaybeError CodeServer::load_module(Term name_atom, const u8_t *bytes, word_t size) {
+Result<Module *> CodeServer::load_module_internal(Term name_atom,
+                                                  const u8_t *bytes,
+                                                  word_t size) {
   G_ASSERT(name_atom.is_atom() || name_atom.is_nil());
   tool::Reader r(bytes, size);
   LoaderState lstate;
@@ -43,6 +49,8 @@ MaybeError CodeServer::load_module(Term name_atom, const u8_t *bytes, word_t siz
   Str modname_s = r.read_string(modname_sz);
   Term modname = VM::to_atom(modname_s);
 
+  Heap *heap = VM::get_heap(VM::HEAP_LOADER_TMP);
+
   MaybeError result;
   while (1) {
     if (r.get_remaining_count() < 5) break;
@@ -54,11 +62,23 @@ MaybeError CodeServer::load_module(Term name_atom, const u8_t *bytes, word_t siz
     else if (chunk == "FunT") { result = lstate.load_fun_table(r); }
     else if (chunk == "ExpT") { result = lstate.load_export_table(r); }
     else if (chunk == "Code") { result = lstate.load_code(r); }
-    else if (chunk == "LitT") { result = lstate.load_literal_table(r); }
-    G_RETURN_IF_ERROR(result)
+    else if (chunk == "LitT") { result = lstate.load_literal_table(heap, r); }
+    G_RETURN_REWRAP_IF_ERROR(result, Module*)
   }
 
-  return success();
+  // All good, deploy the module!
+  return lstate.finalize(modname);
+}
+
+Result<Module *> LoaderState::finalize(Term modname) {
+  Heap *heap = VM::get_heap(VM::HEAP_CODE);
+  Module *m = Heap::alloc_object<Module>(heap);
+
+  // Atoms are already in VM at this point
+  m->m_name = modname;
+  m->m_code = std::move(m_code);
+
+  return success(m);
 }
 
 MaybeError LoaderState::load_atom_table(tool::Reader &r)
@@ -88,13 +108,11 @@ MaybeError LoaderState::load_code(tool::Reader &r) {
   return success();
 }
 
-MaybeError LoaderState::load_literal_table(tool::Reader &r)
+MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r)
 {
   G_LOG("load lit table\n");
   auto all_sz = r.read_var<word_t>();
   r.assert_remaining_at_least(all_sz);
-
-  Heap *tmp_heap = nullptr;
 
   auto count = r.read_var<word_t>();
   m_literals.reserve(count);
@@ -102,7 +120,7 @@ MaybeError LoaderState::load_literal_table(tool::Reader &r)
   for (auto i = 0; i < count; ++i) {
     /*auto lit_sz =*/ r.read_var<word_t>();
 
-    auto lit_result = etf::read_ext_term(tmp_heap, r);
+    auto lit_result = etf::read_ext_term(heap, r);
     G_RETURN_IF_ERROR(lit_result);
 
     auto lit = lit_result.get_result();
