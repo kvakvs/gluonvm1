@@ -26,6 +26,7 @@ set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS}
 set(SRC_LIST
     include/g_defs.h
     include/g_error.h
+    include/g_genop.h # generate using Makefile in codegen/
     include/g_reader.h
     include/g_sys_fs.h
     include/g_sys_mem.h
