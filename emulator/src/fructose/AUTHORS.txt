@@ -1,0 +1,14 @@
+Original author: Andrew Peter Marlow
+C++ test harness generator by Chris Main.
+Python test harness generator by Brian Neal<bgneal@gmail.com>.
+
+This package evolved after many discussions and approaches to unit testing.
+CppUnit remains the grand unit test framework, this is a very much cutdown
+and simplified one. It has been inspired by CppUnit. Several of the ideas
+connected with combining test harness development with command line
+handling were as a result of joint work between myself and Andreas Stirneman.
+FRUCTOSE has also taken some inspiration from CUTE by Peter Sommerlad. 
+The ideas about one class/one test harness and about loop
+asserts are thanks to some discussions about testing I had with John Lakos.
+I also owe thanks to Salvatore Lovene, who made me aware of the TCLAP library
+for command line argument handling (even though it is no longer used).

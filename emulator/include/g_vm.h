@@ -26,6 +26,7 @@ public:
   static Term to_atom(const Str &s);
   static Term to_existing_atom(const Str &s);
   static Term new_atom(const Str &s);
+  static Str find_atom(Term a);
 
   static Node *dist_this_node();
 };

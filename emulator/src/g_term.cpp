@@ -1,5 +1,10 @@
 #include "g_term.h"
+#include "g_vm.h"
 #include "g_heap.h"
+
+#if G_TEST
+#include <fructose/fructose.h>
+#endif
 
 namespace gluon {
 
@@ -16,17 +21,77 @@ Term Term::allocate_cons(Heap *heap, Term head, Term tail) {
   return make_cons(d);
 }
 
+Str Term::atom_str() const
+{
+  return VM::find_atom(m_val);
+}
+
 #if G_DEBUG
 void Term::print()
 {
-  if (is_nil()) { printf("NIL\n"); }
-  if (is_non_value()) { printf("NON_VALUE\n"); }
-  if (is_atom()) { printf("ATOM#%zu\n", atom_val()); }
-  if (is_boxed()) { printf("BOXED#%zu\n", boxed_get_subtag()); }
-  if (is_cons()) { printf("CONS\n"); }
-  printf("SOME UNKNOWN VALUE\n");
+  if (is_cons()) {
+    printf("[");
+    cons_get_element(0).print();
+    printf(",");
+    cons_get_element(1).print();
+    printf("]");
+  }
+  else if (is_tuple()) {
+    auto arity = tuple_get_arity();
+    printf("{");
+    for (auto n = 0; n < arity; ++n) {
+      tuple_get_element(n).print();
+      if (n < arity-1) {
+        printf(",");
+      }
+    }
+    printf("};");
+  }
+  else if (is_boxed()) {
+    printf("BOXED(#%zu)", boxed_get_subtag());
+  }
+  else if (is_nil()) {
+    printf("NIL");
+  }
+  else if (is_non_value()) {
+    printf("NON_VALUE");
+  }
+  else if (is_atom()) {
+    printf("'%s'", atom_str().c_str());
+  }
+  else if (is_small()) {
+    printf("%zd", small_get_value());
+  }
+  else if (is_pid()) {
+    printf("PID");
+  }
+  else {
+    printf("UNKNOWN(%zx)", m_val);
+  }
 }
-#endif
+#endif // DEBUG
+
+
+#if G_TEST
+
+struct term_test_t: public fructose::test_base<term_test_t>
+{
+
+  void test_term_basics(const std::string& test_name) {
+    Term t_tuple_el[10];
+    Term t_tuple = Term::make_tuple(t_tuple_el, 10);
+    fructose_assert(t_tuple.is_tuple());
+  }
+
+}; // struct
+
+void term_test(int argc, const char *argv[]) {
+  term_test_t tests;
+  tests.add_test("term_basics", &term_test_t::test_term_basics);
+  tests.run(argc, const_cast<char **>(argv));
+}
+
+#endif // TEST
 
 
 } // ns gluon

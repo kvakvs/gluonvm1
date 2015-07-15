@@ -49,18 +49,17 @@ namespace term_tag {
 
   template <word_t TAG> struct LEVEL0_TAG {
     const static word_t MASK = 0x3;
-    constexpr static bool check(word_t x) { return x & MASK == TAG; }
-
+    constexpr static bool check(word_t x) {
+      return (x & MASK) == TAG;
+    }
     template <typename T>
     inline static word_t create_from_ptr(T *p) {
       return compress_pointer(p) | TAG;
     }
-
     template <typename T>
     inline static T *value_ptr(word_t x) {
       return expand_pointer<T>(x & ~MASK);
     }
-
     constexpr static word_t create(word_t v) {
       return (v << PRIMARY_SIZE) | TAG;
     }
@@ -170,7 +169,7 @@ namespace term_tag {
       return Boxed::check(x) && get_boxed_subtag(x) == SUBTAG;
     }
     static inline word_t get_boxed_subtag(word_t x) {
-      return Boxed::value_ptr<word_t>(x);
+      return Boxed::value_ptr<word_t>(x)[0] & BOXED_SUBTAG_MASK;
     }
     template <typename T>
     inline static word_t create_from_ptr(T *p) {
@@ -252,7 +251,7 @@ public:
 
   //
   // Bit/arithmetic/comparisons
-  //
+  //const
   inline void set(word_t x) { m_val = x; }
   inline void set(const Term &t) { m_val = t.m_val; }
 
@@ -270,8 +269,7 @@ public:
   //
   // Pointer magic
   //
-  template <typename T> inline T *get_boxed_ptr() const {
-    //return term_tag::expand_pointer<T>(m_val);
+  template <typename T> inline T *boxed_get_ptr() const {
     return term_tag::Boxed::value_ptr<T>(m_val);
   }
   inline static Term make_boxed(Term *x) {
@@ -281,7 +279,7 @@ public:
     return term_tag::Boxed::check(m_val);
   }
   inline word_t boxed_get_subtag() const {
-    word_t *p = get_boxed_ptr<word_t>();
+    word_t *p = boxed_get_ptr<word_t>();
     return term_tag::boxed_subtag(p);
   }
 
@@ -296,6 +294,11 @@ public:
   inline bool is_cons() const {
     return term_tag::Cons::check(m_val);
   }
+  inline Term cons_get_element(word_t n) const {
+    G_ASSERT(n == 0 || n == 1);
+    auto p = boxed_get_ptr<word_t>();
+    return p[n];
+  }
 
   //
   // Atoms
@@ -309,6 +312,7 @@ public:
   constexpr word_t atom_val() const {
     return term_tag::Atom::value(m_val);
   }
+  Str atom_str() const;
 
   //
   // Small Integer
@@ -324,6 +328,12 @@ public:
   template <typename N>
   static constexpr bool does_fit_into_small(N n) {
     return LOWER_BOUND <= n && n <= UPPER_BOUND;
+  }
+  constexpr bool is_small() const {
+    return term_tag::Smallint::check(m_val);
+  }
+  constexpr word_t small_get_value() const {
+    return term_tag::Smallint::value(m_val);
   }
 
 #if FEATURE_BIGNUM
@@ -371,6 +381,9 @@ public:
   static Term make_short_pid(word_t data) {
     return Term(term_tag::ShortPid::create(data));
   }
+  constexpr bool is_pid() const {
+    return term_tag::ShortPid::check(m_val);
+  }
 
   //
   // Tuple
@@ -382,7 +395,18 @@ public:
   // NOTE: Elements should contain 1 extra slot for arity!
   static inline Term make_tuple(Term *elements, word_t arity) {
     elements[0] = arity;
-    return Term(term_tag::Tuple::create_from_ptr(elements+1));
+    return Term(term_tag::Tuple::create_from_ptr(elements));
+  }
+  constexpr bool is_tuple() const {
+    return term_tag::Tuple::check(m_val);
+  }
+  inline word_t tuple_get_arity() const {
+    auto p = boxed_get_ptr<word_t>();
+    return p[0];
+  }
+  inline Term tuple_get_element(word_t n) const {
+    auto p = boxed_get_ptr<word_t>();
+    return p[n+1];
   }
 
 #if FEATURE_MAPS
@@ -404,5 +428,9 @@ public:
   void print();
 #endif
 };
+
+#if G_TEST
+void term_test(int argc, const char *argv[]);
+#endif // TEST
 
 } // ns gluon

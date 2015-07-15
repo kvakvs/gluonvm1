@@ -61,24 +61,24 @@ Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
 }
 
 
-Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t n_elements) {
-  if (n_elements == 0) {
+Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity) {
+  if (arity == 0) {
     return success(Term::make_zero_tuple());
   }
 
-  Term *elements = Heap::alloc<Term>(heap, n_elements+1);
+  Term *elements = Heap::alloc<Term>(heap, arity+1);
 
   // fill elements or die horribly if something does not decode
-  for (auto i = 0; i < n_elements; ++i) {
+  for (auto i = 0; i < arity; ++i) {
     auto elem_result = read_ext_term2(heap, r);
     if (elem_result.is_error()) {
-      Heap::free_terms(heap, elements, n_elements);
+      Heap::free_terms(heap, elements, arity);
       return elem_result;
     }
-    elements[i] = elem_result.get_result();
+    elements[i+1] = elem_result.get_result();
   }
 
-  return success(Term::make_tuple(elements, n_elements));
+  return success(Term::make_tuple(elements, arity));
 }
 
 

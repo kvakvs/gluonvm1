@@ -59,6 +59,15 @@ Term VM::new_atom(const Str &s) {
   return new_a;
 }
 
+Str VM::find_atom(Term a)
+{
+  auto iter = g_atoms_reverse.find(a);
+  if (iter != g_atoms_reverse.end()) {
+    return iter->second;
+  }
+  return "";
+}
+
 Node *VM::dist_this_node() {
 #if FEATURE_ERL_DIST
   G_TODO("implement Node and this node variable")

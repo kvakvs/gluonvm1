@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 add_subdirectory(libgluon_sys)
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/generated
+    #${CMAKE_SOURCE_DIR}/generated/
     ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/src/
     )
@@ -40,6 +40,12 @@ set(SRC_LIST
     src/g_module.cpp include/g_module.h
     src/g_term.cpp include/g_term.h
     src/g_vm.cpp include/g_vm.h
+
+    # Header-only test framework
+    src/fructose/fructose.h
+    src/fructose/test_base.h
+    src/fructose/test_root.h
+    src/fructose/double_compare.h
     )
 set(SRC_LIBTOMMATH
 #    deps/libtommath/tommath.h
