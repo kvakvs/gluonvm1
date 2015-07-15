@@ -45,11 +45,18 @@ public:
   template <typename T>
   T read_var() {
     T result = 0;
+//    // read no more than 5 (9 on 64-bit) 7-bit chunks for sanity
+//    int limit = G_HARDWARE_BITS / 7 + 1;
     u8_t b = read_byte();
     while (b & 0x80) {
-      result *= 0x7f;
-      result += (T)(b & 0x7f);
+      result <<= 7;
+      result += (T)b & 0x7f;
+      b = read_byte();
+
+//      limit--;
+//      G_ASSERT(limit >= 0);
     }
+    result <<= 7;
     return result + (T)b;
   }
 

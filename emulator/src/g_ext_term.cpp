@@ -29,7 +29,7 @@ Result<Term> read_tagged_atom_string(tool::Reader &r) {
     case ATOM_EXT:        return success(read_atom_string_i16(r));
     case SMALL_ATOM_EXT:  return success(read_atom_string_i8(r));
   }
-  return error("etf atom expected");
+  return error<Term>("etf atom expected");
 }
 
 
@@ -226,7 +226,10 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
 
   case PID_EXT: {
       // format: N atom string, 4byte id, 4byte serial, 1byte cre
-      Term node     = read_tagged_atom_string(r);
+      auto node_result = read_tagged_atom_string(r);
+      G_RETURN_REWRAP_IF_ERROR(node_result, Term);
+
+      Term node     = node_result.get_result();
       word_t id     = r.read_bigendian_i32();
       word_t serial = r.read_bigendian_i32();
       u8_t creation = r.read_byte();

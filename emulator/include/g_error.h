@@ -20,27 +20,33 @@ namespace gluon {
 // (a C string) or carries result value of type T
 //
 template <typename T>
-class Result: protected std::pair<const char *, T> {
+class Result {
+  const char *m_what;
+  T           m_result;
 public:
   Result(const char *e, T result)
-    : std::pair<const char *, T>(e, result) {
+    : m_what(e), m_result(result) {
     G_DEBUG_THROW_E
   }
-  inline bool is_error() const { return this->first != nullptr; }
-  inline const char *get_error() const { return this->first; }
-  inline bool is_success() const { return this->first == nullptr; }
+  inline bool is_error() const { return m_what != nullptr; }
+  inline const char *get_error() const { return m_what; }
+  inline bool is_success() const { return m_what == nullptr; }
+  inline void clear() {
+    m_what = nullptr;
+    m_result = T();
+  }
 
   // Feeling lucky? call something().get_result() directly
   inline T get_result() const {
     G_ASSERT(is_success());
-    return this->second;
+    return m_result;
   }
 
   // Repacks error into another type of Result for easier returning
   template <typename U>
   inline Result<U> rewrap_error() {
     G_ASSERT(is_error());
-    return Result<U>(this->first, U());
+    return Result<U>(m_what, U());
   }
 };
 template <typename T>
@@ -60,36 +66,40 @@ inline static Result<T> success(T result) {
 class MaybeError {
 private:
   const char *m_error;
-  bool        m_owned_memory;
+  //bool        m_owned_memory;
 public:
-  MaybeError(): m_error(nullptr), m_owned_memory(false) {}
-  MaybeError(const char *e): m_error(e), m_owned_memory(false) {
+  MaybeError(): m_error(nullptr)/*, m_owned_memory(false)*/ {}
+  MaybeError(const char *e): m_error(e) /*, m_owned_memory(false)*/ {
     G_DEBUG_THROW_E
   }
-  MaybeError(const char *e, bool own): m_error(e), m_owned_memory(own) {
-    G_DEBUG_THROW_E
-  }
+//  MaybeError(const char *e, bool own): m_error(e), m_owned_memory(own) {
+//    G_DEBUG_THROW_E
+//  }
   ~MaybeError() {
-    if (m_owned_memory) {
-      delete m_error;
-    }
+//    if (m_owned_memory) {
+//      delete m_error;
+//    }
   }
 
+  inline void clear() {
+    m_error = nullptr;
+//    m_owned_memory = false;
+  }
   // Move ctor and move assignment
   MaybeError(MaybeError &&other) {
     m_error = other.m_error;
-    m_owned_memory = other.m_owned_memory;
+//    m_owned_memory = other.m_owned_memory;
 
     other.m_error = nullptr;
-    other.m_owned_memory = false;
+//    other.m_owned_memory = false;
   }
   MaybeError &operator =(MaybeError &&other) {
     if (this != &other) {
       m_error = other.m_error;
-      m_owned_memory = other.m_owned_memory;
+//      m_owned_memory = other.m_owned_memory;
 
       other.m_error = nullptr;
-      other.m_owned_memory = false;
+//      other.m_owned_memory = false;
     }
     return *this;
   }
@@ -106,12 +116,12 @@ public:
   }
 };
 
-template <class Err=MaybeError, typename... Args>
-static Err err_fmt(const char *_fmt, Args&&... args) {
-  char *err = new char[256]; // TODO: scale this or something
-  ::sprintf(err, _fmt, std::forward<Args>(args)...);
-  return Err(err, true);
-}
+//template <class Err=MaybeError, typename... Args>
+//static Err err_fmt(const char *_fmt, Args&&... args) {
+//  char *err = new char[256]; // TODO: scale this or something
+//  ::sprintf(err, _fmt, std::forward<Args>(args)...);
+//  return Err(err, true);
+//}
 
 static inline MaybeError success() { return MaybeError(); }
 

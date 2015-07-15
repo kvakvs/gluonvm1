@@ -16,10 +16,12 @@ public:
   MaybeError load_fun_table(tool::Reader &r) {
     auto sz = r.read_var<word_t>();
     G_ASSERT(sz == 0);
+    return success();
   }
   MaybeError load_export_table(tool::Reader &r) {
     auto sz = r.read_var<word_t>();
     G_ASSERT(sz == 0);
+    return success();
   }
   MaybeError load_code(tool::Reader &r);
   MaybeError load_literal_table(tool::Reader &r);
@@ -41,10 +43,13 @@ MaybeError CodeServer::load_module(Term name_atom, const u8_t *bytes, word_t siz
   Str modname_s = r.read_string(modname_sz);
   Term modname = VM::to_atom(modname_s);
 
+  MaybeError result;
   while (1) {
     if (r.get_remaining_count() < 5) break;
     Str chunk = r.read_string(4);
-    MaybeError result;
+    G_LOG("GLEAM section %s\n", chunk.c_str());
+
+    result.clear();
     if      (chunk == "Atom") { result = lstate.load_atom_table(r); }
     else if (chunk == "FunT") { result = lstate.load_fun_table(r); }
     else if (chunk == "ExpT") { result = lstate.load_export_table(r); }
@@ -74,6 +79,7 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r)
 MaybeError LoaderState::load_code(tool::Reader &r) {
   auto sz = r.read_var<word_t>();
   r.assert_remaining_at_least(sz);
+  G_LOG("code section %zu bytes\n", sz);
 
   auto dptr = mem::alloc_bytes(sz).get_result(); // TODO: feeling lucky
   m_code.reset(dptr);
@@ -84,6 +90,7 @@ MaybeError LoaderState::load_code(tool::Reader &r) {
 
 MaybeError LoaderState::load_literal_table(tool::Reader &r)
 {
+  G_LOG("load lit table\n");
   auto all_sz = r.read_var<word_t>();
   r.assert_remaining_at_least(all_sz);
 
@@ -98,8 +105,13 @@ MaybeError LoaderState::load_literal_table(tool::Reader &r)
     auto lit_result = etf::read_ext_term(tmp_heap, r);
     G_RETURN_IF_ERROR(lit_result);
 
-    m_literals.push_back(lit_result.get_result());
+    auto lit = lit_result.get_result();
+#if G_DEBUG
+    lit.print();
+#endif
+    m_literals.push_back(lit);
   }
+  return success();
 }
 
 } // ns gluon

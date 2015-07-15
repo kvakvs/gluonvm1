@@ -75,13 +75,16 @@ integer(N) -> <<?tag_integer_pos, (uint_enc(N))/binary>>.
 
 %% @doc Varlength encoding with highest bit set to 1 for continuation and to 0
 %% for last segment of 7-bit sequence. Only positive integers.
-uint_enc(N) when N >= 0 -> integer_enc(N, <<>>).
+uint_enc(N) when N >= 0 ->
+  Tail = integer_enc(N band 127, <<>>, 0),
+  Head = integer_enc(N div 128, <<>>, 1),
+  <<Head/binary, Tail/binary>>.
 
-integer_enc(N, Acc) when is_integer(N), N > 127 ->
+integer_enc(N, Acc, FlagBit) when is_integer(N), N > 127 ->
   Part = N band 127,
-  integer_enc(N div 128, <<1:1, Part:7, Acc/binary>>);
-integer_enc(N, Acc) when is_integer(N) ->
-  <<0:1, N:7, Acc/binary>>.
+  integer_enc(N div 128, <<FlagBit:1, Part:7, Acc/binary>>, FlagBit);
+integer_enc(N, Acc, FlagBit) when is_integer(N) ->
+  <<FlagBit:1, N:7, Acc/binary>>.
 
 %%%
 %%% Opcode structure encoding and group tag

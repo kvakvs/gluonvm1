@@ -94,9 +94,14 @@ namespace gluon {
       ::fprintf(stderr, "TODO: %s\n", what);  \
       G_ASSERT(what == nullptr)               \
       }
+    // Famous io:format/2 skill on Linkedin!
+#   define G_LOG ::printf
+
 #else // no G_DEBUG
+
 #   define G_FAIL(MSG)
 #   define G_ASSERT(X)
 #   define G_ASSERT_MSG(X, MSG)
 #   define G_TODO(X)
+#   define G_LOG ((void)0)
 #endif

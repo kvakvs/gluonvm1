@@ -106,7 +106,9 @@ add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
   MState#asm_module{funs = Funs1}.
 
 to_binary({code, Code}) when is_binary(Code) ->
-  <<"Code", (asm_irop:uint_enc(byte_size(Code)))/binary, Code/binary>>;
+  CodeSize = byte_size(Code),
+  io:format("code size ~p~n", [CodeSize]),
+  <<"Code", (asm_irop:uint_enc(CodeSize))/binary, Code/binary>>;
 to_binary({funs, _FunDict}) -> <<"FunT", 0>>;
 to_binary({exports, _ExportDict}) -> <<"ExpT", 0>>;
 to_binary({atoms, AtomsDict}) ->

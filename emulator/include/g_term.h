@@ -141,6 +141,12 @@ namespace term_tag {
   // Boxed subtags
   //
   const word_t BOXED_SUBTAG_BITS = 4;
+  const word_t BOXED_SUBTAG_MASK = 0x0F;
+
+  inline word_t boxed_subtag(word_t *p) {
+    return p[0] & BOXED_SUBTAG_MASK;
+  }
+
   enum {
     BOXED_POS_BIGNUM  = 0,
     BOXED_NEG_BIGNUM  = 1,
@@ -264,15 +270,19 @@ public:
   //
   // Pointer magic
   //
-  template <typename T> inline T *expand_pointer() {
-    return term_tag::expand_pointer<T>(m_val);
+  template <typename T> inline T *get_boxed_ptr() const {
+    //return term_tag::expand_pointer<T>(m_val);
+    return term_tag::Boxed::value_ptr<T>(m_val);
   }
-
   inline static Term make_boxed(Term *x) {
     return Term(term_tag::Boxed::create_from_ptr<Term>(x));
   }
   inline bool is_boxed() const {
     return term_tag::Boxed::check(m_val);
+  }
+  inline word_t boxed_get_subtag() const {
+    word_t *p = get_boxed_ptr<word_t>();
+    return term_tag::boxed_subtag(p);
   }
 
   //
@@ -312,7 +322,7 @@ public:
     return Term(term_tag::Smallint::create(x));
   }
   template <typename N>
-  static constexpr bool is_big(N n) {
+  static constexpr bool does_fit_into_small(N n) {
     return LOWER_BOUND <= n && n <= UPPER_BOUND;
   }
 
@@ -388,6 +398,10 @@ public:
     kv_pairs[0] = arity;
     return Term(term_tag::Tuple::create_from_ptr(kv_pairs+1));
   }
+#endif
+
+#if G_DEBUG
+  void print();
 #endif
 };
 
