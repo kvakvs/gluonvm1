@@ -118,16 +118,26 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
   }
 
   Term result = Term::make_nil();
-  // TODO: this should allocate on long heap like in other vm loaders
-  Term *elements = Heap::alloc<Term>(heap, length * 2);
-  Term *write_p = elements;
+  Term *ref = &result;
 
-  for (int i = length - 1; i >= 0; i--) {
-    Term cons = Term::make_cons(write_p);
-    *write_p++ = Term::make_small(r.read_byte());
-    *write_p++ = result;
-    result = cons;
+  for (int i = 0; i < length; ++i) {
+    Term *cons = Heap::alloc<Term>(heap, 2);
+    cons[0] = Term::make_small(r.read_byte());
+    *ref = Term::make_cons(cons);
+    ref = &cons[1];
   }
+
+  *ref = Term::make_nil();
+//  // TODO: this should allocate on long heap like in other vm loaders
+//  Term *elements = Heap::alloc<Term>(heap, length * 2);
+//  Term *write_p = elements;
+
+//  for (int i = length - 1; i >= 0; i--) {
+//    Term cons = Term::make_cons(write_p);
+//    *write_p++ = Term::make_small(r.read_byte());
+//    *write_p++ = result;
+//    result = cons;
+//  }
 
   return result;
 }
