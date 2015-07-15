@@ -23,13 +23,13 @@ Term read_atom_string_i8(tool::Reader &r) {
 
 // Reads tag byte, then reads long or short atom as string and attempts to
 // create it in atom table.
-Term read_tagged_atom_string(tool::Reader &r) {
+Result<Term> read_tagged_atom_string(tool::Reader &r) {
   u8_t tag = r.read_byte();
   switch (tag) {
-    case ATOM_EXT: return read_atom_string_i16(r);
-    case SMALL_ATOM_EXT: return read_atom_string_i16(r);
+    case ATOM_EXT:        return success(read_atom_string_i16(r));
+    case SMALL_ATOM_EXT:  return success(read_atom_string_i8(r));
   }
-  return Term::make_nil();
+  return error("etf atom expected");
 }
 
 
@@ -194,12 +194,13 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
   case OLD_FLOAT_STRING_EXT: {
     G_TODO("parse float string etf");
     } // old string float_ext
-#endif
-
-#if FEATURE_FLOAT
   case IEEE_FLOAT_EXT: {
       G_TODO("make ieee 8byte double etf");
     } // new 8byte double float_ext
+#else
+  case OLD_FLOAT_STRING_EXT:
+  case IEEE_FLOAT_EXT:
+    return error<Term>("FEATURE_FLOAT");
 #endif
 
   case ATOM_UTF8_EXT:   // fall through
@@ -235,9 +236,11 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
   case SMALL_TUPLE_EXT: return read_tuple(heap, r, r.read_byte());
   case LARGE_TUPLE_EXT: return read_tuple(heap, r, r.read_bigendian_i32());
 
-#if FEATURE_MAPS
   case MAP_EXT:
+#if FEATURE_MAPS
     return read_map(heap, r);
+#else
+    return error<Term>("FEATURE_MAPS");
 #endif
 
   case NIL_EXT:     return success(Term::make_nil());
@@ -247,11 +250,17 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
 #if FEATURE_BINARY
   case BINARY_EXT:  G_TODO("read binary etf");
   case BIT_BINARY_EXT:  G_TODO("read bit-binary etf");
+#else
+  case BINARY_EXT:
+  case BIT_BINARY_EXT: return error<Term>("FEATURE_BINARY");
 #endif
 
 #if FEATURE_BIGNUM
   case SMALL_BIG_EXT: G_TODO("read small-big etf");
   case LARGE_BIG_EXT: G_TODO("read large-big etf");
+#else
+  case SMALL_BIG_EXT:
+  case LARGE_BIG_EXT: return error<Term>("FEATURE_BIGNUM");
 #endif
 
   default: return error<Term>("bad etf tag");
