@@ -20,8 +20,8 @@
         , add_fun/4
         , to_binary/1
 %%         , register_label/3
-        , write_ir/2
-        , read_ir/1
+%%         , write_ir/2
+%%         , read_ir/1
         , get_name/1
         , funarity_to_label/2
 %%         , label_to_offset/2

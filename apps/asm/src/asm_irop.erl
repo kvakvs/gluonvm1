@@ -150,22 +150,31 @@ encode_arg({x, X}, Mod) when is_integer(X), X >= 0 ->
   {<<?tag_register:8, (uint_enc(X))/binary>>, Mod};
 encode_arg({y, Y}, Mod) when is_integer(Y), Y >= 0 ->
   {<<?tag_stack:8, (uint_enc(Y))/binary>>, Mod};
-encode_arg({atom, Atom}, Mod0) when is_atom(Atom) -> encode_atom(Atom, Mod0);
-encode_arg(Atom, Mod0) when is_atom(Atom) -> encode_atom(Atom, Mod0);
-encode_arg({integer, N}, Mod) -> {integer(N), Mod};
-encode_arg(N, Mod) when is_integer(N) -> {integer(N), Mod};
-encode_arg(nil, Mod) -> {<<?tag_nil:8>>, Mod};
-encode_arg({f, L}, Mod) -> {<<?tag_label:8, (uint_enc(L))/binary>>, Mod};
+encode_arg({atom, Atom}, Mod0) when is_atom(Atom) ->
+  encode_atom(Atom, Mod0);
+encode_arg(Atom, Mod0) when is_atom(Atom) ->
+  encode_atom(Atom, Mod0);
+encode_arg({integer, N}, Mod) ->
+  {integer(N), Mod};
+encode_arg(N, Mod) when is_integer(N) ->
+  {integer(N), Mod};
+encode_arg(nil, Mod) ->
+  {<<?tag_nil:8>>, Mod};
+encode_arg({f, L}, Mod) ->
+  {<<?tag_label:8, (uint_enc(L))/binary>>, Mod};
 %% encode_arg({'char', C}, Dict) ->
 %%     {encode(?tag_h, C), Dict};
-encode_arg({string, String}, Mod0) -> encode_arg({literal, String}, Mod0);
-encode_arg({extfunc, M, F, A}, Mod0) -> encode_arg({literal, {M,F,A}}, Mod0);
+encode_arg({string, String}, Mod0) ->
+  encode_arg({literal, String}, Mod0);
+encode_arg({extfunc, M, F, A}, Mod0) ->
+  encode_arg({literal, {M,F,A}}, Mod0);
 %% encode_arg({list, List}, Dict0) ->
 %%   {L, Dict} = encode_list(List, Dict0, []),
 %%   {[encode(?tag_z, 1), encode(?tag_u, length(List))|L], Dict};
 encode_arg({float, Float}, Dict) when is_float(Float) ->
   encode_arg({literal,Float}, Dict);
-encode_arg({fr,Fr}, Mod) -> {<<?tag_fp_register:8, (uint_enc(Fr))/binary>>, Mod};
+encode_arg({fr,Fr}, Mod) ->
+  {<<?tag_fp_register:8, (uint_enc(Fr))/binary>>, Mod};
 encode_arg({field_flags,Flags0}, Mod) ->
   Flags = lists:foldl(fun (F, S) -> S bor flag_to_bit(F) end, 0, Flags0),
   encode_arg({literal, Flags}, Mod);
@@ -173,7 +182,12 @@ encode_arg({field_flags,Flags0}, Mod) ->
 %%   encode_alloc_list(List, Dict);
 encode_arg({literal, Term}, Mod0) ->
   {Offset, Mod} = literal_ref_enc(Term, Mod0),
-  {<<?tag_literal:8, (uint_enc(Offset))/binary>>, Mod}.
+  {<<?tag_literal:8, (uint_enc(Offset))/binary>>, Mod};
+encode_arg([{location, File, Line}], Mod0) ->
+  {LitId, Mod1} = literal_ref_enc(File, Mod0),
+  {<<?tag_label:8, (uint_enc(LitId))/binary, (uint_enc(Line))/binary>>, Mod1};
+encode_arg([], Mod0) ->
+  encode_arg(nil, Mod0).
 
 %%flag_to_bit(aligned) -> 16#01; %% No longer useful.
 flag_to_bit(little)  -> 16#02;

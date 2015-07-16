@@ -37,7 +37,7 @@ process(Fname) ->
   Mod  = asm_module:set_bin(Bin, Mod4),
 
   io:format("Module ~p~n", [Mod]),
-  ok = asm_module:write_ir(Fname ++ ".ir", Mod),
+  %ok = asm_module:write_ir(Fname ++ ".ir", Mod),
   ok = file:write_file(Fname ++ ".gleam", asm_module:to_binary(Mod)).
 
 %% @doc Predicate to separate fun headers
@@ -60,8 +60,8 @@ compile_fun_gleam({F, Arity, Code}, CState) ->
   M3 = asm_module:add_fun(FunAtomIndex, Arity, FLabel, M2),
   CState1#compile_state{mod=M3}.
 
-gleam_op({line, _}, #compile_state{}=CState) -> CState;
-gleam_op({label, _}, #compile_state{}=CState) -> CState;
+%gleam_op({line, _}, #compile_state{}=CState) -> CState;
+%gleam_op({label, _}, #compile_state{}=CState) -> CState;
 gleam_op(X, #compile_state{}=CState) when is_atom(X) -> gleam_op({X}, CState);
 gleam_op({func_info, _M, _F, _A}, #compile_state{}=CState) -> CState;
 gleam_op({gc_bif, Name, Fail, Bif, Args, Result}, #compile_state{}=CState) ->
