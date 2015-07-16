@@ -21,7 +21,7 @@ class Module {
 public:
   Term      m_name;
   Code      m_code;
-  Map<word_t, word_t> m_labels;
+  Labels    m_labels;
 };
 
 using mod_map_t = Map<Term, Module *>;

@@ -106,9 +106,9 @@ add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
   MState#asm_module{funs = Funs1}.
 
 to_binary({labels, LDict}) ->
-  Out = << <<(asm_irop:uint_enc(Label))/binary
-           , (asm_irop:uint_enc(Pos))/binary
-           >> || {Label, Pos} <- orddict:to_list(LDict) >>,
+  %(asm_irop:uint_enc(Label))/binary,
+  Out = << <<(asm_irop:uint_enc(Pos))/binary>>
+        || {_Label, Pos} <- orddict:to_list(LDict) >>,
   <<"LABL"
   , (asm_irop:uint_enc(byte_size(Out)))/binary
   , (asm_irop:uint_enc(length(LDict)))/binary

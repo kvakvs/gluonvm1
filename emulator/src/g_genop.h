@@ -3,7 +3,10 @@
 namespace gluon {
 namespace genop {
 
-const unsigned byte arity_map[] = {0, // opcode 0 does not exist
+const unsigned int MIN_OPCODE = 1;
+const unsigned int MAX_OPCODE = 158;
+
+const unsigned char arity_map[] = {0, // opcode 0 does not exist
     1, // opcode: 1 (label)
     3, // opcode: 2 (func_info)
     0, // opcode: 3 (int_code_end)
@@ -165,6 +168,7 @@ const unsigned byte arity_map[] = {0, // opcode 0 does not exist
 };
 
 #if G_DEBUG
+extern const char *opcode_name_map[];
 const char *opcode_name_map[] = {nullptr, // opcode 0 does not exist
     "label", // opcode: 1
     "func_info", // opcode: 2

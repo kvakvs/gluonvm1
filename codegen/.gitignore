@@ -1,1 +1,3 @@
 *.pyc
+g_genop.h
+asm_genop.erl

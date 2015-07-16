@@ -13,13 +13,17 @@ print("namespace genop {")
 
 print
 
+print("const unsigned int MIN_OPCODE = %d;" % libgenop.MIN_OPCODE)
+print("const unsigned int MAX_OPCODE = %d;" % libgenop.MAX_OPCODE)
+print
+
 # make op map by opcode
 ops_by_code = {}
 for op in ops:
     ops_by_code[op['opcode']] = op
 
 # print arity map
-print("const unsigned byte arity_map[] = {0, // opcode 0 does not exist")
+print("const unsigned char arity_map[] = {0, // opcode 0 does not exist")
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     op = ops_by_code[opcode]
     print("    %d, // opcode: %d (%s)" % (op['arity'], opcode, op['name']))
@@ -28,6 +32,7 @@ print
 
 # print opcode names map
 print("#if G_DEBUG")
+print("extern const char *opcode_name_map[];")
 print("const char *opcode_name_map[] = {nullptr, // opcode 0 does not exist")
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     op = ops_by_code[opcode]

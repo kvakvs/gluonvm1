@@ -236,7 +236,7 @@ private:
 public:
   constexpr Term(word_t v): m_val(v) {}
   constexpr Term(): m_val(0) {}
-  //constexpr Term(const Term &other): m_val(other.m_val) {}
+  constexpr Term(const Term &other): m_val(other.m_val) {}
 
   static const word_t NIL = term_tag::Special::create(~0UL);
   //static const word_t MAX_ATOM_INDEX = ~(~((word_t) 0) << (sizeof(word_t)*8 - term_tag::IMMED2_SIZE));

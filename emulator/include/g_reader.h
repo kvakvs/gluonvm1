@@ -40,6 +40,10 @@ public:
     G_ASSERT(m_limit >= m_ptr);
     return (word_t)(m_limit - m_ptr);
   }
+  inline bool is_end() const {
+    return m_limit <= m_ptr;
+  }
+
   Str read_string(word_t size) {
     assert_remaining_at_least(size);
     Str result;

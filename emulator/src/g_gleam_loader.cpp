@@ -12,7 +12,7 @@ public:
   Vector<Str>     m_atoms;
   Code            m_code;
   Vector<Term>    m_literals;
-  Map<word_t, word_t> m_labels;
+  Labels          m_labels;
 
   MaybeError load_atom_table(tool::Reader &r);
   MaybeError load_fun_table(tool::Reader &r) {
@@ -65,7 +65,7 @@ Result<Module *> CodeServer::load_module_internal(Term name_atom,
     else if (chunk == "EXPT") { result = lstate.load_export_table(r); }
     else if (chunk == "CODE") { result = lstate.load_code(r); }
     else if (chunk == "LTRL") { result = lstate.load_literal_table(heap, r); }
-    else if (chunk == "LABL ") { result = lstate.load_labels(heap, r); }
+    else if (chunk == "LABL") { result = lstate.load_labels(heap, r); }
     G_RETURN_REWRAP_IF_ERROR(result, Module*)
   }
 
@@ -85,10 +85,12 @@ Result<Module *> LoaderState::finalize(Term modname) {
   return success(newmod);
 }
 
-MaybeError LoaderState::load_atom_table(tool::Reader &r)
+MaybeError LoaderState::load_atom_table(tool::Reader &r0)
 {
-  auto bytes_sz = r.read_var<word_t>();
-  r.assert_remaining_at_least(bytes_sz);
+  auto chunk_size = r0.read_var<word_t>();
+  tool::Reader r = r0.clone(chunk_size);
+
+  r.assert_remaining_at_least(chunk_size);
 
   auto tab_sz = r.read_var<word_t>();
   m_atoms.reserve(tab_sz);
@@ -100,16 +102,17 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r)
   return success();
 }
 
-MaybeError LoaderState::load_code(tool::Reader &r) {
-  auto sz = r.read_var<word_t>();
-  r.assert_remaining_at_least(sz);
-  G_LOG("code section %zu bytes\n", sz);
+MaybeError LoaderState::load_code(tool::Reader &r0) {
+  auto chunk_size = r0.read_var<word_t>();
+  tool::Reader r = r0.clone(chunk_size);
 
-  auto dptr = mem::alloc_bytes(sz).get_result(); // TODO: feeling lucky
-  m_code.set(dptr, sz);
-  r.read_bytes(dptr, sz);
+  r.assert_remaining_at_least(chunk_size);
+  G_LOG("code section %zu bytes\n", chunk_size);
 
-  return success();
+  auto dptr = mem::alloc_bytes(chunk_size).get_result(); // TODO: feeling lucky
+  r.read_bytes(dptr, chunk_size);
+
+  return m_code.from_raw_gleam(dptr, chunk_size);
 }
 
 MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r)
@@ -136,11 +139,16 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r)
   return success();
 }
 
-MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r)
+MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
 {
-  auto count = r.read_var<word_t>();
-  for (word_t i = 0; i < count; ++i) {
+  auto chunk_size = r0.read_var<word_t>();
+  tool::Reader r = r0.clone(chunk_size);
 
+  auto count = r.read_var<word_t>();
+
+  m_labels.reserve(count+1);
+  for (word_t i = 0; i < count; ++i) {
+    m_labels.push_back(r.read_var<word_t>());
   }
 
   return success();
