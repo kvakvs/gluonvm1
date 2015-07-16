@@ -10,8 +10,9 @@ namespace gluon {
 class LoaderState {
 public:
   Vector<Str>     m_atoms;
-  UniquePtr<u8_t> m_code;
+  Code            m_code;
   Vector<Term>    m_literals;
+  Map<word_t, word_t> m_labels;
 
   MaybeError load_atom_table(tool::Reader &r);
   MaybeError load_fun_table(tool::Reader &r) {
@@ -26,6 +27,7 @@ public:
   }
   MaybeError load_code(tool::Reader &r);
   MaybeError load_literal_table(Heap *heap, tool::Reader &r);
+  MaybeError load_labels(Heap *heap, tool::Reader &r);
 
   // Load finished, create a Module object and inform code server
   Result<Module *> finalize(Term modname);
@@ -63,7 +65,7 @@ Result<Module *> CodeServer::load_module_internal(Term name_atom,
     else if (chunk == "EXPT") { result = lstate.load_export_table(r); }
     else if (chunk == "CODE") { result = lstate.load_code(r); }
     else if (chunk == "LTRL") { result = lstate.load_literal_table(heap, r); }
-    else if (chunk == "LABL") { }
+    else if (chunk == "LABL ") { result = lstate.load_labels(heap, r); }
     G_RETURN_REWRAP_IF_ERROR(result, Module*)
   }
 
@@ -73,13 +75,14 @@ Result<Module *> CodeServer::load_module_internal(Term name_atom,
 
 Result<Module *> LoaderState::finalize(Term modname) {
   Heap *heap = VM::get_heap(VM::HEAP_CODE);
-  Module *m = Heap::alloc_object<Module>(heap);
+  Module *newmod = Heap::alloc_object<Module>(heap);
 
   // Atoms are already in VM at this point
-  m->m_name = modname;
-  m->m_code = std::move(m_code);
+  newmod->m_name = modname;
+  newmod->m_code.move(m_code);
+  newmod->m_labels = std::move(m_labels);
 
-  return success(m);
+  return success(newmod);
 }
 
 MaybeError LoaderState::load_atom_table(tool::Reader &r)
@@ -89,7 +92,7 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r)
 
   auto tab_sz = r.read_var<word_t>();
   m_atoms.reserve(tab_sz);
-  for (auto i = 0; i < tab_sz; ++i) {
+  for (word_t i = 0; i < tab_sz; ++i) {
     auto atom_sz = r.read_var<word_t>();
     m_atoms.push_back(r.read_string(atom_sz));
   }
@@ -103,7 +106,7 @@ MaybeError LoaderState::load_code(tool::Reader &r) {
   G_LOG("code section %zu bytes\n", sz);
 
   auto dptr = mem::alloc_bytes(sz).get_result(); // TODO: feeling lucky
-  m_code.reset(dptr);
+  m_code.set(dptr, sz);
   r.read_bytes(dptr, sz);
 
   return success();
@@ -118,7 +121,7 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r)
   auto count = r.read_var<word_t>();
   m_literals.reserve(count);
 
-  for (auto i = 0; i < count; ++i) {
+  for (word_t i = 0; i < count; ++i) {
     /*auto lit_sz =*/ r.read_var<word_t>();
 
     auto lit_result = etf::read_ext_term(heap, r);
@@ -130,6 +133,16 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r)
 #endif
     m_literals.push_back(lit);
   }
+  return success();
+}
+
+MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r)
+{
+  auto count = r.read_var<word_t>();
+  for (word_t i = 0; i < count; ++i) {
+
+  }
+
   return success();
 }
 

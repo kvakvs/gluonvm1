@@ -32,7 +32,7 @@ process(Fname) ->
   Code1 = lists:flatten(Code),
   Mod3 = asm_module:set_ir(Code1, Mod2),
 
-  {Bin0, Mod4} = lists:foldl(fun compile_irop/2, {[], Mod3}, Code1),
+  {Bin0, Mod4} = lists:foldr(fun compile_irop/2, {[], Mod3}, Code1),
   Bin  = iolist_to_binary(Bin0),
   Mod  = asm_module:set_bin(Bin, Mod4),
 
@@ -92,10 +92,15 @@ emit_gleam_op(Ops, CState = #compile_state{ir = Ir0}) ->
   %% TODO: ++ is O(N^2)
   CState#compile_state{ ir = Ir0 ++ Ops }.
 
-compile_irop({Op, OpArgs}, {Accum, Mod0}) when element(1,Mod0) =:= asm_module ->
-  CompileArg = fun(Arg, {Accum, M}) ->
+%% Catch label instruction and write its offset in bytes to separate map
+compile_irop({label, [N]}, {Accum, Mod0}) ->
+  Offset = iolist_size(Accum),
+  %io:format("label ~p pos ~p~n", [N, Offset]),
+  {Accum, asm_module:register_label(N, Offset, Mod0)};
+compile_irop({Op, OpArgs}, {Accum, Mod0}) ->
+  CompileArg = fun(Arg, {Accum_, M}) ->
                  {BinArg, M1} = asm_irop:encode_arg(Arg, M),
-                 {[BinArg | Accum], M1}
+                 {[BinArg | Accum_], M1}
                end,
   {Args, Mod} = lists:foldl(CompileArg, {[], Mod0}, OpArgs),
   Compiled = [asm_genop:opcode(Op) | Args],

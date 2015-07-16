@@ -19,7 +19,7 @@
         , find_or_create_literal/2
         , add_fun/4
         , to_binary/1
-%%         , register_label/3
+        , register_label/3
 %%         , write_ir/2
 %%         , read_ir/1
         , get_name/1
@@ -39,7 +39,7 @@
                     , atoms = orddict:new()
                     , literal_counter = -1
                     , literals = orddict:new()
-                    %, labels = orddict:new()
+                    , labels = orddict:new()
                     }).
 
 new(Id) -> #asm_module{name=Id}.
@@ -105,6 +105,14 @@ add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
   Funs1 = orddict:store({FunAtomIndex, Arity}, Label, Funs),
   MState#asm_module{funs = Funs1}.
 
+to_binary({labels, LDict}) ->
+  Out = << <<(asm_irop:uint_enc(Label))/binary
+           , (asm_irop:uint_enc(Pos))/binary
+           >> || {Label, Pos} <- orddict:to_list(LDict) >>,
+  <<"LABL"
+  , (asm_irop:uint_enc(byte_size(Out)))/binary
+  , (asm_irop:uint_enc(length(LDict)))/binary
+  , Out/binary>>;
 to_binary({code, Code}) when is_binary(Code) ->
   CodeSize = byte_size(Code),
   io:format("code size ~p~n", [CodeSize]),
@@ -140,7 +148,7 @@ to_binary({literals, LitDict}) ->
     , (asm_irop:uint_enc(byte_size(Out)))/binary
     , (asm_irop:uint_enc(length(Literals)))/binary
     , Out/binary>>;
-to_binary(#asm_module{name=Name, bin=Bin, literals=Lit
+to_binary(#asm_module{name=Name, bin=Bin, literals=Lit, labels=Labels
                      , exports=Exports, atoms=Atoms, funs=Funs}) ->
   ModName = atom_to_binary(Name, utf8),
   %% Module file is encoded as "GLEAM" + module name length + module name
@@ -151,7 +159,9 @@ to_binary(#asm_module{name=Name, bin=Bin, literals=Lit
     , (to_binary({funs, Funs}))/binary
     , (to_binary({exports, Exports}))/binary
     , (to_binary({code, Bin}))/binary
-    , (to_binary({literals, Lit}))/binary>>.
+    , (to_binary({literals, Lit}))/binary
+    , (to_binary({labels, Labels}))/binary
+  >>.
 
 %% write_ir(Filename, #asm_module{name=Name, ir=IR, atoms=At, literals=Lit
 %%                               , funs=Funs}) ->
@@ -213,10 +223,10 @@ to_binary(#asm_module{name=Name, bin=Bin, literals=Lit
 %%     end,
 %%   lists:map(ResolveFun, Funs).
 
-%% register_label(Label, Position, #asm_module{labels=Labels}=M) ->
-%%   error = orddict:find(Label, Labels),
-%%   Labels1 = orddict:store(Label, Position, Labels),
-%%   M#asm_module{labels=Labels1}.
+register_label(Label, Position, #asm_module{labels=Labels}=M) ->
+  error = orddict:find(Label, Labels),
+  Labels1 = orddict:store(Label, Position, Labels),
+  M#asm_module{labels=Labels1}.
 
 funarity_to_label(#asm_module{funs=Funs}, {F, Arity}) ->
   case lists:keyfind({F, Arity}, 1, Funs) of

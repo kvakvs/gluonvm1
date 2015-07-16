@@ -16,6 +16,11 @@ include_directories(
 add_definitions(
     -O0 -g -ggdb
     #-Os
+    -Weverything -Werror
+    -Wno-c++98-compat-pedantic -Wno-missing-noreturn
+    -Wno-c++98-compat -Wno-padded -Wno-format-nonliteral
+    -Wno-old-style-cast -Wno-exit-time-destructors -Wno-global-constructors
+    -Wno-unused-parameter
     )
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}
     -std=c++11
@@ -31,6 +36,7 @@ set(SRC_LIST
     include/g_sys_mem.h
     include/g_sys_stdlib.h
 
+    src/g_code.cpp       include/g_code.h
     src/g_codeserver.cpp include/g_codeserver.h
     src/g_dist.cpp       include/g_dist.h
     src/g_ext_term.cpp   include/g_ext_term.h

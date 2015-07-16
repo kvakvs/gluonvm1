@@ -12,6 +12,13 @@ public:
 
   Reader(const u8_t *ptr, word_t size): m_ptr(ptr), m_limit(ptr+size) {
   }
+  // Clones reader with m_ptr value, sets new size, to read smaller limited
+  // parts of input data
+  Reader clone(word_t new_size) {
+    G_ASSERT(m_ptr + new_size < m_limit);
+    Reader new_r(m_ptr, new_size);
+    return new_r;
+  }
 
   inline u8_t read_byte() {
     // TODO: make this runtime error, not assertion
@@ -27,16 +34,17 @@ public:
   }
   inline void assert_remaining_at_least(word_t n) const {
     // TODO: make this runtime error, not assertion
-    G_ASSERT((m_limit - m_ptr) > n);
+    G_ASSERT((m_limit - m_ptr) > (sword_t)n);
   }
   inline word_t get_remaining_count() const {
-    return (m_limit - m_ptr);
+    G_ASSERT(m_limit >= m_ptr);
+    return (word_t)(m_limit - m_ptr);
   }
   Str read_string(word_t size) {
     assert_remaining_at_least(size);
     Str result;
     result.reserve(size);
-    for (auto i = 0; i < size; ++i) {
+    for (word_t i = 0; i < size; ++i) {
       result += (char)read_byte();
     }
     return result;
@@ -66,14 +74,14 @@ public:
   }
 
   word_t read_bigendian_i16() {
-    word_t result = (m_ptr[0] << 8)  | m_ptr[1];
+    word_t result = ((word_t)m_ptr[0] << 8)  | (word_t)m_ptr[1];
     m_ptr += 2;
     return result;
   }
 
   word_t read_bigendian_i32() {
-    word_t result = (m_ptr[0] << 24) | (m_ptr[1] << 16)
-                  | (m_ptr[2] << 8)  | m_ptr[3];
+    word_t result = ((word_t)m_ptr[0] << 24) | ((word_t)m_ptr[1] << 16)
+                  | ((word_t)m_ptr[2] << 8)  | (word_t)m_ptr[3];
     m_ptr += 4;
     return result;
   }

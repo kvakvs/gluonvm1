@@ -236,9 +236,9 @@ private:
 public:
   constexpr Term(word_t v): m_val(v) {}
   constexpr Term(): m_val(0) {}
-  constexpr Term(const Term &other): m_val(other.m_val) {}
+  //constexpr Term(const Term &other): m_val(other.m_val) {}
 
-  static const word_t NIL = term_tag::Special::create(~0L);
+  static const word_t NIL = term_tag::Special::create(~0UL);
   //static const word_t MAX_ATOM_INDEX = ~(~((word_t) 0) << (sizeof(word_t)*8 - term_tag::IMMED2_SIZE));
   static const word_t THE_NON_VALUE = term_tag::Special::create(0);
 
@@ -319,8 +319,8 @@ public:
   //
   const static word_t SMALL_BITS = sizeof(word_t) * 8
                                   - term_tag::Smallint::L1_TAG_BITS;
-  const static word_t UPPER_BOUND = (1L << (SMALL_BITS-1))-1;
-  const static word_t LOWER_BOUND = -(1L << (SMALL_BITS-1));
+  const static word_t UPPER_BOUND = (1UL << (SMALL_BITS-1))-1;
+  const static word_t LOWER_BOUND = -(1UL << (SMALL_BITS-1));
 
   static constexpr Term make_small(word_t x) {
     return Term(term_tag::Smallint::create(x));

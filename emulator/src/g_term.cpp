@@ -39,7 +39,7 @@ void Term::print()
   else if (is_tuple()) {
     auto arity = tuple_get_arity();
     printf("{");
-    for (auto n = 0; n < arity; ++n) {
+    for (word_t n = 0; n < arity; ++n) {
       tuple_get_element(n).print();
       if (n < arity-1) {
         printf(",");

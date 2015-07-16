@@ -3,12 +3,12 @@
 #include "g_defs.h"
 #include "g_term.h"
 #include "g_error.h"
+#include "g_code.h"
 
-#include <stdint.h>
+//#include <stdint.h>
 
 namespace gluon {
 
-using code_t = UniquePtr<u8_t>;
 
 // Code pointer, refers to module name, version and offset
 typedef struct {
@@ -19,8 +19,9 @@ typedef struct {
 
 class Module {
 public:
-  Term    m_name;
-  code_t  m_code;
+  Term      m_name;
+  Code      m_code;
+  Map<word_t, word_t> m_labels;
 };
 
 using mod_map_t = Map<Term, Module *>;

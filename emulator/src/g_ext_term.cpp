@@ -5,6 +5,16 @@
 namespace gluon {
 namespace etf {
 
+Term read_atom_string_i16(tool::Reader &r);
+Term read_atom_string_i8(tool::Reader &r);
+Result<Term> read_tagged_atom_string(tool::Reader &r);
+Node *get_node(Term /*sysname*/, dist::creation_t /*creation*/);
+Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation);
+Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity);
+Term read_string_ext(Heap *heap, tool::Reader &r);
+Result<Term> read_list_ext(Heap *heap, tool::Reader &r);
+
+
 // Reads long atom as string and attempts to create it in atom table.
 Term read_atom_string_i16(tool::Reader &r) {
   word_t sz = r.read_bigendian_i16();
@@ -60,7 +70,6 @@ Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
   return error<Term>("FEATURE_ERL_DIST");
 }
 
-
 Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity) {
   if (arity == 0) {
     return success(Term::make_zero_tuple());
@@ -69,7 +78,7 @@ Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity) {
   Term *elements = Heap::alloc<Term>(heap, arity+1);
 
   // fill elements or die horribly if something does not decode
-  for (auto i = 0; i < arity; ++i) {
+  for (word_t i = 0; i < arity; ++i) {
     auto elem_result = read_ext_term2(heap, r);
     if (elem_result.is_error()) {
       Heap::free_terms(heap, elements, arity);
@@ -120,7 +129,7 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
   Term result = Term::make_nil();
   Term *ref = &result;
 
-  for (int i = 0; i < length; ++i) {
+  for (word_t i = 0; i < length; ++i) {
     Term *cons = Heap::alloc<Term>(heap, 2);
     cons[0] = Term::make_small(r.read_byte());
     *ref = Term::make_cons(cons);
@@ -148,7 +157,7 @@ Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
   Term result = Term::make_nil();
   Term *ref = &result;
 
-  for (int i = length - 1; i >= 0; i--) {
+  for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
     Term *cons = Heap::alloc<Term>(heap, 2); // TODO: more efficient allocation
 
     auto v_result = read_ext_term2(heap, r);
@@ -260,12 +269,12 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
   case STRING_EXT:  return success(read_string_ext(heap, r));
   case LIST_EXT:    return read_list_ext(heap, r);
 
-#if FEATURE_BINARY
+#if FEATURE_BINARIES
   case BINARY_EXT:  G_TODO("read binary etf");
   case BIT_BINARY_EXT:  G_TODO("read bit-binary etf");
 #else
   case BINARY_EXT:
-  case BIT_BINARY_EXT: return error<Term>("FEATURE_BINARY");
+  case BIT_BINARY_EXT: return error<Term>("FEATURE_BINARIES");
 #endif
 
 #if FEATURE_BIGNUM

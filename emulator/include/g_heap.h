@@ -34,7 +34,7 @@ public:
     return free_bytes(h, reinterpret_cast<u8_t *>(p));
   }
   // Marks nested terms as unused (assuming no references to them)
-  static void free_terms(Heap *h, Term *terms, word_t count) {
+  static void free_terms(Heap *h, Term *terms, word_t /*count*/) {
     // TODO: marking
     free(h, terms);
   }
