@@ -58,11 +58,12 @@ Result<Module *> CodeServer::load_module_internal(Term name_atom,
     G_LOG("GLEAM section %s\n", chunk.c_str());
 
     result.clear();
-    if      (chunk == "Atom") { result = lstate.load_atom_table(r); }
-    else if (chunk == "FunT") { result = lstate.load_fun_table(r); }
-    else if (chunk == "ExpT") { result = lstate.load_export_table(r); }
-    else if (chunk == "Code") { result = lstate.load_code(r); }
-    else if (chunk == "LitT") { result = lstate.load_literal_table(heap, r); }
+    if      (chunk == "ATOM") { result = lstate.load_atom_table(r); }
+    else if (chunk == "LAMD") { result = lstate.load_fun_table(r); }
+    else if (chunk == "EXPT") { result = lstate.load_export_table(r); }
+    else if (chunk == "CODE") { result = lstate.load_code(r); }
+    else if (chunk == "LTRL") { result = lstate.load_literal_table(heap, r); }
+    else if (chunk == "LABL") { }
     G_RETURN_REWRAP_IF_ERROR(result, Module*)
   }
 

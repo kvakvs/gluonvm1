@@ -19,12 +19,12 @@
         , find_or_create_literal/2
         , add_fun/4
         , to_binary/1
-        , register_label/3
+%%         , register_label/3
         , write_ir/2
         , read_ir/1
         , get_name/1
         , funarity_to_label/2
-        , label_to_offset/2
+%%         , label_to_offset/2
         ]).
 
 %% funs contains {F,Arity} -> Label mapping where F is reference to atoms table
@@ -39,7 +39,7 @@
                     , atoms = orddict:new()
                     , literal_counter = -1
                     , literals = orddict:new()
-                    , labels = ordsets:new()
+                    %, labels = orddict:new()
                     }).
 
 new(Id) -> #asm_module{name=Id}.
@@ -108,9 +108,9 @@ add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
 to_binary({code, Code}) when is_binary(Code) ->
   CodeSize = byte_size(Code),
   io:format("code size ~p~n", [CodeSize]),
-  <<"Code", (asm_irop:uint_enc(CodeSize))/binary, Code/binary>>;
-to_binary({funs, _FunDict}) -> <<"FunT", 0>>;
-to_binary({exports, _ExportDict}) -> <<"ExpT", 0>>;
+  <<"CODE", (asm_irop:uint_enc(CodeSize))/binary, Code/binary>>;
+to_binary({funs, _FunDict}) -> <<"LAMD", 0>>;
+to_binary({exports, _ExportDict}) -> <<"EXPT", 0>>;
 to_binary({atoms, AtomsDict}) ->
   %% Atom table is encoded as "Atom" + var_int BytesLength + var_int AtomsCount,
   %% then each atom is encoded as var_int Bytes + utf8 Atom
@@ -122,7 +122,7 @@ to_binary({atoms, AtomsDict}) ->
   %% ASSUMPTION: orddict:to_list gives sorted ascending order without skips
   Atoms = orddict:to_list(AtomsDict),
   Out = iolist_to_binary([AtomEnc(Atom) || {Atom, _} <- Atoms]),
-  <<"Atom"
+  <<"ATOM"
   , (asm_irop:uint_enc(byte_size(Out)))/binary
   , (asm_irop:uint_enc(length(Atoms)))/binary
   , Out/binary>>;
@@ -136,7 +136,7 @@ to_binary({literals, LitDict}) ->
           <<(asm_irop:uint_enc(byte_size(LBin)))/binary, LBin/binary>>
         end,
   Out = iolist_to_binary([Enc(L) || {L, _} <- Literals]),
-  <<"LitT"
+  <<"LTRL"
     , (asm_irop:uint_enc(byte_size(Out)))/binary
     , (asm_irop:uint_enc(length(Literals)))/binary
     , Out/binary>>;
@@ -153,73 +153,70 @@ to_binary(#asm_module{name=Name, bin=Bin, literals=Lit
     , (to_binary({code, Bin}))/binary
     , (to_binary({literals, Lit}))/binary>>.
 
-write_ir(Filename, #asm_module{name=Name, ir=IR, atoms=At, literals=Lit
-                              , funs=Funs, labels=Labels}) ->
-  Out = [ {name, Name}
-        , {ir, IR}
-        , {literals, Lit}
-        , {atoms, At}
-        , {funs, Funs}
-        , {labels, Labels}
-        ],
-  file:write_file(Filename, io_lib:format("~p.~n", [Out])).
+%% write_ir(Filename, #asm_module{name=Name, ir=IR, atoms=At, literals=Lit
+%%                               , funs=Funs}) ->
+%%   Out = [ {name, Name}
+%%         , {ir, IR}
+%%         , {literals, Lit}
+%%         , {atoms, At}
+%%         , {funs, Funs}
+%%         ],
+%%   file:write_file(Filename, io_lib:format("~p.~n", [Out])).
+%%
+%% read_ir(Str) ->
+%%   {ok, [IRFile]} = file:consult(Str),
+%%   Name  = proplists:get_value(name, IRFile),
+%%   IR    = proplists:get_value(ir, IRFile, []),
+%%   Lit   = proplists:get_value(literals, IRFile, []),
+%%   Atoms = proplists:get_value(atoms, IRFile, []),
+%%   Funs  = read_ir_resolve_funs(proplists:get_value(funs, IRFile, []), Atoms),
+%%   IR1 = read_ir_resolve_atoms(IR, Atoms, []),
+%%   #asm_module{ name=Name
+%%              , ir=IR1
+%%              , atoms=Atoms
+%%              , literals=Lit
+%%              , funs=Funs}.
 
-read_ir(Str) ->
-  {ok, [IRFile]} = file:consult(Str),
-  Name  = proplists:get_value(name, IRFile),
-  IR    = proplists:get_value(ir, IRFile, []),
-  Lit   = proplists:get_value(literals, IRFile, []),
-  Atoms = proplists:get_value(atoms, IRFile, []),
-  Funs  = read_ir_resolve_funs(proplists:get_value(funs, IRFile, []), Atoms),
-  Labels = proplists:get_value(labels, IRFile, []),
-  IR1 = read_ir_resolve_atoms(IR, Atoms, []),
-  #asm_module{ name=Name
-             , ir=IR1
-             , atoms=Atoms
-             , literals=Lit
-             , funs=Funs
-             , labels=Labels}.
+%% %% @private
+%% resolve_irop_piece({'$ATOM', A}, Atoms) ->
+%%   {ok, Atom} = find_atom(A, Atoms),
+%%   Atom;
+%% resolve_irop_piece({'$MFA', M0, F0, A}, Atoms) ->
+%%   [{M, F}] = read_ir_resolve_atoms([{M0, F0}], Atoms, []),
+%%   {'$MFA', M, F, A};
+%% resolve_irop_piece(X, _) -> X.
+%%
+%% %% @private
+%% resolve_irop(#{irop := Irop} = Line, Atoms) ->
+%%   maps:put(irop, resolve_irop_piece(Irop, Atoms), Line);
+%% resolve_irop(#{irops := IropList} = Line, Atoms) ->
+%%   ResolveEach = fun(X) -> resolve_irop(X, Atoms) end,
+%%   maps:put(irops, lists:map(ResolveEach, IropList), Line).
+%%
+%% %% @private
+%% read_ir_resolve_atoms([], _Atoms, Accum) -> lists:reverse(Accum);
+%% read_ir_resolve_atoms([Line | Tail], Atoms, Accum) ->
+%%   Line1 = resolve_irop(Line, Atoms),
+%%   read_ir_resolve_atoms(Tail, Atoms, [Line1 | Accum]).
 
-%% @private
-resolve_irop_piece({'$ATOM', A}, Atoms) ->
-  {ok, Atom} = find_atom(A, Atoms),
-  Atom;
-resolve_irop_piece({'$MFA', M0, F0, A}, Atoms) ->
-  [{M, F}] = read_ir_resolve_atoms([{M0, F0}], Atoms, []),
-  {'$MFA', M, F, A};
-resolve_irop_piece(X, _) -> X.
+%% %% @private
+%% read_ir_resolve_funs(Funs, Atoms) ->
+%%   ResolveFun = fun({{FunAtom, Arity}, FunIndex}) ->
+%%       case lists:keyfind(FunAtom, 2, Atoms) of
+%%         false ->
+%%           erlang:error({broken_ir_file
+%%                        , 'cant resolve atom in fun name'
+%%                        , {atom, FunAtom, arity, Arity}
+%%                        });
+%%         {Atom, _AtomIndex} -> {{Atom, Arity}, FunIndex}
+%%       end
+%%     end,
+%%   lists:map(ResolveFun, Funs).
 
-%% @private
-resolve_irop(#{irop := Irop} = Line, Atoms) ->
-  maps:put(irop, resolve_irop_piece(Irop, Atoms), Line);
-resolve_irop(#{irops := IropList} = Line, Atoms) ->
-  ResolveEach = fun(X) -> resolve_irop(X, Atoms) end,
-  maps:put(irops, lists:map(ResolveEach, IropList), Line).
-
-%% @private
-read_ir_resolve_atoms([], _Atoms, Accum) -> lists:reverse(Accum);
-read_ir_resolve_atoms([Line | Tail], Atoms, Accum) ->
-  Line1 = resolve_irop(Line, Atoms),
-  read_ir_resolve_atoms(Tail, Atoms, [Line1 | Accum]).
-
-%% @private
-read_ir_resolve_funs(Funs, Atoms) ->
-  ResolveFun = fun({{FunAtom, Arity}, FunIndex}) ->
-      case lists:keyfind(FunAtom, 2, Atoms) of
-        false ->
-          erlang:error({broken_ir_file
-                       , 'cant resolve atom in fun name'
-                       , {atom, FunAtom, arity, Arity}
-                       });
-        {Atom, _AtomIndex} -> {{Atom, Arity}, FunIndex}
-      end
-    end,
-  lists:map(ResolveFun, Funs).
-
-register_label(Label, Position, #asm_module{labels=Labels}=M) ->
-  error = orddict:find(Label, Labels),
-  Labels1 = orddict:store(Label, Position, Labels),
-  M#asm_module{labels=Labels1}.
+%% register_label(Label, Position, #asm_module{labels=Labels}=M) ->
+%%   error = orddict:find(Label, Labels),
+%%   Labels1 = orddict:store(Label, Position, Labels),
+%%   M#asm_module{labels=Labels1}.
 
 funarity_to_label(#asm_module{funs=Funs}, {F, Arity}) ->
   case lists:keyfind({F, Arity}, 1, Funs) of
@@ -227,10 +224,10 @@ funarity_to_label(#asm_module{funs=Funs}, {F, Arity}) ->
     {{F, Arity}, Label} -> {ok, Label}
   end.
 
-label_to_offset(_, {error,_}=E) -> E; % sprinkle with a pinch of monad
-label_to_offset(M, {ok,L}) -> label_to_offset(M, L);
-label_to_offset(#asm_module{labels=Labels}, Label) ->
-  case lists:keyfind(Label, 1, Labels) of
-    false -> {error, not_found};
-    {Label, Offset} -> {ok, Offset}
-  end.
+%% label_to_offset(_, {error,_}=E) -> E; % sprinkle with a pinch of monad
+%% label_to_offset(M, {ok,L}) -> label_to_offset(M, L);
+%% label_to_offset(#asm_module{labels=Labels}, Label) ->
+%%   case lists:keyfind(Label, 1, Labels) of
+%%     false -> {error, not_found};
+%%     {Label, Offset} -> {ok, Offset}
+%%   end.
