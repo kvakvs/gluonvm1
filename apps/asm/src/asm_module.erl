@@ -109,9 +109,10 @@ to_binary({labels, LDict}) ->
   %(asm_irop:uint_enc(Label))/binary,
   Out = << <<(asm_irop:uint_enc(Pos))/binary>>
         || {_Label, Pos} <- orddict:to_list(LDict) >>,
+  LenLabels = asm_irop:uint_enc(length(LDict)),
   <<"LABL"
-  , (asm_irop:uint_enc(byte_size(Out)))/binary
-  , (asm_irop:uint_enc(length(LDict)))/binary
+  , (asm_irop:uint_enc(byte_size(Out) + byte_size(LenLabels)))/binary
+  , LenLabels/binary
   , Out/binary>>;
 to_binary({code, Code}) when is_binary(Code) ->
   CodeSize = byte_size(Code),
@@ -130,9 +131,10 @@ to_binary({atoms, AtomsDict}) ->
   %% ASSUMPTION: orddict:to_list gives sorted ascending order without skips
   Atoms = orddict:to_list(AtomsDict),
   Out = iolist_to_binary([AtomEnc(Atom) || {Atom, _} <- Atoms]),
+  LenAtoms = asm_irop:uint_enc(length(Atoms)),
   <<"ATOM"
-  , (asm_irop:uint_enc(byte_size(Out)))/binary
-  , (asm_irop:uint_enc(length(Atoms)))/binary
+  , (asm_irop:uint_enc(byte_size(Out) + byte_size(LenAtoms)))/binary
+  , LenAtoms/binary
   , Out/binary>>;
 to_binary({literals, LitDict}) ->
   %% Literal table is encoded as "LitT" + var_int BytesLength + var_int Count,
@@ -144,9 +146,10 @@ to_binary({literals, LitDict}) ->
           <<(asm_irop:uint_enc(byte_size(LBin)))/binary, LBin/binary>>
         end,
   Out = iolist_to_binary([Enc(L) || {L, _} <- Literals]),
+  LenLiterals = asm_irop:uint_enc(length(Literals)),
   <<"LTRL"
-    , (asm_irop:uint_enc(byte_size(Out)))/binary
-    , (asm_irop:uint_enc(length(Literals)))/binary
+    , (asm_irop:uint_enc(byte_size(Out) + byte_size(LenLiterals)))/binary
+    , LenLiterals/binary
     , Out/binary>>;
 to_binary(#asm_module{name=Name, bin=Bin, literals=Lit, labels=Labels
                      , exports=Exports, atoms=Atoms, funs=Funs}) ->

@@ -17,7 +17,7 @@ const void **VM::g_opcode_labels;
 void VM::init()
 {
   g_this_node = new Node;
-
+  vm_loop(nullptr); // initialize labels
   CodeServer::init();
 }
 

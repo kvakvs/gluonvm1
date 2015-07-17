@@ -1,5 +1,8 @@
 #include "g_vm.h"
 #include "g_process.h"
+#include "g_error.h"
+
+#include <stdio.h>
 
 using vm = gluon::VM;
 
@@ -22,7 +25,13 @@ int main(int argc, const char *argv[]) {
   // normal start
   vm::load_module("../test/g_test1.S.gleam");
   gluon::Process p;
-  p.jump(vm::to_atom("g_test1"), vm::to_atom("test1"), gluon::Term::make_nil());
+  auto j_result = p.jump(vm::to_atom("g_test1"), vm::to_atom("test1"),
+                         gluon::Term::make_nil());
+  if (j_result.is_error()) {
+    printf("jump error: %s\n", j_result.get_error());
+  } else {
+    printf("ok");
+  }
 
   return 0;
 #endif

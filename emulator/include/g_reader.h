@@ -15,7 +15,7 @@ public:
   // Clones reader with m_ptr value, sets new size, to read smaller limited
   // parts of input data
   Reader clone(word_t new_size) {
-    G_ASSERT(m_ptr + new_size < m_limit);
+    G_ASSERT(m_ptr + new_size <= m_limit);
     Reader new_r(m_ptr, new_size);
     return new_r;
   }
@@ -33,7 +33,7 @@ public:
   }
   inline void assert_remaining_at_least(word_t n) const {
     // TODO: make this runtime error, not assertion
-    G_ASSERT((m_limit - m_ptr) > (sword_t)n);
+    G_ASSERT((m_limit - m_ptr) >= (sword_t)n);
   }
   inline word_t get_remaining_count() const {
     G_ASSERT(m_limit >= m_ptr);

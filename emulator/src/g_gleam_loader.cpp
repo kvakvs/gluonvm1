@@ -101,8 +101,6 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0)
   auto chunk_size = r0.read_var<word_t>();
   tool::Reader r = r0.clone(chunk_size);
 
-  r.assert_remaining_at_least(chunk_size);
-
   auto tab_sz = r.read_var<word_t>();
   m_atoms.reserve(tab_sz);
   for (word_t i = 0; i < tab_sz; ++i) {
@@ -110,6 +108,7 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0)
     m_atoms.push_back(r.read_string(atom_sz));
   }
 
+  r0.advance(chunk_size);
   return success();
 }
 
@@ -117,24 +116,22 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
   auto chunk_size = r0.read_var<word_t>();
   tool::Reader r = r0.clone(chunk_size);
 
-  r.assert_remaining_at_least(chunk_size);
   G_LOG("code section %zu bytes\n", chunk_size);
 
   //auto dptr = mem::alloc_bytes(chunk_size).get_result(); // TODO: feeling lucky
   //r.read_bytes(dptr, chunk_size);
   m_code = r.get_ptr();
   m_code_size = chunk_size;
-  r.advance(chunk_size);
 
-  //return m_code.from_raw_gleam(dptr, chunk_size);
+  r0.advance(chunk_size);
   return success();
 }
 
-MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r)
+MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
 {
   G_LOG("load lit table\n");
-  auto all_sz = r.read_var<word_t>();
-  r.assert_remaining_at_least(all_sz);
+  auto chunk_size = r0.read_var<word_t>();
+  tool::Reader r = r0.clone(chunk_size);
 
   auto count = r.read_var<word_t>();
   m_literals.reserve(count);
@@ -151,6 +148,8 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r)
 #endif
     m_literals.push_back(lit);
   }
+
+  r0.advance(chunk_size);
   return success();
 }
 
@@ -166,6 +165,7 @@ MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
     m_labels.push_back(r.read_var<word_t>());
   }
 
+  r0.advance(chunk_size);
   return success();
 }
 
