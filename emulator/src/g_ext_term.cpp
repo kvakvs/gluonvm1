@@ -185,6 +185,7 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
   case COMPRESSED:
     // =80; 4 bytes size; compressed data
     G_TODO("compressed etf");
+    G_IF_NODEBUG(break;)
 
   case SMALL_INTEGER_EXT:
     return success(Term::make_small(r.read_byte()));
@@ -233,6 +234,7 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
 //      word_t id = r.read_bigendian_i32();
 //      u8_t creation = r.read_byte();
       G_TODO("ref etf");
+      G_IF_NODEBUG(break;)
     } // end reference_ext
 
   case PORT_EXT: {
@@ -241,6 +243,7 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
 //      word_t id = r.read_bigendian_i32();
 //      u8_t creation = r.read_byte();
       G_TODO("port etf");
+      G_IF_NODEBUG(break;)
     } // end reference_ext
 
   case PID_EXT: {
@@ -285,8 +288,9 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
   case LARGE_BIG_EXT: return error<Term>("FEATURE_BIGNUM");
 #endif
 
-  default: return error<Term>("bad etf tag");
+  default: ;
   } // switch tag
+  return error<Term>("bad etf tag");
 } // parse function
 
 

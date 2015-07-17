@@ -6,10 +6,10 @@ namespace gluon {
 namespace tool {
 
 class Reader {
-public:
   const u8_t *m_ptr;
   const u8_t *m_limit;
 
+public:
   Reader(const u8_t *ptr, word_t size): m_ptr(ptr), m_limit(ptr+size) {
   }
   // Clones reader with m_ptr value, sets new size, to read smaller limited
@@ -29,8 +29,7 @@ public:
 
   // Advance by 1 byte, assert its value equal to 'value'
   void assert_byte(u8_t value) {
-    auto b = read_byte();
-    G_ASSERT(value == b);
+    G_ASSERT(value == read_byte());
   }
   inline void assert_remaining_at_least(word_t n) const {
     // TODO: make this runtime error, not assertion
@@ -42,6 +41,9 @@ public:
   }
   inline bool is_end() const {
     return m_limit <= m_ptr;
+  }
+  const u8_t *get_ptr() const {
+    return m_ptr;
   }
 
   Str read_string(word_t size) {
@@ -88,6 +90,11 @@ public:
                   | ((word_t)m_ptr[2] << 8)  | (word_t)m_ptr[3];
     m_ptr += 4;
     return result;
+  }
+
+  inline void advance(word_t x) {
+    assert_remaining_at_least(x);
+    m_ptr += x;
   }
 };
 

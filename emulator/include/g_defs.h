@@ -77,6 +77,29 @@ namespace gluon {
   using f32_t = float;
   using f64_t = double;
 
+  // Used to shun debug printfs in release
+  inline void dummy_printf(const char *, ...) {}
+
+  // Index in label table, wrapped to create a distinct compile-time type
+  typedef struct label_index_t {
+    word_t value;
+    static inline label_index_t wrap(word_t x) {
+      label_index_t co;
+      co.value = x;
+      return co;
+    }
+  } label_index_t;
+
+  // Index in code table, wrapped to create a distinct compile-time type
+  typedef struct code_offset_t {
+    word_t value;
+    static inline code_offset_t wrap(word_t x) {
+      code_offset_t co;
+      co.value = x;
+      return co;
+    }
+  } code_offset_t;
+
 } // ns gluon
 
 // Branch prediction helper macros, use when something is going to happen much
@@ -97,6 +120,7 @@ namespace gluon {
       }
     // Famous io:format/2 skill on Linkedin!
 #   define G_LOG ::printf
+#   define G_IF_NODEBUG(X)
 
 #else // no G_DEBUG
 
@@ -104,5 +128,6 @@ namespace gluon {
 #   define G_ASSERT(X)
 #   define G_ASSERT_MSG(X, MSG)
 #   define G_TODO(X)
-#   define G_LOG ((void)0)
+#   define G_LOG dummy_printf
+#   define G_IF_NODEBUG(X) X
 #endif

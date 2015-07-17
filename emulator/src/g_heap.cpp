@@ -8,6 +8,7 @@ u8_t *Heap::alloc_bytes(Heap *h, word_t bytes)
     return new u8_t[bytes];
   }
   G_TODO("heaps! alloc");
+  G_IF_NODEBUG(return nullptr;)
 }
 
 void Heap::free_bytes(Heap *h, u8_t *p)

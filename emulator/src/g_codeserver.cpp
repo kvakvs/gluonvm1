@@ -1,4 +1,5 @@
 #include "g_codeserver.h"
+#include "g_module.h"
 
 namespace gluon {
 
@@ -15,9 +16,18 @@ MaybeError CodeServer::load_module(Term name_atom, const u8_t *bytes, word_t siz
   // TODO: module versions for hot code loading
   // TODO: free if module already existed
   Module *m = lm_result.get_result();
-  g_modules[m->m_name] = m;
+  g_modules[m->get_name()] = m;
 
   return success();
+}
+
+Module *CodeServer::find_module(Term m)
+{
+  auto iter = g_modules.find(m);
+  if (iter == g_modules.end()) {
+    return nullptr;
+  }
+  return iter->second;
 }
 
 } // ns gluon

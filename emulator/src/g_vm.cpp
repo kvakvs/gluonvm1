@@ -4,6 +4,7 @@
 #include "g_sys_mem.h"
 #include "g_dist.h"
 #include "g_heap.h"
+#include "g_process.h"
 
 namespace gluon {
 
@@ -11,6 +12,7 @@ str_atom_map_t VM::g_atoms;
 atom_str_map_t VM::g_atoms_reverse;
 word_t VM::g_atom_counter = 0;
 Node *VM::g_this_node = nullptr;
+const void **VM::g_opcode_labels;
 
 void VM::init()
 {
@@ -81,16 +83,11 @@ Heap *VM::get_heap(VM::heap_t) {
   return nullptr;
 }
 
-void *VM::vm_fetch_instr()
-{
-  return nullptr;
-}
 
 #include "g_vm_loop.inl"
 
 // Cool LLVM blockaddress extension, could not make it work, yet
+// http://blog.llvm.org/2010/01/address-of-label-and-indirect-branches.html
 //#include "g_vm_jump_table.inl"
-
-const void *VM::g_opcode_labels[] = { nullptr, };
 
 } // ns gluon

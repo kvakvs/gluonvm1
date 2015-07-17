@@ -11,6 +11,7 @@ using str_atom_map_t = Map<Str, Term>;
 using atom_str_map_t = Map<Term, Str>;
 
 class Heap;
+class Process;
 
 // Note: singleton, do not instantiate even
 class VM {
@@ -44,12 +45,10 @@ public:
   //
   // VM loop and loop labels
   //
-  static void *get_opcode_label(u8_t opcode);
-  static const void *g_opcode_labels[];
+  // this is initialized in vm_loop(nullptr) call
+  static const void **g_opcode_labels;
 
-  static void vm_loop(bool init);
-  // Returns next instruction jump label
-  static void *vm_fetch_instr();
+  static void vm_loop(Process *proc);
 };
 
 } // ns gluon

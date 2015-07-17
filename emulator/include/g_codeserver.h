@@ -17,12 +17,7 @@ typedef struct {
   word_t  offset;
 } code_ptr_t;
 
-class Module {
-public:
-  Term      m_name;
-  Code      m_code;
-  Labels    m_labels;
-};
+class Module;
 
 using mod_map_t = Map<Term, Module *>;
 
@@ -36,6 +31,7 @@ public:
   static void init();
   // Pass nil as name to take name automatically from the module
   static MaybeError load_module(Term name_atom, const u8_t *bytes, word_t size);
+  static Module *find_module(Term m);
 
 protected:
   static Result<Module *> load_module_internal(Term name_atom,

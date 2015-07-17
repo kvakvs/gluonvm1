@@ -45,9 +45,10 @@ set(SRC_LIST
     src/g_gleam_loader.cpp
     src/g_heap.cpp       include/g_heap.h
     src/g_main.cpp
-    src/g_module.cpp include/g_module.h
-    src/g_term.cpp include/g_term.h
-    src/g_vm.cpp include/g_vm.h
+    src/g_module.cpp     include/g_module.h
+    src/g_process.cpp    include/g_process.h
+    src/g_term.cpp       include/g_term.h
+    src/g_vm.cpp         include/g_vm.h
 
     # Header-only test framework
     src/fructose/fructose.h

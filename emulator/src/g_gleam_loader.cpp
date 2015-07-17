@@ -4,24 +4,31 @@
 #include "g_reader.h"
 #include "g_ext_term.h"
 #include "g_heap.h"
+#include "g_module.h"
 
 namespace gluon {
 
 class LoaderState {
 public:
   Vector<Str>     m_atoms;
-  Code            m_code;
+  const u8_t     *m_code; // not owned data
+  word_t          m_code_size;
   Vector<Term>    m_literals;
-  Labels          m_labels;
+  Vector<word_t>  m_labels;
+
+  LoaderState(): m_code(nullptr), m_code_size(0) {
+  }
 
   MaybeError load_atom_table(tool::Reader &r);
   MaybeError load_fun_table(tool::Reader &r) {
     auto sz = r.read_var<word_t>();
+    (void)sz;
     G_ASSERT(sz == 0);
     return success();
   }
   MaybeError load_export_table(tool::Reader &r) {
     auto sz = r.read_var<word_t>();
+    (void)sz;
     G_ASSERT(sz == 0);
     return success();
   }
@@ -75,12 +82,16 @@ Result<Module *> CodeServer::load_module_internal(Term name_atom,
 
 Result<Module *> LoaderState::finalize(Term modname) {
   Heap *heap = VM::get_heap(VM::HEAP_CODE);
-  Module *newmod = Heap::alloc_object<Module>(heap);
+  Module *newmod = Heap::alloc_object<Module>(heap, modname);
 
   // Atoms are already in VM at this point
-  newmod->m_name = modname;
-  newmod->m_code.move(m_code);
-  newmod->m_labels = std::move(m_labels);
+  //newmod->m_name = modname;
+  //newmod->m_code.move(m_code);
+  //newmod->m_labels = std::move(m_labels);
+
+  //return success(newmod);
+  auto result = newmod->from_raw_gleam(m_code, m_code_size);
+  G_RETURN_REWRAP_IF_ERROR(result, Module*);
 
   return success(newmod);
 }
@@ -109,10 +120,14 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
   r.assert_remaining_at_least(chunk_size);
   G_LOG("code section %zu bytes\n", chunk_size);
 
-  auto dptr = mem::alloc_bytes(chunk_size).get_result(); // TODO: feeling lucky
-  r.read_bytes(dptr, chunk_size);
+  //auto dptr = mem::alloc_bytes(chunk_size).get_result(); // TODO: feeling lucky
+  //r.read_bytes(dptr, chunk_size);
+  m_code = r.get_ptr();
+  m_code_size = chunk_size;
+  r.advance(chunk_size);
 
-  return m_code.from_raw_gleam(dptr, chunk_size);
+  //return m_code.from_raw_gleam(dptr, chunk_size);
+  return success();
 }
 
 MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r)

@@ -15,12 +15,14 @@ for op in ops:
     ops_by_code[op['opcode']] = op
 
 # print arity map
-print("""void VM::vm_loop(bool init) {
+print("""void VM::vm_loop(Process *proc) {
   void *jmp_to;
-  if (init) { goto vm_jump_table_init; }
+  if (!proc) {
+    goto vm_jump_table_init;
+  }
 
 next_instr:
-  jmp_to = vm_fetch_instr();
+  jmp_to = proc->vm_fetch_instr();
   goto *jmp_to;
 """)
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
@@ -35,13 +37,20 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
   goto next_instr;
 """ % (op['name'], opcode))
 
-print("""vm_jump_table_init:""")
+#
+# Init table with labels and export it to global scope
+#
+print("""vm_jump_table_init: {
+  // Init table with labels and export it to global scope
+  static const void *l_opcode_labels[] = { nullptr,""")
 
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     op = ops_by_code[opcode]
-    print("  g_opcode_labels[%d] = &&OP_%s;" % (opcode, op['name']))
+    print("      &&OP_%s," % (op['name']))
 
-print(""" // end init
+print("""    };
+    g_opcode_labels = l_opcode_labels;
+  } // end init
 
 vm_end: ;
 }
