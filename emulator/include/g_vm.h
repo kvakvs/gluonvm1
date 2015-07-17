@@ -32,12 +32,24 @@ public:
 
   static Node *dist_this_node();
 
+  //
   // Heap management
+  //
   typedef enum {
     HEAP_CODE,
     HEAP_LOADER_TMP
   } heap_t;
   static Heap *get_heap(heap_t);
+
+  //
+  // VM loop and loop labels
+  //
+  static void *get_opcode_label(u8_t opcode);
+  static const void *g_opcode_labels[];
+
+  static void vm_loop(bool init);
+  // Returns next instruction jump label
+  static void *vm_fetch_instr();
 };
 
 } // ns gluon

@@ -21,6 +21,7 @@ add_definitions(
     -Wno-c++98-compat -Wno-padded -Wno-format-nonliteral
     -Wno-old-style-cast -Wno-exit-time-destructors -Wno-global-constructors
     -Wno-unused-parameter
+    -Wno-gnu-label-as-value -Wno-unused-label
     )
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}
     -std=c++11

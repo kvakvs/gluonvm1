@@ -22,17 +22,18 @@ MaybeError Code::from_raw_gleam(const u8_t *bytes, word_t sz)
     m_code.push_back(opcode);
 
     for (word_t a = 0; a < genop::arity_map[opcode]; ++a) {
-      Term arg = read_arg_value(r);
+      //Term arg = read_arg_value(r);
     }
   }
 
   return success();
 }
 
-void Code::read_arg_value(tool::Reader &r)
+Term Code::read_arg_value(tool::Reader &r)
 {
-  Term tag = r.read_byte();
+  u8_t tag = r.read_byte();
 
+  // TODO: pack these little better
   const u8_t tag_integer_pos = 255;
   const u8_t tag_integer_neg = 254;
   const u8_t tag_atom = 253;
@@ -56,8 +57,17 @@ void Code::read_arg_value(tool::Reader &r)
   case tag_integer_neg: {
     G_TODO("negint not supported?")
     }
-  case tag_atom:
+  case tag_atom: break;
+  case tag_label: break;
+  case tag_mfarity: break;
+  case tag_register: break;
+  case tag_stack: break;
+  case tag_nil: return Term::make_nil();
+  case tag_literal: break;
+  case tag_fp_register: break;
   }
+
+  return Term::make_nil();
 }
 
 } // ns gluon

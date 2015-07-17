@@ -81,4 +81,16 @@ Heap *VM::get_heap(VM::heap_t) {
   return nullptr;
 }
 
+void *VM::vm_fetch_instr()
+{
+  return nullptr;
+}
+
+#include "g_vm_loop.inl"
+
+// Cool LLVM blockaddress extension, could not make it work, yet
+//#include "g_vm_jump_table.inl"
+
+const void *VM::g_opcode_labels[] = { nullptr, };
+
 } // ns gluon
