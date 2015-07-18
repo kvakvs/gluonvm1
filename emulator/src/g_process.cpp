@@ -14,6 +14,11 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
     return "module not found";
   }
 
+  if (m_ip.is_good()) {
+    // push current ip if it wasn't null (initial entry call)
+    m_call_stack.push_back(m_ip);
+  }
+
   m_ip.module = mod;
   auto r_result = mod->resolve_function(f, arity);
   G_RETURN_IF_ERROR(r_result);
@@ -21,10 +26,7 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
   return success();
 }
 
-void *Process::vm_fetch_instr()
-{
-  return reinterpret_cast<void *>(m_ip.next_word());
-}
+
 
 word_t gleam_ptr_t::next_word() {
   G_ASSERT(is_good());

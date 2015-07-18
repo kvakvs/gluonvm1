@@ -100,10 +100,10 @@ compile_irop_dbg(Op, {Accum0, State0}) ->
   {Accum1, State1}.
 
 %% Catch label instruction and write its offset in bytes to separate map
-compile_irop({label, [N]}, {Accum, Mod0}) ->
-  Offset = iolist_size(Accum),
-  %io:format("label ~p pos ~p~n", [N, Offset]),
-  {Accum, asm_module:register_label(N, Offset, Mod0)};
+%% compile_irop({label, [N]}, {Accum, Mod0}) ->
+%%   Offset = iolist_size(Accum),
+%%   %io:format("label ~p pos ~p~n", [N, Offset]),
+%%   {Accum, asm_module:register_label(N, Offset, Mod0)};
 compile_irop({Op, OpArgs}, {Accum, Mod0}) ->
   CompileArg = fun(Arg, {Accum_, M}) ->
                  {BinArg, M1} = asm_irop:encode_arg(Arg, M),

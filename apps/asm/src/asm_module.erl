@@ -115,15 +115,15 @@ add_fun(Fun, Arity, Label, MState=#asm_module{funs=Funs}) when is_atom(Fun) ->
   Funs1 = orddict:store({FunAtomIndex, Arity}, Label, Funs),
   M1#asm_module{funs = Funs1}.
 
-to_binary({labels, LDict}) ->
-  %(asm_irop:uint_enc(Label))/binary,
-  Out = << <<(asm_irop:uint_enc(Pos))/binary>>
-        || {_Label, Pos} <- orddict:to_list(LDict) >>,
-  LenLabels = asm_irop:uint_enc(length(LDict)),
-  <<"LABL"
-  , (asm_irop:uint_enc(byte_size(Out) + byte_size(LenLabels)))/binary
-  , LenLabels/binary
-  , Out/binary>>;
+%% to_binary({labels, LDict}) ->
+%%   %(asm_irop:uint_enc(Label))/binary,
+%%   Out = << <<(asm_irop:uint_enc(Pos))/binary>>
+%%         || {_Label, Pos} <- orddict:to_list(LDict) >>,
+%%   LenLabels = asm_irop:uint_enc(length(LDict)),
+%%   <<"LABL"
+%%   , (asm_irop:uint_enc(byte_size(Out) + byte_size(LenLabels)))/binary
+%%   , LenLabels/binary
+%%   , Out/binary>>;
 to_binary({code, Code}) when is_binary(Code) ->
   CodeSize = byte_size(Code),
   io:format("code size ~p~n", [CodeSize]),
@@ -192,7 +192,7 @@ to_binary(#asm_module{name=Name, bin=Bin, literals=Lit, labels=Labels
     , (to_binary({exports, Exports}))/binary
     , (to_binary({code, Bin}))/binary
     , (to_binary({literals, Lit}))/binary
-    , (to_binary({labels, Labels}))/binary
+%%     , (to_binary({labels, Labels}))/binary
   >>.
 
 register_label(Label, Position, #asm_module{labels=Labels}=M) ->

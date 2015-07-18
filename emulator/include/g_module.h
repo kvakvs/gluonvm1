@@ -46,10 +46,9 @@ private:
   Vector<word_t> m_code;
 
 public:
-  Module(Term name, labels_t &labels, funs_t &funs, exports_t &exports)
+  Module(Term name, funs_t &funs, exports_t &exports)
     : m_name(name)
   {
-    m_labels  = labels;
     m_funs    = funs;
     m_exports = exports;
   }
@@ -81,6 +80,9 @@ public:
 
   inline void set_code(Vector<word_t> &code) {
     m_code = std::move(code); // take ownership
+  }
+  inline void set_labels(labels_t &labels) {
+    m_labels = labels;
   }
 
 protected:

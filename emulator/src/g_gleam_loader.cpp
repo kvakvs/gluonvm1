@@ -17,7 +17,7 @@ public:
   const u8_t     *m_code; // not owned data
   word_t          m_code_size;
   Vector<Term>    m_literals;
-  Module::labels_t  m_labels;   // offsets of each label going sequentially
+  Vector<code_offset_t>  m_labels;
   Module::exports_t m_exports;  // list of {f/arity} sequentially
   Module::funs_t    m_funs;     // map({f/arity} => label_index)
 
@@ -42,6 +42,9 @@ public:
   MaybeError gleam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
   // Parse one argument converting it into Term ready to be stored in code
   Term gleam_read_arg_value(Heap *heap, tool::Reader &r);
+protected:
+  MaybeError gleam_resolve_labels(const Vector<code_offset_t> &postponed_labels,
+                                  Vector<word_t> &code);
 };
 
 Result<Module *> CodeServer::load_module_internal(Term expected_name_or_nil,
@@ -91,7 +94,7 @@ Result<Module *> CodeServer::load_module_internal(Term expected_name_or_nil,
 Result<Module *> LoaderState::finalize(Term modname) {
   Heap *heap = VM::get_heap(VM::HEAP_CODE);
   Module *newmod = Heap::alloc_object<Module>(heap, // then go constructor args:
-                                              modname, m_labels, m_funs, m_exports);
+                                              modname, m_funs, m_exports);
 
   // Atoms are already in VM at this point
   //newmod->m_name = modname;
@@ -136,7 +139,7 @@ MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
 
     auto arity = r.read_var<word_t>();
     auto lbl   = r.read_var<word_t>();
-    G_LOG("load_fun_t %s/%zu -> label %zu\n", f_str.c_str(), arity, lbl);
+//    G_LOG("load_fun_t %s/%zu -> label %zu\n", f_str.c_str(), arity, lbl);
     m_funs[fun_arity_t::create(f, arity)] = label_index_t::wrap(lbl);
   }
 
@@ -209,16 +212,15 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
 MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
 {
   auto chunk_size = r0.read_var<word_t>();
-  tool::Reader r = r0.clone(chunk_size);
+//  tool::Reader r = r0.clone(chunk_size);
 
-  auto count = r.read_var<word_t>();
+//  auto count = r.read_var<word_t>();
 
-  m_labels.reserve(count+1);
-  for (word_t i = 0; i < count; ++i) {
-    m_labels.push_back(code_offset_t::wrap(r.read_var<word_t>()));
-  }
+//  m_labels.reserve(count+1);
+//  for (word_t i = 0; i < count; ++i) {
+//    m_labels.push_back(code_offset_t::wrap(r.read_var<word_t>()));
+//  }
 
-  printf("loaded %zu labels\n", m_labels.size());
   r0.advance(chunk_size);
   return success();
 }
@@ -236,7 +238,11 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
   // rough estimate of what code size would be, vector will grow if needed
   code.reserve(sz * 2);
 
-  G_ASSERT(sizeof(void*) == sizeof(word_t))
+  G_ASSERT(sizeof(void*) == sizeof(word_t));
+
+  // save references to labels in code and resolve them in second pass
+  Vector<code_offset_t> postponed_labels;
+
   while (!r.is_end()) {
     // Get opcode info
     word_t opcode = (word_t)r.read_byte();
@@ -246,26 +252,61 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
 //      return "opcode too big";
     }
 
-    word_t op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
-    code.push_back(op_ptr);
-
-    word_t arity = genop::arity_map[opcode];
-//    printf("opcode 0x%zx %s; arity %zu\n", opcode, genop::opcode_name_map[opcode], arity);
-
     // line/1 opcode
     if (opcode == genop::OPCODE_LINE) {
       gleam_read_arg_value(heap, r);
       continue;
     }
 
+    // label/1 opcode - save offset to labels table
+    if (opcode == genop::OPCODE_LABEL) {
+      Term label = gleam_read_arg_value(heap, r);
+      G_ASSERT(label.is_small());
+
+      word_t l_id = (word_t)label.small_get_value();
+      if (l_id >= m_labels.size()) {
+        m_labels.resize(l_id+1);
+      }
+      m_labels[l_id] = code_offset_t::wrap(code.size());
+      continue;
+    }
+
+    // Convert opcode into jump address
+    word_t op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
+    code.push_back(op_ptr);
+
+    word_t arity = genop::arity_map[opcode];
+//    printf("opcode 0x%zx %s; arity %zu\n", opcode, genop::opcode_name_map[opcode], arity);
+
     for (word_t a = 0; a < arity; ++a) {
       Term arg = gleam_read_arg_value(heap, r);
+      // Use runtime value 'Catch' to mark label references
+      if (term_tag::Catch::check(arg.value())) {
+        postponed_labels.push_back(code_offset_t::wrap(code.size()));
+      }
 //      arg.print();printf("\n");
       code.push_back(arg.value());
     }
   }
 
+  auto stage2 = gleam_resolve_labels(postponed_labels, code);
+  G_RETURN_IF_ERROR(stage2);
+
+  m->set_labels(m_labels);
   m->set_code(code); // give ownership
+  return success();
+}
+
+MaybeError LoaderState::gleam_resolve_labels(
+    const Vector<code_offset_t> &postponed_labels,
+    Vector<word_t> &code)
+{
+  for (word_t i = 0; i < postponed_labels.size(); ++i) {
+    word_t code_index = postponed_labels[i].value;
+    word_t label_index = code[code_index];
+    Term resolved_label = Term::make_small((sword_t)m_labels[label_index].value);
+    code[code_index] = resolved_label.value();
+  }
   return success();
 }
 
@@ -304,9 +345,13 @@ Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
     }
   case tag_label: {
       word_t label_index = r.read_var<word_t>();
-      G_ASSERT(label_index < m_labels.size());
-      auto l_offset = m_labels[label_index].value;
-      return Term::make_small((sword_t)l_offset);
+//      G_ASSERT(label_index < m_labels.size());
+//      auto l_offset = m_labels[label_index].value;
+//      return Term::make_small((sword_t)l_offset);
+
+      // Use runtime value 'Catch' to mark label references then process them
+      // on the second pass
+      return term_tag::Catch::create(label_index);
     }
 //  case tag_mfarity: {
 //      Term_t m = gleam_read_arg_value(heap, r);

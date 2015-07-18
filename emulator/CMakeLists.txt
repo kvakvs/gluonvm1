@@ -49,6 +49,8 @@ set(SRC_LIST
     src/g_process.cpp    include/g_process.h
     src/g_term.cpp       include/g_term.h
     src/g_vm.cpp         include/g_vm.h
+    src/g_vm_loop.cpp
+    src/g_vm_impl.h # because all stuff inline here
 
     # Header-only test framework
     src/fructose/fructose.h

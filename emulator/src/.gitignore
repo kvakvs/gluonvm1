@@ -1,2 +1,2 @@
 g_genop.h
-g_vm_*.inl
+g_vm_loop.cpp

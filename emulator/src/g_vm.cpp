@@ -88,11 +88,4 @@ Heap *VM::get_heap(VM::heap_t) {
   return nullptr;
 }
 
-
-#include "g_vm_loop.inl"
-
-// Cool LLVM blockaddress extension, could not make it work, yet
-// http://blog.llvm.org/2010/01/address-of-label-and-indirect-branches.html
-//#include "g_vm_jump_table.inl"
-
 } // ns gluon

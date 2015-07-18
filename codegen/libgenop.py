@@ -5,7 +5,12 @@
 MIN_OPCODE = 1
 MAX_OPCODE = 158
 
+implemented_ops = ['int_code_end', 'move']
+ops = []
+ops_by_code = {}
+
 def load():
+    global ops
     ops = []
     for ln in file("genop.tab"):
         ln = ln.strip()
@@ -20,4 +25,8 @@ def load():
         opname = opname.strip("-")
         ops.append({'name': opname, 'arity': int(oparity), 'opcode': int(opcode)})
 
-    return ops
+    # make op map by opcode
+    global ops_by_code
+    ops_by_code = {}
+    for op in ops:
+        ops_by_code[op['opcode']] = op
