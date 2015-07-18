@@ -246,6 +246,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
   while (!r.is_end()) {
     // Get opcode info
     word_t opcode = (word_t)r.read_byte();
+    printf("[%zu]: ", code.size());
 
     if (opcode > genop::MAX_OPCODE) {
       G_FAIL("opcode too big");
@@ -268,12 +269,15 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
         m_labels.resize(l_id+1);
       }
       m_labels[l_id] = code_offset_t::wrap(code.size());
+      printf("loader: label %zu\n", l_id);
       continue;
     }
 
     // Convert opcode into jump address
     word_t op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
     code.push_back(op_ptr);
+    printf("loader: op %s (opcode %zx) ptr %zx\n",
+           genop::opcode_name_map[opcode], opcode, op_ptr);
 
     word_t arity = genop::arity_map[opcode];
 //    printf("opcode 0x%zx %s; arity %zu\n", opcode, genop::opcode_name_map[opcode], arity);

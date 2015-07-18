@@ -25,6 +25,7 @@ print("""void VM::vm_loop(Process *proc) {
 
 next_instr:
   jmp_to = proc->vm_fetch_instr();
+  printf("jmp to label %zx\\n", (word_t)jmp_to);
   goto *jmp_to;
 """)
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
@@ -38,9 +39,10 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     print("OP_%s: // opcode: %d" % (op['name'], opcode))
     if op['name'] in libgenop.implemented_ops:
         print("  impl::opcode_%s(proc);" % (op['name']))
+        print("  goto next_instr;")
     else:
         print("  G_FAIL(\"notimpl %s\");" % (op['name']))
-    print("  G_IF_NODEBUG(goto next_instr;)")
+        print("  G_IF_NODEBUG(goto next_instr;)")
     print
 
 #
@@ -52,7 +54,7 @@ print("""vm_jump_table_init: {
 
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     op = libgenop.ops_by_code[opcode]
-    print("      &&OP_%s," % (op['name']))
+    print("      &&OP_%s, // opcode %d" % (op['name'], opcode))
 
 print("""    };
     g_opcode_labels = l_opcode_labels;

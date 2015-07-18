@@ -109,7 +109,7 @@ compile_irop({Op, OpArgs}, {Accum, Mod0}) ->
                  {BinArg, M1} = asm_irop:encode_arg(Arg, M),
                  {[BinArg | Accum_], M1}
                end,
-  {Args, Mod} = lists:foldl(CompileArg, {[], Mod0}, OpArgs),
+  {Args, Mod} = lists:foldr(CompileArg, {[], Mod0}, OpArgs),
   Compiled = [asm_genop:opcode(Op) | Args],
   {[Compiled | Accum], Mod}.
 

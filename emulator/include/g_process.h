@@ -50,6 +50,7 @@ public:
 
   // Reads next instruction from code (instruction pointer)
   void *vm_fetch_instr() {
+    printf("fetch instr at %zu\n", m_ip.offset.value);
     return reinterpret_cast<void *>(m_ip.next_word());
   }
   Term vm_fetch_term() {

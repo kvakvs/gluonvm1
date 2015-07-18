@@ -78,6 +78,12 @@ void Term::print()
     printf("UNKNOWN(%zx)", m_val);
   }
 }
+
+void Term::println()
+{
+  print();
+  puts("");
+}
 #endif // DEBUG
 
 

@@ -427,6 +427,7 @@ public:
 
 #if G_DEBUG
   void print();
+  void println();
 #endif
 
   //
