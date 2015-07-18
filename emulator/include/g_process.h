@@ -47,6 +47,11 @@ public:
 
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code.
   MaybeError call(Term m, Term f, word_t arity, Term args);
+  // Jump inside module
+  inline void jump_local(word_t offset) {
+    printf("local jump to %zu\n", offset);
+    m_ip.offset.value = offset;
+  }
 
   // Reads next instruction from code (instruction pointer)
   void *vm_fetch_instr() {

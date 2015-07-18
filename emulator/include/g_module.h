@@ -31,7 +31,7 @@ typedef struct fun_arity_t {
 //
 class Module {
 public:
-  typedef Vector<code_offset_t> labels_t;
+  typedef Map<word_t, code_offset_t> labels_t;
   typedef Vector<fun_arity_t> exports_t;
   typedef Map<fun_arity_t, label_index_t> funs_t;
 

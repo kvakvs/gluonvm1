@@ -5,7 +5,7 @@
 MIN_OPCODE = 1
 MAX_OPCODE = 158
 
-implemented_ops = ['int_code_end', 'move']
+implemented_ops = file("implemented.tab").read().split()
 ops = []
 ops_by_code = {}
 

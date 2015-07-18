@@ -17,7 +17,7 @@ public:
   const u8_t     *m_code; // not owned data
   word_t          m_code_size;
   Vector<Term>    m_literals;
-  Vector<code_offset_t>  m_labels;
+  Module::labels_t  m_labels;
   Module::exports_t m_exports;  // list of {f/arity} sequentially
   Module::funs_t    m_funs;     // map({f/arity} => label_index)
 
@@ -265,9 +265,6 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
       G_ASSERT(label.is_small());
 
       word_t l_id = (word_t)label.small_get_value();
-      if (l_id >= m_labels.size()) {
-        m_labels.resize(l_id+1);
-      }
       m_labels[l_id] = code_offset_t::wrap(code.size());
       printf("loader: label %zu\n", l_id);
       continue;
@@ -284,11 +281,12 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
 
     for (word_t a = 0; a < arity; ++a) {
       Term arg = gleam_read_arg_value(heap, r);
+
       // Use runtime value 'Catch' to mark label references
       if (term_tag::Catch::check(arg.value())) {
         postponed_labels.push_back(code_offset_t::wrap(code.size()));
       }
-//      arg.print();printf("\n");
+
       code.push_back(arg.value());
     }
   }
@@ -307,8 +305,14 @@ MaybeError LoaderState::gleam_resolve_labels(
 {
   for (word_t i = 0; i < postponed_labels.size(); ++i) {
     word_t code_index = postponed_labels[i].value;
-    word_t label_index = code[code_index];
+
+    // Unwrap catch-marked value
+    word_t label_index = term_tag::Catch::value(code[code_index]);
+
+    // New value will be small int
     Term resolved_label = Term::make_small((sword_t)m_labels[label_index].value);
+    printf("loader: resolving label %zu at %zu to %zd\n",
+           label_index, code_index, resolved_label.small_get_value());
     code[code_index] = resolved_label.value();
   }
   return success();

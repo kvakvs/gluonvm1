@@ -6,16 +6,6 @@
 namespace gluon {
 namespace impl {
 
-inline void opcode_move(Process *proc) { // opcode: 64
-  Term arg1 = proc->vm_fetch_term();
-  Term arg2 = proc->vm_fetch_term();
-  if (arg2.is_regx()) {
-    proc->set_x(arg2.regx_get_value(), arg1);
-  } else {
-    G_FAIL("bad move dst")
-  }
-}
-
 //  inline void opcode_label(Process *proc) { // opcode: 1
 //  }
 //  inline void opcode_func_info(Process *proc) { // opcode: 2
@@ -26,8 +16,13 @@ inline void opcode_move(Process *proc) { // opcode: 64
 //  }
 //  inline void opcode_call_last(Process *proc) { // opcode: 5
 //  }
-//  inline void opcode_call_only(Process *proc) { // opcode: 6
-//  }
+  inline void opcode_call_only(Process *proc) { // opcode: 6
+    /*Term arg1 =*/ proc->vm_fetch_term();
+    Term arg2 = proc->vm_fetch_term();
+    G_ASSERT(arg2.is_small());
+    word_t offset = (word_t)arg2.small_get_value();
+    proc->jump_local(offset);
+  }
 //  inline void opcode_call_ext(Process *proc) { // opcode: 7
 //  }
 //  inline void opcode_call_ext_last(Process *proc) { // opcode: 8
@@ -142,6 +137,16 @@ inline void opcode_move(Process *proc) { // opcode: 64
 //  }
 //  inline void opcode_catch_end(Process *proc) { // opcode: 63
 //  }
+
+inline void opcode_move(Process *proc) { // opcode: 64
+  Term arg1 = proc->vm_fetch_term();
+  Term arg2 = proc->vm_fetch_term();
+  if (arg2.is_regx()) {
+    proc->set_x(arg2.regx_get_value(), arg1);
+  } else {
+    G_FAIL("bad move dst")
+  }
+}
 //  inline void opcode_get_list(Process *proc) { // opcode: 65
 //  }
 //  inline void opcode_get_tuple_element(Process *proc) { // opcode: 66
