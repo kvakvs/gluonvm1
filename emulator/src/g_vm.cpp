@@ -55,12 +55,11 @@ Term VM::to_existing_atom(const Str &s) {
 }
 
 Term VM::new_atom(const Str &s) {
-  auto iter = g_atoms.find(s);
-  if (iter != g_atoms.end()) {
-    G_FAIL("atom exists")
-    G_IF_NODEBUG(return Term::make_nil());
-  }
-
+//  auto iter = g_atoms.find(s);
+//  if (iter != g_atoms.end()) {
+//    G_FAIL("atom exists")
+//    G_IF_NODEBUG(return Term::make_nil());
+//  }
   Term new_a = Term::make_atom(g_atom_counter);
   g_atoms[s] = new_a;
   g_atoms_reverse[new_a] = s;

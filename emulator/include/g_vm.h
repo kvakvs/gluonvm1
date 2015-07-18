@@ -30,7 +30,6 @@ public:
   static Term to_atom(const Str &s);
   // Returns existing or nil
   static Term to_existing_atom(const Str &s);
-  static Term new_atom(const Str &s);
   static Str find_atom(Term a);
 
   static Node *dist_this_node();
@@ -51,6 +50,10 @@ public:
   static const void **g_opcode_labels;
 
   static void vm_loop(Process *proc);
+
+private:
+  // Does not check if atom existed before. Will break old values on overwrite
+  static Term new_atom(const Str &s);
 };
 
 } // ns gluon

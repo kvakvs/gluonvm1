@@ -58,9 +58,8 @@ compile_fun_gleam({F, Arity, Code}, CState) ->
   %% First opcode in function is always label, get it
   {label, FLabel} = hd(Code),
   M1 = CState1#compile_state.mod,
-  {FunAtomIndex, M2} = asm_module:find_or_create_atom(F, M1),
-  M3 = asm_module:add_fun(FunAtomIndex, Arity, FLabel, M2),
-  CState1#compile_state{mod=M3}.
+  M2 = asm_module:add_fun(F, Arity, FLabel, M1),
+  CState1#compile_state{mod=M2}.
 
 %gleam_op({line, _}, #compile_state{}=CState) -> CState;
 %gleam_op({label, _}, #compile_state{}=CState) -> CState;

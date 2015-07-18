@@ -49,9 +49,9 @@ public:
   Module(Term name, labels_t &labels, funs_t &funs, exports_t &exports)
     : m_name(name)
   {
-    m_labels  = std::move(labels);
-    m_funs    = std::move(funs);
-    m_exports = std::move(exports);
+    m_labels  = labels;
+    m_funs    = funs;
+    m_exports = exports;
   }
 
   Module(Module &&src) {

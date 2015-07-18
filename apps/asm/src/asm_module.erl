@@ -110,9 +110,10 @@ find_literal(LitIndex, #asm_module{literals=Literals}) ->
   {value, {Lit, _}} = lists:keysearch(LitIndex, 2, Literals),
   {ok, Lit}.
 
-add_fun(FunAtomIndex, Arity, Label, MState=#asm_module{funs=Funs}) ->
+add_fun(Fun, Arity, Label, MState=#asm_module{funs=Funs}) when is_atom(Fun) ->
+  {FunAtomIndex, M1} = asm_module:find_or_create_atom(Fun, MState),
   Funs1 = orddict:store({FunAtomIndex, Arity}, Label, Funs),
-  MState#asm_module{funs = Funs1}.
+  M1#asm_module{funs = Funs1}.
 
 to_binary({labels, LDict}) ->
   %(asm_irop:uint_enc(Label))/binary,
@@ -156,8 +157,8 @@ to_binary({atoms, AtomsDict}) ->
     <<(asm_irop:uint_enc(byte_size(ABin)))/binary
     , ABin/binary>>
   end,
-  %% ASSUMPTION: orddict:to_list gives sorted ascending order without skips
-  Atoms = orddict:to_list(AtomsDict),
+  SortFun = fun({KeyA,ValA}, {KeyB,ValB}) -> {ValA,KeyA} =< {ValB,KeyB} end,
+  Atoms = lists:sort(SortFun, orddict:to_list(AtomsDict)),
   Out = iolist_to_binary([AtomEnc(Atom) || {Atom, _} <- Atoms]),
   LenAtoms = asm_irop:uint_enc(length(Atoms)),
   <<"ATOM"

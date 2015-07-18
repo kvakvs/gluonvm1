@@ -8,10 +8,10 @@
 
 namespace gluon {
 
-word_t Term::g_zero_sized_tuple = 0;
+word_t term::g_zero_sized_tuple = 0;
 
 #if FEATURE_MAPS
-word_t Term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
+word_t term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
 #endif
 
 Term Term::allocate_cons(Heap *heap, Term head, Term tail) {

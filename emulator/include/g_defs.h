@@ -111,12 +111,12 @@ namespace gluon {
 
 // TODO: debug macro goes here
 #if G_DEBUG
-#   define G_FAIL(MSG) ::fprintf(stderr, "FAIL: %s\n", MSG); ::abort();
+#   define G_FAIL(MSG) ::fprintf(stderr, "FAIL: %s (%s:%d)\n", MSG, __FILE__, __LINE__); ::abort();
 #   define G_ASSERT(X) if (!(X)) { G_FAIL(#X); }
 #   define G_ASSERT_MSG(X, MSG) if (!(X)) { G_FAIL(MSG); }
-#   define G_TODO(what) {                    \
-      ::fprintf(stderr, "TODO: %s\n", what);  \
-      G_ASSERT(what == nullptr)               \
+#   define G_TODO(what) { \
+      ::fprintf(stderr, "TODO: %s (%s:%d)\n", what, __FILE__, __LINE__);  \
+      G_ASSERT(what == nullptr) \
       }
     // Famous io:format/2 skill on Linkedin!
 #   define G_LOG ::printf

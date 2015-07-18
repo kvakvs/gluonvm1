@@ -224,6 +224,22 @@ namespace dist {
   const creation_t INTERNAL_CREATION = 255;
 } // ns dist
 
+  namespace term {
+  const word_t NIL = term_tag::Special::create(~0UL);
+  const word_t THE_NON_VALUE = term_tag::Special::create(0);
+
+  const word_t PID_ID_SIZE = 15;
+  const word_t PID_DATA_SIZE = 28;
+  const word_t PID_SER_SIZE = (PID_DATA_SIZE - PID_ID_SIZE);
+
+  const word_t SMALL_BITS = sizeof(word_t) * 8
+                            - term_tag::Smallint::L1_TAG_BITS;
+  const sword_t UPPER_BOUND = (1L << (SMALL_BITS-1))-1;
+  const sword_t LOWER_BOUND = -(1L << (SMALL_BITS-1));
+
+  extern word_t g_zero_sized_tuple;
+  extern word_t g_zero_sized_map;
+} // ns term
 
 // This wrap is here to make strong type difference between hardware hw::Word
 // (which is just a machine size unsigned integer) and term type, which is
@@ -239,15 +255,11 @@ public:
   constexpr Term(): m_val(0) {}
   //constexpr Term(const Term &other): m_val(other.m_val) {}
 
-  static const word_t NIL = term_tag::Special::create(~0UL);
-  //static const word_t MAX_ATOM_INDEX = ~(~((word_t) 0) << (sizeof(word_t)*8 - term_tag::IMMED2_SIZE));
-  static const word_t THE_NON_VALUE = term_tag::Special::create(0);
-
   constexpr static Term make_nil() {
-    return Term(NIL);
+    return Term(term::NIL);
   }
   constexpr static Term make_non_value() {
-    return Term(THE_NON_VALUE);
+    return Term(term::THE_NON_VALUE);
   }
 
   //
@@ -263,9 +275,9 @@ public:
   inline bool operator ==(const word_t x) const { return m_val == x; }
   inline bool operator !=(const Term &x) const { return m_val != x.m_val; }
   inline bool operator !=(const word_t x) const { return m_val != x; }
-  inline bool is_nil() const { return m_val == NIL; }
-  inline bool is_non_value() const { return m_val == THE_NON_VALUE; }
-  inline bool is_value() const { return m_val != THE_NON_VALUE; }
+  inline bool is_nil() const { return m_val == term::NIL; }
+  inline bool is_non_value() const { return m_val == term::THE_NON_VALUE; }
+  inline bool is_value() const { return m_val != term::THE_NON_VALUE; }
 
   //
   // Pointer magic
@@ -318,16 +330,11 @@ public:
   //
   // Small Integer
   //
-  const static word_t SMALL_BITS = sizeof(word_t) * 8
-                                  - term_tag::Smallint::L1_TAG_BITS;
-  const static sword_t UPPER_BOUND = (1L << (SMALL_BITS-1))-1;
-  const static sword_t LOWER_BOUND = -(1L << (SMALL_BITS-1));
-
   static constexpr Term make_small(sword_t x) {
     return Term(term_tag::Smallint::create(x));
   }
   static constexpr bool does_fit_into_small(sword_t n) {
-    return LOWER_BOUND <= n && n <= UPPER_BOUND;
+    return term::LOWER_BOUND <= n && n <= term::UPPER_BOUND;
   }
   constexpr bool is_small() const {
     return term_tag::Smallint::check(m_val);
@@ -364,18 +371,14 @@ public:
   //
   // Pid
   //
-  static const word_t PID_ID_SIZE = 15;
-  static const word_t PID_DATA_SIZE = 28;
-  static const word_t PID_SER_SIZE = (PID_DATA_SIZE - PID_ID_SIZE);
-
   static constexpr bool is_valid_pid_id(word_t x) {
-    return x < (1 << PID_ID_SIZE) - 1;
+    return x < (1 << term::PID_ID_SIZE) - 1;
   }
   static constexpr bool is_valid_pid_serial(word_t x) {
-    return x < (1 << PID_SER_SIZE) - 1;
+    return x < (1 << term::PID_SER_SIZE) - 1;
   }
   static constexpr word_t make_pid_data(word_t ser, word_t num) {
-      return (word_t)(ser << PID_ID_SIZE | num);
+      return (word_t)(ser << term::PID_ID_SIZE | num);
   }
   // Data arg is created using Term::make_pid_data
   static Term make_short_pid(word_t data) {
@@ -388,9 +391,8 @@ public:
   //
   // Tuple
   //
-  static word_t g_zero_sized_tuple;
   static inline Term make_zero_tuple() {
-    return Term(term_tag::Tuple::create_from_ptr(&g_zero_sized_tuple));
+    return Term(term_tag::Tuple::create_from_ptr(&term::g_zero_sized_tuple));
   }
   // NOTE: Elements should contain 1 extra slot for arity!
   static inline Term make_tuple(Term *elements, word_t arity) {
@@ -413,9 +415,8 @@ public:
   //
   // Map
   //
-  static word_t g_zero_sized_map;
   static inline Term make_zero_map() {
-    return Term(term_tag::Boxed::create_from_ptr(&g_zero_sized_map));
+    return Term(term_tag::Boxed::create_from_ptr(&term::g_zero_sized_map));
   }
   // NOTE: Elements should contain 1 extra slot for arity!
   static inline Term make_map(Term *kv_pairs, word_t arity) {

@@ -8,6 +8,7 @@ namespace gluon {
 
 Result<code_offset_t> Module::resolve_function(Term f, word_t arity)
 {
+  printf("resolve_function(%s/%zu)\n", VM::find_atom(f).c_str(), arity);
   auto iter = m_funs.find(fun_arity_t::create(f, arity));
   if (iter == m_funs.end()) {
     return error<code_offset_t>("function not found");

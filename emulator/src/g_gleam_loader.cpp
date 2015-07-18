@@ -131,10 +131,12 @@ MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
     if (f_i > m_atoms.size()) {
       return "funt: atom index too big";
     }
-    auto f     = VM::to_atom(atom_tab_index_to_str(f_i));
+    const Str &f_str = atom_tab_index_to_str(f_i);
+    auto f     = VM::to_atom(f_str);
 
     auto arity = r.read_var<word_t>();
     auto lbl   = r.read_var<word_t>();
+    G_LOG("load_fun_t %s/%zu -> label %zu\n", f_str.c_str(), arity, lbl);
     m_funs[fun_arity_t::create(f, arity)] = label_index_t::wrap(lbl);
   }
 
@@ -216,6 +218,7 @@ MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
     m_labels.push_back(code_offset_t::wrap(r.read_var<word_t>()));
   }
 
+  printf("loaded %zu labels\n", m_labels.size());
   r0.advance(chunk_size);
   return success();
 }
