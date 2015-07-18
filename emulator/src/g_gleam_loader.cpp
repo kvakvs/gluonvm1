@@ -6,6 +6,9 @@
 #include "g_heap.h"
 #include "g_module.h"
 
+// Generated opcode arity table
+#include "g_genop.h"
+
 namespace gluon {
 
 class LoaderState {
@@ -14,36 +17,37 @@ public:
   const u8_t     *m_code; // not owned data
   word_t          m_code_size;
   Vector<Term>    m_literals;
-  Vector<word_t>  m_labels;
+  Module::labels_t  m_labels;   // offsets of each label going sequentially
+  Module::exports_t m_exports;  // list of {f/arity} sequentially
+  Module::funs_t    m_funs;     // map({f/arity} => label_index)
 
   LoaderState(): m_code(nullptr), m_code_size(0) {
   }
 
   MaybeError load_atom_table(tool::Reader &r);
-  MaybeError load_fun_table(tool::Reader &r) {
-    auto sz = r.read_var<word_t>();
-    (void)sz;
-    G_ASSERT(sz == 0);
-    return success();
-  }
-  MaybeError load_export_table(tool::Reader &r) {
-    auto sz = r.read_var<word_t>();
-    (void)sz;
-    G_ASSERT(sz == 0);
-    return success();
-  }
+  MaybeError load_fun_table(tool::Reader &r);
+  MaybeError load_export_table(tool::Reader &r);
   MaybeError load_code(tool::Reader &r);
   MaybeError load_literal_table(Heap *heap, tool::Reader &r);
   MaybeError load_labels(Heap *heap, tool::Reader &r);
 
+  inline const Str &atom_tab_index_to_str(word_t i) const {
+    G_ASSERT(i < m_atoms.size());
+    return m_atoms[i];
+  }
+
   // Load finished, create a Module object and inform code server
   Result<Module *> finalize(Term modname);
+  // Parse raw code creating jump table with decoded args
+  MaybeError gleam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
+  // Parse one argument converting it into Term ready to be stored in code
+  Term gleam_read_arg_value(Heap *heap, tool::Reader &r);
 };
 
-Result<Module *> CodeServer::load_module_internal(Term name_atom,
+Result<Module *> CodeServer::load_module_internal(Term expected_name_or_nil,
                                                   const u8_t *bytes,
                                                   word_t size) {
-  G_ASSERT(name_atom.is_atom() || name_atom.is_nil());
+  G_ASSERT(expected_name_or_nil.is_atom() || expected_name_or_nil.is_nil());
   tool::Reader r(bytes, size);
   LoaderState lstate;
 
@@ -57,6 +61,10 @@ Result<Module *> CodeServer::load_module_internal(Term name_atom,
   auto modname_sz = r.read_byte();
   Str modname_s = r.read_string(modname_sz);
   Term modname = VM::to_atom(modname_s);
+  if (false == expected_name_or_nil.is_nil()
+      && modname != expected_name_or_nil) {
+    return error<Module *>("module name does not match");
+  }
 
   Heap *heap = VM::get_heap(VM::HEAP_LOADER_TMP);
 
@@ -68,7 +76,7 @@ Result<Module *> CodeServer::load_module_internal(Term name_atom,
 
     result.clear();
     if      (chunk == "ATOM") { result = lstate.load_atom_table(r); }
-    else if (chunk == "LAMD") { result = lstate.load_fun_table(r); }
+    else if (chunk == "FUNT") { result = lstate.load_fun_table(r); }
     else if (chunk == "EXPT") { result = lstate.load_export_table(r); }
     else if (chunk == "CODE") { result = lstate.load_code(r); }
     else if (chunk == "LTRL") { result = lstate.load_literal_table(heap, r); }
@@ -82,15 +90,15 @@ Result<Module *> CodeServer::load_module_internal(Term name_atom,
 
 Result<Module *> LoaderState::finalize(Term modname) {
   Heap *heap = VM::get_heap(VM::HEAP_CODE);
-  Module *newmod = Heap::alloc_object<Module>(heap, modname);
+  Module *newmod = Heap::alloc_object<Module>(heap, // then go constructor args:
+                                              modname, m_labels, m_funs, m_exports);
 
   // Atoms are already in VM at this point
   //newmod->m_name = modname;
   //newmod->m_code.move(m_code);
-  //newmod->m_labels = std::move(m_labels);
 
   //return success(newmod);
-  auto result = newmod->from_raw_gleam(m_code, m_code_size);
+  auto result = gleam_prepare_code(newmod, m_code, m_code_size);
   G_RETURN_REWRAP_IF_ERROR(result, Module*);
 
   return success(newmod);
@@ -112,11 +120,54 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0)
   return success();
 }
 
+MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
+  auto chunk_size = r0.read_var<word_t>();
+  tool::Reader r = r0.clone(chunk_size);
+
+  G_ASSERT(m_atoms.size() > 0);
+  word_t count = r.read_var<word_t>();
+  for (word_t i = 0; i < count; ++i) {
+    auto f_i   = r.read_var<word_t>();
+    if (f_i > m_atoms.size()) {
+      return "funt: atom index too big";
+    }
+    auto f     = VM::to_atom(atom_tab_index_to_str(f_i));
+
+    auto arity = r.read_var<word_t>();
+    auto lbl   = r.read_var<word_t>();
+    m_funs[fun_arity_t::create(f, arity)] = label_index_t::wrap(lbl);
+  }
+
+  r0.advance(chunk_size);
+  return success();
+}
+
+MaybeError LoaderState::load_export_table(tool::Reader &r0) {
+  auto chunk_size = r0.read_var<word_t>();
+  tool::Reader r = r0.clone(chunk_size);
+
+  G_ASSERT(m_atoms.size() > 0);
+  word_t count = r.read_var<word_t>();
+  for (word_t i = 0; i < count; ++i) {
+    auto f_i   = r.read_var<word_t>();
+    if (f_i > m_atoms.size()) {
+      return "expt: atom index too big";
+    }
+    auto f = VM::to_atom(atom_tab_index_to_str(f_i));
+
+    auto arity = r.read_var<word_t>();
+    m_exports.push_back(fun_arity_t::create(f, arity));
+  }
+
+  r0.advance(chunk_size);
+  return success();
+}
+
 MaybeError LoaderState::load_code(tool::Reader &r0) {
   auto chunk_size = r0.read_var<word_t>();
   tool::Reader r = r0.clone(chunk_size);
 
-  G_LOG("code section %zu bytes\n", chunk_size);
+  //  G_LOG("code section %zu bytes\n", chunk_size);
 
   //auto dptr = mem::alloc_bytes(chunk_size).get_result(); // TODO: feeling lucky
   //r.read_bytes(dptr, chunk_size);
@@ -129,7 +180,7 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
 
 MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
 {
-  G_LOG("load lit table\n");
+//  G_LOG("load lit table\n");
   auto chunk_size = r0.read_var<word_t>();
   tool::Reader r = r0.clone(chunk_size);
 
@@ -144,7 +195,7 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
 
     auto lit = lit_result.get_result();
 #if G_DEBUG
-    lit.print();
+    lit.print();puts("");
 #endif
     m_literals.push_back(lit);
   }
@@ -162,11 +213,125 @@ MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
 
   m_labels.reserve(count+1);
   for (word_t i = 0; i < count; ++i) {
-    m_labels.push_back(r.read_var<word_t>());
+    m_labels.push_back(code_offset_t::wrap(r.read_var<word_t>()));
   }
 
   r0.advance(chunk_size);
   return success();
+}
+
+// Scans raw code in bytes:sz, and builds jump table with processed args
+MaybeError LoaderState::gleam_prepare_code(Module *m,
+                                           const u8_t *bytes, word_t sz)
+{
+  // TODO: use some other heap?
+  Heap *heap = VM::get_heap(VM::HEAP_LOADER_TMP);
+
+  tool::Reader r(bytes, sz);
+
+  Vector<word_t> code;
+  // rough estimate of what code size would be, vector will grow if needed
+  code.reserve(sz * 2);
+
+  G_ASSERT(sizeof(void*) == sizeof(word_t))
+  while (!r.is_end()) {
+    // Get opcode info
+    word_t opcode = (word_t)r.read_byte();
+
+    if (opcode > genop::MAX_OPCODE) {
+      G_FAIL("opcode too big");
+//      return "opcode too big";
+    }
+
+    word_t op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
+    code.push_back(op_ptr);
+
+    word_t arity = genop::arity_map[opcode];
+//    printf("opcode 0x%zx %s; arity %zu\n", opcode, genop::opcode_name_map[opcode], arity);
+
+    // line/1 opcode
+    if (opcode == genop::OPCODE_LINE) {
+      gleam_read_arg_value(heap, r);
+      continue;
+    }
+
+    for (word_t a = 0; a < arity; ++a) {
+      Term arg = gleam_read_arg_value(heap, r);
+//      arg.print();printf("\n");
+      code.push_back(arg.value());
+    }
+  }
+
+  m->set_code(code); // give ownership
+  return success();
+}
+
+Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
+{
+  u8_t tag = r.read_byte();
+
+  // TODO: pack these little better
+  const u8_t tag_integer_pos  = 255; // FF
+  const u8_t tag_integer_neg  = 254; // FE
+  const u8_t tag_atom         = 253; // FD
+  const u8_t tag_label        = 252; // FC
+//  const u8_t tag_mfarity    = 251; // FB
+  const u8_t tag_register     = 250; // FA
+  const u8_t tag_stack        = 249; // F9
+  const u8_t tag_nil          = 248; // F8
+  const u8_t tag_literal      = 247; // F7
+  const u8_t tag_fp_register  = 246; // F6
+
+  switch (tag) {
+  case tag_integer_pos:
+  case tag_integer_neg: {
+      word_t x0 = r.read_var<word_t>();
+      sword_t x = (tag == tag_integer_pos? (sword_t)x0 : -(sword_t)x0);
+      if (Term::does_fit_into_small(x)) {
+        return Term::make_small(x);
+      } else {
+        G_TODO("int does not fit into small");
+      }
+      G_IF_NODEBUG(break;)
+    }
+  case tag_atom: {
+      word_t atom_index = r.read_var<word_t>();
+      G_ASSERT(atom_index < m_atoms.size());
+      return VM::to_atom(atom_tab_index_to_str(atom_index));
+    }
+  case tag_label: {
+      word_t label_index = r.read_var<word_t>();
+      G_ASSERT(label_index < m_labels.size());
+      auto l_offset = m_labels[label_index].value;
+      return Term::make_small((sword_t)l_offset);
+    }
+//  case tag_mfarity: {
+//      Term_t m = gleam_read_arg_value(heap, r);
+//      Term_t f = gleam_read_arg_value(heap, r);
+//      Term_t arity = gleam_read_arg_value(heap, r);
+//    }
+  case tag_register: {
+      word_t reg_index = r.read_var<word_t>();
+      return Term::make_regx(reg_index);
+    }
+  case tag_stack: {
+      word_t stk_index = r.read_var<word_t>();
+      return Term::make_regy(stk_index);
+    }
+  case tag_nil:
+    return Term::make_nil();
+  case tag_literal: {
+      word_t lit_index = r.read_var<word_t>();
+      G_ASSERT(lit_index < m_literals.size());
+      return m_literals[lit_index];
+    }
+  case tag_fp_register: {
+      word_t fp_index = r.read_var<word_t>();
+      return Term::make_regfp(fp_index);
+    }
+  } // case tag of
+
+  return Term::make_nil();
 }
 
 } // ns gluon

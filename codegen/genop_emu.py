@@ -22,6 +22,12 @@ ops_by_code = {}
 for op in ops:
     ops_by_code[op['opcode']] = op
 
+# print constants
+for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
+    op = ops_by_code[opcode]
+    print("const u8_t OPCODE_%s = %d; // 0x%x" % (op['name'].upper(), opcode, opcode));
+print
+
 # print arity map
 print("const unsigned char arity_map[] = {0, // opcode 0 does not exist")
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):

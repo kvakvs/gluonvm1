@@ -25,7 +25,7 @@ int main(int argc, const char *argv[]) {
   // normal start
   vm::load_module("../test/g_test1.S.gleam");
   gluon::Process p;
-  auto j_result = p.jump(vm::to_atom("g_test1"), vm::to_atom("test1"),
+  auto j_result = p.call(vm::to_atom("g_test1"), vm::to_atom("test1"), 0,
                          gluon::Term::make_nil());
   if (j_result.is_error()) {
     printf("jump error: %s\n", j_result.get_error());

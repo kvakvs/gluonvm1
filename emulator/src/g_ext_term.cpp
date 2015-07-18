@@ -192,7 +192,7 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
 
   case INTEGER_EXT: {
       // 32-bit integer
-      word_t n = r.read_bigendian_i32();
+      sword_t n = (sword_t)r.read_bigendian_i32();
       if (get_hardware_bits() > 32) {
         // fits into small_int if platform is x64
         return success(Term::make_small(n));

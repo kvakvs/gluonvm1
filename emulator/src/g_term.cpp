@@ -65,6 +65,15 @@ void Term::print()
   else if (is_pid()) {
     printf("PID");
   }
+  else if (is_regx()) {
+    printf("X[%zu]", regx_get_value());
+  }
+  else if (is_regfp()) {
+    printf("FP[%zu]", regfp_get_value());
+  }
+  else if (is_regy()) {
+    printf("Y[%zu]", regy_get_value());
+  }
   else {
     printf("UNKNOWN(%zx)", m_val);
   }

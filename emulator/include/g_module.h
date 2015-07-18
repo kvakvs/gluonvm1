@@ -7,21 +7,51 @@
 
 namespace gluon {
 
+class Heap;
+
+// A pair of atom and int arity, can be used as map key
+typedef struct fun_arity_t {
+  Term    fun;
+  word_t  arity;
+  static inline fun_arity_t create(Term f, word_t a) {
+    fun_arity_t fa;
+    fa.fun = f;
+    fa.arity = a;
+    return fa;
+  }
+  inline bool operator < (const fun_arity_t &other) const {
+    // TODO: this may be not very correct
+    return fun.value() < other.fun.value() || arity < other.arity;
+  }
+} fun_arity_t;
+
 //
 // Class Module represents a single Erlang module with code. When multiple
 // versions of same module are loaded, you'll find one Module for each version
 //
 class Module {
+public:
+  typedef Vector<code_offset_t> labels_t;
+  typedef Vector<fun_arity_t> exports_t;
+  typedef Map<fun_arity_t, label_index_t> funs_t;
+
+private:
   Term m_name;
 
-  Vector<code_offset_t>    m_labels;
-  Map<Term, label_index_t> m_functions;
+  labels_t  m_labels;
+  exports_t m_exports; // just list of {f/arity}
+  funs_t    m_funs; // map({f/arity} => label_index)
 
   // Instruction layout in code: { void *label; Term args[arity] }
   Vector<word_t> m_code;
 
 public:
-  Module(Term name): m_name(name) {
+  Module(Term name, labels_t &labels, funs_t &funs, exports_t &exports)
+    : m_name(name)
+  {
+    m_labels  = std::move(labels);
+    m_funs    = std::move(funs);
+    m_exports = std::move(exports);
   }
 
   Module(Module &&src) {
@@ -44,13 +74,16 @@ public:
   }
 
   // Resolves function in current module to a label number
-  Result<code_offset_t> resolve_function(Term f);
+  Result<code_offset_t> resolve_function(Term f, word_t arity);
 
   // Resolves label to an offset in code
   Result<code_offset_t> resolve_label(label_index_t label);
 
+  inline void set_code(Vector<word_t> &code) {
+    m_code = std::move(code); // take ownership
+  }
+
 protected:
-  Term read_arg_value(tool::Reader &r);
 };
 
 } // ns gluon

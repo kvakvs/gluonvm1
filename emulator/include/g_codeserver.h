@@ -34,7 +34,7 @@ public:
   static Module *find_module(Term m);
 
 protected:
-  static Result<Module *> load_module_internal(Term name_atom,
+  static Result<Module *> load_module_internal(Term expected_name_or_nil,
                                                const u8_t *bytes, word_t size);
 };
 

@@ -41,7 +41,7 @@ public:
   Process() {
   }
 
-  MaybeError jump(Term m, Term f, Term args);
+  MaybeError call(Term m, Term f, word_t arity, Term args);
 
   // Reads next instruction from code (instruction pointer)
   void *vm_fetch_instr();

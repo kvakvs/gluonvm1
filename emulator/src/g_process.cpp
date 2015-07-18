@@ -5,11 +5,17 @@
 
 namespace gluon {
 
-MaybeError Process::jump(Term m, Term f, Term args)
+MaybeError Process::call(Term m, Term f, word_t arity, Term args)
 {
+  G_ASSERT(this);
+
   auto mod = CodeServer::find_module(m);
+  if (!mod) {
+    return "module not found";
+  }
+
   m_ip.module = mod;
-  auto r_result = mod->resolve_function(f);
+  auto r_result = mod->resolve_function(f, arity);
   G_RETURN_IF_ERROR(r_result);
   m_ip.offset = r_result.get_result();
   return success();

@@ -18,12 +18,14 @@
 process(Fname) ->
   {ok, Asm} = file:consult(Fname),
 
-  %% Cut away header tags
+  [{module, ModName} | _] = Asm,
+
+    %% Cut away header tags
   Trimmed = lists:dropwhile(fun not_func_header/1, Asm),
   Funs = split_funs(Trimmed, []),
   io:format("Funs ~p~n", [Funs]),
 
-  Mod0 = asm_module:new(init),
+  Mod0 = asm_module:new(ModName),
   Mod1 = asm_module:set_exports(proplists:get_value(exports, Asm), Mod0),
 
   CompileState = #compile_state{mod = Mod1},
@@ -32,12 +34,12 @@ process(Fname) ->
   Code1 = lists:flatten(Code),
   Mod3 = asm_module:set_ir(Code1, Mod2),
 
-  {Bin0, Mod4} = lists:foldr(fun compile_irop/2, {[], Mod3}, Code1),
+  {Bin0, Mod4} = lists:foldr(fun compile_irop_dbg/2, {[], Mod3}, Code1),
   Bin  = iolist_to_binary(Bin0),
   Mod  = asm_module:set_bin(Bin, Mod4),
 
-  io:format("Module ~p~n", [Mod]),
-  %ok = asm_module:write_ir(Fname ++ ".ir", Mod),
+  io:format("Module ~p~n", [asm_module:to_proplist(Mod)]),
+  %%ok = asm_module:write_ir(Fname ++ ".ir", Mod),
   ok = file:write_file(Fname ++ ".gleam", asm_module:to_binary(Mod)).
 
 %% @doc Predicate to separate fun headers
@@ -80,7 +82,7 @@ gleam_op(Src, #compile_state{}=CState) ->
   op(Src, CState).
 
 op(Src, #compile_state{}=CState) ->
-  io:format("gleam_op src=~p~n", [Src]),
+  %%io:format("gleam_op src=~p~n", [Src]),
   Op = element(1, Src),
   %Opcode = asm_genop:opcode(Op),
   Arity = asm_genop:arity(Op),
@@ -91,6 +93,12 @@ emit_gleam_op(Op, CState) when not is_list(Op) -> emit_gleam_op([Op], CState);
 emit_gleam_op(Ops, CState = #compile_state{ir = Ir0}) ->
   %% TODO: ++ is O(N^2)
   CState#compile_state{ ir = Ir0 ++ Ops }.
+
+compile_irop_dbg(Op, {Accum0, State0}) ->
+  {Accum1, State1} = compile_irop(Op, {Accum0, State0}),
+  Diff = case Accum1 == Accum0 of true -> []; false -> hd(Accum1) end,
+  io:format("~p -> ~p~n", [Op, Diff]),
+  {Accum1, State1}.
 
 %% Catch label instruction and write its offset in bytes to separate map
 compile_irop({label, [N]}, {Accum, Mod0}) ->

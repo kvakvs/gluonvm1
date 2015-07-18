@@ -81,10 +81,10 @@ namespace term_tag {
     SMALL_INT = 1,
     SHORT_PID = 2,
     SHORT_OID = 4,
-    L1_UNUSED = 6,
+    FP_REG    = 6,
     CATCH     = 8,
-    X         = 10,
-    Y         = 12,
+    X_REG     = 10,
+    Y_REG     = 12,
     SPECIAL   = 14, // includes nil,noval,rip
   };
 
@@ -113,8 +113,9 @@ namespace term_tag {
   typedef LEVEL1_TAG<SHORT_PID> ShortPid;
   typedef LEVEL1_TAG<SHORT_OID> ShortOid;
   typedef LEVEL1_TAG<CATCH> Catch;
-  typedef LEVEL1_TAG<X> SlotX;
-  typedef LEVEL1_TAG<Y> SlotY;
+  typedef LEVEL1_TAG<FP_REG> FloatRegReference;
+  typedef LEVEL1_TAG<X_REG> RegReference;
+  typedef LEVEL1_TAG<Y_REG> StackReference;
   typedef LEVEL1_TAG<SPECIAL> Special; // includes nil,noval,rip
 
   struct Smallint {
@@ -128,11 +129,11 @@ namespace term_tag {
     constexpr static bool check(word_t x) {
       return (x & MASK) == TAG_L0_L1;
     }
-    constexpr static word_t create(word_t v) {
-      return (v << L1_TAG_BITS) | TAG_L0_L1;
+    constexpr static word_t create(sword_t v) {
+      return (word_t)(v << L1_TAG_BITS) | TAG_L0_L1;
     }
-    constexpr static word_t value(word_t t) {
-      return t >> L1_TAG_BITS;
+    constexpr static sword_t value(word_t t) {
+      return (sword_t)t >> L1_TAG_BITS;
     }
   };
 
@@ -319,20 +320,19 @@ public:
   //
   const static word_t SMALL_BITS = sizeof(word_t) * 8
                                   - term_tag::Smallint::L1_TAG_BITS;
-  const static word_t UPPER_BOUND = (1UL << (SMALL_BITS-1))-1;
-  const static word_t LOWER_BOUND = -(1UL << (SMALL_BITS-1));
+  const static sword_t UPPER_BOUND = (1L << (SMALL_BITS-1))-1;
+  const static sword_t LOWER_BOUND = -(1L << (SMALL_BITS-1));
 
-  static constexpr Term make_small(word_t x) {
+  static constexpr Term make_small(sword_t x) {
     return Term(term_tag::Smallint::create(x));
   }
-  template <typename N>
-  static constexpr bool does_fit_into_small(N n) {
+  static constexpr bool does_fit_into_small(sword_t n) {
     return LOWER_BOUND <= n && n <= UPPER_BOUND;
   }
   constexpr bool is_small() const {
     return term_tag::Smallint::check(m_val);
   }
-  constexpr word_t small_get_value() const {
+  constexpr sword_t small_get_value() const {
     return term_tag::Smallint::value(m_val);
   }
 
@@ -427,6 +427,39 @@ public:
 #if G_DEBUG
   void print();
 #endif
+
+  //
+  // Special values
+  //
+  constexpr bool is_regx() const {
+    return term_tag::RegReference::check(m_val);
+  }
+  static constexpr Term make_regx(word_t x) {
+    return Term(term_tag::RegReference::create(x));
+  }
+  constexpr word_t regx_get_value() const {
+    return term_tag::RegReference::value(m_val);
+  }
+
+  constexpr bool is_regfp() const {
+    return term_tag::FloatRegReference::check(m_val);
+  }
+  static constexpr Term make_regfp(word_t x) {
+    return Term(term_tag::FloatRegReference::create(x));
+  }
+  constexpr word_t regfp_get_value() const {
+    return term_tag::FloatRegReference::value(m_val);
+  }
+
+  constexpr bool is_regy() const {
+    return term_tag::StackReference::check(m_val);
+  }
+  static constexpr Term make_regy(word_t x) {
+    return Term(term_tag::StackReference::create(x));
+  }
+  constexpr word_t regy_get_value() const {
+    return term_tag::StackReference::value(m_val);
+  }
 };
 
 #if G_TEST
