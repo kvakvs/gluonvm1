@@ -1,4 +1,5 @@
 #include "bif/g_bif_misc.h"
+#include "g_vm.h"
 
 namespace gluon {
 namespace bif {
@@ -9,10 +10,17 @@ bool is_term_smaller(Term a, Term b)
     return false;
   }
 
+  // number < atom < reference < fun < oid < pid < tuple < empty_list < list < binary
   if (Term::are_both_immed(a, b)) {
     if (Term::are_both_small(a, b)) {
       return a.small_get_value() < b.small_get_value();
     }
+#if FEATURE_BIGNUM
+    // TODO: case when one small and one big? Compare both +-- as big
+    //if (Term::are_both_big(a, b)) {
+#     error "bigint compare"
+    //}
+#endif
 
     if (a.is_small()) { // means b is not smallint
       return true;
@@ -26,41 +34,41 @@ bool is_term_smaller(Term a, Term b)
       return true;
     }
 
-//    if (is_atom(a)) {
-//      if (is_int(b)) {
-//        return 0;
-//      } else if (is_atom(b)) {
-//        uint8_t *print1 = atoms_get(atom_index(a));
-//        uint8_t *print2 = atoms_get(atom_index(b));
-//        int short_len = (print1[0] < print2[0])
-//                        ? print1[0]
-//                        : print2[0];
-//        int d = memcmp(print1 + 1, print2 + 1, short_len);
+    if (a.is_atom()) {
+      if (b.is_integer()) {
+        // Atom > Int
+        return false;
+      } else if (b.is_atom()) {
+        // Compare atoms
+        const Str &print1 = VM::find_atom(a);
+        const Str &print2 = VM::find_atom(b);
+        return print1 < print2;
+      } else {
+        // Atom is < everything else
+        return true;
+      }
+    }
 
-//        if (d == 0) {
-//          return print1[0] < print2[0];
-//        }
-
-//        return d < 0;
-//      } else {
-//        return 1;
-//      }
-//    } else if (is_short_oid(a)) {
-//      if (is_int(b) || is_atom(b)) {
-//        return 0;
-//      } else if (is_short_oid(b)) {
-//        return short_oid_id(a) < short_oid_id(b);
-//      } else {
-//        return 1;
-//      }
-//    } else if (is_short_pid(a)) {
-//      if (is_int(b) || is_atom(b) || is_short_oid(b)) {
-//        return 0;
-//      } else {
-//        assert(is_short_pid(b));
-//        return short_pid_id(a) < short_pid_id(b);
-//      }
-//    }
+    if (a.is_port()) {
+      // Port is greater than any int or atom
+      if (b.is_integer() || b.is_atom()) {
+        return false;
+      } else if (b.is_short_port()) {
+        return a.short_port_get_value() < b.short_port_get_value();
+      } else {
+        return true;
+      }
+    } else if (a.is_pid()) {
+      if (b.is_integer() || b.is_atom() || b.is_port()) {
+        return 0;
+      } else {
+#if FEATURE_ERL_DIST
+#       error "long pids?"
+#endif
+        G_ASSERT(b.is_short_pid());
+        return a.short_pid_get_value() < b.short_pid_get_value();
+      }
+    }
   }
 
   G_TODO("compare");

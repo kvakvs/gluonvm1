@@ -31,7 +31,7 @@ typedef struct fun_arity_t {
 //
 class Module {
 public:
-  typedef Map<word_t, code_offset_t> labels_t;
+  typedef Map<word_t, word_t> labels_t;
   typedef Vector<fun_arity_t> exports_t;
   typedef Map<fun_arity_t, label_index_t> funs_t;
 
@@ -73,11 +73,11 @@ public:
     return m_code[ptr];
   }
 
-  // Resolves function in current module to a label number
-  Result<code_offset_t> resolve_function(Term f, word_t arity);
+  // Resolves function in current module to a code pointer
+  Result<word_t *> resolve_function(Term f, word_t arity);
 
-  // Resolves label to an offset in code
-  Result<code_offset_t> resolve_label(label_index_t label);
+  // Resolves label to a code pointer
+  Result<word_t *> resolve_label(label_index_t label);
 
   inline void set_code(Vector<word_t> &code) {
     m_code = std::move(code); // take ownership

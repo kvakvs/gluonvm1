@@ -18,18 +18,18 @@ namespace gluon {
 """)
 
 print("""void VM::vm_loop(Process *proc) {
-  word_t *ip;
+  impl::vm_runtime_ctx_t ctx;
   void *jmp_to;
 
   if (!proc) {
     goto vm_jump_table_init;
   }
 
-  ip = proc->get_ip();
+  ctx.load(proc); // get copies of quick access data from environment
 
 next_instr:
-  jmp_to = (void *)(*ip);
-  ip++;
+  jmp_to = (void *)(*ctx.ip);
+  ctx.ip++;
   //printf("jmp to label %zx\\n", (word_t)jmp_to);
   goto *jmp_to;
 """)
@@ -43,7 +43,7 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
 
     print("OP_%s: // opcode: %d" % (op['name'], opcode))
     if op['name'] in libgenop.implemented_ops:
-        print("  impl::opcode_%s(proc, ip);" % (op['name']))
+        print("  impl::opcode_%s(proc, ctx);" % (op['name']))
         print("  goto next_instr;")
     else:
         print("  G_FAIL(\"notimpl %s\");" % (op['name']))

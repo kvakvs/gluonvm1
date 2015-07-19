@@ -81,7 +81,7 @@ namespace term_tag {
     ATOM      = 0, //(0 << PRIMARY_SIZE) | IMMED1,
     SMALL_INT = 1,
     SHORT_PID = 2,
-    SHORT_OID = 4,
+    SHORT_PORT = 4,
     FP_REG    = 6,
     CATCH     = 8,
     X_REG     = 10,
@@ -112,7 +112,7 @@ namespace term_tag {
 
   typedef LEVEL1_TAG<ATOM> Atom;
   typedef LEVEL1_TAG<SHORT_PID> ShortPid;
-  typedef LEVEL1_TAG<SHORT_OID> ShortOid;
+  typedef LEVEL1_TAG<SHORT_PORT> ShortPort;
   typedef LEVEL1_TAG<CATCH> Catch;
   typedef LEVEL1_TAG<FP_REG> FloatRegReference;
   typedef LEVEL1_TAG<X_REG> RegReference;
@@ -156,7 +156,7 @@ namespace term_tag {
     BOXED_FUN         = 6,
     BOXED_EXPORT      = 7,
     BOXED_PID         = 8,
-    BOXED_OID         = 9,
+    BOXED_PORT        = 9,
     BOXED_REF         = 10,
     BOXED_RIP         = 11,
     BOXED_PROC_BIN    = 12,
@@ -193,7 +193,7 @@ namespace term_tag {
   typedef BOXED_SUBTAG<BOXED_FUN> BoxedFun;
   typedef BOXED_SUBTAG<BOXED_EXPORT> BoxedExport;
   typedef BOXED_SUBTAG<BOXED_PID> BoxedPid;
-  typedef BOXED_SUBTAG<BOXED_OID> BoxedOid;
+  typedef BOXED_SUBTAG<BOXED_PORT> BoxedPort;
   typedef BOXED_SUBTAG<BOXED_REF> BoxedRef;
   typedef BOXED_SUBTAG<BOXED_RIP> BoxedRIP;
   typedef BOXED_SUBTAG<BOXED_PROC_BIN> BoxedProcBin;
@@ -293,8 +293,8 @@ public:
   template <typename T> inline T *boxed_get_ptr() const {
     return term_tag::Boxed::value_ptr<T>(m_val);
   }
-  inline static Term make_boxed(Term *x) {
-    return Term(term_tag::Boxed::create_from_ptr<Term>(x));
+  template <typename T> inline static Term make_boxed(T *x) {
+    return Term(term_tag::Boxed::create_from_ptr<T>(x));
   }
   inline bool is_boxed() const {
     return term_tag::Boxed::check(m_val);
@@ -347,6 +347,14 @@ public:
   constexpr bool is_small() const {
     return term_tag::Smallint::check(m_val);
   }
+  constexpr bool is_integer() const {
+    // Match either small int or big int if feature is enabled
+#if FEATURE_BIGNUM
+    return is_small() || is_big();
+#else
+    return is_small();
+#endif
+  }
   constexpr sword_t small_get_value() const {
     return term_tag::Smallint::value(m_val);
   }
@@ -395,8 +403,30 @@ public:
   static Term make_short_pid(word_t data) {
     return Term(term_tag::ShortPid::create(data));
   }
-  constexpr bool is_pid() const {
+  constexpr bool is_short_pid() const {
     return term_tag::ShortPid::check(m_val);
+  }
+  constexpr bool is_pid() const {
+#if FEATURE_ERL_DIST
+    return is_short_pid() || term_tag::BoxedPid::check(m_val);
+#else
+    return is_short_pid();
+#endif
+  }
+  constexpr word_t short_pid_get_value() const {
+    return term_tag::ShortPid::value(m_val);
+  }
+  //
+  // Port id (Oid)
+  //
+  constexpr bool is_short_port() const {
+    return term_tag::ShortPort::check(m_val);
+  }
+  constexpr bool is_port() const {
+    return is_short_port() || term_tag::BoxedPort::check(m_val);
+  }
+  constexpr word_t short_port_get_value() const {
+    return term_tag::ShortPort::value(m_val);
   }
 
   //
@@ -478,5 +508,11 @@ public:
 #if G_TEST
 void term_test(int argc, const char *argv[]);
 #endif // TEST
+
+class Process;
+typedef Term (*gc_bif0_fn)(Process *);
+typedef Term (*gc_bif1_fn)(Process *, Term);
+typedef Term (*gc_bif2_fn)(Process *, Term, Term);
+
 
 } // ns gluon

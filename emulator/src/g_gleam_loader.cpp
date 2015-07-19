@@ -43,7 +43,7 @@ public:
   // Parse one argument converting it into Term ready to be stored in code
   Term gleam_read_arg_value(Heap *heap, tool::Reader &r);
 protected:
-  MaybeError gleam_resolve_labels(const Vector<code_offset_t> &postponed_labels,
+  MaybeError gleam_resolve_labels(const Vector<word_t> &postponed_labels,
                                   Vector<word_t> &code);
 };
 
@@ -241,7 +241,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
   G_ASSERT(sizeof(void*) == sizeof(word_t));
 
   // save references to labels in code and resolve them in second pass
-  Vector<code_offset_t> postponed_labels;
+  Vector<word_t> postponed_labels;
 
   while (!r.is_end()) {
     // Get opcode info
@@ -265,7 +265,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
       G_ASSERT(label.is_small());
 
       word_t l_id = (word_t)label.small_get_value();
-      m_labels[l_id] = code_offset_t::wrap(code.size());
+      m_labels[l_id] = code.size();
       printf("loader: label %zu\n", l_id);
       continue;
     }
@@ -284,7 +284,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
 
       // Use runtime value 'Catch' to mark label references
       if (term_tag::Catch::check(arg.value())) {
-        postponed_labels.push_back(code_offset_t::wrap(code.size()));
+        postponed_labels.push_back(code.size());
       }
 
       code.push_back(arg.value());
@@ -300,17 +300,17 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
 }
 
 MaybeError LoaderState::gleam_resolve_labels(
-    const Vector<code_offset_t> &postponed_labels,
-    Vector<word_t> &code)
+                                    const Vector<word_t> &postponed_labels,
+                                    Vector<word_t> &code)
 {
   for (word_t i = 0; i < postponed_labels.size(); ++i) {
-    word_t code_index = postponed_labels[i].value;
+    word_t code_index = postponed_labels[i];
 
     // Unwrap catch-marked value
     word_t label_index = term_tag::Catch::value(code[code_index]);
 
     // New value will be small int
-    Term resolved_label = Term::make_small((sword_t)m_labels[label_index].value);
+    Term resolved_label = Term::make_small((sword_t)m_labels[label_index]);
     printf("loader: resolving label %zu at %zu to %zd\n",
            label_index, code_index, resolved_label.small_get_value());
     code[code_index] = resolved_label.value();

@@ -14,24 +14,24 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
     return "module not found";
   }
 
-  if (m_ip.module) {
+  if (m_ctx.mod) {
     // push current ip if it wasn't null (initial entry call)
-    m_call_stack.push_back(m_ip);
+    m_stack.push_back(Term::make_boxed(m_ctx.ip));
   }
 
-  m_ip.module = mod;
+  m_ctx.mod = mod;
   auto r_result = mod->resolve_function(f, arity);
   G_RETURN_IF_ERROR(r_result);
-  m_ip.offset = r_result.get_result();
+  m_ctx.ip = r_result.get_result();
   return success();
 }
 
 word_t *Process::get_code_base() const {
-  return m_ip.module->m_code.data();
+  return m_ctx.mod->m_code.data();
 }
-word_t *Process::get_ip() const {
-  return m_ip.module->m_code.data() + m_ip.offset.value;
-}
+//word_t *Process::get_ip() const {
+//  return m_ctx.mod->m_code.data() + m_ip.offset.value;
+//}
 
 
 

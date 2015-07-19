@@ -62,7 +62,7 @@ void Term::print()
   else if (is_small()) {
     printf("%zd", small_get_value());
   }
-  else if (is_pid()) {
+  else if (is_short_pid()) {
     printf("PID");
   }
   else if (is_regx()) {

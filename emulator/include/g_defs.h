@@ -93,21 +93,21 @@ namespace gluon {
     }
   } label_index_t;
 
-  // Index in code table, wrapped to create a distinct compile-time type
-  typedef struct code_offset_t {
-    word_t value;
-    static inline code_offset_t wrap(word_t x) {
-      code_offset_t co;
-      co.value = x;
-      return co;
-    }
-  } code_offset_t;
+//  // Index in code table, wrapped to create a distinct compile-time type
+//  typedef struct code_offset_t {
+//    word_t value;
+//    static inline code_offset_t wrap(word_t x) {
+//      code_offset_t co;
+//      co.value = x;
+//      return co;
+//    }
+//  } code_offset_t;
 
-  class Module;
-  typedef struct {
-    Module *module;
-    code_offset_t offset;
-  } code_ptr_t;
+//  class Module;
+//  typedef struct {
+//    Module *module;
+//    code_offset_t offset;
+//  } code_ptr_t;
 
 } // ns gluon
 

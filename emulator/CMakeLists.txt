@@ -14,8 +14,9 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/
     )
 add_definitions(
-    -O0 -g -ggdb
-    #-Os
+    -O0 -g -ggdb  # debug, no optimization
+#    -Os          # optimize for size
+#    -S -Os       # optimize for size AND generate asm, build will fail though
     -Weverything -Werror
     -Wno-c++98-compat-pedantic -Wno-missing-noreturn
     -Wno-c++98-compat -Wno-padded -Wno-format-nonliteral

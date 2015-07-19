@@ -13,6 +13,7 @@ atom_str_map_t VM::g_atoms_reverse;
 word_t VM::g_atom_counter = 0;
 Node *VM::g_this_node = nullptr;
 const void **VM::g_opcode_labels;
+Str VM::g_empty_str;
 
 void VM::init()
 {
@@ -67,13 +68,14 @@ Term VM::new_atom(const Str &s) {
   return new_a;
 }
 
-Str VM::find_atom(Term a)
+const Str &VM::find_atom(Term a)
 {
+  G_ASSERT(a.is_atom());
   auto iter = g_atoms_reverse.find(a);
   if (iter != g_atoms_reverse.end()) {
     return iter->second;
   }
-  return "";
+  return g_empty_str;
 }
 
 Node *VM::dist_this_node() {

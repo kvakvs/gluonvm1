@@ -21,6 +21,8 @@ private:
   static atom_str_map_t g_atoms_reverse;
   static word_t g_atom_counter;
   static Node *g_this_node;
+  // used as "" constant when atom is not found
+  static Str g_empty_str;
 
 public:
   static void init();
@@ -30,7 +32,7 @@ public:
   static Term to_atom(const Str &s);
   // Returns existing or nil
   static Term to_existing_atom(const Str &s);
-  static Str find_atom(Term a);
+  static const Str &find_atom(Term a);
 
   static Node *dist_this_node();
 
