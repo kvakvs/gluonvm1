@@ -52,6 +52,8 @@ set(SRC_LIST
     src/g_vm_loop.cpp
     src/g_vm_impl.h # because all stuff inline here
 
+    src/bif/g_bif_misc.cpp include/bif/g_bif_misc.h
+
     # Header-only test framework
     src/fructose/fructose.h
     src/fructose/test_base.h

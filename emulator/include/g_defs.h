@@ -55,6 +55,9 @@ namespace gluon {
   template <typename V>
   using UniquePtr = std::unique_ptr<V>;
 
+  template <typename A, typename B>
+  using Pair = std::pair<A, B>;
+
   // Hardware abstractions
   namespace hw {
     using Word = long unsigned int; // size of machine word
@@ -99,6 +102,12 @@ namespace gluon {
       return co;
     }
   } code_offset_t;
+
+  class Module;
+  typedef struct {
+    Module *module;
+    code_offset_t offset;
+  } code_ptr_t;
 
 } // ns gluon
 

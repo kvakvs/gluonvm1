@@ -11,11 +11,11 @@ namespace gluon {
 
 
 // Code pointer, refers to module name, version and offset
-typedef struct {
-  Term    name;
-  word_t  version;
-  word_t  offset;
-} code_ptr_t;
+//typedef struct {
+//  Term    name;
+//  word_t  version;
+//  word_t  offset;
+//} code_ptr_t;
 
 class Module;
 

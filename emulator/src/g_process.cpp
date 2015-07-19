@@ -14,7 +14,7 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
     return "module not found";
   }
 
-  if (m_ip.is_good()) {
+  if (m_ip.module) {
     // push current ip if it wasn't null (initial entry call)
     m_call_stack.push_back(m_ip);
   }
@@ -26,13 +26,13 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
   return success();
 }
 
-
-
-word_t gleam_ptr_t::next_word() {
-  G_ASSERT(is_good());
-  auto word = module->fetch_word(offset);
-  offset.value++;
-  return word;
+word_t *Process::get_code_base() const {
+  return m_ip.module->m_code.data();
 }
+word_t *Process::get_ip() const {
+  return m_ip.module->m_code.data() + m_ip.offset.value;
+}
+
+
 
 } // ns gluon

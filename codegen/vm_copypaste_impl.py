@@ -18,7 +18,7 @@ namespace impl {""")
 # print implementations
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     op = libgenop.ops_by_code[opcode]
-    print("""  inline void opcode_%s(Process *proc) { // opcode: %d
+    print("""  inline void opcode_%s(Process *proc, word_t * &ip) { // opcode: %d
   }""" % (op['name'], opcode))
 
 print

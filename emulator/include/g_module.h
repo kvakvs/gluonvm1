@@ -42,6 +42,7 @@ private:
   exports_t m_exports; // just list of {f/arity}
   funs_t    m_funs; // map({f/arity} => label_index)
 
+public:
   // Instruction layout in code: { void *label; Term args[arity] }
   Vector<word_t> m_code;
 
@@ -67,9 +68,9 @@ public:
     return m_name;
   }
 
-  inline word_t fetch_word(code_offset_t ip) const {
-    G_ASSERT(ip.value < m_code.size());
-    return m_code[ip.value];
+  inline word_t read_word(word_t ptr) const {
+    G_ASSERT(ptr < m_code.size());
+    return m_code[ptr];
   }
 
   // Resolves function in current module to a label number

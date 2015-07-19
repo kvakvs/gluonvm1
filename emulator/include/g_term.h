@@ -71,6 +71,7 @@ namespace term_tag {
   typedef LEVEL0_TAG<CONS> Cons;
   typedef LEVEL0_TAG<TUPLE> Tuple;
   typedef LEVEL0_TAG<BOXED> Boxed;
+  typedef LEVEL0_TAG<IMMED1> Immed;
 
   //
   // Templatized tag/untag/check functions for level 1 tags (bits 2,3 when
@@ -279,6 +280,13 @@ public:
   inline bool is_non_value() const { return m_val == term::THE_NON_VALUE; }
   inline bool is_value() const { return m_val != term::THE_NON_VALUE; }
 
+  inline bool is_immed() const {
+    return term_tag::Immed::check(m_val);
+  }
+  inline static bool are_both_immed(Term a, Term b) {
+    return term_tag::Immed::check(a.value() & b.value());
+  }
+
   //
   // Pointer magic
   //
@@ -341,6 +349,9 @@ public:
   }
   constexpr sword_t small_get_value() const {
     return term_tag::Smallint::value(m_val);
+  }
+  inline static bool are_both_small(Term a, Term b) {
+    return term_tag::Smallint::check(a.value() & b.value());
   }
 
 #if FEATURE_BIGNUM
