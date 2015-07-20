@@ -1,0 +1,8 @@
+#
+# Bif atom name <dash> Arity <space> C++ function name
+#
+# Function name will be prefixed by "bif_" and suffixed by "_arity"
+# for example: - minus
+# will create mapping to bif '-'/2 named bif_minus_2(Process *, Term, Term) in C++
+#
+- 2 minus

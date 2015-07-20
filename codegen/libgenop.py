@@ -5,10 +5,6 @@
 MIN_OPCODE = 1
 MAX_OPCODE = 158
 
-implemented_ops = file("implemented.tab").read().split()
-ops = []
-ops_by_code = {}
-
 def load():
     global ops
     ops = []
@@ -30,3 +26,14 @@ def load():
     ops_by_code = {}
     for op in ops:
         ops_by_code[op['opcode']] = op
+
+def filter_comments(lst):
+    # skip lines starting with # and empty lines
+    return [i for i in lst if not i.strip().startswith("#") and len(i.strip()) > 0]
+
+implemented_ops = filter_comments(file("implemented_ops.tab").read().split("\n"))
+atom_tab = filter_comments(file("atoms.tab").read().split("\n"))
+bif_tab = filter_comments(file("bif.tab").read().split("\n"))
+
+ops = []
+ops_by_code = {}

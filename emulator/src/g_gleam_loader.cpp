@@ -266,15 +266,15 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
 
       word_t l_id = (word_t)label.small_get_value();
       m_labels[l_id] = code.size();
-      printf("loader: label %zu\n", l_id);
+//      printf("loader: label %zu\n", l_id);
       continue;
     }
 
     // Convert opcode into jump address
     word_t op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
     code.push_back(op_ptr);
-    printf("loader: op %s (opcode %zx) ptr %zx\n",
-           genop::opcode_name_map[opcode], opcode, op_ptr);
+//    printf("loader: op %s (opcode %zx) ptr %zx\n",
+//           genop::opcode_name_map[opcode], opcode, op_ptr);
 
     word_t arity = genop::arity_map[opcode];
 //    printf("opcode 0x%zx %s; arity %zu\n", opcode, genop::opcode_name_map[opcode], arity);
@@ -311,8 +311,8 @@ MaybeError LoaderState::gleam_resolve_labels(
 
     // New value will be small int
     Term resolved_label = Term::make_small((sword_t)m_labels[label_index]);
-    printf("loader: resolving label %zu at %zu to %zd\n",
-           label_index, code_index, resolved_label.small_get_value());
+//    printf("loader: resolving label %zu at %zu to %zd\n",
+//           label_index, code_index, resolved_label.small_get_value());
     code[code_index] = resolved_label.value();
   }
   return success();
