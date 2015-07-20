@@ -1,4 +1,5 @@
 #include "bif/g_bif_misc.h"
+#include "g_process.h"
 #include "g_vm.h"
 
 namespace gluon {
@@ -73,6 +74,16 @@ bool is_term_smaller(Term a, Term b)
 
   G_TODO("compare");
   //return false;
+}
+
+Term bif_minus_2(Process *, Term a, Term b)
+{
+  G_ASSERT(a.is_small());
+  G_ASSERT(b.is_small());
+  sword_t a_s = a.small_get_value();
+  sword_t b_s = b.small_get_value();
+  printf("bif minus %zd - %zd\n", a_s, b_s);
+  return Term::make_small(a_s - b_s);
 }
 
 } // ns bif

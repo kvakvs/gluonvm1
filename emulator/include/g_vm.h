@@ -53,6 +53,11 @@ public:
 
   static void vm_loop(Process *proc);
 
+  //
+  // Bif management
+  //
+  static gc_bif2_fn resolve_bif2(Term name);
+
 private:
   // Does not check if atom existed before. Will break old values on overwrite
   static Term new_atom(const Str &s);

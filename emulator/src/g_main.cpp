@@ -31,6 +31,9 @@ int main(int argc, const char *argv[]) {
     printf("jump error: %s\n", j_result.get_error());
   }
   vm::vm_loop(&proc);
+  // Print x0
+  printf("Result x0=");
+  proc.get_runtime_ctx().regs[0].println();
 
   return 0;
 #endif

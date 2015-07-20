@@ -15,20 +15,28 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   word_t *base;
   Process::stack_t *stack;
 
-  inline void load(Process *proc) {
-    const runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+  void load(Process *proc) {
+    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
     mod  = proc_ctx.mod;
     ip   = proc_ctx.ip;
+    cp   = proc_ctx.cp;
     std::memcpy(regs, proc_ctx.regs, sizeof(regs)); // TODO: more efficient copy?
 
     stack = proc->get_stack();
     base  = proc->get_code_base();
   }
+  void save(Process *proc) {
+    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+    proc_ctx.mod  = mod;
+    proc_ctx.ip   = ip;
+    proc_ctx.cp   = cp;
+    std::memcpy(proc_ctx.regs, regs, sizeof(regs)); // TODO: more efficient copy?
+  }
 
   // For special immed1 types (register and stack ref) convert them to their
   // values
   // TODO: move to context in g_vm_impl.h
-  inline void resolve_immed(Term &i) const {
+  void resolve_immed(Term &i) const {
     if (i.is_regx()) {
       i = regs[i.regx_get_value()];
     }
@@ -42,6 +50,22 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 #endif
   }
 
+  void move(Term val, Term dst) {
+    if (dst.is_regx()) {
+      regs[dst.regx_get_value()] = val;
+    } else
+    if (dst.is_regy()) {
+      (*stack)[dst.regy_get_value()] = val;
+    } else
+#if FEATURE_FLOAT
+    if (dst.is_regfp()) {
+      regs[dst.regx_get_value()] = val;
+    } else
+#endif
+    {
+      G_FAIL("bad move dst")
+    }
+  }
 };
 
 #define IMMED(var) if ((var).is_immed()) { ctx.resolve_immed(var); }
@@ -57,8 +81,11 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  inline void opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
 //  }
   inline void opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
+    // @doc Do a tail recursive call to the function at Label.
+    // Do not update the CP register.
     //Term arg1 = ctx.ip[0];
-    Term arg2 = ctx.ip[1];
+    Term arg2(ctx.ip[1]);
+    // do not update cp
 
     G_ASSERT(arg2.is_small());
     word_t offset = (word_t)arg2.small_get_value();
@@ -88,8 +115,17 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_deallocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 18
 //  }
-//  inline void opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
-//  }
+  inline bool opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
+    printf("op: return to %zx\n", (word_t)ctx.cp);
+    if (!ctx.cp) {
+      // nowhere to return: end program
+      ctx.save(proc);
+      return false; // break vm loop
+    }
+    ctx.ip = ctx.cp;
+    ctx.cp = nullptr;
+    return true; // keep running vm loop
+  }
 //  inline void opcode_send(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 20
 //  }
 //  inline void opcode_remove_message(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 21
@@ -129,9 +165,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  inline void opcode_int_bnot(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 38
 //  }
   inline void opcode_is_lt(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 39
-    Term on_fail = ctx.ip[0];
-    Term arg1    = ctx.ip[1];
-    Term arg2    = ctx.ip[2];
+    Term on_fail(ctx.ip[0]);
+    Term    arg1(ctx.ip[1]);
+    Term    arg2(ctx.ip[2]);
     IMMED(arg1); // in case they are reg references
     IMMED(arg2);
     if (Term::are_both_small(arg1, arg2)) {
@@ -197,13 +233,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 
 inline void opcode_move(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 64
-  Term arg1 = Term(ctx.ip[0]);
-  Term arg2 = Term(ctx.ip[1]);
-  if (arg2.is_regx()) {
-    ctx.regs[arg2.regx_get_value()] = arg1;
-  } else {
-    G_FAIL("bad move dst")
-  }
+  Term val(ctx.ip[0]);
+  Term dst(ctx.ip[1]);
+  ctx.move(val, dst);
   ctx.ip += 2;
 }
 //  inline void opcode_get_list(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 65
@@ -326,8 +358,24 @@ inline void opcode_move(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 64
 //  }
 //  inline void opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 124
 //  }
-//  inline void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 125
-//  }
+  inline void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 125
+    Term fun(ctx.ip[0]);
+    //Term label(ctx.ip[1]); // on crash?
+    //Term live(ctx.ip[2]);
+    Term arg1(ctx.ip[3]);
+    Term arg2(ctx.ip[4]);
+    IMMED(arg1);
+    IMMED(arg2);
+    Term result_dst(ctx.ip[5]);
+
+    gc_bif2_fn bif_fn = VM::resolve_bif2(fun);
+    G_ASSERT(bif_fn);
+
+    Term result = bif_fn(proc, arg1, arg2);
+    ctx.move(result, result_dst);
+
+    ctx.ip += 6;
+  }
 //  inline void opcode_bs_final2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 126
 //  }
 //  inline void opcode_bs_bits_to_bytes2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 127

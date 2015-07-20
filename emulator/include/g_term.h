@@ -252,7 +252,7 @@ private:
   word_t m_val;
 
 public:
-  constexpr Term(word_t v): m_val(v) {}
+  explicit constexpr Term(word_t v): m_val(v) {}
   constexpr Term(): m_val(0) {}
   //constexpr Term(const Term &other): m_val(other.m_val) {}
 
@@ -318,7 +318,7 @@ public:
   inline Term cons_get_element(word_t n) const {
     G_ASSERT(n == 0 || n == 1);
     auto p = boxed_get_ptr<word_t>();
-    return p[n];
+    return Term(p[n]);
   }
 
   //
@@ -437,7 +437,7 @@ public:
   }
   // NOTE: Elements should contain 1 extra slot for arity!
   static inline Term make_tuple(Term *elements, word_t arity) {
-    elements[0] = arity;
+    ((word_t *)elements)[0] = arity;
     return Term(term_tag::Tuple::create_from_ptr(elements));
   }
   constexpr bool is_tuple() const {
@@ -447,9 +447,11 @@ public:
     auto p = boxed_get_ptr<word_t>();
     return p[0];
   }
+  // Zero based index n
   inline Term tuple_get_element(word_t n) const {
     auto p = boxed_get_ptr<word_t>();
-    return p[n+1];
+    G_ASSERT(p[0] > n);
+    return Term(p[n+1]);
   }
 
 #if FEATURE_MAPS
@@ -483,7 +485,7 @@ public:
   constexpr word_t regx_get_value() const {
     return term_tag::RegReference::value(m_val);
   }
-
+#if FEATURE_FLOAT
   constexpr bool is_regfp() const {
     return term_tag::FloatRegReference::check(m_val);
   }
@@ -493,7 +495,7 @@ public:
   constexpr word_t regfp_get_value() const {
     return term_tag::FloatRegReference::value(m_val);
   }
-
+#endif
   constexpr bool is_regy() const {
     return term_tag::StackReference::check(m_val);
   }

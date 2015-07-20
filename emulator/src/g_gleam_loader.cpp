@@ -332,7 +332,9 @@ Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
   const u8_t tag_stack        = 249; // F9
   const u8_t tag_nil          = 248; // F8
   const u8_t tag_literal      = 247; // F7
+#if FEATURE_FLOAT
   const u8_t tag_fp_register  = 246; // F6
+#endif
 
   switch (tag) {
   case tag_integer_pos:
@@ -359,7 +361,7 @@ Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
 
       // Use runtime value 'Catch' to mark label references then process them
       // on the second pass
-      return term_tag::Catch::create(label_index);
+      return Term(term_tag::Catch::create(label_index));
     }
 //  case tag_mfarity: {
 //      Term_t m = gleam_read_arg_value(heap, r);
@@ -381,10 +383,12 @@ Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
       G_ASSERT(lit_index < m_literals.size());
       return m_literals[lit_index];
     }
+#if FEATURE_FLOAT
   case tag_fp_register: {
       word_t fp_index = r.read_var<word_t>();
       return Term::make_regfp(fp_index);
     }
+#endif
   } // case tag of
 
   return Term::make_nil();

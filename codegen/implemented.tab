@@ -1,4 +1,7 @@
 move
 call_only
+gc_bif2
+return
 
+#--- tests ---
 is_lt

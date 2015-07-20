@@ -5,6 +5,7 @@
 #include "g_dist.h"
 #include "g_heap.h"
 #include "g_process.h"
+#include "bif/g_bif_misc.h"
 
 namespace gluon {
 
@@ -87,6 +88,15 @@ Node *VM::dist_this_node() {
 
 // For now all heaps are located in normal C++ heap
 Heap *VM::get_heap(VM::heap_t) {
+  return nullptr;
+}
+
+gc_bif2_fn VM::resolve_bif2(Term name)
+{
+  // TODO: make atom constants for predef/bif name atoms
+  if (name.atom_str() == "-")  {
+    return &bif::bif_minus_2;
+  }
   return nullptr;
 }
 

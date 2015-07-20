@@ -23,7 +23,7 @@ Term Term::allocate_cons(Heap *heap, Term head, Term tail) {
 
 Str Term::atom_str() const
 {
-  return VM::find_atom(m_val);
+  return VM::find_atom(*this);
 }
 
 #if G_DEBUG
@@ -68,9 +68,11 @@ void Term::print()
   else if (is_regx()) {
     printf("X[%zu]", regx_get_value());
   }
+#if FEATURE_FLOAT
   else if (is_regfp()) {
     printf("FP[%zu]", regfp_get_value());
   }
+#endif
   else if (is_regy()) {
     printf("Y[%zu]", regy_get_value());
   }

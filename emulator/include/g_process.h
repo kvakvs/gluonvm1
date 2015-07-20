@@ -16,8 +16,11 @@ static const word_t MAX_FP_REGS = 2;
 // Set of stuff we take from Process struct to keep running, this will be saved
 // by loop runner on context switch or loop end
 typedef struct {
-  Module *mod;
-  word_t *ip;   // code pointer
+  Module *mod = nullptr;
+  word_t *ip = nullptr;   // code pointer
+  // continuation, works like return address for a single call. If more nested
+  // calls are done, cp is saved to stack
+  word_t *cp = nullptr;
 
   Term    regs[MAX_REGS];
 #if FEATURE_FLOAT
@@ -46,7 +49,7 @@ public:
 
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code.
   MaybeError call(Term m, Term f, word_t arity, Term args);
-  const runtime_ctx_t &get_runtime_ctx() const {
+  runtime_ctx_t &get_runtime_ctx() {
     return m_ctx;
   }
   stack_t *get_stack() {

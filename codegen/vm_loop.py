@@ -43,7 +43,13 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
 
     print("OP_%s: // opcode: %d" % (op['name'], opcode))
     if op['name'] in libgenop.implemented_ops:
-        print("  impl::opcode_%s(proc, ctx);" % (op['name']))
+        if op['name'] == 'return':
+            # special instruction which can interrupt loop
+            print("""  if (! impl::opcode_%s(proc, ctx)) {
+    return;
+  }""" % (op['name']))
+        else:
+            print("  impl::opcode_%s(proc, ctx);" % (op['name']))
         print("  goto next_instr;")
     else:
         print("  G_FAIL(\"notimpl %s\");" % (op['name']))
