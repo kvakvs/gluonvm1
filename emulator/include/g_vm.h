@@ -17,9 +17,11 @@ class Process;
 class VM {
 private:
   VM() = delete;
+
   static str_atom_map_t g_atoms;
   static atom_str_map_t g_atoms_reverse;
-  static word_t g_atom_counter;
+  static word_t         g_atom_counter;
+
   static Node *g_this_node;
   // used as "" constant when atom is not found
   static Str g_empty_str;
@@ -61,6 +63,7 @@ public:
 private:
   // Does not check if atom existed before. Will break old values on overwrite
   static Term new_atom(const Str &s);
+  static void init_predef_atoms();
 };
 
 } // ns gluon

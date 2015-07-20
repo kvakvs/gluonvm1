@@ -5,7 +5,7 @@
 MIN_OPCODE = 1
 MAX_OPCODE = 158
 
-def load():
+def load_opcodes():
     global ops
     ops = []
     for ln in file("genop.tab"):
@@ -29,11 +29,15 @@ def load():
 
 def filter_comments(lst):
     # skip lines starting with # and empty lines
-    return [i for i in lst if not i.strip().startswith("#") and len(i.strip()) > 0]
+    return [i for i in lst
+            if not i.strip().startswith("#") and len(i.strip()) > 0]
 
 implemented_ops = filter_comments(file("implemented_ops.tab").read().split("\n"))
 atom_tab = filter_comments(file("atoms.tab").read().split("\n"))
 bif_tab = filter_comments(file("bif.tab").read().split("\n"))
+
+def load():
+    load_opcodes()
 
 ops = []
 ops_by_code = {}

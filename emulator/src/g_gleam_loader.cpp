@@ -246,7 +246,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
   while (!r.is_end()) {
     // Get opcode info
     word_t opcode = (word_t)r.read_byte();
-    printf("[%zu]: ", code.size());
+//    printf("[%zu]: ", code.size());
 
     if (opcode > genop::MAX_OPCODE) {
       G_FAIL("opcode too big");

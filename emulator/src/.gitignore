@@ -1,2 +1,4 @@
 g_genop.h
+g_vm_impl.h
 g_vm_loop.cpp
+g_predef_atoms.cpp

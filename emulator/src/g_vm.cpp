@@ -4,6 +4,7 @@
 #include "g_sys_mem.h"
 #include "g_dist.h"
 #include "g_heap.h"
+#include "g_predef_atoms.h"
 #include "g_process.h"
 #include "bif/g_bif_misc.h"
 
@@ -11,7 +12,7 @@ namespace gluon {
 
 str_atom_map_t VM::g_atoms;
 atom_str_map_t VM::g_atoms_reverse;
-word_t VM::g_atom_counter = 0;
+word_t VM::g_atom_counter; // initialized in init_predef_atoms
 Node *VM::g_this_node = nullptr;
 const void **VM::g_opcode_labels;
 Str VM::g_empty_str;
@@ -21,6 +22,7 @@ void VM::init()
   g_this_node = new Node;
   vm_loop(nullptr); // initialize labels
   CodeServer::init();
+  init_predef_atoms();
 }
 
 MaybeError VM::load_module(const Str &filename)
@@ -63,10 +65,24 @@ Term VM::new_atom(const Str &s) {
 //    G_IF_NODEBUG(return Term::make_nil());
 //  }
   Term new_a = Term::make_atom(g_atom_counter);
-  g_atoms[s] = new_a;
+  g_atoms[s]             = new_a;
   g_atoms_reverse[new_a] = s;
   g_atom_counter++;
   return new_a;
+}
+
+void VM::init_predef_atoms()
+{
+  const char *p = atom::g_predef_atoms;
+  g_atom_counter = 1;
+
+  while (*p) {
+    word_t len = (word_t)(p[0]);
+    new_atom(Str(p+1, len));
+    p += len + 1;
+  }
+
+  // TODO: get rid of
 }
 
 const Str &VM::find_atom(Term a)
