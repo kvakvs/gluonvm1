@@ -1,8 +1,12 @@
 move
 call_only
+#call_ext-do-later
 gc_bif2
 return
+allocate
+deallocate
 
 #--- tests ---
 is_lt
 is_nonempty_list
+is_nil

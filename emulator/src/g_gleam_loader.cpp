@@ -247,7 +247,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
   while (!r.is_end()) {
     // Get opcode info
     word_t opcode = (word_t)r.read_byte();
-    printf("[%zx]: ", code.size());
+    printf("[0x%zx]: ", code.size());
 
     if (opcode > genop::MAX_OPCODE) {
       G_FAIL("opcode too big");
@@ -268,19 +268,19 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
 
       word_t l_id = (word_t)label.small_get_value();
       m_labels[l_id] = code.size();
-      printf("label %zu offset %zx\n", l_id, code.size());
+      printf("label %zu offset 0x%zx\n", l_id, code.size());
       continue;
     }
 
     // Convert opcode into jump address
     word_t op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
     code.push_back(op_ptr);
-//    printf("loader: op %s (opcode %zx) ptr %zx\n",
+//    printf("loader: op %s (opcode 0x%zx) ptr 0x%zx\n",
 //           genop::opcode_name_map[opcode], opcode, op_ptr);
 
     word_t arity = genop::arity_map[opcode];
-    printf("opcode 0x%zx %s; arity %zu\n", opcode, genop::opcode_name_map[opcode],
-           arity);
+    printf("opcode=0x%zx %s; arity=%zu\n", opcode,
+           genop::opcode_name_map[opcode], arity);
 
     for (word_t a = 0; a < arity; ++a) {
       Term arg = gleam_read_arg_value(heap, r);
@@ -314,8 +314,8 @@ MaybeError LoaderState::gleam_resolve_labels(
 
     // New value will be small int
     Term resolved_label = Term::make_small((sword_t)m_labels[label_index]);
-//    printf("loader: resolving label %zu at %zu to %zd\n",
-//           label_index, code_index, resolved_label.small_get_value());
+    printf("loader: resolving label %zu at 0x%zx to 0x%zx\n",
+           label_index, code_index, resolved_label.small_get_value());
     code[code_index] = resolved_label.value();
   }
   return success();
@@ -384,6 +384,8 @@ Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
   case tag_literal: {
       word_t lit_index = r.read_var<word_t>();
       G_ASSERT(lit_index < m_literals.size());
+      printf("referred lit ");
+      m_literals[lit_index].println();
       return m_literals[lit_index];
     }
 #if FEATURE_FLOAT

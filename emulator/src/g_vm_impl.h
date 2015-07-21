@@ -73,14 +73,35 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
   void jump(Term t) {
     G_ASSERT(t.is_small());
-    printf("ctx.jump -> %zx\n", (word_t)t.small_get_value());
+    printf("ctx.jump -> 0x%zx\n", (word_t)t.small_get_value());
     ip = base + (word_t)t.small_get_value();
     G_ASSERT(ip > base);
     G_ASSERT(ip < mod->m_code.size() + base);
   }
+
+  void alloc_stack(word_t n) {
+    stack->reserve(stack->size() + n);
+    while (n > 0) {
+      (*stack).push_back(Term::make_nil());
+      n--;
+    }
+  }
+  void free_stack(word_t n) {
+    G_ASSERT(stack->size() >= n);
+    stack->resize(stack->size() - n);
+  }
+  void push(Term t) {
+    stack->push_back(t);
+  }
+  Term pop() {
+    G_ASSERT(stack->size() > 0);
+    Term t = stack->back();
+    stack->pop_back();
+    return t;
+  }
 };
 
-#define IMMED(var) if ((var).is_immed()) { ctx.resolve_immed(var); }
+#define DEREF(var) if ((var).is_immed()) { ctx.resolve_immed(var); }
 
 //  inline void opcode_label(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 1
 //  }
@@ -98,8 +119,13 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     //      Do not update the CP register.
     ctx.jump(Term(ctx.ip[1]));
   }
-//  inline void opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
-//  }
+  inline void opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
+    // @spec call_ext Arity Destination
+    // @doc Call the function of arity Arity pointed to by Destination.
+    //      Save the next instruction as the return address in the CP register.
+    ctx.cp = ctx.ip + 2;
+    //ctx.jump(ctx.ip[2]);
+  }
 //  inline void opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
 //  }
 //  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
@@ -108,8 +134,17 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
 //  }
-//  inline void opcode_allocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 12
-//  }
+  inline void opcode_allocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 12
+    // @spec allocate StackNeed Live
+    // @doc Allocate space for StackNeed words on the stack. If a GC is needed
+    //      during allocation there are Live number of live X registers.
+    //      Also save the continuation pointer (CP) on the stack.
+    Term stack_need(ctx.ip[1]);
+    G_ASSERT(stack_need.is_small());
+    ctx.alloc_stack((word_t)stack_need.small_get_value());
+    ctx.push(Term::make_boxed(ctx.cp));
+    ctx.ip += 2;
+  }
 //  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
 //  }
 //  inline void opcode_allocate_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 14
@@ -120,8 +155,15 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_init(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 17
 //  }
-//  inline void opcode_deallocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 18
-//  }
+  inline void opcode_deallocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 18
+    // @spec deallocate N
+    // @doc  Restore the continuation pointer (CP) from the stack and deallocate
+    //       N+1 words from the stack (the + 1 is for the CP).
+    Term n(ctx.ip[0]);
+    ctx.cp = ctx.pop().boxed_get_ptr<word_t>();
+    ctx.free_stack((word_t)n.small_get_value());
+    ctx.ip++;
+  }
   inline bool opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
     // @spec return
     // @doc  Return to the address in the continuation pointer (CP).
@@ -177,8 +219,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // @doc Compare two terms and jump to Lbl if Arg1 is not less than Arg2.
     Term    arg1(ctx.ip[1]);
     Term    arg2(ctx.ip[2]);
-    IMMED(arg1); // in case they are reg references
-    IMMED(arg2);
+    DEREF(arg1); // in case they are reg references
+    DEREF(arg2);
     if (Term::are_both_small(arg1, arg2)) {
       if (arg1.value() >= arg2.value()) {
         ctx.jump(Term(ctx.ip[0]));
@@ -216,8 +258,17 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_is_port(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 51
 //  }
-//  inline void opcode_is_nil(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 52
-//  }
+  inline void opcode_is_nil(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 52
+    // @spec is_nil Lbl Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not nil.
+    Term t(ctx.ip[1]);
+    DEREF(t);
+    if (t.is_nil() == false) {
+      ctx.jump(Term(ctx.ip[0]));
+    } else {
+      ctx.ip += 2;
+    }
+  }
 //  inline void opcode_is_binary(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 53
 //  }
 //  inline void opcode_is_constant(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 54
@@ -228,6 +279,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // @spec is_nonempty_list Lbl Arg1
     // @doc Test the type of Arg1 and jump to Lbl if it is not a cons.
     Term t(ctx.ip[1]);
+    DEREF(t);
+    t.println();
     if (t.is_cons() == false) {
       ctx.jump(Term(ctx.ip[0]));
     } else {
@@ -251,6 +304,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
 inline void opcode_move(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 64
   Term val(ctx.ip[0]);
+  DEREF(val);
   Term dst(ctx.ip[1]);
   ctx.move(val, dst);
   ctx.ip += 2;
@@ -381,8 +435,8 @@ inline void opcode_move(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 64
     //Term live(ctx.ip[2]);
     Term arg1(ctx.ip[3]);
     Term arg2(ctx.ip[4]);
-    IMMED(arg1);
-    IMMED(arg2);
+    DEREF(arg1);
+    DEREF(arg2);
     Term result_dst(ctx.ip[5]);
 
     gc_bif2_fn bif_fn = VM::resolve_bif2(fun);

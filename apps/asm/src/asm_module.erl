@@ -169,7 +169,8 @@ to_binary({literals, LitDict}) ->
   %% Literal table is encoded as "LitT" + var_int BytesLength + var_int Count,
   %% then each literal is encoded as external term format
   %% ASSUMPTION: orddict:to_list gives sorted ascending order without skips
-  Literals = orddict:to_list(LitDict),
+  SortFun = fun({KeyA,ValA}, {KeyB,ValB}) -> {ValA,KeyA} =< {ValB,KeyB} end,
+  Literals = lists:sort(SortFun, orddict:to_list(LitDict)),
   Enc = fun(L) ->
           LBin = term_to_binary(L),
           <<(asm_irop:uint_enc(byte_size(LBin)))/binary, LBin/binary>>
@@ -180,7 +181,7 @@ to_binary({literals, LitDict}) ->
     , (asm_irop:uint_enc(byte_size(Out) + byte_size(LenLiterals)))/binary
     , LenLiterals/binary
     , Out/binary>>;
-to_binary(#asm_module{name=Name, bin=Bin, literals=Lit, labels=Labels
+to_binary(#asm_module{name=Name, bin=Bin, literals=Lit %, labels=Labels
                      , exports=Exports, atoms=Atoms, funs=Funs}) ->
   ModName = atom_to_binary(Name, utf8),
   %% Module file is encoded as "GLEAM" + module name length + module name
