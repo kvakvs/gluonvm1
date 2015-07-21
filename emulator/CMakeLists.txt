@@ -42,7 +42,7 @@ set(SRC_LIST
     src/g_codeserver.cpp include/g_codeserver.h
     src/g_dist.cpp       include/g_dist.h
     src/g_ext_term.cpp   include/g_ext_term.h
-    src/g_genop.h # generate using Makefile in codegen/
+    src/g_genop.cpp      include/g_genop.h        # generated via codegen/ script
     src/g_gleam_loader.cpp
     src/g_heap.cpp       include/g_heap.h
     src/g_main.cpp
@@ -52,7 +52,7 @@ set(SRC_LIST
     src/g_term.cpp       include/g_term.h
     src/g_vm.cpp         include/g_vm.h
     src/g_vm_loop.cpp
-    src/g_vm_impl.h # because all stuff inline here
+    src/g_vm_impl.h # because all stuff is inline here
 
     src/bif/g_bif_misc.cpp include/bif/g_bif_misc.h
 

@@ -30,7 +30,6 @@ print("""void VM::vm_loop(Process *proc) {
 next_instr:
   jmp_to = (void *)(*ctx.ip);
   ctx.ip++;
-  //printf("jmp to label %zx\\n", (word_t)jmp_to);
   goto *jmp_to;
 """)
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
@@ -43,6 +42,7 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
 
     print("OP_%s: // opcode: %d" % (op['name'], opcode))
     if op['name'] in libgenop.implemented_ops:
+        print('  printf("vm op: %s/%d\\n");' % (op['name'], op['arity']))
         if op['name'] == 'return':
             # special instruction which can interrupt loop
             print("""  if (! impl::opcode_%s(proc, ctx)) {

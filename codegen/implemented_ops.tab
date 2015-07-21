@@ -5,3 +5,4 @@ return
 
 #--- tests ---
 is_lt
+is_nonempty_list

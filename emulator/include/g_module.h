@@ -10,20 +10,7 @@ namespace gluon {
 class Heap;
 
 // A pair of atom and int arity, can be used as map key
-typedef struct fun_arity_t {
-  Term    fun;
-  word_t  arity;
-  static inline fun_arity_t create(Term f, word_t a) {
-    fun_arity_t fa;
-    fa.fun = f;
-    fa.arity = a;
-    return fa;
-  }
-  inline bool operator < (const fun_arity_t &other) const {
-    // TODO: this may be not very correct
-    return fun.value() < other.fun.value() || arity < other.arity;
-  }
-} fun_arity_t;
+typedef Pair<Term, word_t> fun_arity_t;
 
 //
 // Class Module represents a single Erlang module with code. When multiple
@@ -58,10 +45,6 @@ public:
     m_name = std::move(src.m_name);
     m_code = std::move(src.m_code);
   }
-
-  // Scans raw code in bytes:sz, and builds jump table with processed args
-  // TODO: this maybe belongs to g_gleam_loader.cpp
-  MaybeError from_raw_gleam(const u8_t *bytes, word_t sz);
 
   Term get_name() const {
     G_ASSERT(m_name.is_atom());

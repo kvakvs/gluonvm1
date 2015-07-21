@@ -1,2 +1,5 @@
-debug: _build/gluon
+debug: make_g _build/gluon
 	gdb _build/gluon
+
+make_g:
+	cd _build && make && cd ..

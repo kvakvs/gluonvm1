@@ -140,3 +140,7 @@ namespace gluon {
 #   define G_LOG dummy_printf
 #   define G_IF_NODEBUG(X) X
 #endif
+
+// TODO: borrow hot/cold table or build my own
+#define G_ATTR_HOT __attribute((__hot__))
+#define G_ATTR_COLD __attribute((__cold__))

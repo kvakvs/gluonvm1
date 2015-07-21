@@ -140,7 +140,7 @@ MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
     auto arity = r.read_var<word_t>();
     auto lbl   = r.read_var<word_t>();
 //    G_LOG("load_fun_t %s/%zu -> label %zu\n", f_str.c_str(), arity, lbl);
-    m_funs[fun_arity_t::create(f, arity)] = label_index_t::wrap(lbl);
+    m_funs[fun_arity_t(f, arity)] = label_index_t::wrap(lbl);
   }
 
   r0.advance(chunk_size);
@@ -161,7 +161,8 @@ MaybeError LoaderState::load_export_table(tool::Reader &r0) {
     auto f = VM::to_atom(atom_tab_index_to_str(f_i));
 
     auto arity = r.read_var<word_t>();
-    m_exports.push_back(fun_arity_t::create(f, arity));
+//    printf("export %s/%zu\n", f.atom_str().c_str(), arity);
+    m_exports.push_back(fun_arity_t(f, arity));
   }
 
   r0.advance(chunk_size);
@@ -246,7 +247,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
   while (!r.is_end()) {
     // Get opcode info
     word_t opcode = (word_t)r.read_byte();
-//    printf("[%zu]: ", code.size());
+    printf("[%zx]: ", code.size());
 
     if (opcode > genop::MAX_OPCODE) {
       G_FAIL("opcode too big");
@@ -256,6 +257,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
     // line/1 opcode
     if (opcode == genop::OPCODE_LINE) {
       gleam_read_arg_value(heap, r);
+      printf("line instr\n");
       continue;
     }
 
@@ -266,7 +268,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
 
       word_t l_id = (word_t)label.small_get_value();
       m_labels[l_id] = code.size();
-//      printf("loader: label %zu\n", l_id);
+      printf("label %zu offset %zx\n", l_id, code.size());
       continue;
     }
 
@@ -277,7 +279,8 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
 //           genop::opcode_name_map[opcode], opcode, op_ptr);
 
     word_t arity = genop::arity_map[opcode];
-//    printf("opcode 0x%zx %s; arity %zu\n", opcode, genop::opcode_name_map[opcode], arity);
+    printf("opcode 0x%zx %s; arity %zu\n", opcode, genop::opcode_name_map[opcode],
+           arity);
 
     for (word_t a = 0; a < arity; ++a) {
       Term arg = gleam_read_arg_value(heap, r);

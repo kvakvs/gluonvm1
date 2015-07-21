@@ -8,8 +8,14 @@ namespace gluon {
 
 Result<word_t *> Module::resolve_function(Term f, word_t arity)
 {
-  printf("resolve_function(%s/%zu)\n", VM::find_atom(f).c_str(), arity);
-  auto iter = m_funs.find(fun_arity_t::create(f, arity));
+//  printf("resolve_function(%s/%zu)\n", f.atom_str().c_str(), arity);
+//  for (auto &pa: m_funs) {
+//    printf("fun table: %s/%zu\n", pa.first.fun.atom_str().c_str(), pa.first.arity);
+//    if (pa.first == fun_arity_t(f, arity)) {
+//      printf("found\n");
+//    }
+//  }
+  auto iter = m_funs.find(fun_arity_t(f, arity));
   if (iter == m_funs.end()) {
     return error<word_t *>("function not found");
   }
