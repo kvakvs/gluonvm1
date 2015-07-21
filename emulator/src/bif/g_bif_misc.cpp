@@ -104,5 +104,13 @@ Term bif_length_1(Process *, Term a)
   return Term::make_small(counter);
 }
 
+bool are_terms_equal(Term a, Term b, bool exact)
+{
+  G_ASSERT(a != b); // should be checked elsewhere
+
+
+}
+
+
 } // ns bif
 } // ns gluon

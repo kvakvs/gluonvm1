@@ -10,5 +10,6 @@ get_list
 
 #--- tests ---
 is_lt
+is_eq
 is_nonempty_list
 is_nil

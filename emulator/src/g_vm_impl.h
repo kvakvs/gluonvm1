@@ -236,8 +236,20 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 //  inline void opcode_is_ge(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 40
 //  }
-//  inline void opcode_is_eq(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 41
-//  }
+  inline void opcode_is_eq(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 41
+    // @spec is_eq Lbl Arg1 Arg2
+    // @doc Compare two terms and jump to Lbl if Arg1 is not (numerically) equal
+    // to Arg2.
+    Term    arg1(ctx.ip[1]);
+    Term    arg2(ctx.ip[2]);
+    DEREF(arg1); // in case they are reg references
+    DEREF(arg2);
+    if (arg1 == arg2 || bif::are_terms_equal(arg1, arg2)) {
+      ctx.ip += 3;
+    } else {
+      ctx.jump(Term(ctx.ip[0]));
+    }
+  }
 //  inline void opcode_is_ne(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 42
 //  }
 //  inline void opcode_is_eq_exact(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 43
