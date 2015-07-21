@@ -6,3 +6,4 @@
 # will create mapping to bif '-'/2 named bif_minus_2(Process *, Term, Term) in C++
 #
 - 2 minus
+length 1 length

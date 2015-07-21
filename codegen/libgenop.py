@@ -43,7 +43,7 @@ def is_printable(s):
     for c in s:
         if c not in printable: 
             return False
-    return true
+    return True
 
 def load_bifs():
     global bif_tab, atom_tab
@@ -55,7 +55,8 @@ def load_bifs():
     for b in bifs:
         b = b.split()
         bif_tab.append({'atom': b[0], 'arity': int(b[1]), 'cname': b[2]})
-        if is_printable(b[0]): atom_tab.append(b[0])
+
+        if is_printable(b[0]): atom_tab.append({'atom': b[0]})
         else: atom_tab.append({'atom': b[0], 'cname': b[2]})
 
 def load():

@@ -17,7 +17,7 @@ namespace atom {
 atom_id = 1
 for a in libgenop.atom_tab:
     if 'cname' in a:
-        constname = "_" + a['cname'].upper()
+        constname = "Q_" + a['cname'].upper()
     else:
         constname = a['atom'].upper()
     print("  const Term %s = Term::make_atom(%d);" % (constname, atom_id))

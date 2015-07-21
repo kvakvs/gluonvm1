@@ -280,7 +280,6 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // @doc Test the type of Arg1 and jump to Lbl if it is not a cons.
     Term t(ctx.ip[1]);
     DEREF(t);
-    t.println();
     if (t.is_cons() == false) {
       ctx.jump(Term(ctx.ip[0]));
     } else {
@@ -302,15 +301,26 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  inline void opcode_catch_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 63
 //  }
 
-inline void opcode_move(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 64
-  Term val(ctx.ip[0]);
-  DEREF(val);
-  Term dst(ctx.ip[1]);
-  ctx.move(val, dst);
-  ctx.ip += 2;
-}
-//  inline void opcode_get_list(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 65
-//  }
+  inline void opcode_move(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 64
+    Term val(ctx.ip[0]);
+    DEREF(val);
+    Term dst(ctx.ip[1]);
+    ctx.move(val, dst);
+    ctx.ip += 2;
+  }
+  inline void opcode_get_list(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 65
+    // @spec get_list  Source Head Tail
+    // @doc  Get the head and tail (or car and cdr) parts of a list
+    //       (a cons cell) from Source and put them into the registers
+    //       Head and Tail.
+    Term src(ctx.ip[0]);
+    DEREF(src);
+    Term dst_head(ctx.ip[1]);
+    Term dst_tail(ctx.ip[2]);
+    ctx.move(src.cons_get_element(0), dst_head);
+    ctx.move(src.cons_get_element(1), dst_tail);
+    ctx.ip += 3;
+  }
 //  inline void opcode_get_tuple_element(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 66
 //  }
 //  inline void opcode_set_tuple_element(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 67
@@ -427,9 +437,31 @@ inline void opcode_move(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 64
 //  }
 //  inline void opcode_bs_restore2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 123
 //  }
-//  inline void opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 124
-//  }
+  inline void opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 124
+    // @spec gc_bif1 Lbl Live Bif Arg Reg
+    // @doc Call the bif Bif with the argument Arg, and store the result in Reg.
+    // On failure jump to Lbl. Do a garbage collection if necessary to allocate
+    // space on the heap for the result (saving Live number of X registers).
+    Term fun(ctx.ip[0]);
+    //Term label(ctx.ip[1]); // on crash?
+    //Term live(ctx.ip[2]);
+    Term arg1(ctx.ip[3]);
+    DEREF(arg1);
+    Term result_dst(ctx.ip[4]);
+
+    gc_bif1_fn bif_fn = VM::resolve_bif1(fun);
+    G_ASSERT(bif_fn);
+
+    Term result = bif_fn(proc, arg1);
+    ctx.move(result, result_dst);
+    ctx.ip += 5;
+  }
   inline void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 125
+    // @spec gc_bif2 Lbl Live Bif Arg1 Arg2 Reg
+    // @doc Call the bif Bif with the arguments Arg1 and Arg2, and store the
+    // result in Reg. On failure jump to Lbl. Do a garbage collection if
+    // necessary to allocate space on the heap for the result (saving Live
+    // number of X registers).
     Term fun(ctx.ip[0]);
     //Term label(ctx.ip[1]); // on crash?
     //Term live(ctx.ip[2]);
@@ -444,7 +476,6 @@ inline void opcode_move(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 64
 
     Term result = bif_fn(proc, arg1, arg2);
     ctx.move(result, result_dst);
-
     ctx.ip += 6;
   }
 //  inline void opcode_bs_final2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 126

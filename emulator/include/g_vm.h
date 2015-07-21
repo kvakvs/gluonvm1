@@ -58,6 +58,7 @@ public:
   //
   // Bif management
   //
+  static gc_bif1_fn resolve_bif1(Term name);
   static gc_bif2_fn resolve_bif2(Term name);
 
 private:

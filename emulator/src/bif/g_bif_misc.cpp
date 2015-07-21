@@ -86,5 +86,23 @@ Term bif_minus_2(Process *, Term a, Term b)
   return Term::make_small(a_s - b_s);
 }
 
+Term bif_length_1(Process *, Term a)
+{
+  if (a.is_nil()) {
+    return Term::make_small(0);
+  }
+
+  G_ASSERT(a.is_cons());
+  sword_t counter = 1;
+  while (a.is_cons()) {
+    a = a.cons_get_element(1);
+    counter++;
+  }
+  if (!a.is_nil()) {
+    G_FAIL("throw badarg");
+  }
+  return Term::make_small(counter);
+}
+
 } // ns bif
 } // ns gluon

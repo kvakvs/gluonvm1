@@ -1,10 +1,12 @@
 move
 call_only
 #call_ext-do-later
+gc_bif1
 gc_bif2
 return
 allocate
 deallocate
+get_list
 
 #--- tests ---
 is_lt

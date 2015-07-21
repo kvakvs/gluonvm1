@@ -9,6 +9,7 @@ const char *g_predef_atoms =
   "\x04"  "true"
   "\x05"  "false"
   "\x01"  "-"
+  "\x06"  "length"
   ;
 
 } // ns atom
