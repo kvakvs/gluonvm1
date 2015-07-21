@@ -186,6 +186,10 @@ Term bif_length_1(Process *, Term a)
 
 bool are_terms_equal(Term a, Term b, bool exact)
 {
+  printf("are_terms_eq: ");
+  a.print();
+  printf(" ? ");
+  b.println();
   G_ASSERT(a != b); // should be checked elsewhere
 
   if (a.is_immed() || b.is_immed()) {
@@ -195,19 +199,25 @@ bool are_terms_equal(Term a, Term b, bool exact)
       return false;
     }
 
-#if FEATURE_FLOAT
-    G_TODO("float-int approximate equality");
     if (a.is_integer() && b.is_boxed()) {
+#if FEATURE_FLOAT
       word_t *term_data = peel_boxed(b);
       return (boxed_tag(term_data) == SUBTAG_FLOAT)
              && (double)int_value(a) == float_value(term_data);
-    } else if (is_boxed(a) && is_int(b)) {
+#else
+      return false;
+#endif
+    } else if (a.is_boxed() && b.is_integer()) {
+#if FEATURE_FLOAT
       uint32_t *term_data = peel_boxed(a);
       return (boxed_tag(term_data) == SUBTAG_FLOAT)
              && (float_value(term_data) == (double)int_value(b));
+#else
+      return false;
+#endif
     }
     return false;
-#endif
+//#endif
   }
 
   if (a.is_cons()) {

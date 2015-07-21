@@ -1,5 +1,6 @@
 move
 call_only
+call
 #call_ext-do-later
 gc_bif1
 gc_bif2
@@ -11,5 +12,6 @@ get_list
 #--- tests ---
 is_lt
 is_eq
+is_eq_exact
 is_nonempty_list
 is_nil

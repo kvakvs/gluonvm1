@@ -6,6 +6,7 @@
 #include "g_module.h"
 #include "bif/g_bif_misc.h"
 #include "g_genop.h"
+#include "g_predef_atoms.h"
 
 #include <cstring>
 
@@ -109,8 +110,13 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_int_code_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 3
 //  }
-//  inline void opcode_call(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 4
-//  }
+  inline void opcode_call(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 4
+    // @spec call Arity Label
+    // @doc Call the function at Label.
+    //      Save the next instruction as the return address in the CP register.
+    ctx.cp = ctx.ip + 2;
+    ctx.jump(Term(ctx.ip[1]));
+  }
 //  inline void opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
 //  }
   inline void opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
@@ -252,8 +258,23 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 //  inline void opcode_is_ne(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 42
 //  }
-//  inline void opcode_is_eq_exact(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 43
-//  }
+  inline void opcode_is_eq_exact(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 43
+    // @spec is_eq_exact Lbl Arg1 Arg2
+    // @doc Compare two terms and jump to Lbl if Arg1 is not exactly equal to Arg2.
+    Term    arg1(ctx.ip[1]);
+    Term    arg2(ctx.ip[2]);
+    DEREF(arg1); // in case they are reg references
+    DEREF(arg2);
+    if (arg1 != arg2) {
+      // immediate values must be exactly equal or we fail comparison
+      if (Term::are_both_immed(arg1, arg2)
+          || !bif::are_terms_equal(arg1, arg2, true))
+      {
+        return ctx.jump(Term(ctx.ip[0]));
+      }
+    }
+    ctx.ip += 3;
+  }
 //  inline void opcode_is_ne_exact(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 44
 //  }
 //  inline void opcode_is_integer(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 45
@@ -345,8 +366,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_put(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 71
 //  }
-//  inline void opcode_badmatch(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 72
-//  }
+  inline void opcode_badmatch(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 72
+    return ctx.raise(atom::BADMATCH);
+  }
 //  inline void opcode_if_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 73
 //  }
 //  inline void opcode_case_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 74
