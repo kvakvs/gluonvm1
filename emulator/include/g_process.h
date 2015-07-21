@@ -37,6 +37,7 @@ typedef struct {
 class Process {
 public:
   typedef Vector<Term> stack_t;
+  Term    m_stack_trace = Term::make_non_value();
 
 private:
   runtime_ctx_t m_ctx;

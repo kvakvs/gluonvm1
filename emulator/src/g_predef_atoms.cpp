@@ -6,9 +6,12 @@ namespace atom {
 extern const char *g_predef_atoms;
 
 const char *g_predef_atoms =
-  "\x04"  "true"
-  "\x05"  "false"
   "\x08"  "badmatch"
+  "\x05"  "error"
+  "\x04"  "exit"
+  "\x05"  "false"
+  "\x05"  "throw"
+  "\x04"  "true"
   "\x01"  "-"
   "\x06"  "length"
   ;

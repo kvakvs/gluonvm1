@@ -100,6 +100,18 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     stack->pop_back();
     return t;
   }
+
+  // Throws type:reason (for example error:badmatch)
+  void raise(Process *proc, Term type, Term reason) {
+    regs[0] = type;
+    regs[1] = reason;
+    proc->m_stack_trace = Term::make_non_value();
+    return exception();
+  }
+
+  void exception() {
+
+  }
 };
 
 #define DEREF(var) if ((var).is_immed()) { ctx.resolve_immed(var); }
@@ -367,7 +379,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  inline void opcode_put(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 71
 //  }
   inline void opcode_badmatch(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 72
-    return ctx.raise(atom::BADMATCH);
+    return ctx.raise(proc, atom::ERROR, atom::BADMATCH);
   }
 //  inline void opcode_if_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 73
 //  }
