@@ -118,9 +118,10 @@ namespace gluon {
 
 #define G_NORETURN __attribute__((noreturn))
 
+#define G_FAIL(MSG) ::fprintf(stderr, "FAIL: %s (%s:%d)\n", MSG, __FILE__, __LINE__); ::abort();
+
 // TODO: debug macro goes here
 #if G_DEBUG
-#   define G_FAIL(MSG) ::fprintf(stderr, "FAIL: %s (%s:%d)\n", MSG, __FILE__, __LINE__); ::abort();
 #   define G_ASSERT(X) if (!(X)) { G_FAIL(#X); }
 #   define G_ASSERT_MSG(X, MSG) if (!(X)) { G_FAIL(MSG); }
 #   define G_TODO(what) { \
@@ -133,7 +134,6 @@ namespace gluon {
 
 #else // no G_DEBUG
 
-#   define G_FAIL(MSG)
 #   define G_ASSERT(X)
 #   define G_ASSERT_MSG(X, MSG)
 #   define G_TODO(X)

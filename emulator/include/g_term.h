@@ -151,7 +151,9 @@ namespace term_tag {
   enum {
     BOXED_POS_BIGNUM  = 0,
     BOXED_NEG_BIGNUM  = 1,
+#if FEATURE_FLOAT
     BOXED_FLOAT       = 2,
+#endif
     BOXED_MAP         = 3,
     BOXED_FUN         = 6,
     BOXED_EXPORT      = 7,
@@ -165,13 +167,14 @@ namespace term_tag {
     BOXED_SUB_BIN     = 15,
   };
 
+  static inline word_t get_boxed_subtag(word_t x) {
+    return Boxed::value_ptr<word_t>(x)[0] & BOXED_SUBTAG_MASK;
+  }
+
   template <word_t SUBTAG> struct BOXED_SUBTAG {
     // Takes a term value, and checks if it is boxed and points at SUBTAG
     static inline bool check(word_t x) {
       return Boxed::check(x) && get_boxed_subtag(x) == SUBTAG;
-    }
-    static inline word_t get_boxed_subtag(word_t x) {
-      return Boxed::value_ptr<word_t>(x)[0] & BOXED_SUBTAG_MASK;
     }
     template <typename T>
     inline static word_t create_from_ptr(T *p) {
@@ -188,7 +191,9 @@ namespace term_tag {
 
   typedef BOXED_SUBTAG<BOXED_POS_BIGNUM> BoxedPosBignum;
   typedef BOXED_SUBTAG<BOXED_NEG_BIGNUM> BoxedNegBignum;
+#if FEATURE_FLOAT
   typedef BOXED_SUBTAG<BOXED_FLOAT> BoxedFloat;
+#endif
   typedef BOXED_SUBTAG<BOXED_MAP> BoxedMap;
   typedef BOXED_SUBTAG<BOXED_FUN> BoxedFun;
   typedef BOXED_SUBTAG<BOXED_EXPORT> BoxedExport;
@@ -315,12 +320,16 @@ public:
   inline bool is_cons() const {
     return term_tag::Cons::check(m_val);
   }
+  inline Term cons_head() const { return cons_get_element(0); }
+  inline Term cons_tail() const { return cons_get_element(1); }
+protected:
   inline Term cons_get_element(word_t n) const {
     G_ASSERT(n == 0 || n == 1);
     auto p = boxed_get_ptr<word_t>();
     return Term(p[n]);
   }
 
+public:
   //
   // Atoms
   //

@@ -244,7 +244,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     Term    arg2(ctx.ip[2]);
     DEREF(arg1); // in case they are reg references
     DEREF(arg2);
-    if (arg1 == arg2 || bif::are_terms_equal(arg1, arg2)) {
+    if (arg1 == arg2 || bif::are_terms_equal(arg1, arg2, false)) {
       ctx.ip += 3;
     } else {
       ctx.jump(Term(ctx.ip[0]));
@@ -329,8 +329,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     DEREF(src);
     Term dst_head(ctx.ip[1]);
     Term dst_tail(ctx.ip[2]);
-    ctx.move(src.cons_get_element(0), dst_head);
-    ctx.move(src.cons_get_element(1), dst_tail);
+    ctx.move(src.cons_head(), dst_head);
+    ctx.move(src.cons_tail(), dst_tail);
     ctx.ip += 3;
   }
 //  inline void opcode_get_tuple_element(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 66
