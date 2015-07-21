@@ -16,7 +16,7 @@ extern const char *g_predef_atoms;
 # print atom constants
 print("const char *g_predef_atoms =")
 for a in libgenop.atom_tab:
-    print('  "\\x%02x"  "%s"' % (len(a), a))
+    print('  "\\x%02x"  "%s"' % (len(a['atom']), a['atom']))
 
 print("""  ;
 

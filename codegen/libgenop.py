@@ -2,6 +2,8 @@
 # takes: genop.tab from erlang/otp
 # returns list of dicts{name:str(), arity:int(), opcode:int()}
 
+import string
+
 MIN_OPCODE = 1
 MAX_OPCODE = 158
 
@@ -33,11 +35,32 @@ def filter_comments(lst):
             if not i.strip().startswith("#") and len(i.strip()) > 0]
 
 implemented_ops = filter_comments(file("implemented_ops.tab").read().split("\n"))
-atom_tab = filter_comments(file("atoms.tab").read().split("\n"))
-bif_tab = filter_comments(file("bif.tab").read().split("\n"))
+atom_tab = []
+bif_tab = []
+
+def is_printable(s):
+    printable = string.ascii_letters + string.digits + "_"
+    for c in s:
+        if c not in printable: 
+            return False
+    return true
+
+def load_bifs():
+    global bif_tab, atom_tab
+    atoms = filter_comments(file("atoms.tab").read().split("\n"))
+    for a in atoms:
+        atom_tab.append({'atom': a})
+
+    bifs = filter_comments(file("bif.tab").read().split("\n"))
+    for b in bifs:
+        b = b.split()
+        bif_tab.append({'atom': b[0], 'arity': int(b[1]), 'cname': b[2]})
+        if is_printable(b[0]): atom_tab.append(b[0])
+        else: atom_tab.append({'atom': b[0], 'cname': b[2]})
 
 def load():
     load_opcodes()
+    load_bifs()
 
 ops = []
 ops_by_code = {}

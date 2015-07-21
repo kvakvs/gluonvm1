@@ -16,7 +16,11 @@ namespace atom {
 # print atom constants
 atom_id = 1
 for a in libgenop.atom_tab:
-    print("  const Term %s = Term::make_atom(%d);" % (a.upper(), atom_id))
+    if 'cname' in a:
+        constname = "_" + a['cname'].upper()
+    else:
+        constname = a['atom'].upper()
+    print("  const Term %s = Term::make_atom(%d);" % (constname, atom_id))
     atom_id += 1
 
 print("""

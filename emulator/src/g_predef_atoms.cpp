@@ -8,6 +8,7 @@ extern const char *g_predef_atoms;
 const char *g_predef_atoms =
   "\x04"  "true"
   "\x05"  "false"
+  "\x01"  "-"
   ;
 
 } // ns atom
