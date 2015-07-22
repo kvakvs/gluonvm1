@@ -21,6 +21,7 @@ typedef struct {
   // continuation, works like return address for a single call. If more nested
   // calls are done, cp is saved to stack
   word_t *cp = nullptr;
+  word_t live = 0; // saved registers count
 
   Term    regs[MAX_REGS];
 #if FEATURE_FLOAT
@@ -39,10 +40,10 @@ public:
   typedef Vector<Term> stack_t;
   Term    m_stack_trace = Term::make_non_value();
 
-private:
   runtime_ctx_t m_ctx;
   // TODO: Replace these with proper in-heap stack pointer, do not carry in ctx
   stack_t       m_stack;
+  word_t        m_catch_level = 0;
 
 public:
   Process() {

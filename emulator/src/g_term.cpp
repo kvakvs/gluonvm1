@@ -29,11 +29,15 @@ Str Term::atom_str() const
 #if G_DEBUG
 void Term::print()
 {
+  if (m_val == 0) {
+    printf("BADTERM");
+    return;
+  }
   if (is_cons()) {
     printf("[");
-    cons_get_element(0).print();
+    cons_head().print();
     printf(",");
-    cons_get_element(1).print();
+    cons_tail().print();
     printf("]");
   }
   else if (is_tuple()) {

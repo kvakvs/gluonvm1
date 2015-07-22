@@ -186,10 +186,10 @@ Term bif_length_1(Process *, Term a)
 
 bool are_terms_equal(Term a, Term b, bool exact)
 {
-  printf("are_terms_eq: ");
-  a.print();
-  printf(" ? ");
-  b.println();
+//  printf("are_terms_eq: ");
+//  a.print();
+//  printf(" ? ");
+//  b.println();
   G_ASSERT(a != b); // should be checked elsewhere
 
   if (a.is_immed() || b.is_immed()) {

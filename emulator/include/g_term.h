@@ -205,6 +205,18 @@ namespace term_tag {
   typedef BOXED_SUBTAG<BOXED_HEAP_BIN> BoxedHeapBin;
   typedef BOXED_SUBTAG<BOXED_MATCH_CTX> BoxedMatchCtx;
   typedef BOXED_SUBTAG<BOXED_SUB_BIN> BoxedSubBin;
+
+  const word_t CP_TAG = 1UL << (G_HARDWARE_BITS-1);
+  // Check highest bit if it was CP pushed on stack
+  template <typename T>
+  inline constexpr bool is_cp(T x) {
+    return 0 != (((word_t)x) & CP_TAG);
+  }
+  // Set highest bit to mark CP pushed on stack
+  template <typename T>
+  inline constexpr T *make_cp(T *x) {
+    return (T *)(((word_t)x) | CP_TAG);
+  }
 } // ns term_tag
 
 namespace temporary {
@@ -301,12 +313,28 @@ public:
   template <typename T> inline static Term make_boxed(T *x) {
     return Term(term_tag::Boxed::create_from_ptr<T>(x));
   }
+  template <typename T> constexpr static Term make_boxed_cp(T *x) {
+    return Term(term_tag::Boxed::create_from_ptr<T>(term_tag::make_cp(x)));
+  }
   inline bool is_boxed() const {
     return term_tag::Boxed::check(m_val);
   }
   inline word_t boxed_get_subtag() const {
     word_t *p = boxed_get_ptr<word_t>();
     return term_tag::boxed_subtag(p);
+  }
+
+  //
+  // Throw/catch exception magic
+  //
+  inline constexpr bool is_catch() const {
+    return term_tag::Catch::check(m_val);
+  }
+  constexpr static Term make_catch(word_t x) {
+    return Term(term_tag::Catch::create(x));
+  }
+  constexpr word_t catch_val() const {
+    return term_tag::Catch::value(m_val);
   }
 
   //
@@ -515,6 +543,9 @@ public:
     return term_tag::StackReference::value(m_val);
   }
 };
+
+static_assert(sizeof(Term) == sizeof(word_t),
+              "Term size should be same as machine word");
 
 #if G_TEST
 void term_test(int argc, const char *argv[]);

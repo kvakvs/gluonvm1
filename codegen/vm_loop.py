@@ -43,7 +43,8 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
 
     print("OP_%s: // opcode: %d" % (op['name'], opcode))
     if op['name'] in libgenop.implemented_ops:
-        print('  printf("%s/%d\\n");' % (op['name'], op['arity']))
+        print('  printf("%s/%d args=");' % (op['name'], op['arity']))
+        print('  ctx.print_args(%d);' % (op['arity']))
         if op['name'] == 'return':
             # special instruction which can interrupt loop
             print("""  if (! impl::opcode_%s(proc, ctx)) {

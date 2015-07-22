@@ -9,6 +9,9 @@ allocate
 deallocate
 get_list
 
+#--- errors ---
+badmatch
+
 #--- tests ---
 is_lt
 is_eq

@@ -25,17 +25,25 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     mod  = proc_ctx.mod;
     ip   = proc_ctx.ip;
     cp   = proc_ctx.cp;
-    std::memcpy(regs, proc_ctx.regs, sizeof(regs)); // TODO: more efficient copy?
+    live = proc_ctx.live;
+    std::memcpy(regs, proc_ctx.regs, sizeof(Term)*live);
 
     stack = proc->get_stack();
     base  = proc->get_code_base();
+    // TODO: update heap top
   }
   void save(Process *proc) {
     runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
     proc_ctx.mod  = mod;
     proc_ctx.ip   = ip;
     proc_ctx.cp   = cp;
-    std::memcpy(proc_ctx.regs, regs, sizeof(regs)); // TODO: more efficient copy?
+    proc_ctx.live = live;
+    std::memcpy(proc_ctx.regs, regs, sizeof(Term)*live);
+    // TODO: update heap top
+  }
+  // TODO: swap_out: save r0, stack top and heap top
+  inline void swap_out_light(Process *proc) {
+    // update only heap top
   }
 
   // For special immed1 types (register and stack ref) convert them to their
@@ -103,14 +111,57 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
   // Throws type:reason (for example error:badmatch)
   void raise(Process *proc, Term type, Term reason) {
+    swap_out_light(proc);
     regs[0] = type;
     regs[1] = reason;
     proc->m_stack_trace = Term::make_non_value();
-    return exception();
+    return exception(proc);
   }
 
-  void exception() {
+  void exception(Process *proc) {
+    if (proc->m_catch_level == 0) {
+      // we're not catching anything here
+      printf("EXCEPTION: ");
+      regs[0].print();
+      printf(":");
+      regs[1].println();
+      G_FAIL("Stopping execution here");
+    }
+    // unwind stack
+    for (word_t i = stack->size()-1; i > 0; --i)
+    {
+      if ((*stack)[i].is_catch()) {
+        //word_t jump_to = (*stack)[i].catch_val();
+        do {
+          i++;
+        } while (!(*stack)[i].is_boxed()
+                 || !term_tag::is_cp((*stack)[i].boxed_get_ptr<word_t>()));
+        // TODO: trim stack to iter
 
+
+        //ip = catch_jump(index);
+        cp = nullptr;
+      }
+
+      // TODO: set process exit reason
+      proc->get_runtime_ctx().live = 0;
+      // TODO: schedule next process in queue
+    }
+  }
+  void print_args(word_t arity) {
+#if G_DEBUG
+    for (word_t i = 0; i < arity; ++i) {
+      Term value(ip[i]);
+      value.print();
+      if (value.is_regx() || value.is_regy()) {
+        resolve_immed(value);
+        printf("=");
+        value.print();
+      }
+      printf(";");
+    }
+    puts("");
+#endif
   }
 };
 
@@ -141,6 +192,10 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // @spec call_ext Arity Destination
     // @doc Call the function of arity Arity pointed to by Destination.
     //      Save the next instruction as the return address in the CP register.
+    // TODO: reduction count
+    // TODO: yield and schedule
+    // Term arity(ip[0]);
+    // TODO: set live on reductions swap out ctx.live = (word_t)arity.small_get_value();
     ctx.cp = ctx.ip + 2;
     //ctx.jump(ctx.ip[2]);
   }
@@ -160,7 +215,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     Term stack_need(ctx.ip[1]);
     G_ASSERT(stack_need.is_small());
     ctx.alloc_stack((word_t)stack_need.small_get_value());
-    ctx.push(Term::make_boxed(ctx.cp));
+    ctx.push(Term::make_boxed_cp(ctx.cp));
     ctx.ip += 2;
   }
 //  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
