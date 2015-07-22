@@ -17,7 +17,7 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
 
   if (m_ctx.mod) {
     // push current ip if it wasn't null (initial entry call)
-    m_stack.push_back(Term::make_boxed(m_ctx.ip));
+    m_stack.push(Term::make_boxed(m_ctx.ip));
   }
 
   m_ctx.mod = mod;

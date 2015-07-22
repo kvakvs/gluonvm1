@@ -80,14 +80,14 @@ encode_arg({y, Y}, Mod) when is_integer(Y), Y >= 0 ->
   {<<?tag_stack:8, (uint_enc(Y))/binary>>, Mod};
 encode_arg({atom, Atom}, Mod0) when is_atom(Atom) ->
   encode_atom(Atom, Mod0);
+encode_arg(nil, Mod) ->
+  {<<?tag_nil:8>>, Mod};
 encode_arg(Atom, Mod0) when is_atom(Atom) ->
   encode_atom(Atom, Mod0);
 encode_arg({integer, N}, Mod) ->
   {tag_integer(N), Mod};
 encode_arg(N, Mod) when is_integer(N) ->
   {tag_integer(N), Mod};
-encode_arg(nil, Mod) ->
-  {<<?tag_nil:8>>, Mod};
 encode_arg({f, L}, Mod) ->
   {<<?tag_label:8, (uint_enc(L))/binary>>, Mod};
 %% encode_arg({'char', C}, Dict) ->

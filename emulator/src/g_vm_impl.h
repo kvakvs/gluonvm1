@@ -12,13 +12,12 @@
 
 namespace gluon {
 
-
 namespace impl {
 
 struct vm_runtime_ctx_t: runtime_ctx_t {
   // where code begins (for jumps)
   word_t *base;
-  Process::stack_t *stack;
+  ProcessStack *stack;
 
   void load(Process *proc) {
     runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
@@ -54,7 +53,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       i = regs[i.regx_get_value()];
     }
     else if (i.is_regy()) {
-      i = (*stack)[i.regy_get_value()];
+      i = stack->get(i.regy_get_value());
     }
 #if FEATURE_FLOAT
     else if (i.is_regfp()) {
@@ -71,10 +70,12 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     dst.println();
 #endif
     if (dst.is_regx()) {
-      regs[dst.regx_get_value()] = val;
+      word_t x = dst.regx_get_value();
+      G_ASSERT(x < sizeof(regs));
+      regs[x] = val;
     } else
     if (dst.is_regy()) {
-      (*stack)[dst.regy_get_value()] = val;
+      stack->set(dst.regy_get_value(), val);
     } else
 #if FEATURE_FLOAT
     if (dst.is_regfp()) {
@@ -92,27 +93,6 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     ip = base + (word_t)t.small_get_value();
     G_ASSERT(ip > base);
     G_ASSERT(ip < mod->m_code.size() + base);
-  }
-
-  void alloc_stack(word_t n) {
-    stack->reserve(stack->size() + n);
-    while (n > 0) {
-      (*stack).push_back(Term::make_nil());
-      n--;
-    }
-  }
-  void free_stack(word_t n) {
-    G_ASSERT(stack->size() >= n);
-    stack->resize(stack->size() - n);
-  }
-  void push(Term t) {
-    stack->push_back(t);
-  }
-  Term pop() {
-    G_ASSERT(stack->size() > 0);
-    Term t = stack->back();
-    stack->pop_back();
-    return t;
   }
 
   // Throws type:reason (for example error:badmatch)
@@ -134,9 +114,10 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       G_FAIL("Stopping execution here");
     }
     // unwind stack
+/*
     for (word_t i = stack->size()-1; i > 0; --i)
     {
-      if ((*stack)[i].is_catch()) {
+      if (stack[i].is_catch()) {
         //word_t jump_to = (*stack)[i].catch_val();
         do {
           i++;
@@ -148,17 +129,17 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
         //ip = catch_jump(index);
         cp = nullptr;
       }
-
       // TODO: set process exit reason
       proc->get_runtime_ctx().live = 0;
       // TODO: schedule next process in queue
     }
+*/
   }
   void push_cp() {
-    push(Term::make_boxed_cp(cp));
+    stack->push(Term::make_boxed_cp(cp));
   }
   void pop_cp() {
-    Term p = pop();
+    Term p = stack->pop();
     cp = term_tag::untag_cp<word_t>(p.boxed_get_ptr<word_t>());
   }
 
@@ -180,6 +161,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 };
 
 #define DEREF(var) if ((var).is_immed()) { ctx.resolve_immed(var); }
+void opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx);
+void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
 //  inline void opcode_label(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 1
 //  }
@@ -196,8 +179,17 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     ctx.cp = ctx.ip + 2;
     ctx.jump(Term(ctx.ip[1]));
   }
-//  inline void opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
-//  }
+  inline void opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
+    // @spec call_last Arity Label Dellocate
+    // @doc Deallocate and do a tail recursive call to the function at Label.
+    // Do not update the CP register. Before the call deallocate Deallocate
+    // words of stack.
+    Term arity(ctx.ip[0]);
+    ctx.live = (word_t)arity.small_get_value();
+    Term n(ctx.ip[2]);
+    ctx.stack->drop_n((word_t)n.small_get_value());
+    ctx.jump(Term(ctx.ip[1]));
+  }
   inline void opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
     // @spec call_only Arity Label
     // @doc Do a tail recursive call to the function at Label.
@@ -221,10 +213,36 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
 //  }
-//  inline void opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
-//  }
-//  inline void opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
-//  }
+  inline void opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
+    Term label(ctx.ip[0]);
+    //Term bif(ctx.ip[1]); // on crash?
+    Term arg1(ctx.ip[2]);
+    DEREF(arg1);
+    Term result_dst(ctx.ip[3]);
+
+    gc_bif1_fn bif_fn = VM::resolve_bif1(label);
+    G_ASSERT(bif_fn);
+
+    Term result = bif_fn(proc, arg1);
+    ctx.move(result, result_dst);
+    ctx.ip += 4;
+  }
+  inline void opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
+    Term label(ctx.ip[0]);
+    //Term bif(ctx.ip[1]);
+    Term arg1(ctx.ip[2]);
+    Term arg2(ctx.ip[3]);
+    DEREF(arg1);
+    DEREF(arg2);
+    Term result_dst(ctx.ip[4]);
+
+    gc_bif2_fn bif_fn = VM::resolve_bif2(label);
+    G_ASSERT(bif_fn);
+
+    Term result = bif_fn(proc, arg1, arg2);
+    ctx.move(result, result_dst);
+    ctx.ip += 5;
+  }
   inline void opcode_allocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 12
     // @spec allocate StackNeed Live
     // @doc Allocate space for StackNeed words on the stack. If a GC is needed
@@ -232,8 +250,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     //      Also save the continuation pointer (CP) on the stack.
     Term stack_need(ctx.ip[1]);
     G_ASSERT(stack_need.is_small());
-    ctx.alloc_stack((word_t)stack_need.small_get_value());
     ctx.push_cp();
+    ctx.stack->push_n_nils((word_t)stack_need.small_get_value());
     ctx.ip += 2;
   }
 //  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
@@ -255,8 +273,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // @doc  Restore the continuation pointer (CP) from the stack and deallocate
     //       N+1 words from the stack (the + 1 is for the CP).
     Term n(ctx.ip[0]);
+    ctx.stack->drop_n((word_t)n.small_get_value());
     ctx.pop_cp();
-    ctx.free_stack((word_t)n.small_get_value());
     ctx.ip++;
   }
   inline bool opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
@@ -339,7 +357,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     Term    arg2(ctx.ip[2]);
     DEREF(arg1); // in case they are reg references
     DEREF(arg2);
-    if (arg1 == arg2 || bif::are_terms_equal(arg1, arg2, false)) {
+    if (bif::are_terms_equal(arg1, arg2, false)) {
       ctx.ip += 3;
     } else {
       ctx.jump(Term(ctx.ip[0]));

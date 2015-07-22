@@ -209,7 +209,7 @@ namespace term_tag {
   const word_t CP_TAG = 1UL << (G_HARDWARE_BITS-1);
   // Check highest bit if it was CP pushed on stack
   template <typename T>
-  inline constexpr bool is_cp(T x) {
+  inline constexpr bool is_cp(T *x) {
     return 0 != (((word_t)x) & CP_TAG);
   }
   // Set highest bit to mark CP pushed on stack
@@ -348,6 +348,7 @@ public:
   // Cons
   // Cons is a boxed value pointing at two words in memory: a head and a tail
   //
+  // TODO: make a cool variadic helper to build lists
   static Term allocate_cons(Heap *heap, Term head, Term tail);
   inline static Term make_cons(Term *box) {
     return Term(term_tag::Cons::create_from_ptr<Term>(box));

@@ -65,19 +65,19 @@ compile_fun_gleam({F, Arity, Code}, CState) ->
 %gleam_op({label, _}, #compile_state{}=CState) -> CState;
 gleam_op(X, #compile_state{}=CState) when is_atom(X) -> gleam_op({X}, CState);
 gleam_op({func_info, _M, _F, _A}, #compile_state{}=CState) -> CState;
-gleam_op({gc_bif, Name, Fail, Bif, Args, Result}, #compile_state{}=CState) ->
+gleam_op({gc_bif, Lbl, Fail, Bif, Args, Result}, #compile_state{}=CState) ->
   Opcode = case length(Args) of
              1 -> gc_bif1;
              2 -> gc_bif2;
-             3 -> gc_bif3
+             0 -> gc_bif0
            end,
-  Op1 = list_to_tuple([Opcode, Name, Fail, Bif] ++ Args ++ [Result]),
+  Op1 = list_to_tuple([Opcode, Lbl, Fail, Bif] ++ Args ++ [Result]),
   op(Op1, CState);
 gleam_op({bif, Lbl, Bif, Args, Result}, #compile_state{}=CState) ->
   Opcode = case length(Args) of
              1 -> bif1;
              2 -> bif2;
-             3 -> bif3
+             0 -> bif0
            end,
   Op1 = list_to_tuple([Opcode, Lbl, Bif] ++ Args ++ [Result]),
   op(Op1, CState);

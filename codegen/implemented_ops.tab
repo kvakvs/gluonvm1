@@ -2,9 +2,12 @@ test_heap
 move
 call_only
 call
+call_last
 #call_ext-do-later
 gc_bif1
 gc_bif2
+bif1
+bif2
 return
 allocate
 deallocate

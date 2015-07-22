@@ -335,6 +335,7 @@ double_compare::fuzzy_compare(double a, double b,
                               double relative_tolerance, 
                               double absolute_tolerance)
 {
+#pragma clang diagnostic ignored "-Wfloat-equal"
     if (a == b)
     {
         // Special case: equality. Done.

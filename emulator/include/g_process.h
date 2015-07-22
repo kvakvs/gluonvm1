@@ -29,6 +29,47 @@ typedef struct {
 #endif
 } runtime_ctx_t;
 
+class ProcessStack {
+  Vector<Term> cells;
+public:
+  ProcessStack() {}
+  void push(Term t) {
+    cells.push_back(t);
+  }
+  Term pop() {
+    Term t = cells.back();
+    cells.pop_back();
+    return t;
+  }
+  void set(word_t offset, Term t) {
+    G_ASSERT(offset < cells.size());
+    cells[top_nth_index(offset)] = t;
+  }
+  Term get(word_t offset) const {
+    G_ASSERT(offset < cells.size());
+    return cells[top_nth_index(offset)];
+  }
+  void push_n_nils(word_t n) {
+    cells.reserve(cells.size() + n);
+    while (n > 0) {
+      cells.push_back(Term::make_nil());
+      n--;
+    }
+  }
+  void drop_n(word_t n) {
+    G_ASSERT(cells.size() >= n);
+    cells.resize(cells.size() - n);
+  }
+  word_t size() const {
+    return cells.size();
+  }
+
+protected:
+  inline word_t top_nth_index(word_t offset) const {
+    return cells.size() - 1 - offset;
+  }
+};
+
 //------------------------------------------------------------------------------
 // Thread of execution in VM
 // Has own heap (well TODO, using shared now)
@@ -37,12 +78,11 @@ typedef struct {
 //------------------------------------------------------------------------------
 class Process {
 public:
-  typedef Vector<Term> stack_t;
+
   Term    m_stack_trace = Term::make_non_value();
 
   runtime_ctx_t m_ctx;
-  // TODO: Replace these with proper in-heap stack pointer, do not carry in ctx
-  stack_t       m_stack;
+  ProcessStack  m_stack;
   word_t        m_catch_level = 0;
 
 public:
@@ -54,21 +94,10 @@ public:
   runtime_ctx_t &get_runtime_ctx() {
     return m_ctx;
   }
-  stack_t *get_stack() {
+  ProcessStack *get_stack() {
     return &m_stack;
   }
   Heap *get_heap();
-
-//  // Jump inside module
-//  inline void jump_local(word_t offset) {
-//    printf("local jump to %zu\n", offset);
-//    m_ip.offset.value = offset;
-//  }
-
-//  inline void set_x(word_t index, Term value) {
-//    G_ASSERT(index < MAX_REGS);
-//    m_x[index] = value;
-//  }
 
   // Not inlined, ask module for pointer to its code. Safety off!
   word_t *get_ip() const;

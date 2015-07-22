@@ -72,6 +72,7 @@ namespace fructose {
  * dynamic initialisation of test suites from the command
  * line.
  */
+#pragma clang diagnostic ignored "-Wweak-vtables"
 class test_root
 {
 
@@ -249,7 +250,7 @@ public:
      * @param lhs - the value on the left hand side of the expression (lhs == rhs)
      * @param rhs - the value on the right hand side of the expression (lhs == rhs)
      * @param test_case_name - the name of the enclosing test case
-     * @param msg - the message to be printed on failure
+     * @param msg1 - the message to be printed on failure
      * @param filename - the name of the file containing the test
      * @param line_number - the location of the test assertion in the test source 
      * file
@@ -269,7 +270,7 @@ public:
      * @param lhs - the value on the left hand side of the expression (lhs == rhs)
      * @param rhs - the value on the right hand side of the expression (lhs == rhs)
      * @param test_case_name - the name of the enclosing test case
-     * @param msg - the message to be printed on failure
+     * @param msg1 - the message to be printed on failure
      * @param filename - the name of the file containing the test
      * @param line_number - the location of the test assertion in the test source 
      * file
@@ -306,7 +307,7 @@ public:
      * @param lhs - the value on the left hand side of the expression (lhs == rhs)
      * @param rhs - the value on the right hand side of the expression (lhs == rhs)
      * @param test_case_name - the name of the enclosing test case
-     * @param msg - the message to be printed on failure
+     * @param msg1 - the message to be printed on failure
      * @param filename - the name of the file containing the test
      * @param line_number - the location of the test assertion in the test source 
      * file
@@ -367,7 +368,7 @@ public:
      * @param lhs - the value on the left hand side of the expression (lhs == rhs)
      * @param rhs - the value on the right hand side of the expression (lhs == rhs)
      * @param test_case_name - the name of the enclosing test case
-     * @param msg - the message to be printed on failure
+     * @param msg1 - the message to be printed on failure
      * @param filename - the name of the file containing the test
      * @param line_number - the location of the test assertion in the test source 
      * file
@@ -508,6 +509,9 @@ protected:
     suite do_get_suite(const suite& available_tests, int argc, char* argv[]);
     
 private:
+    #pragma clang diagnostic ignored "-Wsign-conversion"
+    #pragma clang diagnostic ignored "-Wshorten-64-to-32"
+    #pragma clang diagnostic ignored "-Wsign-compare"
     void split(std::vector<std::string> &tokens, const std::string& text, char sep)
     {
         int start = 0, end = 0;

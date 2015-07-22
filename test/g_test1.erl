@@ -1,12 +1,17 @@
 -module(g_test1).
--export([test1/0
-        , test2/0
-        %, f_test/0
-        %, my_last/1
-        %, my_last2/1
+-export([test/0
         ]).
 
-test1() -> recurse(10).
+test() ->
+    test1(),
+    test_eq(),
+    test2().
+
+%%-----------------------------------------------
+test1() ->
+    recurse(10).
+test_eq() ->
+    [1,2,3,4] == rev([1,2,3,4]).
 test2() -> 
     X = [1,2,3,4,5],
     5 = my_last2(X),

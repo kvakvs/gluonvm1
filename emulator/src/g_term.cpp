@@ -52,7 +52,12 @@ void Term::print()
     printf("};");
   }
   else if (is_boxed()) {
-    printf("BOXED(#%zu)", boxed_get_subtag());
+    auto p = boxed_get_ptr<word_t>();
+    if (term_tag::is_cp<word_t>(p)) {
+      printf("BOXED_CP(0x%zx)", (word_t)term_tag::untag_cp<word_t>(p));
+    } else {
+      printf("BOXED(0x%zx)", boxed_get_subtag());
+    }
   }
   else if (is_nil()) {
     printf("NIL");
@@ -92,9 +97,15 @@ void Term::println()
 }
 #endif // DEBUG
 
-
+//
+//====================================
+//
 #if G_TEST
+} // ns gluon
 
+#include "bif/g_bif_misc.h"
+#pragma clang diagnostic ignored "-Wweak-vtables"
+namespace gluon {
 struct term_test_t: public fructose::test_base<term_test_t>
 {
 
@@ -103,12 +114,24 @@ struct term_test_t: public fructose::test_base<term_test_t>
     Term t_tuple = Term::make_tuple(t_tuple_el, 10);
     fructose_assert(t_tuple.is_tuple());
   }
+  void test_term_cmp(const std::string &tn) {
+    Term l1 = Term::allocate_cons(nullptr, Term::make_small(3), Term::make_nil());
+    Term l2 = Term::allocate_cons(nullptr, Term::make_small(2), l1);
+    Term l3 = Term::allocate_cons(nullptr, Term::make_small(1), l2);
+
+    Term m1 = Term::allocate_cons(nullptr, Term::make_small(1), Term::make_nil());
+    Term m2 = Term::allocate_cons(nullptr, Term::make_small(2), m1);
+    Term m3 = Term::allocate_cons(nullptr, Term::make_small(3), m2);
+
+    fructose_assert(bif::are_terms_equal(l3, m3, false) == false);
+  }
 
 }; // struct
 
 void term_test(int argc, const char *argv[]) {
   term_test_t tests;
   tests.add_test("term_basics", &term_test_t::test_term_basics);
+  tests.add_test("term_cmp", &term_test_t::test_term_cmp);
   tests.run(argc, const_cast<char **>(argv));
 }
 

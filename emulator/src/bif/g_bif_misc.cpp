@@ -1,5 +1,6 @@
 #include "bif/g_bif_misc.h"
 #include "g_process.h"
+#include "g_predef_atoms.h"
 #include "g_vm.h"
 
 namespace gluon {
@@ -181,6 +182,7 @@ Term bif_length_1(Process *, Term a)
     return Term::make_small(0);
   }
 
+  printf("length: "); a.println();
   G_ASSERT(a.is_cons());
   sword_t counter = 0;
   while (a.is_cons()) {
@@ -195,11 +197,13 @@ Term bif_length_1(Process *, Term a)
 
 bool are_terms_equal(Term a, Term b, bool exact)
 {
-//  printf("are_terms_eq: ");
-//  a.print();
-//  printf(" ? ");
-//  b.println();
-  G_ASSERT(a != b); // should be checked elsewhere
+  printf("are_terms_eq(exact=%d): ", (int)exact);
+  a.print();
+  printf(" ? ");
+  b.println();
+  if (a == b) {
+    return true;
+  }
 
   if (a.is_immed() || b.is_immed()) {
     if (exact) {
@@ -231,17 +235,18 @@ bool are_terms_equal(Term a, Term b, bool exact)
 
   if (a.is_cons()) {
     if (b.is_cons()) {
+      printf("both cons\n");
       do {
-        Term *a_ptr = a.boxed_get_ptr<Term>();
-        Term *b_ptr = a.boxed_get_ptr<Term>();
+        Term *cons_a = a.boxed_get_ptr<Term>();
+        Term *cons_b = b.boxed_get_ptr<Term>();
 
-        if (a_ptr[0] != b_ptr[0]
-            && !are_terms_equal(a_ptr[0], b_ptr[0], exact)) {
+        if (cons_a[0] != cons_b[0]
+            && !are_terms_equal(cons_a[0], cons_b[0], exact)) {
           return false;
         }
 
-        a = a_ptr[1];
-        b = b_ptr[1];
+        a = cons_a[1];
+        b = cons_b[1];
       } while (a.is_cons() && b.is_cons());
 
       return (a == b) || are_terms_equal(a, b, exact);
@@ -402,6 +407,22 @@ bool are_terms_equal(Term a, Term b, bool exact)
 
   }
 
+}
+
+Term bif_equals_2(Process *, Term a, Term b)
+{
+  if (are_terms_equal(a, b, false)) {
+    return atom::TRUE;
+  }
+  return atom::FALSE;
+}
+
+Term bif_equals_exact_2(Process *, Term a, Term b)
+{
+  if (are_terms_equal(a, b, true)) {
+    return atom::TRUE;
+  }
+  return atom::FALSE;
 }
 
 } // ns bif

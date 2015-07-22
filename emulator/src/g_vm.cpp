@@ -109,8 +109,10 @@ Heap *VM::get_heap(VM::heap_t) {
 
 gc_bif2_fn VM::resolve_bif2(Term name)
 {
-  if (name == atom::Q_MINUS)  { return &bif::bif_minus_2; }
-  if (name == atom::Q_PLUS)   { return &bif::bif_plus_2; }
+  if (name == atom::Q_MINUS)        { return &bif::bif_minus_2; }
+  if (name == atom::Q_PLUS)         { return &bif::bif_plus_2; }
+  if (name == atom::Q_EQUALS)       { return &bif::bif_equals_2; }
+  if (name == atom::Q_EQUALS_EXACT) { return &bif::bif_equals_exact_2; }
   return nullptr;
 }
 
