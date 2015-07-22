@@ -173,7 +173,7 @@ Term bif_length_1(Process *, Term a)
   }
 
   G_ASSERT(a.is_cons());
-  sword_t counter = 1;
+  sword_t counter = 0;
   while (a.is_cons()) {
     a = a.cons_tail();
     counter++;

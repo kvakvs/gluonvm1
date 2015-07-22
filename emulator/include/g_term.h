@@ -214,8 +214,15 @@ namespace term_tag {
   }
   // Set highest bit to mark CP pushed on stack
   template <typename T>
-  inline constexpr T *make_cp(T *x) {
+  inline T *make_cp(T *x) {
+    G_ASSERT(!is_cp(x));
     return (T *)(((word_t)x) | CP_TAG);
+  }
+  // Check and clear highest bit to mark CP pushed on stack
+  template <typename T>
+  inline T *untag_cp(T *x) {
+    G_ASSERT(is_cp(x));
+    return (T *)(((word_t)x) & (~CP_TAG));
   }
 } // ns term_tag
 

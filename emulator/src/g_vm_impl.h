@@ -64,6 +64,12 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 
   void move(Term val, Term dst) {
+#if G_DEBUG
+    printf("ctx.move ");
+    val.print();
+    printf(" -> ");
+    dst.println();
+#endif
     if (dst.is_regx()) {
       regs[dst.regx_get_value()] = val;
     } else
@@ -148,6 +154,14 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       // TODO: schedule next process in queue
     }
   }
+  void push_cp() {
+    push(Term::make_boxed_cp(cp));
+  }
+  void pop_cp() {
+    Term p = pop();
+    cp = term_tag::untag_cp<word_t>(p.boxed_get_ptr<word_t>());
+  }
+
   void print_args(word_t arity) {
 #if G_DEBUG
     for (word_t i = 0; i < arity; ++i) {
@@ -177,6 +191,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // @spec call Arity Label
     // @doc Call the function at Label.
     //      Save the next instruction as the return address in the CP register.
+    Term arity(ctx.ip[0]);
+    ctx.live = (word_t)arity.small_get_value();
     ctx.cp = ctx.ip + 2;
     ctx.jump(Term(ctx.ip[1]));
   }
@@ -186,6 +202,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // @spec call_only Arity Label
     // @doc Do a tail recursive call to the function at Label.
     //      Do not update the CP register.
+    Term arity(ctx.ip[0]);
+    ctx.live = (word_t)arity.small_get_value();
     ctx.jump(Term(ctx.ip[1]));
   }
   inline void opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
@@ -215,7 +233,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     Term stack_need(ctx.ip[1]);
     G_ASSERT(stack_need.is_small());
     ctx.alloc_stack((word_t)stack_need.small_get_value());
-    ctx.push(Term::make_boxed_cp(ctx.cp));
+    ctx.push_cp();
     ctx.ip += 2;
   }
 //  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
@@ -233,7 +251,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // @doc  Restore the continuation pointer (CP) from the stack and deallocate
     //       N+1 words from the stack (the + 1 is for the CP).
     Term n(ctx.ip[0]);
-    ctx.cp = ctx.pop().boxed_get_ptr<word_t>();
+    ctx.pop_cp();
     ctx.free_stack((word_t)n.small_get_value());
     ctx.ip++;
   }
