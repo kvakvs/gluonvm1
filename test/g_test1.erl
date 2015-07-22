@@ -13,7 +13,10 @@ test2() ->
     4 = my_but_last2(X),
     2 = element_at(2, X),
     5 = len(X),
-    [5,4,3,2,1] = rev(X).
+    [5,4,3,2,1] = rev(X),
+    false = is_palindrome([]),
+    false = is_palindrome(X),
+    true = is_palindrome([1,2,3,2,1]).
 
 %f_test() ->
 %    F = fun(X) -> X * 2 end,
@@ -58,3 +61,8 @@ rev([])-> [];
 rev(L) -> rev(L,[]).
 rev([],R)-> R;
 rev([H|T],R)-> rev(T,[H|R]).
+
+%% P06 Find out whether a list is a palindrome.
+is_palindrome([])-> false;
+is_palindrome(L) when length(L) == 1 -> false;
+is_palindrome(L) -> case L == rev(L) of true -> true; false -> false end.
