@@ -2,6 +2,7 @@
 #include "g_codeserver.h"
 #include "g_code.h"
 #include "g_module.h"
+#include "g_vm.h"
 
 namespace gluon {
 
@@ -24,6 +25,11 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
   G_RETURN_IF_ERROR(r_result);
   m_ctx.ip = r_result.get_result();
   return success();
+}
+
+Heap *Process::get_heap()
+{
+  return VM::get_heap(VM::HEAP_PROCESS);
 }
 
 word_t *Process::get_code_base() const {

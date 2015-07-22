@@ -8,9 +8,12 @@
 
 test1() -> recurse(10).
 test2() -> 
-    X = [1,2,3,4],
-    4 = my_last2(X),
-    3 = my_but_last2(X).
+    X = [1,2,3,4,5],
+    5 = my_last2(X),
+    4 = my_but_last2(X),
+    2 = element_at(2, X),
+    5 = len(X),
+    [5,4,3,2,1] = rev(X).
 
 %f_test() ->
 %    F = fun(X) -> X * 2 end,
@@ -35,3 +38,23 @@ my_but_last2([])-> false;
 my_but_last2([_H|[]]) -> false;
 my_but_last2([H|T]) when length(T) == 1 -> H;
 my_but_last2([_H|T]) -> my_but_last2(T).
+
+%% From 99 problems: P03 Find the K'th element of a list.
+%% Find the K'th element of a list (1-based)
+element_at(K,L) when length(L) < K -> false;
+element_at(K,L)-> element_at(K,L,1).
+element_at(K,[H|_T],C) when C == K-> H;
+element_at(K,[_H|T],C) -> element_at(K,T,C+1).
+
+%% From 99 problems: P04 Find the number of elements of a list.
+len([])-> 0;
+len(L) -> len(L,0).
+
+len([],Count) -> Count;
+len([_H|T],Count)-> len(T,Count+1).
+
+%% From 99 problems: P05 Reverse a list.
+rev([])-> [];
+rev(L) -> rev(L,[]).
+rev([],R)-> R;
+rev([H|T],R)-> rev(T,[H|R]).

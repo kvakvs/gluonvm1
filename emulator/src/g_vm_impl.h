@@ -242,8 +242,12 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_allocate_heap_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 15
 //  }
-//  inline void opcode_test_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 16
-//  }
+  inline void opcode_test_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 16
+    // @spec test_heap HeapNeed Live
+    // @doc Ensure there is space for HeapNeed words on the heap. If a GC is needed
+    // save Live number of X registers.
+    ctx.ip += 2;
+  }
 //  inline void opcode_init(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 17
 //  }
   inline void opcode_deallocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 18
@@ -445,8 +449,17 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //  }
 //  inline void opcode_put_string(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 68
 //  }
-//  inline void opcode_put_list(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 69
-//  }
+  inline void opcode_put_list(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 69
+    // @spec put_list H T Dst
+    Term h(ctx.ip[0]);
+    Term t(ctx.ip[1]);
+    DEREF(h);
+    DEREF(t);
+    Term dst(ctx.ip[2]);
+    Term result = Term::allocate_cons(proc->get_heap(), h, t);
+    ctx.move(result, dst);
+    ctx.ip += 3;
+  }
 //  inline void opcode_put_tuple(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 70
 //  }
 //  inline void opcode_put(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 71

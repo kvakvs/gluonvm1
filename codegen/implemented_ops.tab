@@ -1,3 +1,4 @@
+test_heap
 move
 call_only
 call
@@ -7,6 +8,9 @@ gc_bif2
 return
 allocate
 deallocate
+
+#--- list ops ---
+put_list
 get_list
 
 #--- errors ---

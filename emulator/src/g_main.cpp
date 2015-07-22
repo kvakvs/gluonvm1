@@ -32,7 +32,7 @@ int main(int argc, const char *argv[]) {
   }
   vm::vm_loop(&proc);
   // Print x0
-  printf("Result x0=");
+  printf("Result X[0]=");
   proc.get_runtime_ctx().regs[0].println();
 
   return 0;

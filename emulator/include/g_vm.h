@@ -43,7 +43,8 @@ public:
   //
   typedef enum {
     HEAP_CODE,
-    HEAP_LOADER_TMP
+    HEAP_LOADER_TMP,
+    HEAP_PROCESS
   } heap_t;
   static Heap *get_heap(heap_t);
 

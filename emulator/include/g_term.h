@@ -294,7 +294,7 @@ public:
   inline void set(const Term &t) { m_val = t.m_val; }
 
   //inline Term operator <<(word_t bits) const { return Term(m_val << bits); }
-  inline word_t value() const { return m_val; }
+  inline constexpr word_t value() const { return m_val; }
   inline bool operator <(const Term &x) const { return m_val < x.m_val; }
   inline bool operator ==(const Term &x) const { return m_val == x.m_val; }
   inline bool operator ==(const word_t x) const { return m_val == x; }

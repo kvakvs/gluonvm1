@@ -109,17 +109,14 @@ Heap *VM::get_heap(VM::heap_t) {
 
 gc_bif2_fn VM::resolve_bif2(Term name)
 {
-  if (name == atom::Q_MINUS)  {
-    return &bif::bif_minus_2;
-  }
+  if (name == atom::Q_MINUS)  { return &bif::bif_minus_2; }
+  if (name == atom::Q_PLUS)   { return &bif::bif_plus_2; }
   return nullptr;
 }
 
 gc_bif1_fn VM::resolve_bif1(Term name)
 {
-  if (name == atom::LENGTH)  {
-    return &bif::bif_length_1;
-  }
+  if (name == atom::LENGTH)  { return &bif::bif_length_1; }
   return nullptr;
 }
 

@@ -57,6 +57,7 @@ public:
   stack_t *get_stack() {
     return &m_stack;
   }
+  Heap *get_heap();
 
 //  // Jump inside module
 //  inline void jump_local(word_t offset) {

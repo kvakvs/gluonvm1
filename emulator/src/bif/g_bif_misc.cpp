@@ -162,9 +162,18 @@ Term bif_minus_2(Process *, Term a, Term b)
   G_ASSERT(b.is_small());
   sword_t a_s = a.small_get_value();
   sword_t b_s = b.small_get_value();
-  printf("bif minus %zd - %zd\n", a_s, b_s);
   return Term::make_small(a_s - b_s);
 }
+
+Term bif_plus_2(Process *, Term a, Term b)
+{
+  G_ASSERT(a.is_small());
+  G_ASSERT(b.is_small());
+  sword_t a_s = a.small_get_value();
+  sword_t b_s = b.small_get_value();
+  return Term::make_small(a_s + b_s);
+}
+
 
 Term bif_length_1(Process *, Term a)
 {
@@ -394,7 +403,6 @@ bool are_terms_equal(Term a, Term b, bool exact)
   }
 
 }
-
 
 } // ns bif
 } // ns gluon
