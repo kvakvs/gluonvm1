@@ -13,6 +13,9 @@ return
 allocate
 deallocate
 
+#--- funs, hofs ---
+make_fun2
+
 #--- list ops ---
 put_list
 get_list
@@ -26,3 +29,4 @@ is_eq
 is_eq_exact
 is_nonempty_list
 is_nil
+is_ge

@@ -382,8 +382,26 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     }
     ctx.ip += 3; // args size
   }
-//  inline void opcode_is_ge(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 40
-//  }
+  inline void opcode_is_ge(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 40
+    // @spec is_ge Lbl Arg1 Arg2
+    // @doc Compare two terms and jump to Lbl if Arg1 is less than Arg2.
+    Term    arg1(ctx.ip[1]);
+    Term    arg2(ctx.ip[2]);
+    DEREF(arg1); // in case they are reg references
+    DEREF(arg2);
+    if (Term::are_both_small(arg1, arg2)) {
+      if (arg1.value() < arg2.value()) {
+        ctx.jump(proc, Term(ctx.ip[0]));
+        return;
+      }
+    } else { // full term compare
+      if (bif::is_term_smaller(arg1, arg2)) {
+        ctx.jump(proc, Term(ctx.ip[0]));
+        return;
+      }
+    }
+    ctx.ip += 3; // args size
+  }
   inline void opcode_is_eq(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 41
     // @spec is_eq Lbl Arg1 Arg2
     // @doc Compare two terms and jump to Lbl if Arg1 is not (numerically) equal
@@ -586,8 +604,11 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_fnegate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 102
 //  }
-//  inline void opcode_make_fun2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 103
-//  }
+  inline void opcode_make_fun2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 103
+    // @spec make_fun2 Loc A1 A2 A3
+    // @doc Produces a callable fun object (something to do with lambdas table
+    // in beam and using 1st arg as index?)
+  }
 //  inline void opcode_try(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 104
 //  }
 //  inline void opcode_try_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 105

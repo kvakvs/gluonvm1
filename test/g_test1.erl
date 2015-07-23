@@ -6,9 +6,18 @@ test() ->
     test1(),
     test_eq(),
     test2(),
-    test_extcalls().
+    test_extcalls(),
+    test_case(),
+    test_hof().
 
 %%-----------------------------------------------
+test_hof() ->
+    F = fun(A,B) -> A =< B end,
+    [1,2,3,4] = lists:sort(F, [3,2,4,1]).
+
+test_case() ->
+    [1,2,3,4] = lists:sort([3,2,4,1]).
+
 test_extcalls() ->
     [1,2,3] = lists:reverse([3,2,1]).
 
