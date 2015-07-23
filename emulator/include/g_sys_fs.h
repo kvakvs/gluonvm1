@@ -15,7 +15,9 @@ namespace fs {
     ~File();
 
     MaybeError open(const Str &name);
-    Result<word_t> size();
+    // May leave read position at file end, re-seek after you used size
+    word_t size();
+    void seek(word_t offset);
     Result<word_t> read(u8_t *dst, word_t bytes);
     inline bool is_good() { return !(is_error() || is_eof()); }
     bool is_error();
@@ -24,6 +26,8 @@ namespace fs {
   private:
     void *m_handle;
   };
+
+  bool exists(const Str &);
 
 } // ns fs
 

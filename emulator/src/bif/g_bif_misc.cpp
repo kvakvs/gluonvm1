@@ -92,7 +92,7 @@ bool is_term_smaller(Term a, Term b)
   // number < atom < reference < fun < oid < pid < tuple < empty_list < list < binary
   if (Term::are_both_immed(a, b)) {
     if (Term::are_both_small(a, b)) {
-      return a.small_get_value() < b.small_get_value();
+      return a.small_get_signed() < b.small_get_signed();
     }
 #if FEATURE_BIGNUM
     // TODO: case when one small and one big? Compare both +-- as big
@@ -161,8 +161,8 @@ Term bif_minus_2(Process *, Term a, Term b)
 {
   G_ASSERT(a.is_small());
   G_ASSERT(b.is_small());
-  sword_t a_s = a.small_get_value();
-  sword_t b_s = b.small_get_value();
+  sword_t a_s = a.small_get_signed();
+  sword_t b_s = b.small_get_signed();
   return Term::make_small(a_s - b_s);
 }
 
@@ -170,8 +170,8 @@ Term bif_plus_2(Process *, Term a, Term b)
 {
   G_ASSERT(a.is_small());
   G_ASSERT(b.is_small());
-  sword_t a_s = a.small_get_value();
-  sword_t b_s = b.small_get_value();
+  sword_t a_s = a.small_get_signed();
+  sword_t b_s = b.small_get_signed();
   return Term::make_small(a_s + b_s);
 }
 
@@ -235,7 +235,6 @@ bool are_terms_equal(Term a, Term b, bool exact)
 
   if (a.is_cons()) {
     if (b.is_cons()) {
-      printf("both cons\n");
       do {
         Term *cons_a = a.boxed_get_ptr<Term>();
         Term *cons_b = b.boxed_get_ptr<Term>();

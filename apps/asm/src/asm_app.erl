@@ -19,7 +19,7 @@
 
 start() ->
   %application:start(asm)
-  %asm_to_ir:process("test/g_test1.S"),
+  asm_to_ir:process("test/g_test1.S"),
   asm_to_ir:process("test/lists.S"),
   init:stop().
 

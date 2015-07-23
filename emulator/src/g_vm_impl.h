@@ -4,6 +4,7 @@
 
 #include "g_process.h"
 #include "g_module.h"
+#include "g_codeserver.h"
 #include "bif/g_bif_misc.h"
 #include "g_genop.h"
 #include "g_predef_atoms.h"
@@ -89,8 +90,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
   void jump(Term t) {
     G_ASSERT(t.is_small());
-    printf("ctx.jump -> 0x%zx\n", (word_t)t.small_get_value());
-    ip = base + (word_t)t.small_get_value();
+    printf("ctx.jump -> 0x%zx\n", (word_t)t.small_get_signed());
+    ip = base + (word_t)t.small_get_signed();
     G_ASSERT(ip > base);
     G_ASSERT(ip < mod->m_code.size() + base);
   }
@@ -175,7 +176,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc Call the function at Label.
     //      Save the next instruction as the return address in the CP register.
     Term arity(ctx.ip[0]);
-    ctx.live = (word_t)arity.small_get_value();
+    ctx.live = (word_t)arity.small_get_signed();
     ctx.cp = ctx.ip + 2;
     ctx.jump(Term(ctx.ip[1]));
   }
@@ -185,9 +186,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // Do not update the CP register. Before the call deallocate Deallocate
     // words of stack.
     Term arity(ctx.ip[0]);
-    ctx.live = (word_t)arity.small_get_value();
+    ctx.live = (word_t)arity.small_get_signed();
     Term n(ctx.ip[2]);
-    ctx.stack->drop_n((word_t)n.small_get_value());
+    ctx.stack->drop_n((word_t)n.small_get_signed());
     ctx.jump(Term(ctx.ip[1]));
   }
   inline void opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
@@ -195,7 +196,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc Do a tail recursive call to the function at Label.
     //      Do not update the CP register.
     Term arity(ctx.ip[0]);
-    ctx.live = (word_t)arity.small_get_value();
+    ctx.live = (word_t)arity.small_get_signed();
     ctx.jump(Term(ctx.ip[1]));
   }
   inline void opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
@@ -204,10 +205,25 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //      Save the next instruction as the return address in the CP register.
     // TODO: reduction count
     // TODO: yield and schedule
-    // Term arity(ip[0]);
+    // Term arity(ip[0]); // assert arity = destination.arity
     // TODO: set live on reductions swap out ctx.live = (word_t)arity.small_get_value();
-    ctx.cp = ctx.ip + 2;
-    //ctx.jump(ctx.ip[2]);
+    Term mfa(ctx.ip[1]);
+    G_ASSERT(mfa.is_tuple());
+    G_ASSERT(mfa.tuple_get_arity() == 3);
+    auto find_result = CodeServer::find_module(mfa.tuple_get_element(0),
+                                            CodeServer::LOAD_IF_NOT_FOUND);
+    if (find_result.is_error()) {
+      return ctx.raise(proc, atom::ERROR, atom::UNDEF);
+    }
+
+    Module *mod = find_result.get_result();
+    word_t arity = mfa.tuple_get_element(2).small_get_unsigned();
+    auto find_fn_result = mod->resolve_function(mfa.tuple_get_element(1),
+                                                arity);
+    if (find_fn_result.is_error()) {
+      return ctx.raise(proc, atom::ERROR, atom::UNDEF);
+    }
+    ctx.ip = find_fn_result.get_result();
   }
 //  inline void opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
 //  }
@@ -251,7 +267,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term stack_need(ctx.ip[1]);
     G_ASSERT(stack_need.is_small());
     ctx.push_cp();
-    ctx.stack->push_n_nils((word_t)stack_need.small_get_value());
+    ctx.stack->push_n_nils((word_t)stack_need.small_get_signed());
     ctx.ip += 2;
   }
 //  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
@@ -273,7 +289,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc  Restore the continuation pointer (CP) from the stack and deallocate
     //       N+1 words from the stack (the + 1 is for the CP).
     Term n(ctx.ip[0]);
-    ctx.stack->drop_n((word_t)n.small_get_value());
+    ctx.stack->drop_n((word_t)n.small_get_signed());
     ctx.pop_cp();
     ctx.ip++;
   }

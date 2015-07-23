@@ -3,6 +3,7 @@
 #include "g_code.h"
 #include "g_module.h"
 #include "g_vm.h"
+#include "g_error.h"
 
 namespace gluon {
 
@@ -10,10 +11,9 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
 {
   G_ASSERT(this);
 
-  auto mod = CodeServer::find_module(m);
-  if (!mod) {
-    return "module not found";
-  }
+  auto mod_result = CodeServer::find_module(m, CodeServer::LOAD_IF_NOT_FOUND);
+  G_RETURN_IF_ERROR(mod_result);
+  Module *mod = mod_result.get_result();
 
   if (m_ctx.mod) {
     // push current ip if it wasn't null (initial entry call)

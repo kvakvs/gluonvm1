@@ -117,6 +117,7 @@ encode_arg([{location, _File, Line}], Mod0) ->
   %%{<<?tag_label:8, (uint_enc(LitId))/binary, (uint_enc(Line))/binary>>, Mod1};
   encode_arg({integer, Line}, Mod0);
 encode_arg({list, L}, Mod0) ->
+%%  encode_arg({literal, list_to_tuple(L)}, Mod0);
   EncElement = fun(Elem, {Accum, M0}) ->
       {Encoded, M1} = encode_arg(Elem, M0),
       {<<Accum/binary, Encoded/binary>>, M1}

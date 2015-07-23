@@ -400,8 +400,11 @@ public:
     return is_small();
 #endif
   }
-  constexpr sword_t small_get_value() const {
+  constexpr sword_t small_get_signed() const {
     return term_tag::Smallint::value(m_val);
+  }
+  constexpr word_t small_get_unsigned() const {
+    return (word_t)term_tag::Smallint::value(m_val);
   }
   inline static bool are_both_small(Term a, Term b) {
     return term_tag::Smallint::check(a.value() & b.value());

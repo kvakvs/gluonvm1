@@ -25,24 +25,24 @@ void VM::init()
   init_predef_atoms();
 }
 
-MaybeError VM::load_module(const Str &filename)
-{
-  fs::File modf;
-  auto open_result = modf.open(filename);
-  G_RETURN_IF_ERROR(open_result);
+//MaybeError VM::load_module(const Str &filename)
+//{
+//  fs::File modf;
+//  auto open_result = modf.open(filename);
+//  G_RETURN_IF_ERROR(open_result);
 
-  word_t size = modf.size().get_result();
+//  word_t size = modf.size();
 
-  auto alloc_result = mem::alloc_bytes(size);
-  G_RETURN_IF_ERROR_UNLIKELY(alloc_result);
+//  auto alloc_result = mem::alloc_bytes(size);
+//  G_RETURN_IF_ERROR_UNLIKELY(alloc_result);
 
-  auto bytes = alloc_result.get_result();
-  auto r_result = modf.read(bytes, size);
-  G_RETURN_IF_ERROR(r_result)
+//  auto bytes = alloc_result.get_result();
+//  auto r_result = modf.read(bytes, size);
+//  G_RETURN_IF_ERROR(r_result)
 
-  CodeServer::load_module(Term::make_nil(), bytes, size);
-  return success();
-}
+//  CodeServer::load_module(Term::make_nil(), bytes, size);
+//  return success();
+//}
 
 Term VM::to_atom(const Str &s)
 {

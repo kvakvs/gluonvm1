@@ -3,7 +3,7 @@ move
 call_only
 call
 call_last
-#call_ext-do-later
+call_ext
 gc_bif1
 gc_bif2
 bif1

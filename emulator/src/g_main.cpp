@@ -1,20 +1,21 @@
 #include "g_vm.h"
 #include "g_process.h"
+#include "g_codeserver.h"
 #include "g_error.h"
 
 #include <stdio.h>
 
-using vm = gluon::VM;
+using namespace gluon;
 
 #if G_TEST
 static void run_tests(int argc, const char *argv[]) {
-  gluon::term_test(argc, argv);
+  term_test(argc, argv);
 }
 #endif
 
 int main(int argc, const char *argv[]) {
 
-  vm::init();
+  VM::init();
 
 #if G_TEST
   // test runner
@@ -23,15 +24,23 @@ int main(int argc, const char *argv[]) {
 #else
 
   // normal start
-  vm::load_module("../test/g_test1.S.gleam");
-  gluon::Process proc;
-  auto j_result = proc.call(vm::to_atom("g_test1"), vm::to_atom("test"), 0,
-                            gluon::Term::make_nil());
+  //vm::load_module("../test/g_test1.S.gleam");
+  CodeServer::path_append("../test");
+
+  // create root process and set it to some entry function
+  Process proc;
+  auto j_result = proc.call(VM::to_atom("g_test1"),
+                            VM::to_atom("test"),
+                            0,
+                            Term::make_nil());
   if (j_result.is_error()) {
     printf("jump error: %s\n", j_result.get_error());
   }
-  vm::vm_loop(&proc);
-  // Print x0
+
+  // Run some code
+  VM::vm_loop(&proc);
+
+  // Print x0 as result
   printf("Result X[0]=");
   proc.get_runtime_ctx().regs[0].println();
 

@@ -266,7 +266,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
       Term label = gleam_read_arg_value(heap, r);
       G_ASSERT(label.is_small());
 
-      word_t l_id = (word_t)label.small_get_value();
+      word_t l_id = (word_t)label.small_get_signed();
       m_labels[l_id] = code.size();
       printf("label %zu offset 0x%zx\n", l_id, code.size());
       continue;
@@ -294,6 +294,7 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
     }
   }
 
+  // TODO: just scan code and resolve in place maybe? don't have to accum labels
   auto stage2 = gleam_resolve_labels(postponed_labels, code);
   G_RETURN_IF_ERROR(stage2);
 
@@ -315,7 +316,7 @@ MaybeError LoaderState::gleam_resolve_labels(
     // New value will be small int
     Term resolved_label = Term::make_small((sword_t)m_labels[label_index]);
     printf("loader: resolving label %zu at 0x%zx to 0x%zx\n",
-           label_index, code_index, resolved_label.small_get_value());
+           label_index, code_index, resolved_label.small_get_signed());
     code[code_index] = resolved_label.value();
   }
   return success();
@@ -338,6 +339,7 @@ Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
 #if FEATURE_FLOAT
   const u8_t tag_fp_register  = 246; // F6
 #endif
+  const u8_t tag_list         = 245; // F5 - tag for select clauses
 
   switch (tag) {
   case tag_integer_pos:
@@ -394,9 +396,18 @@ Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
       return Term::make_regfp(fp_index);
     }
 #endif
+  case tag_list: {
+      word_t sz = r.read_var<word_t>();
+      Term *elts = Heap::alloc<Term>(heap, sz+1);
+      for (word_t i = 0; i < sz; ++i) {
+        elts[i+1] = gleam_read_arg_value(heap, r);
+      }
+      return Term::make_tuple(elts, sz);
+    }
+  default: G_FAIL("strange value tag");
   } // case tag of
 
-  return Term::make_nil();
+  //return Term::make_nil();
 }
 
 } // ns gluon

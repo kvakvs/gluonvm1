@@ -69,7 +69,7 @@ void Term::print()
     printf("'%s'", atom_str().c_str());
   }
   else if (is_small()) {
-    printf("%zd", small_get_value());
+    printf("%zd", small_get_signed());
   }
   else if (is_short_pid()) {
     printf("PID");

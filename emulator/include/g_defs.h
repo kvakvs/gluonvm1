@@ -22,6 +22,8 @@
 #   else
 #       define G_HARDWARE_BITS 32
 #   endif
+#else
+#   error "Define platform bit width detection code"
 #endif
 
 #define FEATURE_BIGNUM    0
@@ -57,6 +59,9 @@ namespace gluon {
 
   template <typename A, typename B>
   using Pair = std::pair<A, B>;
+
+  template <typename A>
+  using List = std::list<A>;
 
   // Hardware abstractions
   namespace hw {

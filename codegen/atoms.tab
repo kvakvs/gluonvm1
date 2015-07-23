@@ -1,9 +1,17 @@
+#--- B
 badmatch
 
+#--- E
 error
 exit
 
+#--- F
 false
 
+#--- T
 throw
 true
+
+#--- U
+undef
+undefined

@@ -5,9 +5,13 @@
 test() ->
     test1(),
     test_eq(),
-    test2().
+    test2(),
+    test_extcalls().
 
 %%-----------------------------------------------
+test_extcalls() ->
+    [1,2,3] = lists:reverse([3,2,1]).
+
 test1() ->
     recurse(10).
 test_eq() ->
