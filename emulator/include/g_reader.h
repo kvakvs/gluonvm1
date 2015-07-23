@@ -91,10 +91,14 @@ public:
     m_ptr += 4;
     return result;
   }
-
   inline void advance(word_t x) {
     assert_remaining_at_least(x);
     m_ptr += x;
+  }
+  template <word_t ALIGN>
+  inline void advance_align(word_t x) {
+    assert_remaining_at_least(x);
+    m_ptr += ALIGN * ((x + ALIGN - 1) / ALIGN);
   }
 };
 

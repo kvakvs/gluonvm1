@@ -9,6 +9,9 @@
 // Generated opcode arity table
 #include "g_genop.h"
 
+#define MINIZ_HEADER_FILE_ONLY
+#include "miniz/miniz.c"
+
 namespace gluon {
 
 class LoaderState {
@@ -82,6 +85,9 @@ Result<Module *> CodeServer::load_module_internal(Term expected_name,
   while (1) {
     if (r.get_remaining_count() < 5) break;
     Str chunk = r.read_string(4);
+    if (chunk[0] < 'A' || chunk[0] > 'Z') {
+      return error<Module *>("bad beam format");
+    }
     G_LOG("BEAM section %s\n", chunk.c_str());
 
     result.clear();
@@ -131,6 +137,7 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
   for (word_t i = 0; i < tab_sz; ++i) {
     auto atom_sz = r.read_var<word_t>();
     m_atoms.push_back(r.read_string(atom_sz));
+    printf("atom: %s\n", m_atoms.back().c_str());
   }
 
   // Check first atom in table which is module name
@@ -141,7 +148,7 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
     return "module name mismatch";
   }
 
-  r0.advance(chunk_size);
+  r0.advance_align<4>(chunk_size);
   return success();
 }
 
@@ -165,7 +172,7 @@ MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
     m_funs[fun_arity_t(f, arity)] = label_index_t(lbl);
   }
 
-  r0.advance(chunk_size);
+  r0.advance_align<4>(chunk_size);
   return success();
 }
 
@@ -187,7 +194,7 @@ MaybeError LoaderState::load_export_table(tool::Reader &r0) {
     m_exports[fun_arity_t(f, arity)] = label_index_t(label);
   }
 
-  r0.advance(chunk_size);
+  r0.advance_align<4>(chunk_size);
   return success();
 }
 
@@ -199,7 +206,7 @@ MaybeError LoaderState::load_import_table(tool::Reader &r0)
 
   // Read triplets u32 module_atom_id; u32 method_atom_id; u32 arity
 
-  r0.advance(chunk_size);
+  r0.advance_align<4>(chunk_size);
   return success();
 }
 
@@ -207,9 +214,7 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r  = r0.clone(chunk_size);
 
-  // header size expected to be 0 for beam format 0
-  auto header_size = r.read_big_u32();
-  G_ASSERT(header_size == 0);
+  /*auto info_size =*/ r.read_big_u32();
 
   m_code_version   = r.read_big_u32();
   if (m_code_version != 0) {
@@ -223,34 +228,45 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
   m_code = r.get_ptr();
   m_code_size = chunk_size;
 
-  r0.advance(chunk_size);
+  r0.advance_align<4>(chunk_size);
   return success();
 }
 
 MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
-  //tool::Reader r = r0.clone(chunk_size);
+  tool::Reader r1 = r0.clone(chunk_size);
 
-  //auto uncompressed_size = r.read_big_u32();
+  auto uncompressed_size = r1.read_big_u32();
+  UniquePtr<u8_t> compressed(Heap::alloc_bytes(heap, chunk_size));
+  r1.read_bytes(compressed.get(), chunk_size);
 
-//  auto count = r.read_var<word_t>();
-//  m_literals.reserve(count);
+  UniquePtr<u8_t> uncompressed(Heap::alloc_bytes(heap, uncompressed_size));
 
-//  for (word_t i = 0; i < count; ++i) {
-//    /*auto lit_sz =*/ r.read_var<word_t>();
+  auto result = mz_uncompress(uncompressed.get(), &uncompressed_size,
+                              compressed.get(), chunk_size);
+  if (result != MZ_OK) {
+    return "beam LitT error";
+  }
 
-//    auto lit_result = etf::read_ext_term(heap, r);
-//    G_RETURN_IF_ERROR(lit_result);
+  tool::Reader r(uncompressed.get(), uncompressed_size);
+  auto count = r.read_big_u32();
+  m_literals.reserve(count);
 
-//    auto lit = lit_result.get_result();
-//#if G_DEBUG
-//    lit.print();puts("");
-//#endif
-//    m_literals.push_back(lit);
-//  }
+  for (word_t i = 0; i < count; ++i) {
+    //auto lit_sz = r.read_big_u32();
 
-  r0.advance(chunk_size);
+    auto lit_result = etf::read_ext_term(heap, r);
+    G_RETURN_IF_ERROR(lit_result);
+
+    auto lit = lit_result.get_result();
+#if G_DEBUG
+    lit.print();puts("");
+#endif
+    m_literals.push_back(lit);
+  }
+
+  r0.advance_align<4>(chunk_size);
   return success();
 }
 
@@ -266,7 +282,7 @@ MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
 //    m_labels.push_back(code_offset_t::wrap(r.read_var<word_t>()));
 //  }
 
-  r0.advance(chunk_size);
+  r0.advance_align<4>(chunk_size);
   return success();
 }
 

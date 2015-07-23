@@ -28,7 +28,7 @@ MaybeError CodeServer::load_module(Term name_atom, const u8_t *bytes, word_t siz
 MaybeError CodeServer::load_module(Term name)
 {
   // Scan for locations where module file can be found
-  Str mod_filename = name.atom_str() + ".S.gleam";
+  Str mod_filename = name.atom_str() + ".beam";
 
   for (const Str &dir: g_search_path) {
     Str path = dir + "/" + mod_filename;
