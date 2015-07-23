@@ -17,24 +17,24 @@ namespace impl {
 
 struct vm_runtime_ctx_t: runtime_ctx_t {
   // where code begins (for jumps)
-  word_t *base;
+  //word_t *base;
   ProcessStack *stack;
 
   void load(Process *proc) {
     runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
-    mod  = proc_ctx.mod;
+//    mod  = proc_ctx.mod;
     ip   = proc_ctx.ip;
     cp   = proc_ctx.cp;
     live = proc_ctx.live;
     std::memcpy(regs, proc_ctx.regs, sizeof(Term)*live);
 
     stack = proc->get_stack();
-    base  = proc->get_code_base();
+    //base  = proc->get_code_base();
     // TODO: update heap top
   }
   void save(Process *proc) {
     runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
-    proc_ctx.mod  = mod;
+//    proc_ctx.mod  = mod;
     proc_ctx.ip   = ip;
     proc_ctx.cp   = cp;
     proc_ctx.live = live;
@@ -88,12 +88,42 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     }
   }
 
-  void jump(Term t) {
-    G_ASSERT(t.is_small());
-    printf("ctx.jump -> 0x%zx\n", (word_t)t.small_get_signed());
-    ip = base + (word_t)t.small_get_signed();
-    G_ASSERT(ip > base);
-    G_ASSERT(ip < mod->m_code.size() + base);
+  // Jumps to location pointed with {extfunc, Mod, Fun, Arity} in BEAM ASM,
+  // depending on encoding decision: now it would be a {M,F,Arity} tuple in
+  // literals table - so fetch MFA elements, resolve address and jump
+  void jump_ext(Process *proc, Term mfa) {
+    G_ASSERT(mfa.is_tuple());
+    G_ASSERT(mfa.tuple_get_arity() == 3);
+    auto find_result = CodeServer::find_module(mfa.tuple_get_element(0),
+                                            CodeServer::LOAD_IF_NOT_FOUND);
+    if (find_result.is_error()) {
+      return raise(proc, atom::ERROR, atom::UNDEF);
+    }
+
+    Module *mod = find_result.get_result();
+    word_t arity = mfa.tuple_get_element(2).small_get_unsigned();
+    auto find_fn_result = mod->resolve_function(mfa.tuple_get_element(1),
+                                                arity);
+    if (find_fn_result.is_error()) {
+      return raise(proc, atom::ERROR, atom::UNDEF);
+    }
+    return jump_far(proc, mod, find_fn_result.get_result());
+  }
+
+  // Jumps between modules updating base and mod fields
+  void jump_far(Process *proc, Module *m, word_t *new_ip) {
+//    mod = m;
+    //base = proc->get_code_base();
+    ip = new_ip;
+  }
+
+  void jump(Process *proc, Term t) {
+    G_ASSERT(t.is_boxed());
+    printf("ctx.jump -> 0x%zx\n", (word_t)t.boxed_get_ptr<word_t>());
+    ip = t.boxed_get_ptr<word_t>();
+    // TODO: some meaningful assertion here?
+    //G_ASSERT(ip > base);
+    //G_ASSERT(ip < proc->m_module->m_code.size() + base);
   }
 
   // Throws type:reason (for example error:badmatch)
@@ -131,7 +161,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
         cp = nullptr;
       }
       // TODO: set process exit reason
-      proc->get_runtime_ctx().live = 0;
+      procmo->get_runtime_ctx().live = 0;
       // TODO: schedule next process in queue
     }
 */
@@ -178,7 +208,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term arity(ctx.ip[0]);
     ctx.live = (word_t)arity.small_get_signed();
     ctx.cp = ctx.ip + 2;
-    ctx.jump(Term(ctx.ip[1]));
+    ctx.jump(proc, Term(ctx.ip[1]));
   }
   inline void opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
     // @spec call_last Arity Label Dellocate
@@ -188,16 +218,16 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term arity(ctx.ip[0]);
     ctx.live = (word_t)arity.small_get_signed();
     Term n(ctx.ip[2]);
-    ctx.stack->drop_n((word_t)n.small_get_signed());
-    ctx.jump(Term(ctx.ip[1]));
+    ctx.stack->drop_n(n.small_get_unsigned());
+    ctx.jump(proc, Term(ctx.ip[1]));
   }
   inline void opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
     // @spec call_only Arity Label
     // @doc Do a tail recursive call to the function at Label.
     //      Do not update the CP register.
     Term arity(ctx.ip[0]);
-    ctx.live = (word_t)arity.small_get_signed();
-    ctx.jump(Term(ctx.ip[1]));
+    ctx.live = arity.small_get_unsigned();
+    ctx.jump(proc, Term(ctx.ip[1]));
   }
   inline void opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
     // @spec call_ext Arity Destination
@@ -208,22 +238,11 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // Term arity(ip[0]); // assert arity = destination.arity
     // TODO: set live on reductions swap out ctx.live = (word_t)arity.small_get_value();
     Term mfa(ctx.ip[1]);
-    G_ASSERT(mfa.is_tuple());
-    G_ASSERT(mfa.tuple_get_arity() == 3);
-    auto find_result = CodeServer::find_module(mfa.tuple_get_element(0),
-                                            CodeServer::LOAD_IF_NOT_FOUND);
-    if (find_result.is_error()) {
-      return ctx.raise(proc, atom::ERROR, atom::UNDEF);
-    }
+    ctx.cp = ctx.ip + 2;
 
-    Module *mod = find_result.get_result();
-    word_t arity = mfa.tuple_get_element(2).small_get_unsigned();
-    auto find_fn_result = mod->resolve_function(mfa.tuple_get_element(1),
-                                                arity);
-    if (find_fn_result.is_error()) {
-      return ctx.raise(proc, atom::ERROR, atom::UNDEF);
-    }
-    ctx.ip = find_fn_result.get_result();
+    Term a(ctx.ip[0]);
+    ctx.live = a.small_get_unsigned();
+    return ctx.jump_ext(proc, mfa);
   }
 //  inline void opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
 //  }
@@ -352,12 +371,12 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     DEREF(arg2);
     if (Term::are_both_small(arg1, arg2)) {
       if (arg1.value() >= arg2.value()) {
-        ctx.jump(Term(ctx.ip[0]));
+        ctx.jump(proc, Term(ctx.ip[0]));
         return;
       }
     } else { // full term compare
       if (!bif::is_term_smaller(arg1, arg2)) {
-        ctx.jump(Term(ctx.ip[0]));
+        ctx.jump(proc, Term(ctx.ip[0]));
         return;
       }
     }
@@ -376,7 +395,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     if (bif::are_terms_equal(arg1, arg2, false)) {
       ctx.ip += 3;
     } else {
-      ctx.jump(Term(ctx.ip[0]));
+      ctx.jump(proc, Term(ctx.ip[0]));
     }
   }
 //  inline void opcode_is_ne(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 42
@@ -393,7 +412,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       if (Term::are_both_immed(arg1, arg2)
           || !bif::are_terms_equal(arg1, arg2, true))
       {
-        return ctx.jump(Term(ctx.ip[0]));
+        return ctx.jump(proc, Term(ctx.ip[0]));
       }
     }
     ctx.ip += 3;
@@ -420,7 +439,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term t(ctx.ip[1]);
     DEREF(t);
     if (t.is_nil() == false) {
-      ctx.jump(Term(ctx.ip[0]));
+      ctx.jump(proc, Term(ctx.ip[0]));
     } else {
       ctx.ip += 2;
     }
@@ -437,7 +456,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term t(ctx.ip[1]);
     DEREF(t);
     if (t.is_cons() == false) {
-      ctx.jump(Term(ctx.ip[0]));
+      ctx.jump(proc, Term(ctx.ip[0]));
     } else {
       ctx.ip += 2;
     }
@@ -511,8 +530,14 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_is_function(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 77
 //  }
-//  inline void opcode_call_ext_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 78
-//  }
+  inline void opcode_call_ext_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 78
+    // @spec call_ext_only Arity Label
+    // Do a tail recursive call to the function at Label. Do not update CP.
+    Term mfa(ctx.ip[1]);
+    Term a(ctx.ip[0]);
+    ctx.live = a.small_get_unsigned();
+    return ctx.jump_ext(proc, mfa);
+  }
 //  inline void opcode_bs_start_match(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 79
 //  }
 //  inline void opcode_bs_get_integer(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 80

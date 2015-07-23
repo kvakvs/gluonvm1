@@ -266,8 +266,8 @@ MaybeError LoaderState::gleam_prepare_code(Module *m,
       Term label = gleam_read_arg_value(heap, r);
       G_ASSERT(label.is_small());
 
-      word_t l_id = (word_t)label.small_get_signed();
-      m_labels[l_id] = code.size();
+      word_t l_id = label.small_get_unsigned();
+      m_labels[l_id] = (&code.back())+1;
       printf("label %zu offset 0x%zx\n", l_id, code.size());
       continue;
     }
@@ -307,6 +307,7 @@ MaybeError LoaderState::gleam_resolve_labels(
                                     const Vector<word_t> &postponed_labels,
                                     Vector<word_t> &code)
 {
+//  word_t *base = code.data();
   for (word_t i = 0; i < postponed_labels.size(); ++i) {
     word_t code_index = postponed_labels[i];
 
@@ -314,9 +315,11 @@ MaybeError LoaderState::gleam_resolve_labels(
     word_t label_index = term_tag::Catch::value(code[code_index]);
 
     // New value will be small int
-    Term resolved_label = Term::make_small((sword_t)m_labels[label_index]);
+    Term resolved_label = Term::make_boxed(m_labels[label_index]);
     printf("loader: resolving label %zu at 0x%zx to 0x%zx\n",
-           label_index, code_index, resolved_label.small_get_signed());
+           label_index,
+           code_index,
+           (word_t)resolved_label.boxed_get_ptr<word_t>());
     code[code_index] = resolved_label.value();
   }
   return success();

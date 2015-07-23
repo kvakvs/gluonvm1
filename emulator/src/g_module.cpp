@@ -27,7 +27,7 @@ Result<word_t *> Module::resolve_label(label_index_t label)
   if (label.value >= m_labels.size()) {
     return error<word_t *>("label index too big");
   }
-  return success(m_code.data() + m_labels[label.value]);
+  return success(m_labels[label.value]);
 }
 
 } // ns gluon

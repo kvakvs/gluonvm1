@@ -47,7 +47,7 @@ MaybeError CodeServer::load_module(Term name)
       return result;
     }
   }
-  return "not found";
+  return "module not found";
 }
 
 Result<Module *> CodeServer::find_module(Term m, find_opt_t load)
@@ -55,7 +55,7 @@ Result<Module *> CodeServer::find_module(Term m, find_opt_t load)
   auto iter = g_modules.find(m);
   if (iter == g_modules.end()) {
     if (load == CodeServer::FIND_EXISTING) {
-      return error<Module *>("not found");
+      return error<Module *>("function not found");
     } else {
       auto res = load_module(m);
       G_RETURN_REWRAP_IF_ERROR(res, Module *);

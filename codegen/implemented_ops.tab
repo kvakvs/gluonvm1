@@ -4,6 +4,7 @@ call_only
 call
 call_last
 call_ext
+call_ext_only
 gc_bif1
 gc_bif2
 bif1

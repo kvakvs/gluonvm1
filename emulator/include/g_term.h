@@ -328,6 +328,7 @@ public:
   }
   inline word_t boxed_get_subtag() const {
     word_t *p = boxed_get_ptr<word_t>();
+    if (!p) { return (word_t)-1; }
     return term_tag::boxed_subtag(p);
   }
 
@@ -403,8 +404,10 @@ public:
   constexpr sword_t small_get_signed() const {
     return term_tag::Smallint::value(m_val);
   }
-  constexpr word_t small_get_unsigned() const {
-    return (word_t)term_tag::Smallint::value(m_val);
+  inline word_t small_get_unsigned() const {
+    sword_t v = term_tag::Smallint::value(m_val);
+    G_ASSERT(v >= 0);
+    return (word_t)v;
   }
   inline static bool are_both_small(Term a, Term b) {
     return term_tag::Smallint::check(a.value() & b.value());

@@ -16,7 +16,7 @@ static const word_t MAX_FP_REGS = 2;
 // Set of stuff we take from Process struct to keep running, this will be saved
 // by loop runner on context switch or loop end
 typedef struct {
-  Module *mod = nullptr;
+//  Module *mod = nullptr;
   word_t *ip = nullptr;   // code pointer
   // continuation, works like return address for a single call. If more nested
   // calls are done, cp is saved to stack
@@ -84,6 +84,7 @@ public:
   runtime_ctx_t m_ctx;
   ProcessStack  m_stack;
   word_t        m_catch_level = 0;
+//  Module        *m_module = nullptr;
 
 public:
   Process() {
@@ -101,7 +102,7 @@ public:
 
   // Not inlined, ask module for pointer to its code. Safety off!
   word_t *get_ip() const;
-  word_t *get_code_base() const;
+//  word_t *get_code_base() const;
 };
 
 } // ns gluon

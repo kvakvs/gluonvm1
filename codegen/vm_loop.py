@@ -29,7 +29,7 @@ print("""void VM::vm_loop(Process *proc) {
 
 next_instr:
   jmp_to = (void *)(*ctx.ip);
-  printf("[0x%zx]: ", (word_t)(ctx.ip - ctx.base));
+  printf("[0x%zx]: ", (word_t)ctx.ip);
   ctx.ip++;
   goto *jmp_to;
 """)
