@@ -23,6 +23,7 @@
 -define(tag_nil, 248).
 -define(tag_literal, 247).
 -define(tag_fp_register, 246).
+-define(tag_list, 245).
 
 get_test_type(is_lt) ->         0;
 get_test_type(is_ge) ->         1;
@@ -115,6 +116,13 @@ encode_arg([{location, _File, Line}], Mod0) ->
   %%{LitId, Mod1} = literal_ref_enc(File, Mod0),
   %%{<<?tag_label:8, (uint_enc(LitId))/binary, (uint_enc(Line))/binary>>, Mod1};
   encode_arg({integer, Line}, Mod0);
+encode_arg({list, L}, Mod0) ->
+  EncElement = fun(Elem, {Accum, M0}) ->
+      {Encoded, M1} = encode_arg(Elem, M0),
+      {<<Accum/binary, Encoded/binary>>, M1}
+    end,
+  {Enc, Mod1} = lists:foldr(EncElement, {<<>>, Mod0}, L),
+  {<<?tag_list:8, (uint_enc(length(L)))/binary, Enc/binary>>, Mod1};
 encode_arg([], Mod0) ->
   encode_arg(nil, Mod0).
 

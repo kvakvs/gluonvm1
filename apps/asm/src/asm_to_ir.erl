@@ -63,6 +63,7 @@ compile_fun_gleam({F, Arity, Code}, CState) ->
 
 %gleam_op({line, _}, #compile_state{}=CState) -> CState;
 %gleam_op({label, _}, #compile_state{}=CState) -> CState;
+gleam_op({kill, _}, #compile_state{}=CState) -> CState;
 gleam_op(X, #compile_state{}=CState) when is_atom(X) -> gleam_op({X}, CState);
 gleam_op({func_info, _M, _F, _A}, #compile_state{}=CState) -> CState;
 gleam_op({gc_bif, Lbl, Fail, Bif, Args, Result}, #compile_state{}=CState) ->
