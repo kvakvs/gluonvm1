@@ -43,7 +43,8 @@ set(SRC_LIST
     src/g_dist.cpp       include/g_dist.h
     src/g_ext_term.cpp   include/g_ext_term.h
     src/g_genop.cpp      include/g_genop.h        # generated via codegen/ script
-    src/g_gleam_loader.cpp
+    #src/g_gleam_loader.cpp
+    src/g_beam_loader.cpp
     src/g_heap.cpp       include/g_heap.h
     src/g_main.cpp
     src/g_module.cpp     include/g_module.h
@@ -61,6 +62,9 @@ set(SRC_LIST
     src/fructose/test_base.h
     src/fructose/test_root.h
     src/fructose/double_compare.h
+
+    # Zlib replacement
+    src/miniz/miniz.c
     )
 set(SRC_LIBTOMMATH
 #    deps/libtommath/tommath.h

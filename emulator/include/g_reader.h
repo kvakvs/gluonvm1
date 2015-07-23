@@ -79,13 +79,13 @@ public:
     m_ptr += sz;
   }
 
-  word_t read_bigendian_i16() {
+  word_t read_big_u16() {
     word_t result = ((word_t)m_ptr[0] << 8)  | (word_t)m_ptr[1];
     m_ptr += 2;
     return result;
   }
 
-  word_t read_bigendian_i32() {
+  word_t read_big_u32() {
     word_t result = ((word_t)m_ptr[0] << 24) | ((word_t)m_ptr[1] << 16)
                   | ((word_t)m_ptr[2] << 8)  | (word_t)m_ptr[3];
     m_ptr += 4;

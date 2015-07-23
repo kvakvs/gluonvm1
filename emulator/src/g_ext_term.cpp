@@ -17,7 +17,7 @@ Result<Term> read_list_ext(Heap *heap, tool::Reader &r);
 
 // Reads long atom as string and attempts to create it in atom table.
 Term read_atom_string_i16(tool::Reader &r) {
-  word_t sz = r.read_bigendian_i16();
+  word_t sz = r.read_big_u16();
   Str atom_str = r.read_string(sz);
   return VM::to_atom(atom_str);
 }
@@ -121,7 +121,7 @@ Term read_map(Heap *heap, tool::Reader &r) {
 
 
 Term read_string_ext(Heap *heap, tool::Reader &r) {
-  word_t length = r.read_bigendian_i16();
+  word_t length = r.read_big_u16();
   if (length == 0) {
     return Term::make_nil();
   }
@@ -152,7 +152,7 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
 }
 
 Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
-  word_t length = r.read_bigendian_i32();
+  word_t length = r.read_big_u32();
 
   Term result = Term::make_nil();
   Term *ref = &result;
@@ -192,7 +192,7 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
 
   case INTEGER_EXT: {
       // 32-bit integer
-      sword_t n = (sword_t)r.read_bigendian_i32();
+      sword_t n = (sword_t)r.read_big_u32();
       if (get_hardware_bits() > 32) {
         // fits into small_int if platform is x64
         return success(Term::make_small(n));
@@ -252,14 +252,14 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
       G_RETURN_REWRAP_IF_ERROR(node_result, Term);
 
       Term node     = node_result.get_result();
-      word_t id     = r.read_bigendian_i32();
-      word_t serial = r.read_bigendian_i32();
+      word_t id     = r.read_big_u32();
+      word_t serial = r.read_big_u32();
       u8_t creation = r.read_byte();
       return make_pid(node, id, serial, creation);
     } // end reference_ext
 
   case SMALL_TUPLE_EXT: return read_tuple(heap, r, r.read_byte());
-  case LARGE_TUPLE_EXT: return read_tuple(heap, r, r.read_bigendian_i32());
+  case LARGE_TUPLE_EXT: return read_tuple(heap, r, r.read_big_u32());
 
   case MAP_EXT:
 #if FEATURE_MAPS

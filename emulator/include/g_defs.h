@@ -89,14 +89,12 @@ namespace gluon {
   inline void dummy_printf(const char *, ...) {}
 
   // Index in label table, wrapped to create a distinct compile-time type
-  typedef struct label_index_t {
+  class label_index_t {
+  public:
     word_t value;
-    static inline label_index_t wrap(word_t x) {
-      label_index_t co;
-      co.value = x;
-      return co;
-    }
-  } label_index_t;
+    label_index_t(): value(0) {}
+    explicit label_index_t(word_t x): value(x) {}
+  };
 
 //  // Index in code table, wrapped to create a distinct compile-time type
 //  typedef struct code_offset_t {

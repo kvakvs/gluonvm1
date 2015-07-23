@@ -19,8 +19,8 @@ typedef Pair<Term, word_t> fun_arity_t;
 class Module {
 public:
   typedef Map<word_t, word_t *> labels_t;
-  typedef Vector<fun_arity_t> exports_t;
   typedef Map<fun_arity_t, label_index_t> funs_t;
+  typedef Map<fun_arity_t, label_index_t> exports_t;
 
 private:
   Term m_name;
