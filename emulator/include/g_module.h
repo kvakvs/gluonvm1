@@ -12,6 +12,20 @@ class Heap;
 // A pair of atom and int arity, can be used as map key
 typedef Pair<Term, word_t> fun_arity_t;
 
+typedef struct {
+  Term    mod;
+  Term    fun;
+  word_t  arity;
+
+  word_t  index;
+  word_t  uniq[4];
+  word_t  old_index;
+  word_t  old_uniq;
+
+  word_t  num_free;
+  word_t  *code;
+} fun_entry_t;
+
 //
 // Class Module represents a single Erlang module with code. When multiple
 // versions of same module are loaded, you'll find one Module for each version
@@ -19,7 +33,7 @@ typedef Pair<Term, word_t> fun_arity_t;
 class Module {
 public:
   typedef Map<word_t, word_t *> labels_t;
-  typedef Map<fun_arity_t, label_index_t> funs_t;
+  typedef Map<fun_arity_t, fun_entry_t> funs_t;
   typedef Map<fun_arity_t, label_index_t> exports_t;
 
 private:

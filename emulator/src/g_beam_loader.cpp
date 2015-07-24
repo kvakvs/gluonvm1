@@ -35,12 +35,14 @@ public:
   }
 
   MaybeError load_atom_table(tool::Reader &r, Term expected_name);
+  MaybeError load_str_table(tool::Reader &r);
   MaybeError load_fun_table(tool::Reader &r);
   MaybeError load_export_table(tool::Reader &r);
   MaybeError load_import_table(tool::Reader &r);
   MaybeError load_code(tool::Reader &r);
   MaybeError load_literal_table(Heap *heap, tool::Reader &r);
   MaybeError load_labels(Heap *heap, tool::Reader &r);
+  MaybeError load_line_table(tool::Reader &r);
 
   inline const Str &atom_tab_index_to_str(word_t i) const {
     G_ASSERT(i < m_atoms.size());
@@ -50,7 +52,7 @@ public:
   // Load finished, create a Module object and inform code server
   Result<Module *> finalize(Term modname);
   // Parse raw code creating jump table with decoded args
-  MaybeError gleam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
+  MaybeError beam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
   // Parse one argument converting it into Term ready to be stored in code
   Term gleam_read_arg_value(Heap *heap, tool::Reader &r);
 protected:
@@ -85,7 +87,9 @@ Result<Module *> CodeServer::load_module_internal(Term expected_name,
   while (1) {
     if (r.get_remaining_count() < 5) break;
     Str chunk = r.read_string(4);
-    if (chunk[0] < 'A' || chunk[0] > 'Z') {
+    if ((chunk[0] < 'A' || chunk[0] > 'Z')
+        || (chunk[1] < 'a' || chunk[1] > 'z')
+        || (chunk[2] < 'a' || chunk[2] > 'z')) {
       return error<Module *>("bad beam format");
     }
     G_LOG("BEAM section %s\n", chunk.c_str());
@@ -97,12 +101,12 @@ Result<Module *> CodeServer::load_module_internal(Term expected_name,
     else if (chunk == "ExpT") { result = lstate.load_export_table(r); }
     else if (chunk == "LitT") { result = lstate.load_literal_table(heap, r); }
     // else if (chunk == "LABL") { result = lstate.load_labels(heap, r); }
-    // StrT (always 0?)
+    else if (chunk == "StrT") { result = lstate.load_str_table(r); }
     else if (chunk == "ImpT") { result = lstate.load_import_table(r); }
     // CInf block
     // Attr block
     // Abst block
-    // Line block
+    else if (chunk == "Line") { result = lstate.load_line_table(r); }
     G_RETURN_REWRAP_IF_ERROR(result, Module*)
   }
 
@@ -121,7 +125,7 @@ Result<Module *> LoaderState::finalize(Term modname) {
   //newmod->m_code.move(m_code);
 
   //return success(newmod);
-  auto result = gleam_prepare_code(newmod, m_code, m_code_size);
+  auto result = beam_prepare_code(newmod, m_code, m_code_size);
   G_RETURN_REWRAP_IF_ERROR(result, Module*);
 
   return success(newmod);
@@ -152,24 +156,48 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
   return success();
 }
 
+MaybeError LoaderState::load_str_table(tool::Reader &r0)
+{
+  auto chunk_size = r0.read_big_u32();
+  //tool::Reader r  = r0.clone(chunk_size);
+
+  r0.advance_align<4>(chunk_size);
+  return success();
+}
+
 MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
-  auto chunk_size = r0.read_var<word_t>();
+  auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
 
   G_ASSERT(m_atoms.size() > 0);
-  word_t count = r.read_var<word_t>();
+  word_t count = chunk_size / (6*4);
+  Term mod = VM::to_atom(m_atoms[0]);
+
   for (word_t i = 0; i < count; ++i) {
-    auto f_i   = r.read_var<word_t>();
-    if (f_i > m_atoms.size()) {
+    auto fun_atom_i = r.read_big_u32();
+    auto arity      = r.read_big_u32();
+    auto offset     = r.read_big_u32();
+    auto index      = r.read_big_u32();
+    auto nfree      = r.read_big_u32();
+    auto ouniq      = r.read_big_u32();
+
+    if (fun_atom_i > m_atoms.size()) {
       return "funt: atom index too big";
     }
-    const Str &f_str = atom_tab_index_to_str(f_i);
-    auto f     = VM::to_atom(f_str);
+    const Str &f_str = atom_tab_index_to_str(fun_atom_i);
 
-    auto arity = r.read_var<word_t>();
-    auto lbl   = r.read_var<word_t>();
-//    G_LOG("load_fun_t %s/%zu -> label %zu\n", f_str.c_str(), arity, lbl);
-    m_funs[fun_arity_t(f, arity)] = label_index_t(lbl);
+    fun_entry_t fe;
+    fe.mod = mod;
+    fe.fun = VM::to_atom(f_str);
+    fe.arity = r.read_big_u32();
+    fe.uniq[0] = offset; // use as temp storage
+    fe.uniq[1] = fe.uniq[2] = fe.uniq[3] = 0;
+    fe.old_uniq = ouniq;
+    fe.old_index = fe.index = index;
+    fe.num_free = nfree;
+    fe.code     = nullptr; // resolve later from uniq0
+
+    m_funs[fun_arity_t(fe.fun, arity)] = fe;
   }
 
   r0.advance_align<4>(chunk_size);
@@ -177,9 +205,10 @@ MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
 }
 
 MaybeError LoaderState::load_export_table(tool::Reader &r0) {
-  auto count = r0.read_big_u32();
-  auto chunk_size = count * 12;
+  auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
+
+  auto count = r.read_big_u32();
 
   for (word_t i = 0; i < count; ++i) {
     auto f_i   = r.read_big_u32();
@@ -200,9 +229,9 @@ MaybeError LoaderState::load_export_table(tool::Reader &r0) {
 
 MaybeError LoaderState::load_import_table(tool::Reader &r0)
 {
-  auto count = r0.read_big_u32();
-  auto chunk_size = count * 12;
+  auto chunk_size = r0.read_big_u32();
   //tool::Reader r  = r0.clone(chunk_size);
+  //auto count = r.read_big_u32();
 
   // Read triplets u32 module_atom_id; u32 method_atom_id; u32 arity
 
@@ -251,12 +280,15 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
 
   tool::Reader r(uncompressed.get(), uncompressed_size);
   auto count = r.read_big_u32();
+
+  printf("compressed %zu bytes, uncomp %zu bytes, count %zu\n",
+         chunk_size, uncompressed_size, count);
   m_literals.reserve(count);
 
   for (word_t i = 0; i < count; ++i) {
-    //auto lit_sz = r.read_big_u32();
+    /*auto lit_sz =*/ r.read_big_u32();
 
-    auto lit_result = etf::read_ext_term(heap, r);
+    auto lit_result = etf::read_ext_term_with_marker(heap, r);
     G_RETURN_IF_ERROR(lit_result);
 
     auto lit = lit_result.get_result();
@@ -286,9 +318,25 @@ MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
   return success();
 }
 
+MaybeError LoaderState::load_line_table(tool::Reader &r0)
+{
+  auto chunk_size = r0.read_var<word_t>();
+
+  // u32 table_version=0
+  // u32 flags ignore
+  // u32 count in code chunk
+  // u32 count of line records
+  // u32 count of filenames
+  // line_record[] (1-base index)
+  // filename[] = u16 length + characters
+
+  r0.advance_align<4>(chunk_size);
+  return success();
+}
+
 // Scans raw code in bytes:sz, and builds jump table with processed args
-MaybeError LoaderState::gleam_prepare_code(Module *m,
-                                           const u8_t *bytes, word_t sz)
+MaybeError LoaderState::beam_prepare_code(Module *m,
+                                          const u8_t *bytes, word_t sz)
 {
   // TODO: use some other heap?
   Heap *heap = VM::get_heap(VM::HEAP_LOADER_TMP);

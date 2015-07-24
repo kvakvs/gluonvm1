@@ -8,18 +8,13 @@ namespace gluon {
 
 Result<word_t *> Module::resolve_function(Term f, word_t arity)
 {
-//  printf("resolve_function(%s/%zu)\n", f.atom_str().c_str(), arity);
-//  for (auto &pa: m_funs) {
-//    printf("fun table: %s/%zu\n", pa.first.fun.atom_str().c_str(), pa.first.arity);
-//    if (pa.first == fun_arity_t(f, arity)) {
-//      printf("found\n");
-//    }
-//  }
   auto iter = m_funs.find(fun_arity_t(f, arity));
   if (iter == m_funs.end()) {
     return error<word_t *>("function not found");
   }
-  return resolve_label(iter->second);
+  const fun_entry_t &fe = iter->second;
+  G_ASSERT(fe.code);
+  return success(fe.code);
 }
 
 Result<word_t *> Module::resolve_label(label_index_t label)

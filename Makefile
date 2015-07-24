@@ -1,5 +1,6 @@
 .PHONY: codegen test_erl asm compile
-asm: codegen test_erl compile
+#asm: codegen test_erl compile
+asm: test_erl
 	erl -pa _build/default/lib/*/ebin -s asm_app
 
 #emu: codegen compile

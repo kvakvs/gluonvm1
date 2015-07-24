@@ -79,7 +79,7 @@ Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity) {
 
   // fill elements or die horribly if something does not decode
   for (word_t i = 0; i < arity; ++i) {
-    auto elem_result = read_ext_term2(heap, r);
+    auto elem_result = read_ext_term(heap, r);
     if (elem_result.is_error()) {
       Heap::free_terms(heap, elements, arity);
       return elem_result;
@@ -91,9 +91,9 @@ Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity) {
 }
 
 
-Result<Term> read_ext_term(Heap *heap, tool::Reader &r) {
+Result<Term> read_ext_term_with_marker(Heap *heap, tool::Reader &r) {
   r.assert_byte(ETF_MARKER);
-  return read_ext_term2(heap, r);
+  return read_ext_term(heap, r);
 }
 
 
@@ -160,7 +160,7 @@ Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
   for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
     Term *cons = Heap::alloc<Term>(heap, 2); // TODO: more efficient allocation
 
-    auto v_result = read_ext_term2(heap, r);
+    auto v_result = read_ext_term(heap, r);
     if (v_result.is_error()) {
       return v_result;
     }
@@ -170,7 +170,7 @@ Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
     ref = &cons[1];
   }
 
-  auto tail_result = read_ext_term2(heap, r);
+  auto tail_result = read_ext_term(heap, r);
   if (tail_result.is_error()) {
     return tail_result;
   }
@@ -180,8 +180,9 @@ Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
 }
 
 
-Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
-  switch (r.read_byte()) {
+Result<Term> read_ext_term(Heap *heap, tool::Reader &r) {
+  auto t = r.read_byte();
+  switch (t) {
   case COMPRESSED:
     // =80; 4 bytes size; compressed data
     G_TODO("compressed etf");
@@ -288,9 +289,10 @@ Result<Term> read_ext_term2(Heap *heap, tool::Reader &r) {
   case LARGE_BIG_EXT: return error<Term>("FEATURE_BIGNUM");
 #endif
 
-  default: ;
+  default:
+    printf("invalid ETF value tag %d\n", t);
+    return error<Term>("bad etf tag");
   } // switch tag
-  return error<Term>("bad etf tag");
 } // parse function
 
 

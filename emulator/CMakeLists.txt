@@ -15,7 +15,7 @@ include_directories(
     )
 add_definitions(
     -O0 -g -ggdb  # debug, no optimization
-#    -Os          # optimize for size
+#    -Os
 #    -S -Os       # optimize for size AND generate asm, build will fail though
     -Weverything -Werror
     -Wno-c++98-compat-pedantic -Wno-missing-noreturn
@@ -24,9 +24,8 @@ add_definitions(
     -Wno-unused-parameter
     -Wno-gnu-label-as-value -Wno-unused-label
     )
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}
-    -std=c++11
-    )
+#-fno-exceptions -fno-rtti
+set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS}
     -std=c99
     )
