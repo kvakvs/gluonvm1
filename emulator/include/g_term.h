@@ -133,6 +133,9 @@ namespace term_tag {
     constexpr static word_t create(sword_t v) {
       return (word_t)(v << L1_TAG_BITS) | TAG_L0_L1;
     }
+    constexpr static word_t create_u(word_t v) {
+      return (word_t)(v << L1_TAG_BITS) | TAG_L0_L1;
+    }
     constexpr static sword_t value(word_t t) {
       return (sword_t)t >> L1_TAG_BITS;
     }
@@ -386,6 +389,9 @@ public:
   //
   static constexpr Term make_small(sword_t x) {
     return Term(term_tag::Smallint::create(x));
+  }
+  static constexpr Term make_small_u(word_t x) {
+    return Term(term_tag::Smallint::create_u(x));
   }
   static constexpr bool does_fit_into_small(sword_t n) {
     return term::LOWER_BOUND <= n && n <= term::UPPER_BOUND;

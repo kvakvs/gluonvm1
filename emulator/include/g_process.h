@@ -9,10 +9,6 @@ namespace gluon {
 class Module;
 class Process;
 
-
-static const word_t MAX_REGS = 16; // max arity of fun which can be called
-static const word_t MAX_FP_REGS = 2;
-
 // Set of stuff we take from Process struct to keep running, this will be saved
 // by loop runner on context switch or loop end
 typedef struct {
@@ -23,7 +19,7 @@ typedef struct {
   word_t *cp = nullptr;
   word_t live = 0; // saved registers count
 
-  Term    regs[MAX_REGS];
+  Term    regs[VM_MAX_REGS];
 #if FEATURE_FLOAT
   //float_t fp_regs[MAX_FP_REGS];
 #endif

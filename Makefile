@@ -1,4 +1,7 @@
 .PHONY: codegen test_erl asm compile
+compile:
+	rebar3 compile
+
 #asm: codegen test_erl compile
 asm: test_erl
 	erl -pa _build/default/lib/*/ebin -s asm_app
@@ -16,6 +19,3 @@ codegen:
 
 #prototype: compile
 #	erl -pa _build/default/lib/*/ebin -s prototype_app
-
-compile:
-	rebar3 compile

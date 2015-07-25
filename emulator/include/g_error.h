@@ -125,6 +125,15 @@ public:
 
 static inline MaybeError success() { return MaybeError(); }
 
+//
+// Errors are handled by two classes MaybeError and Result<T>, both identically
+// can have error set as const char *. Result<T> can carry value of T as result
+// (then error is guaranteed to be nullptr). The following macros allow to check
+// error state and forward it out of the current function.  Rewrap macro allows
+// to convert MaybeError into Result<T>. UNLIKELY and LIKELY macros help
+// branch prediction.
+//
+
 // Returns const char * reason of the error (auto converted to MaybeError)
 #define G_RETURN_IF_ERROR(res) \
   if (res.is_error()) { return res.get_error(); }

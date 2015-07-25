@@ -33,6 +33,7 @@
 #define FEATURE_ERL_DIST  0 /*Distribution features*/
 
 namespace gluon {
+
   constexpr unsigned int get_hardware_bits() {
     return (8*sizeof(void*));
   }
@@ -111,6 +112,9 @@ namespace gluon {
 //    Module *module;
 //    code_offset_t offset;
 //  } code_ptr_t;
+
+  static const word_t VM_MAX_REGS = 16; // max arity of fun which can be called
+  static const word_t VM_MAX_FP_REGS = 2;
 
 } // ns gluon
 
