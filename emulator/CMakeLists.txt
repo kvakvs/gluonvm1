@@ -17,8 +17,8 @@ add_definitions(
     -O0 -g -ggdb  # debug, no optimization
 #    -Os
 #    -S -Os -g # optimize for size AND generate asm, build will fail though
-    -fno-exceptions -fno-rtti
-    -Weverything -Werror
+    -fno-exceptions -fno-rtti #-m32
+    -Weverything #-Werror
     -Wno-c++98-compat-pedantic -Wno-missing-noreturn
     -Wno-c++98-compat -Wno-padded -Wno-format-nonliteral
     -Wno-old-style-cast -Wno-exit-time-destructors -Wno-global-constructors
@@ -45,6 +45,7 @@ set(SRC_LIST
     src/g_genop.cpp      include/g_genop.h        # generated via codegen/ script
     #src/g_gleam_loader.cpp
     src/g_beam_loader.cpp
+    src/g_fun.cpp        include/g_fun.h
     src/g_heap.cpp       include/g_heap.h
     src/g_main.cpp
     src/g_module.cpp     include/g_module.h

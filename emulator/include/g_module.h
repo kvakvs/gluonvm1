@@ -4,22 +4,11 @@
 #include "g_term.h"
 #include "g_error.h"
 #include "g_reader.h"
+#include "g_fun.h"
 
 namespace gluon {
 
 class Heap;
-
-typedef struct {
-  mfarity_t mfa;
-
-  word_t  index;
-  word_t  uniq[4];
-  word_t  old_index;
-  word_t  old_uniq;
-
-  word_t  num_free;
-  word_t  *code;
-} fun_entry_t;
 
 //
 // Class Module represents a single Erlang module with code. When multiple

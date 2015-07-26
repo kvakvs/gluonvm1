@@ -75,6 +75,9 @@ namespace gluon {
 
   using word_t = hw::Word;
   using sword_t = hw::SWord;
+  constexpr inline word_t word_size(word_t x) {
+    return (x + sizeof(word_t) - 1) / sizeof(word_t);
+  }
 
   using u8_t = unsigned char;
   using i8_t = signed char;

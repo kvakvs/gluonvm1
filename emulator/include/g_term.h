@@ -269,6 +269,8 @@ namespace dist {
   extern word_t g_zero_sized_map;
 } // ns term
 
+class boxed_fun_t;
+
 // This wrap is here to make strong type difference between hardware hw::Word
 // (which is just a machine size unsigned integer) and term type, which is
 // complex bitfield structure.
@@ -563,6 +565,19 @@ public:
   }
   constexpr word_t regy_get_value() const {
     return term_tag::StackReference::value(m_val);
+  }
+
+  //
+  // Boxed callable object (a fun)
+  //
+  static inline Term make_fun(boxed_fun_t *p) {
+    return Term(term_tag::BoxedFun::create_from_ptr(p));
+  }
+  inline bool is_fun() const {
+    return term_tag::BoxedFun::check(m_val);
+  }
+  inline boxed_fun_t *fun_get_object() const {
+    return boxed_get_ptr<boxed_fun_t>();
   }
 };
 

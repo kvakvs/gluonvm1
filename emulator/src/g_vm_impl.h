@@ -8,6 +8,8 @@
 #include "bif/g_bif_misc.h"
 #include "g_genop.h"
 #include "g_predef_atoms.h"
+#include "g_fun.h"
+#include "g_heap.h"
 
 #include <cstring>
 
@@ -605,9 +607,20 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  inline void opcode_fnegate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 102
 //  }
   inline void opcode_make_fun2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 103
-    // @spec make_fun2 Loc A1 A2 A3
-    // @doc Produces a callable fun object (something to do with lambdas table
-    // in beam and using 1st arg as index?)
+    // @spec make_fun2 LambdaT_index
+    // @doc Produces a callable fun object
+    Term boxed_fe(ctx.ip[0]);
+    fun_entry_t *fe = boxed_fe.boxed_get_ptr<fun_entry_t>();
+
+    word_t *p8 = Heap::alloc<word_t>(
+          proc->get_heap(),
+          word_size(sizeof(boxed_fun_t)) + fe->num_free
+          );
+    // Assuming that regs have all values ready to be frozen (copied to closure)
+    boxed_fun_t *p = fun::box_fun(fe, p8, proc->get_pid(), ctx.regs);
+
+    ctx.regs[0] = Term::make_fun(p);
+    ctx.ip += 4;
   }
 //  inline void opcode_try(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 104
 //  }

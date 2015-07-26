@@ -74,18 +74,22 @@ protected:
 //------------------------------------------------------------------------------
 class Process {
 public:
-
   Term    m_stack_trace = Term::make_non_value();
+  word_t        m_catch_level = 0;
 
+protected:
   runtime_ctx_t m_ctx;
   ProcessStack  m_stack;
-  word_t        m_catch_level = 0;
-//  Module        *m_module = nullptr;
+  Term          m_pid;
 
 public:
   Process() {
+    // TODO: fill pid?
   }
 
+  Term get_pid() const {
+    return m_pid;
+  }
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code.
   MaybeError call(Term m, Term f, word_t arity, Term args);
   runtime_ctx_t &get_runtime_ctx() {
