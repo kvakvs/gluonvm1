@@ -236,12 +236,12 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // TODO: yield and schedule
     // Term arity(ip[0]); // assert arity = destination.arity
     // TODO: set live on reductions swap out ctx.live = (word_t)arity.small_get_value();
-    Term mfa(ctx.ip[1]);
+    Term boxed_mfa(ctx.ip[1]);
     ctx.cp = ctx.ip + 2;
 
     Term a(ctx.ip[0]);
     ctx.live = a.small_get_unsigned();
-    return ctx.jump_ext(proc, mfa);
+    return ctx.jump_ext(proc, boxed_mfa);
   }
 //  inline void opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
 //  }
@@ -428,7 +428,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     if (arg1 != arg2) {
       // immediate values must be exactly equal or we fail comparison
       if (Term::are_both_immed(arg1, arg2)
-          || !bif::are_terms_equal(arg1, arg2, true))
+         || !bif::are_terms_equal(arg1, arg2, true))
       {
         return ctx.jump(proc, Term(ctx.ip[0]));
       }
@@ -551,10 +551,10 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   inline void opcode_call_ext_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 78
     // @spec call_ext_only Arity Label
     // Do a tail recursive call to the function at Label. Do not update CP.
-    Term mfa(ctx.ip[1]);
+    Term boxed_mfa(ctx.ip[1]);
     Term a(ctx.ip[0]);
     ctx.live = a.small_get_unsigned();
-    return ctx.jump_ext(proc, mfa);
+    return ctx.jump_ext(proc, boxed_mfa);
   }
 //  inline void opcode_bs_start_match(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 79
 //  }

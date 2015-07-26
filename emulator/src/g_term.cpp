@@ -30,7 +30,7 @@ Str Term::atom_str() const
 void Term::print()
 {
   if (m_val == 0) {
-    printf("BADTERM");
+    printf("0-TERM");
     return;
   }
   if (is_cons()) {

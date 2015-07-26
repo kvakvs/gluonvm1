@@ -3,12 +3,14 @@
         ]).
 
 test() ->
-    test1(),
+    %[5,4,3,2,1] = rev([1,2,3,4,5]),
+    0 = recurse(10),
     test_eq(),
-    test2(),
+    test_list_ops(),
     test_extcalls(),
     test_case(),
-    test_hof().
+    test_hof(),
+    ok.
 
 %%-----------------------------------------------
 test_hof() ->
@@ -21,11 +23,10 @@ test_case() ->
 test_extcalls() ->
     [1,2,3] = lists:reverse([3,2,1]).
 
-test1() ->
-    recurse(10).
 test_eq() ->
     [1,2,3,4] == rev([1,2,3,4]).
-test2() -> 
+    
+test_list_ops() -> 
     X = [1,2,3,4,5],
     5 = my_last2(X),
     4 = my_but_last2(X),

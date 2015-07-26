@@ -57,16 +57,6 @@ public:
   void get_tag_and_value(Heap *heap, tool::Reader &r, word_t &tag, word_t &val);
 
 protected:
-  MaybeError resolve_labels(const Vector<word_t> &postponed_labels,
-                            Vector<word_t> &code);
-  Result<Term> parse_value(Heap *, tool::Reader &r);
-  MaybeError get_tag_and_value(tool::Reader &r, word_t &tag, word_t &value);
-  Result<word_t> get_tag_and_value_2(tool::Reader &r,
-                                     word_t len_code,
-                                     word_t &tag, word_t &result);
-  void replace_imp_index_with_ptr(word_t *p, Module *m);
-
-
   struct Tag { enum {
     // The following operand types for generic instructions
     // occur in beam files.
@@ -93,6 +83,17 @@ protected:
     LiteralRef  = 13, // TAG_q
     Overflow  = 14,   // overflow/bigint
     };};
+
+  MaybeError resolve_labels(const Vector<word_t> &postponed_labels,
+                            Vector<word_t> &code);
+  Result<Term> parse_term(Heap *, tool::Reader &r);
+  MaybeError get_tag_and_value(tool::Reader &r, word_t &tag, word_t &value);
+  Result<word_t> get_tag_and_value_2(tool::Reader &r,
+                                     word_t len_code,
+                                     word_t &tag, word_t &result);
+  void replace_imp_index_with_ptr(word_t *p, Module *m);
+
+  word_t parse_int(tool::Reader &r);
 };
 
 Result<Module *> CodeServer::load_module_internal(Term expected_name,
@@ -424,7 +425,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
     // line/1 opcode
     if (opcode == genop::OPCODE_LINE) {
-      auto a = parse_value(heap, r);
+      auto a = parse_term(heap, r);
       G_RETURN_IF_ERROR_UNLIKELY(a);
       a.get_result().println();
       continue;
@@ -432,7 +433,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
     // label/1 opcode - save offset to labels table
     if (opcode == genop::OPCODE_LABEL) {
-      auto pv_result = parse_value(heap, r);
+      auto pv_result = parse_term(heap, r);
       G_RETURN_IF_ERROR_UNLIKELY(pv_result);
       Term label = pv_result.get_result();
       label.println();
@@ -440,17 +441,17 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
       word_t l_id = label.small_get_unsigned();
       m_labels[l_id] = (&code.back())+1;
-      G_LOG("label %zu offset 0x%zx", l_id, code.size());
+      G_LOG("label %zu (0x%zx) offset 0x%zx", l_id, l_id, code.size());
       puts("");
       continue;
     }
 
     if (opcode == genop::OPCODE_FUNC_INFO) {
-      auto a = parse_value(heap, r);
+      auto a = parse_term(heap, r);
       G_RETURN_IF_ERROR(a)
-      auto b = parse_value(heap, r);
+      auto b = parse_term(heap, r);
       G_RETURN_IF_ERROR(b);
-      auto c = parse_value(heap, r);
+      auto c = parse_term(heap, r);
       G_RETURN_IF_ERROR(c);
       puts("");
       continue;
@@ -468,7 +469,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     word_t *first_arg = &code.back() + 1;
 
     for (word_t a = 0; a < arity; ++a) {
-      auto arg_result = parse_value(heap, r);
+      auto arg_result = parse_term(heap, r);
       G_RETURN_IF_ERROR_UNLIKELY(arg_result);
 
       Term arg = arg_result.get_result();
@@ -490,7 +491,10 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       // bif0 import_index Dst - cannot fail, no fail label
       replace_imp_index_with_ptr(first_arg, m);
     } else if (opcode == genop::OPCODE_BIF1
-               || opcode == genop::OPCODE_BIF2)
+               || opcode == genop::OPCODE_BIF2
+               || opcode == genop::OPCODE_CALL_EXT
+               || opcode == genop::OPCODE_CALL_EXT_LAST
+               || opcode == genop::OPCODE_CALL_EXT_ONLY)
     {
       // bif1|2 Fail import_index ...Args Dst
       replace_imp_index_with_ptr(first_arg+1, m);
@@ -712,7 +716,18 @@ MaybeError LoaderState::get_tag_and_value(tool::Reader &r,
   return success();
 }
 
-Result<Term> LoaderState::parse_value(Heap *, tool::Reader &r)
+word_t LoaderState::parse_int(tool::Reader &r) {
+  word_t tag, val;
+
+  auto gt_result = get_tag_and_value(r, tag, val);
+  G_ASSERT(gt_result.is_success());
+//  if (tag != Tag::Literal && tag != Tag::Integer) {
+//    return error<word_t>("parse_int: lit/int tag expected");
+//  }
+  return val;
+}
+
+Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
 {
   word_t type, val;
   auto gt_result = get_tag_and_value(r, type, val);
@@ -744,10 +759,10 @@ Result<Term> LoaderState::parse_value(Heap *, tool::Reader &r)
   case Tag::Atom:
     if (val == 0) {
       return success(Term::make_nil());
-    } else if (val >= m_atoms.size()) {
+    } else if (val > m_atoms.size()) {
       return error<Term>("bad atom index");
     }
-    return success(VM::to_atom(m_atoms[val]));
+    return success(VM::to_atom(atom_tab_index_to_str(val)));
 
   case Tag::Label:
     if (val == 0) {
@@ -806,24 +821,31 @@ Result<Term> LoaderState::parse_value(Heap *, tool::Reader &r)
 #endif
 
     case Tag::Extended_List: {
+      // case select list
+      // contains pairs of (literal table reference; label)
 //      if (arg + 1 != arity) {
 //        LoadError0(stp, "list argument must be the last argument");
 //      }
-      gt_result = get_tag_and_value(r, tag, val);
-      G_RETURN_REWRAP_IF_ERROR_UNLIKELY(gt_result, Term);
-      if (tag != Tag::Literal) {
-        return error<Term>("extlist: literal tag expected");
+      //auto l_result = parse_int(r);
+      //G_RETURN_REWRAP_IF_ERROR_UNLIKELY(l_result, Term);
+      //word_t length = l_result.get_result();
+      word_t length = parse_int(r) / 2;
+      Term *selectlist = Heap::alloc<Term>(heap, length * 2 + 1);
+
+      for (word_t i = 0; i < length; ++i) {
+        auto base_result = parse_term(heap, r);
+        if (base_result.is_error()) { return base_result; }
+        Term base = base_result.get_result();
+
+        word_t label = parse_int(r);
+
+        selectlist[i*2+1] = base;
+        selectlist[i*2+2] = Term::make_small_u(label);
+//        printf("extlist pair [");
+//        base.print();
+//        printf("; %zu]\n", label);
       }
-      type = Tag::Literal;
-//      last_op->a = (GenOpArg *)
-//                   erts_alloc(ERTS_ALC_T_LOADER_TMP,
-//                              (arity + last_op->a[arg].val)
-//                              * sizeof(GenOpArg));
-//      memcpy(last_op->a, last_op->def_args,
-//             arity * sizeof(GenOpArg));
-//      arity += last_op->a[arg].val;
-      G_FAIL("ext list?");
-      //break;
+      return success(Term::make_tuple(selectlist, length*2));
     }
 
     case Tag::Extended_FloatRegister: {
