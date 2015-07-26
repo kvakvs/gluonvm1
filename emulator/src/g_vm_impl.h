@@ -248,8 +248,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
 //  }
   inline void opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
-    Term boxed_mfa(ctx.ip[0]);
-    //Term bif(ctx.ip[1]); // on crash?
+    Term boxed_mfa(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
     DEREF(arg1);
     Term result_dst(ctx.ip[3]);
@@ -263,8 +262,8 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.ip += 4;
   }
   inline void opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
-    Term boxed_mfa(ctx.ip[0]);
-    //Term bif(ctx.ip[1]);
+    // bif1|2 Fail import_index ...Args Dst
+    Term boxed_mfa(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
     Term arg2(ctx.ip[3]);
     DEREF(arg1);
