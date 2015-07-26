@@ -16,7 +16,8 @@ include_directories(
 add_definitions(
     -O0 -g -ggdb  # debug, no optimization
 #    -Os
-#    -S -Os       # optimize for size AND generate asm, build will fail though
+#    -S -Os -g # optimize for size AND generate asm, build will fail though
+    -fno-exceptions -fno-rtti
     -Weverything -Werror
     -Wno-c++98-compat-pedantic -Wno-missing-noreturn
     -Wno-c++98-compat -Wno-padded -Wno-format-nonliteral

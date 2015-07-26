@@ -390,6 +390,8 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
   // save references to labels in code and resolve them in second pass
   Vector<word_t> postponed_labels;
 
+  word_t arity;
+  word_t op_ptr;
   while (!r.is_end()) {
     // Get opcode info
     word_t opcode = (word_t)r.read_byte();
@@ -397,15 +399,24 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
           genop::opcode_name_map[opcode]);
 
     if (opcode > genop::MAX_OPCODE) {
-      G_FAIL("opcode too big");
-//      return "opcode too big";
+//      G_FAIL("opcode too big");
+      return "opcode too big";
     }
+
+
+    if (G_UNLIKELY(opcode == genop::OPCODE_INT_CODE_END)) {
+      break;
+    }
+
+    // TODO: can optimize code here if we generalize args reading
+    // and then handle different special opcode cases
 
     // line/1 opcode
     if (opcode == genop::OPCODE_LINE) {
-      parse_value(heap, r);
-      G_LOG("line instr\n");
-      continue;
+      auto a = parse_value(heap, r);
+      G_RETURN_IF_ERROR_UNLIKELY(a);
+      a.get_result().print();
+      goto next_op;
     }
 
     // label/1 opcode - save offset to labels table
@@ -418,24 +429,40 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
       word_t l_id = label.small_get_unsigned();
       m_labels[l_id] = (&code.back())+1;
-      G_LOG("label %zu offset 0x%zx\n", l_id, code.size());
-      continue;
+      G_LOG("label %zu offset 0x%zx", l_id, code.size());
+      goto next_op;
+    }
+
+    if (opcode == genop::OPCODE_FUNC_INFO) {
+      auto a = parse_value(heap, r);
+      G_RETURN_IF_ERROR(a)
+      auto b = parse_value(heap, r);
+      G_RETURN_IF_ERROR(b);
+      auto c = parse_value(heap, r);
+      G_RETURN_IF_ERROR(c);
+//      a.get_result().print();
+//      printf(",");
+//      b.get_result().print();
+//      printf(",");
+//      c.get_result().println();
+      goto next_op;
     }
 
     // Convert opcode into jump address
-    word_t op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
+    op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
     code.push_back(op_ptr);
 //    G_LOG("loader: op %s (opcode 0x%zx) ptr 0x%zx\n",
 //           genop::opcode_name_map[opcode], opcode, op_ptr);
 
-    word_t arity = genop::arity_map[opcode];
-    G_LOG("arity=%zu\n", arity);
+    arity = genop::arity_map[opcode];
+    G_LOG("arity=%zu args=(", arity);
 
     for (word_t a = 0; a < arity; ++a) {
       auto arg_result = parse_value(heap, r);
       G_RETURN_IF_ERROR_UNLIKELY(arg_result);
 
       Term arg = arg_result.get_result();
+      arg.print();
 
       // Use runtime value 'Catch' to mark label references
       if (term_tag::Catch::check(arg.value())) {
@@ -443,7 +470,12 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       }
 
       code.push_back(arg.value());
+      printf("; ");
     }
+    printf(").");
+
+next_op:
+    puts("");
   }
 
   // TODO: just scan code and resolve in place maybe? don't have to accum labels
