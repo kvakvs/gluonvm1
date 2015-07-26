@@ -318,6 +318,7 @@ public:
   // Pointer magic
   //
   template <typename T> inline T *boxed_get_ptr() const {
+    G_ASSERT(is_boxed() || is_tuple() || is_cons());
     return term_tag::Boxed::value_ptr<T>(m_val);
   }
   template <typename T> inline static Term make_boxed(T *x) {
@@ -330,6 +331,7 @@ public:
     return term_tag::Boxed::check(m_val);
   }
   inline word_t boxed_get_subtag() const {
+    G_ASSERT(is_boxed());
     word_t *p = boxed_get_ptr<word_t>();
     if (!p) { return (word_t)-1; }
     return term_tag::boxed_subtag(p);
@@ -571,10 +573,21 @@ static_assert(sizeof(Term) == sizeof(word_t),
 void term_test(int argc, const char *argv[]);
 #endif // TEST
 
+// A pair of atom and int arity, can be used as map key
+typedef Pair<Term, word_t> fun_arity_t;
+class mfarity_t {
+public:
+  Term    mod;
+  Term    fun;
+  word_t  arity;
+  mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {}
+};
+
 class Process;
-typedef Term (*gc_bif0_fn)(Process *);
-typedef Term (*gc_bif1_fn)(Process *, Term);
-typedef Term (*gc_bif2_fn)(Process *, Term, Term);
+typedef Term (*bif0_fn)(Process *);
+typedef Term (*bif1_fn)(Process *, Term);
+typedef Term (*bif2_fn)(Process *, Term, Term);
+typedef Term (*bif3_fn)(Process *, Term, Term, Term);
 
 
 } // ns gluon

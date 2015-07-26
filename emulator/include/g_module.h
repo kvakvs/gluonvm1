@@ -9,16 +9,6 @@ namespace gluon {
 
 class Heap;
 
-// A pair of atom and int arity, can be used as map key
-typedef Pair<Term, word_t> fun_arity_t;
-class mfarity_t {
-public:
-  Term    mod;
-  Term    fun;
-  word_t  arity;
-  mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {}
-};
-
 typedef struct {
   mfarity_t mfa;
 

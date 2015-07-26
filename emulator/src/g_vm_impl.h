@@ -255,15 +255,15 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[3]);
 
     mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
-    gc_bif1_fn bif_fn = VM::resolve_bif1(mfa);
-    G_ASSERT(bif_fn);
+    bif1_fn fn1 = VM::resolve_bif1(*mfa);
+    G_ASSERT(fn1);
 
-    Term result = bif_fn(proc, arg1);
+    Term result = fn1(proc, arg1);
     ctx.move(result, result_dst);
     ctx.ip += 4;
   }
   inline void opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
-    Term label(ctx.ip[0]);
+    Term boxed_mfa(ctx.ip[0]);
     //Term bif(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
     Term arg2(ctx.ip[3]);
@@ -271,10 +271,11 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     DEREF(arg2);
     Term result_dst(ctx.ip[4]);
 
-    gc_bif2_fn bif_fn = VM::resolve_bif2(label);
-    G_ASSERT(bif_fn);
+    mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
+    bif2_fn fn2 = VM::resolve_bif2(*mfa);
+    G_ASSERT(fn2);
 
-    Term result = bif_fn(proc, arg1, arg2);
+    Term result = fn2(proc, arg1, arg2);
     ctx.move(result, result_dst);
     ctx.ip += 5;
   }
@@ -654,17 +655,16 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc Call the bif Bif with the argument Arg, and store the result in Reg.
     // On failure jump to Lbl. Do a garbage collection if necessary to allocate
     // space on the heap for the result (saving Live number of X registers).
-    Term fun(ctx.ip[0]);
-    //Term label(ctx.ip[1]); // on crash?
-    //Term live(ctx.ip[2]);
+    Term boxed_fun(ctx.ip[2]);
     Term arg1(ctx.ip[3]);
     DEREF(arg1);
     Term result_dst(ctx.ip[4]);
 
-    gc_bif1_fn bif_fn = VM::resolve_bif1(fun);
-    G_ASSERT(bif_fn);
+    mfarity_t *mfa = boxed_fun.boxed_get_ptr<mfarity_t>();
+    bif1_fn fn1 = VM::resolve_bif1(*mfa);
+    G_ASSERT(fn1);
 
-    Term result = bif_fn(proc, arg1);
+    Term result = fn1(proc, arg1);
     ctx.move(result, result_dst);
     ctx.ip += 5;
   }
@@ -674,19 +674,18 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // result in Reg. On failure jump to Lbl. Do a garbage collection if
     // necessary to allocate space on the heap for the result (saving Live
     // number of X registers).
-    Term fun(ctx.ip[0]);
-    //Term label(ctx.ip[1]); // on crash?
-    //Term live(ctx.ip[2]);
+    Term boxed_fun(ctx.ip[2]);
     Term arg1(ctx.ip[3]);
     Term arg2(ctx.ip[4]);
     DEREF(arg1);
     DEREF(arg2);
     Term result_dst(ctx.ip[5]);
 
-    gc_bif2_fn bif_fn = VM::resolve_bif2(fun);
-    G_ASSERT(bif_fn);
+    mfarity_t *mfa = boxed_fun.boxed_get_ptr<mfarity_t>();
+    bif2_fn fn2 = VM::resolve_bif2(*mfa);
+    G_ASSERT(fn2);
 
-    Term result = bif_fn(proc, arg1, arg2);
+    Term result = fn2(proc, arg1, arg2);
     ctx.move(result, result_dst);
     ctx.ip += 6;
   }

@@ -46,7 +46,7 @@ public:
   MaybeError load_line_table(tool::Reader &r);
 
   inline const Str &atom_tab_index_to_str(word_t i) const {
-    G_ASSERT(i < m_atoms.size());
+    G_ASSERT(i <= m_atoms.size());
     return m_atoms[i-1];
   }
 
@@ -282,9 +282,12 @@ MaybeError LoaderState::load_import_table(tool::Reader &r0)
   // Read triplets u32 module_atom_id; u32 method_atom_id; u32 arity
   m_imports.reserve(count);
   for (word_t i = 0; i < count; ++i) {
-    Term m = Term::make_atom(r.read_big_u32());
-    Term f = Term::make_atom(r.read_big_u32());
+    Str ms = atom_tab_index_to_str(r.read_big_u32());
+    Str fs = atom_tab_index_to_str(r.read_big_u32());
+    Term m = VM::to_atom(ms);
+    Term f = VM::to_atom(fs);
     word_t arity = r.read_big_u32();
+    printf("import: %s:%s/%zu\n", ms.c_str(), fs.c_str(), arity);
     m_imports.push_back(mfarity_t(m, f, arity));
   }
 

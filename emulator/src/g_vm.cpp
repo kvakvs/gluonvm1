@@ -107,23 +107,37 @@ Heap *VM::get_heap(VM::heap_t) {
   return nullptr;
 }
 
-gc_bif2_fn VM::resolve_bif2(Term name)
+bif2_fn VM::resolve_bif2(mfarity_t &mfa)
 {
-  if (name == atom::Q_MINUS)        { return &bif::bif_minus_2; }
-  if (name == atom::Q_PLUS)         { return &bif::bif_plus_2; }
-  if (name == atom::Q_EQUALS)       { return &bif::bif_equals_2; }
-  if (name == atom::Q_EQUALS_EXACT) { return &bif::bif_equals_exact_2; }
+  G_ASSERT(mfa.arity == 2);
+  if (mfa.mod == atom::ERLANG) {
+    if (mfa.fun == atom::Q_MINUS)        { return &bif::bif_minus_2; }
+    if (mfa.fun == atom::Q_PLUS)         { return &bif::bif_plus_2; }
+    if (mfa.fun == atom::Q_EQUALS)       { return &bif::bif_equals_2; }
+    if (mfa.fun == atom::Q_EQUALS_EXACT) { return &bif::bif_equals_exact_2; }
+  }
+
 #if G_DEBUG
-  printf("ERROR bif2 not found: %s\n", name.atom_str().c_str());
+  printf("ERROR bif2 undef: %s:%s/%zu\n",
+         mfa.mod.atom_str().c_str(),
+         mfa.fun.atom_str().c_str(),
+         mfa.arity);
 #endif
   return nullptr;
 }
 
-gc_bif1_fn VM::resolve_bif1(Term name)
+bif1_fn VM::resolve_bif1(mfarity_t &mfa)
 {
-  if (name == atom::LENGTH)  { return &bif::bif_length_1; }
+  G_ASSERT(mfa.arity == 1);
+  if (mfa.arity == 1) {
+    if (mfa.fun == atom::LENGTH)  { return &bif::bif_length_1; }
+  }
+
 #if G_DEBUG
-  printf("ERROR bif1 not found: %s\n", name.atom_str().c_str());
+  printf("ERROR bif2 undef: %s:%s/%zu\n",
+         mfa.mod.atom_str().c_str(),
+         mfa.fun.atom_str().c_str(),
+         mfa.arity);
 #endif
   return nullptr;
 }

@@ -67,8 +67,10 @@ public:
   //
   // Bif management
   //
-  static gc_bif1_fn resolve_bif1(Term name);
-  static gc_bif2_fn resolve_bif2(Term name);
+  //static bif0_fn resolve_bif0(mfarity_t &);
+  static bif1_fn resolve_bif1(mfarity_t &);
+  static bif2_fn resolve_bif2(mfarity_t &);
+  //static bif3_fn resolve_bif3(mfarity_t &);
 
 private:
   // Does not check if atom existed before. Will break old values on overwrite
