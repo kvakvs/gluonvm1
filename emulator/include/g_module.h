@@ -34,24 +34,24 @@ class Module {
 public:
   typedef Map<word_t, word_t *> labels_t;
   typedef Map<fun_arity_t, fun_entry_t> funs_t;
-  typedef Map<fun_arity_t, label_index_t> exports_t;
+  typedef Map<fun_arity_t, word_t *> exports_t;
 
 private:
   Term m_name;
 
   labels_t  m_labels;
   exports_t m_exports; // just list of {f/arity}
-  funs_t    m_funs; // map({f/arity} => label_index)
+  //funs_t    m_funs; // map({f/arity} => label_index)
 
 public:
   // Instruction layout in code: { void *label; Term args[arity] }
   Vector<word_t> m_code;
 
 public:
-  Module(Term name, funs_t &funs, exports_t &exports)
+  Module(Term name, funs_t &/*funs*/, exports_t &exports)
     : m_name(name)
   {
-    m_funs    = funs;
+    //m_funs    = funs;
     m_exports = exports;
   }
 

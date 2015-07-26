@@ -28,7 +28,7 @@ public:
 
   Vector<Term>    m_literals;
   Module::labels_t  m_labels;
-  Module::exports_t m_exports;  // list of {f/arity} sequentially
+  Map<fun_arity_t, label_index_t> m_exports;  // list of {f/arity} sequentially
   Module::funs_t    m_funs;     // map({f/arity} => label_index)
 
   LoaderState(): m_code(nullptr), m_code_size(0) {
@@ -46,7 +46,7 @@ public:
 
   inline const Str &atom_tab_index_to_str(word_t i) const {
     G_ASSERT(i < m_atoms.size());
-    return m_atoms[i];
+    return m_atoms[i-1];
   }
 
   // Load finished, create a Module object and inform code server
@@ -56,8 +56,8 @@ public:
   void get_tag_and_value(Heap *heap, tool::Reader &r, word_t &tag, word_t &val);
 
 protected:
-//  MaybeError gleam_resolve_labels(const Vector<word_t> &postponed_labels,
-//                                  Vector<word_t> &code);
+  MaybeError resolve_labels(const Vector<word_t> &postponed_labels,
+                            Vector<word_t> &code);
   Result<Term> parse_value(Heap *, tool::Reader &r);
   MaybeError get_tag_and_value(tool::Reader &r, word_t &tag, word_t &value);
   Result<word_t> get_tag_and_value_2(tool::Reader &r,
@@ -155,8 +155,17 @@ Result<Module *> CodeServer::load_module_internal(Term expected_name,
 
 Result<Module *> LoaderState::finalize(Term modname) {
   Heap *heap = VM::get_heap(VM::HEAP_CODE);
+
+  // Move exports from m_exports to this table, resolving labels to code offsets
+  Module::exports_t exports;
+  for (auto &e: m_exports) {
+    exports[e.first] = m_labels[e.second.value];
+  }
+
   Module *newmod = Heap::alloc_object<Module>(heap, // then go constructor args:
-                                              modname, m_funs, m_exports);
+                                              modname,
+                                              m_funs,
+                                              exports);
 
   // Atoms are already in VM at this point
   //newmod->m_name = modname;
@@ -179,7 +188,7 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
   for (word_t i = 0; i < tab_sz; ++i) {
     auto atom_sz = r.read_var<word_t>();
     m_atoms.push_back(r.read_string(atom_sz));
-    G_LOG("atom: %s\n", m_atoms.back().c_str());
+    G_LOG("atom: %s index %zu\n", m_atoms.back().c_str(), m_atoms.size()-1);
   }
 
   // Check first atom in table which is module name
@@ -205,6 +214,7 @@ MaybeError LoaderState::load_str_table(tool::Reader &r0)
 
 MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
+  /*
   tool::Reader r = r0.clone(chunk_size);
 
   G_ASSERT(m_atoms.size() > 0);
@@ -227,7 +237,7 @@ MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
     fun_entry_t fe;
     fe.mod = mod;
     fe.fun = VM::to_atom(f_str);
-    fe.arity = r.read_big_u32();
+    fe.arity = arity;
     fe.uniq[0] = offset; // use as temp storage
     fe.uniq[1] = fe.uniq[2] = fe.uniq[3] = 0;
     fe.old_uniq = ouniq;
@@ -235,8 +245,10 @@ MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
     fe.num_free = nfree;
     fe.code     = nullptr; // resolve later from uniq0
 
+    printf("read fun table: %s/%zu\n", fe.fun.atom_str().c_str(), arity);
     m_funs[fun_arity_t(fe.fun, arity)] = fe;
   }
+  */
 
   r0.advance_align<4>(chunk_size);
   return success();
@@ -257,6 +269,7 @@ MaybeError LoaderState::load_export_table(tool::Reader &r0) {
 
     auto arity = r.read_big_u32();
     auto label = r.read_big_u32();
+    printf("load export %s/%zu @label %zu\n", f.atom_str().c_str(), arity, label);
 
     m_exports[fun_arity_t(f, arity)] = label_index_t(label);
   }
@@ -479,11 +492,11 @@ next_op:
   }
 
   // TODO: just scan code and resolve in place maybe? don't have to accum labels
-//  auto stage2 = gleam_resolve_labels(postponed_labels, code);
-//  G_RETURN_IF_ERROR(stage2);
+  auto stage2 = resolve_labels(postponed_labels, code);
+  G_RETURN_IF_ERROR(stage2);
 
-//  m->set_labels(m_labels);
-//  m->set_code(code); // give ownership
+  m->set_labels(m_labels);
+  m->set_code(code); // give ownership
   return success();
 }
 
@@ -879,10 +892,8 @@ Result<Term> LoaderState::parse_value(Heap *, tool::Reader &r)
   }
 }
 
-/*
-MaybeError LoaderState::gleam_resolve_labels(
-                                    const Vector<word_t> &postponed_labels,
-                                    Vector<word_t> &code)
+MaybeError LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
+                                       Vector<word_t> &code)
 {
 //  word_t *base = code.data();
   for (word_t i = 0; i < postponed_labels.size(); ++i) {
@@ -901,7 +912,7 @@ MaybeError LoaderState::gleam_resolve_labels(
   }
   return success();
 }
-*/
+
 
 /*
 Term LoaderState::gleam_read_arg_value(Heap *heap, tool::Reader &r)
