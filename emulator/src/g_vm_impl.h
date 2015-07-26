@@ -91,19 +91,18 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   // Jumps to location pointed with {extfunc, Mod, Fun, Arity} in BEAM ASM,
   // depending on encoding decision: now it would be a {M,F,Arity} tuple in
   // literals table - so fetch MFA elements, resolve address and jump
-  void jump_ext(Process *proc, Term mfa) {
-    G_ASSERT(mfa.is_tuple());
-    G_ASSERT(mfa.tuple_get_arity() == 3);
-    auto find_result = CodeServer::find_module(mfa.tuple_get_element(0),
-                                            CodeServer::LOAD_IF_NOT_FOUND);
+  void jump_ext(Process *proc, Term mfa_box) {
+    G_ASSERT(mfa_box.is_boxed());
+    mfarity_t *mfa = mfa_box.boxed_get_ptr<mfarity_t>();
+
+    auto find_result = CodeServer::find_module(mfa->mod,
+                                               CodeServer::LOAD_IF_NOT_FOUND);
     if (find_result.is_error()) {
       return raise(proc, atom::ERROR, atom::UNDEF);
     }
 
     Module *mod = find_result.get_result();
-    word_t arity = mfa.tuple_get_element(2).small_get_unsigned();
-    auto find_fn_result = mod->resolve_function(mfa.tuple_get_element(1),
-                                                arity);
+    auto find_fn_result = mod->resolve_function(mfa->fun, mfa->arity);
     if (find_fn_result.is_error()) {
       return raise(proc, atom::ERROR, atom::UNDEF);
     }
@@ -249,13 +248,14 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
 //  }
   inline void opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
-    Term label(ctx.ip[0]);
+    Term boxed_mfa(ctx.ip[0]);
     //Term bif(ctx.ip[1]); // on crash?
     Term arg1(ctx.ip[2]);
     DEREF(arg1);
     Term result_dst(ctx.ip[3]);
 
-    gc_bif1_fn bif_fn = VM::resolve_bif1(label);
+    mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
+    gc_bif1_fn bif_fn = VM::resolve_bif1(mfa);
     G_ASSERT(bif_fn);
 
     Term result = bif_fn(proc, arg1);
@@ -370,7 +370,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     DEREF(arg1); // in case they are reg references
     DEREF(arg2);
     if (Term::are_both_small(arg1, arg2)) {
-      if (arg1.value() >= arg2.value()) {
+      if (arg1.as_word() >= arg2.as_word()) {
         ctx.jump(proc, Term(ctx.ip[0]));
         return;
       }
@@ -390,7 +390,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     DEREF(arg1); // in case they are reg references
     DEREF(arg2);
     if (Term::are_both_small(arg1, arg2)) {
-      if (arg1.value() < arg2.value()) {
+      if (arg1.as_word() < arg2.as_word()) {
         ctx.jump(proc, Term(ctx.ip[0]));
         return;
       }

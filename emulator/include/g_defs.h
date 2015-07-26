@@ -26,8 +26,11 @@
 #   error "Define platform bit width detection code"
 #endif
 
+// If you enable this, bignums have to be implemented throughout loader and vm
 #define FEATURE_BIGNUM    0
+// If you enable this, floats have to be implemented throughout loader and vm
 #define FEATURE_FLOAT     0
+
 #define FEATURE_MAPS      0
 #define FEATURE_BINARIES  0
 #define FEATURE_ERL_DIST  0 /*Distribution features*/

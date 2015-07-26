@@ -113,12 +113,18 @@ gc_bif2_fn VM::resolve_bif2(Term name)
   if (name == atom::Q_PLUS)         { return &bif::bif_plus_2; }
   if (name == atom::Q_EQUALS)       { return &bif::bif_equals_2; }
   if (name == atom::Q_EQUALS_EXACT) { return &bif::bif_equals_exact_2; }
+#if G_DEBUG
+  printf("ERROR bif2 not found: %s\n", name.atom_str().c_str());
+#endif
   return nullptr;
 }
 
 gc_bif1_fn VM::resolve_bif1(Term name)
 {
   if (name == atom::LENGTH)  { return &bif::bif_length_1; }
+#if G_DEBUG
+  printf("ERROR bif1 not found: %s\n", name.atom_str().c_str());
+#endif
   return nullptr;
 }
 

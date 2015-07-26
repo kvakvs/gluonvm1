@@ -23,7 +23,10 @@ MaybeError Process::call(Term m, Term f, word_t arity, Term args)
 //  m_ctx.mod = mod;
   auto find_result = mod->resolve_function(f, arity);
   G_RETURN_IF_ERROR(find_result);
-  m_ctx.ip = find_result.get_result();
+  auto ip = find_result.get_result();
+  G_ASSERT(ip);
+  m_ctx.ip = ip;
+  printf("call -> 0x%zx\n", (word_t)m_ctx.ip);
   return success();
 }
 

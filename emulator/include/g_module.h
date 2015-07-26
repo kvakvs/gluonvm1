@@ -11,11 +11,16 @@ class Heap;
 
 // A pair of atom and int arity, can be used as map key
 typedef Pair<Term, word_t> fun_arity_t;
-
-typedef struct {
+class mfarity_t {
+public:
   Term    mod;
   Term    fun;
   word_t  arity;
+  mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {}
+};
+
+typedef struct {
+  mfarity_t mfa;
 
   word_t  index;
   word_t  uniq[4];
@@ -32,27 +37,26 @@ typedef struct {
 //
 class Module {
 public:
-  typedef Map<word_t, word_t *> labels_t;
+  typedef Map<word_t, word_t *>         labels_t;
   typedef Map<fun_arity_t, fun_entry_t> funs_t;
-  typedef Map<fun_arity_t, word_t *> exports_t;
+  typedef Map<fun_arity_t, word_t *>    exports_t;
+  typedef Vector<mfarity_t>             imports_t;
 
 private:
-  Term m_name;
-
+  Term      m_name;
   labels_t  m_labels;
   exports_t m_exports; // just list of {f/arity}
-  //funs_t    m_funs; // map({f/arity} => label_index)
+  imports_t m_imports;
 
 public:
   // Instruction layout in code: { void *label; Term args[arity] }
   Vector<word_t> m_code;
 
 public:
-  Module(Term name, funs_t &/*funs*/, exports_t &exports)
+  Module(Term name, imports_t &imp)
     : m_name(name)
   {
-    //m_funs    = funs;
-    m_exports = exports;
+    m_imports = std::move(imp);
   }
 
   Module(Module &&src) {
@@ -81,6 +85,13 @@ public:
   }
   inline void set_labels(labels_t &labels) {
     m_labels = labels;
+  }
+  void set_exports(exports_t e) {
+    m_exports = e;
+  }
+  mfarity_t *get_import_entry(word_t i) {
+    G_ASSERT(i < m_imports.size());
+    return &(m_imports[i]);
   }
 
 protected:

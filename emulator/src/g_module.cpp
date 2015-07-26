@@ -8,15 +8,10 @@ namespace gluon {
 
 Result<word_t *> Module::resolve_function(Term f, word_t arity)
 {
-  f.println();
-
   auto iter = m_exports.find(fun_arity_t(f, arity));
   if (iter == m_exports.end()) {
     return error<word_t *>("function not found");
   }
-  //const fun_entry_t &fe = iter->second;
-  //G_ASSERT(fe.code);
-  //return success(fe.code);
   return success(iter->second);
 }
 

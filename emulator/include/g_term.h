@@ -297,7 +297,7 @@ public:
   inline void set(const Term &t) { m_val = t.m_val; }
 
   //inline Term operator <<(word_t bits) const { return Term(m_val << bits); }
-  inline constexpr word_t value() const { return m_val; }
+  inline constexpr word_t as_word() const { return m_val; }
   inline bool operator <(const Term &x) const { return m_val < x.m_val; }
   inline bool operator ==(const Term &x) const { return m_val == x.m_val; }
   inline bool operator ==(const word_t x) const { return m_val == x; }
@@ -311,7 +311,7 @@ public:
     return term_tag::Immed::check(m_val);
   }
   inline static bool are_both_immed(Term a, Term b) {
-    return term_tag::Immed::check(a.value() & b.value());
+    return term_tag::Immed::check(a.as_word() & b.as_word());
   }
 
   //
@@ -416,7 +416,7 @@ public:
     return (word_t)v;
   }
   inline static bool are_both_small(Term a, Term b) {
-    return term_tag::Smallint::check(a.value() & b.value());
+    return term_tag::Smallint::check(a.as_word() & b.as_word());
   }
 
 #if FEATURE_BIGNUM
