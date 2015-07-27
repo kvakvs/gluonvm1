@@ -483,6 +483,15 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     }
 //    printf(").\n");
 
+//    // If the command was call_ext to a bif - rewrite with bif call
+//    if (opcode == genop::OPCODE_CALL_EXT) {
+//      Term a(first_arg[0]);
+//      // So, an ext call of arity 1, to something that we have bif for
+//      if (a.small_get_unsigned() == 1 && VM::resolve_bif1(mfa) != nullptr) {
+//        // replace with bif1 op and rewrite args
+//      }
+//    }
+
     // Things to resolve from imports:
     if (opcode == genop::OPCODE_BIF0)
     {

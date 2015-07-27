@@ -61,5 +61,11 @@ Result<Term> Process::spawn(mfarity_t &mfa, Term *args) {
   return success(get_pid());
 }
 
+Term Process::bif_error(Term reason)
+{
+  m_bif_error_reason = reason;
+  return Term::make_non_value();
+}
+
 
 } // ns gluon

@@ -26,25 +26,6 @@ void VM::init()
   init_predef_atoms();
 }
 
-//MaybeError VM::load_module(const Str &filename)
-//{
-//  fs::File modf;
-//  auto open_result = modf.open(filename);
-//  G_RETURN_IF_ERROR(open_result);
-
-//  word_t size = modf.size();
-
-//  auto alloc_result = mem::alloc_bytes(size);
-//  G_RETURN_IF_ERROR_UNLIKELY(alloc_result);
-
-//  auto bytes = alloc_result.get_result();
-//  auto r_result = modf.read(bytes, size);
-//  G_RETURN_IF_ERROR(r_result)
-
-//  CodeServer::load_module(Term::make_nil(), bytes, size);
-//  return success();
-//}
-
 Term VM::to_atom(const Str &s)
 {
   Term a = to_existing_atom(s);
@@ -121,12 +102,31 @@ bif2_fn VM::resolve_bif2(mfarity_t &mfa)
   }
 
 #if G_DEBUG
-  printf("ERROR bif2 undef: %s:%s/%zu\n",
-         mfa.mod.atom_str().c_str(),
-         mfa.fun.atom_str().c_str(),
-         mfa.arity);
+  printf("ERROR bif2 undef");
+  mfa.println();
 #endif
   return nullptr;
+}
+
+Term VM::apply_bif(Process *proc, mfarity_t &mfa, Term *args)
+{
+  switch (mfa.arity) {
+  case 1: {
+      auto b1 = resolve_bif1(mfa);
+      if (b1) {
+        return b1(proc, args[0]);
+      }
+      break;
+    }
+  case 2: {
+      auto b2 = resolve_bif2(mfa);
+      if (b2) {
+        return b2(proc, args[0], args[1]);
+      }
+      break;
+    }
+  }
+  return proc->bif_error(atom::UNDEF);
 }
 
 Scheduler *VM::get_scheduler() {
@@ -139,15 +139,14 @@ Scheduler *VM::get_scheduler() {
 bif1_fn VM::resolve_bif1(mfarity_t &mfa)
 {
   G_ASSERT(mfa.arity == 1);
-  if (mfa.arity == 1) {
-    if (mfa.fun == atom::LENGTH)  { return &bif::bif_length_1; }
+  if (mfa.mod == atom::ERLANG) {
+    if (mfa.fun == atom::LENGTH)       { return &bif::bif_length_1; }
+    if (mfa.fun == atom::ATOM_TO_LIST) { return &bif::bif_atom_to_list_1; }
   }
 
 #if G_DEBUG
-  printf("ERROR bif2 undef: %s:%s/%zu\n",
-         mfa.mod.atom_str().c_str(),
-         mfa.fun.atom_str().c_str(),
-         mfa.arity);
+  printf("ERROR bif1 undef");
+  mfa.println();
 #endif
   return nullptr;
 }

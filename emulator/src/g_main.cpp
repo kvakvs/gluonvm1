@@ -31,6 +31,7 @@ int main(int argc, const char *argv[]) {
   Process *proc = new Process(Term::make_non_value());
 
   mfarity_t mfa(VM::to_atom("g_test1"), VM::to_atom("test"), 0);
+
   auto sp_result = proc->spawn(mfa, nullptr);
   if (sp_result.is_error()) {
     G_FAIL(sp_result.get_error());

@@ -54,10 +54,12 @@ def load_bifs():
     bifs = filter_comments(file("bif.tab").read().split("\n"))
     for b in bifs:
         b = b.split()
-        bif_tab.append({'atom': b[0], 'arity': int(b[1]), 'cname': b[2]})
+        if len(b) >= 3: cname = b[2]
+        else: cname = b[0]
+        bif_tab.append({'atom': b[0], 'arity': int(b[1]), 'cname': cname})
 
         if is_printable(b[0]): atom_tab.append({'atom': b[0]})
-        else: atom_tab.append({'atom': b[0], 'cname': b[2]})
+        else: atom_tab.append({'atom': b[0], 'cname': cname})
 
 def load():
     load_opcodes()

@@ -123,7 +123,7 @@ namespace gluon {
 //    code_offset_t offset;
 //  } code_ptr_t;
 
-  static const word_t VM_MAX_REGS = 16; // max arity of fun which can be called
+  static const word_t VM_MAX_REGS = 64; // (max arity of fun + captured terms)
   static const word_t VM_MAX_FP_REGS = 2;
 
 } // ns gluon

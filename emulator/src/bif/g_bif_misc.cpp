@@ -440,5 +440,15 @@ Term bif_greater_equal_2(Process *, Term a, Term b)
   return atom::FALSE;
 }
 
+Term bif_atom_to_list_1(Process *proc, Term a)
+{
+  if (!a.is_atom()) {
+    return proc->bif_error(atom::BADARG);
+  }
+
+  const Str &atom_str = VM::find_atom(a);
+  return Term::make_string(proc->get_heap(), atom_str);
+}
+
 } // ns bif
 } // ns gluon

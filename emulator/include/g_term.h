@@ -323,6 +323,9 @@ public:
     G_ASSERT(is_boxed() || is_tuple() || is_cons());
     return term_tag::Boxed::value_ptr<T>(m_val);
   }
+//  template <typename T> inline T *boxed_get_ptr_unsafe() const {
+//    return term_tag::Boxed::value_ptr<T>(m_val);
+//  }
   template <typename T> inline static Term make_boxed(T *x) {
     return Term(term_tag::Boxed::create_from_ptr<T>(x));
   }
@@ -366,6 +369,8 @@ public:
   }
   inline Term cons_head() const { return cons_get_element(0); }
   inline Term cons_tail() const { return cons_get_element(1); }
+  // Builds string as list of integers on heap
+  static Term make_string(Heap *, const Str &);
 protected:
   inline Term cons_get_element(word_t n) const {
     G_ASSERT(n == 0 || n == 1);
@@ -507,6 +512,7 @@ public:
     return term_tag::Tuple::check(m_val);
   }
   inline word_t tuple_get_arity() const {
+    G_ASSERT(is_tuple());
     auto p = boxed_get_ptr<word_t>();
     return p[0];
   }
@@ -602,6 +608,9 @@ public:
   mfarity_t(): mod(Term::make_non_value()), fun(Term::make_non_value()),
                arity(0) {}
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {}
+#if G_DEBUG
+  void println();
+#endif
 };
 
 class Process;

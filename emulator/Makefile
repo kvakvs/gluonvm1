@@ -1,10 +1,7 @@
-.PHONY: debug make_g testerlfiles
+.PHONY: debug testerlfiles
 
-debug: make_g _build/gluon testerlfiles
+debug: testerlfiles
 	gdb _build/gluon
 
 testerlfiles:
 	cd ../test/ && make && cd ../emulator
-
-make_g:
-	cd _build && make && cd ..

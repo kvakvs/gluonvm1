@@ -21,6 +21,25 @@ Term Term::allocate_cons(Heap *heap, Term head, Term tail) {
   return make_cons(d);
 }
 
+Term Term::make_string(Heap *heap, const Str &s)
+{
+  if (s.empty()) {
+    return Term::make_nil();
+  }
+
+  word_t len = s.length();
+  Term *h = Heap::alloc<Term>(heap, 2 * len);
+
+  Term str_term = Term::make_cons(h);
+  for (word_t i = 0; i < len; i++) {
+    h[0] = Term::make_small_u((word_t)s[i]);
+    h[1] = (i == len - 1) ? Term::make_nil() : Term::make_cons(h + 2);
+    h += 2;
+  }
+
+  return str_term;
+}
+
 Str Term::atom_str() const
 {
   return VM::find_atom(*this);
@@ -30,7 +49,7 @@ Str Term::atom_str() const
 void Term::print()
 {
   if (m_val == 0) {
-    printf("0-TERM");
+    printf("ZERO");
     return;
   }
   if (is_cons()) {
@@ -56,7 +75,8 @@ void Term::print()
     if (term_tag::is_cp<word_t>(p)) {
       printf("BOXED_CP(0x%zx)", (word_t)term_tag::untag_cp<word_t>(p));
     } else {
-      printf("BOXED(0x%zx)", boxed_get_subtag());
+      printf("BOXED(0x%zx@0x%zx)", boxed_get_subtag(),
+             (word_t)boxed_get_ptr<void>());
     }
   }
   else if (is_nil()) {
@@ -98,6 +118,17 @@ void Term::println()
   print();
   puts("");
 }
+
+void mfarity_t::println()
+{
+  printf("MFA(");
+  mod.print();
+  printf(":");
+  fun.print();
+  printf("/%zu", arity);
+  puts(")");
+}
+
 #endif // DEBUG
 
 //

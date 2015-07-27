@@ -77,6 +77,7 @@ class Process {
 public:
   Term          m_stack_trace = Term::make_non_value();
   word_t        m_catch_level = 0;
+  Term          m_bif_error_reason = Term::make_non_value();
 
 protected:
   runtime_ctx_t m_ctx;
@@ -118,6 +119,10 @@ public:
   // Assumes that process already created on heap and initialized, assigns proc
   // to scheduler, assigns starting fun and args
   Result<Term> spawn(mfarity_t &mfa, Term *args);
+
+  // Returns no_val and sets bif error flag in process. Use in bifs to signal
+  // error condition: return proc->bif_error(reason);
+  Term bif_error(Term reason);
 
 protected:
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args

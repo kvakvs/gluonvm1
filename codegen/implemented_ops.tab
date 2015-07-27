@@ -4,6 +4,8 @@ return
 allocate
 deallocate
 select_val
+trim
+jump
 
 #--- funs, hofs ---
 call_only
@@ -28,6 +30,11 @@ badmatch
 case_end
 if_end
 
+#--- tuple
+is_tuple
+test_arity
+get_tuple_element
+
 #--- tests ---
 is_lt
 is_eq
@@ -36,3 +43,7 @@ is_nonempty_list
 is_nil
 is_ge
 is_atom
+is_integer
+is_float
+is_list
+is_binary

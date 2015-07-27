@@ -9,10 +9,14 @@ test() ->
     %test_list_ops(),
     %test_extcalls(),
     %test_case(),
-    test_hof(),
+    %test_hof(),
+    test_mochijson(),
     ok.
 
 %%-----------------------------------------------
+test_mochijson() ->
+    mochijson:encode({struct, [{hello, "world"}]}).
+
 test_hof() ->
     F = fun(A,B) -> A =< B end,
     [1,2,3,4] = lists:sort(F, [3,2,4,1]).

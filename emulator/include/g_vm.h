@@ -79,6 +79,8 @@ public:
   static bif2_fn resolve_bif2(mfarity_t &);
   //static bif3_fn resolve_bif3(mfarity_t &);
 
+  static Term apply_bif(Process *proc, mfarity_t &mfa, Term *args);
+
   static Scheduler *get_scheduler();
 
 private:

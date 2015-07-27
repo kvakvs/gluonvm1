@@ -96,6 +96,24 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   void jump_ext(Process *proc, Term mfa_box) {
     G_ASSERT(mfa_box.is_boxed());
     mfarity_t *mfa = mfa_box.boxed_get_ptr<mfarity_t>();
+    mfa->println();
+
+    // check for bif, a nonvalue result with error flag set to undef means that
+    // this was not a bif
+    // TODO: this can be done on load stage
+    Term result = VM::apply_bif(proc, *mfa, regs);
+    if (result.is_non_value()) {
+      if (proc->m_bif_error_reason != atom::UNDEF) {
+        // a real error happened
+        return raise(proc, atom::ERROR, proc->m_bif_error_reason);
+      }
+    } else {
+      // simulate real call but return bif result instead
+      regs[0] = result;
+      ip = cp;
+      cp = nullptr;
+      return;
+    }
 
     auto find_result = CodeServer::find_module(mfa->mod,
                                                CodeServer::LOAD_IF_NOT_FOUND);
@@ -190,6 +208,13 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     puts("");
 #endif
   }
+  bool check_bif_error(Process *p) {
+    if (p->m_bif_error_reason.is_non_value()) {
+      return false; // good no error
+    }
+    raise(p, atom::ERROR, p->m_bif_error_reason);
+    return true;
+  }
 };
 
 #define DEREF(var) if ((var).is_immed()) { ctx.resolve_immed(var); }
@@ -250,6 +275,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
 //  }
   inline void opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
+    // bif1 Fail import_index Arg1 Dst
     Term boxed_mfa(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
     DEREF(arg1);
@@ -260,11 +286,12 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
+    if (ctx.check_bif_error(proc)) { return; }
     ctx.move(result, result_dst);
     ctx.ip += 4;
   }
   inline void opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
-    // bif1|2 Fail import_index ...Args Dst
+    // bif1 Fail import_index Arg1 Arg2 Dst
     Term boxed_mfa(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
     Term arg2(ctx.ip[3]);
@@ -277,6 +304,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);
+    if (ctx.check_bif_error(proc)) { return; }
     ctx.move(result, result_dst);
     ctx.ip += 5;
   }
@@ -439,10 +467,23 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   }
 //  inline void opcode_is_ne_exact(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 44
 //  }
-//  inline void opcode_is_integer(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 45
-//  }
-//  inline void opcode_is_float(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 46
-//  }
+  inline void opcode_is_integer(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 45
+    // @spec is_integer Lbl Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not an integer.
+    Term arg(ctx.ip[1]);
+    DEREF(arg);
+    if (!arg.is_integer()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 2;
+  }
+  inline void opcode_is_float(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 46
+#if FEATURE_FLOAT
+    G_TODO("is_float");
+#else
+    return ctx.jump(proc, Term(ctx.ip[0]));
+#endif
+  }
 //  inline void opcode_is_number(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 47
 //  }
   inline void opcode_is_atom(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 48
@@ -467,32 +508,64 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term t(ctx.ip[1]);
     DEREF(t);
     if (t.is_nil() == false) {
-      ctx.jump(proc, Term(ctx.ip[0]));
-    } else {
-      ctx.ip += 2;
+      return ctx.jump(proc, Term(ctx.ip[0]));
     }
+    ctx.ip += 2;
   }
-//  inline void opcode_is_binary(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 53
-//  }
+  inline void opcode_is_binary(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 53
+    // @spec is_binary Lbl Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not a binary.
+#if FEATURE_BINARIES
+    G_TODO("is_binary");
+#else
+    return ctx.jump(proc, Term(ctx.ip[0]));
+#endif
+  }
 //  inline void opcode_is_constant(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 54
 //  }
-//  inline void opcode_is_list(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 55
-//  }
+  inline void opcode_is_list(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 55
+    // @spec is_list Lbl Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not a cons or nil.
+    Term t(ctx.ip[1]);
+    DEREF(t);
+    if (!t.is_cons() && !t.is_nil()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 2;
+  }
   inline void opcode_is_nonempty_list(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 56
     // @spec is_nonempty_list Lbl Arg1
     // @doc Test the type of Arg1 and jump to Lbl if it is not a cons.
     Term t(ctx.ip[1]);
     DEREF(t);
     if (t.is_cons() == false) {
-      ctx.jump(proc, Term(ctx.ip[0]));
-    } else {
-      ctx.ip += 2;
+      return ctx.jump(proc, Term(ctx.ip[0]));
     }
+    ctx.ip += 2;
   }
-//  inline void opcode_is_tuple(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 57
-//  }
-//  inline void opcode_test_arity(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 58
-//  }
+  inline void opcode_is_tuple(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 57
+    // @spec is_tuple Lbl Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not a tuple.
+    Term t(ctx.ip[1]);
+    DEREF(t);
+    if (!t.is_tuple()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 2;
+  }
+  inline void opcode_test_arity(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 58
+    // @spec test_arity Lbl Arg1 Arity
+    // @doc Test the arity of (the tuple in) Arg1 and jump to Lbl if it is
+    // not equal to Arity.
+    Term t(ctx.ip[1]);
+    DEREF(t);
+    Term t_arity(ctx.ip[2]);
+    DEREF(t_arity);
+    if (!t.is_tuple() || t.tuple_get_arity() != t_arity.small_get_unsigned()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 3;
+  }
   inline void opcode_select_val(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 59
     // @spec select_val Arg FailLabel Destinations
     // @doc Jump to the destination label corresponding to Arg
@@ -513,8 +586,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   }
 //  inline void opcode_select_tuple_arity(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 60
 //  }
-//  inline void opcode_jump(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 61
-//  }
+  inline void opcode_jump(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 61
+    return ctx.jump(proc, Term(ctx.ip[0]));
+  }
 //  inline void opcode_catch(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 62
 //  }
 //  inline void opcode_catch_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 63
@@ -540,8 +614,19 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.move(src.cons_tail(), dst_tail);
     ctx.ip += 3;
   }
-//  inline void opcode_get_tuple_element(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 66
-//  }
+  inline void opcode_get_tuple_element(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 66
+    // @spec get_tuple_element Source Element Destination
+    // @doc  Get element number Element from the tuple in Source and put
+    //       it in the destination register Destination.
+    Term src(ctx.ip[0]);
+    DEREF(src);
+    Term t_el(ctx.ip[1]);
+    DEREF(t_el);
+    word_t el = t_el.small_get_unsigned();
+    G_ASSERT(el >= 0 && el < src.tuple_get_arity());
+    ctx.move(src.tuple_get_element(el), Term(ctx.ip[2]));
+    ctx.ip += 3;
+  }
 //  inline void opcode_set_tuple_element(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 67
 //  }
 //  inline void opcode_put_string(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 68
@@ -749,6 +834,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
+    if (ctx.check_bif_error(proc)) { return; }
     ctx.move(result, result_dst);
     ctx.ip += 5;
   }
@@ -770,6 +856,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);
+    if (ctx.check_bif_error(proc)) { return; }
     ctx.move(result, result_dst);
     ctx.ip += 6;
   }
@@ -793,8 +880,15 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_bs_private_append(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 135
 //  }
-//  inline void opcode_trim(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 136
-//  }
+  inline void opcode_trim(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 136
+    // @spec trim N Remaining
+    // @doc Reduce the stack usage by N words, keeping the CP on the top.
+    Term n(ctx.ip[0]);
+    auto masq_cp = ctx.stack->pop();
+    ctx.stack->drop_n(n.small_get_unsigned());
+    ctx.stack->push(masq_cp);
+    ctx.ip += 2;
+  }
 //  inline void opcode_bs_init_bits(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 137
 //  }
 //  inline void opcode_bs_get_utf8(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 138

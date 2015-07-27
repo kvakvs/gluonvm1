@@ -11,4 +11,5 @@
 =:= 2 equals_exact
 =< 2 less_equal
 >= 2 greater_equal
-length 1 length
+atom_to_list 1
+length 1
