@@ -74,24 +74,34 @@ protected:
 //------------------------------------------------------------------------------
 class Process {
 public:
-  Term    m_stack_trace = Term::make_non_value();
+  Term          m_stack_trace = Term::make_non_value();
   word_t        m_catch_level = 0;
 
 protected:
   runtime_ctx_t m_ctx;
   ProcessStack  m_stack;
-  Term          m_pid;
+  Term          m_pid = Term::make_non_value();
+  mfarity_t     m_init_call;
+  bool          m_trap_exit = false;
+  // TODO: process dict
+  Term          m_group_leader;
+  Term          m_priority; // an atom: 'low', 'high' or 'normal'
+  // TODO: result (is exiting, reason, put back in sched queue for reason)
 
-public:
-  Process() {
-    // TODO: fill pid?
+  friend class Scheduler;
+  void set_pid(Term pid) {
+    m_pid = pid;
   }
 
+public:
+  Process() = delete;
+  Process(Term gleader);
   Term get_pid() const {
     return m_pid;
   }
-  // Resolves M:F/Arity and sets instruction pointer to it. Runs no code.
-  MaybeError call(Term m, Term f, word_t arity, Term args);
+  Term get_priority() const {
+    return m_priority;
+  }
   runtime_ctx_t &get_runtime_ctx() {
     return m_ctx;
   }
@@ -102,7 +112,16 @@ public:
 
   // Not inlined, ask module for pointer to its code. Safety off!
   word_t *get_ip() const;
-//  word_t *get_code_base() const;
+  //  word_t *get_code_base() const;
+
+  // Assumes that process already created on heap and initialized, assigns proc
+  // to scheduler, assigns starting fun and args
+  Result<Term> spawn(mfarity_t &mfa, Term *args);
+
+protected:
+  // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args
+  // should be placed in registers before this process is scheduled to execute.
+  MaybeError jump_to_mfa(mfarity_t &mfa);
 };
 
 } // ns gluon

@@ -12,6 +12,7 @@ namespace stdlib {
   }
 
   void abort(); // blow up stuff
+  void sleep(word_t micro_sec);
 } // ns stdlib
 
 } // ns gluon

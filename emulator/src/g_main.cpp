@@ -28,21 +28,20 @@ int main(int argc, const char *argv[]) {
   CodeServer::path_append("../test");
 
   // create root process and set it to some entry function
-  Process proc;
-  auto j_result = proc.call(VM::to_atom("g_test1"),
-                            VM::to_atom("test"),
-                            0,
-                            Term::make_nil());
-  if (j_result.is_error()) {
-    printf("jump error: %s\n", j_result.get_error());
+  Process *proc = new Process(Term::make_non_value());
+
+  mfarity_t mfa(VM::to_atom("g_test1"), VM::to_atom("test"), 0);
+  auto sp_result = proc->spawn(mfa, nullptr);
+  if (sp_result.is_error()) {
+    G_FAIL(sp_result.get_error());
   }
 
   // Run some code
-  VM::vm_loop(&proc);
+  VM::vm_loop(false);
 
   // Print x0 as result
   printf("Result X[0]=");
-  proc.get_runtime_ctx().regs[0].println();
+  proc->get_runtime_ctx().regs[0].println();
 
   return 0;
 #endif

@@ -587,6 +587,8 @@ public:
   Term    mod;
   Term    fun;
   word_t  arity;
+  mfarity_t(): mod(Term::make_non_value()), fun(Term::make_non_value()),
+               arity(0) {}
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {}
 };
 

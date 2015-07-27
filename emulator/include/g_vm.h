@@ -4,6 +4,7 @@
 #include "g_term.h"
 #include "g_error.h"
 #include "g_dist.h"
+#include "g_scheduler.h"
 
 namespace gluon {
 
@@ -25,8 +26,11 @@ private:
   static Node *g_this_node;
   // used as "" constant when atom is not found
   static Str g_empty_str;
+  static Scheduler      *g_scheduler;
 
 public:
+  static const word_t SLICE_REDUCTIONS = 1000; // adjust this for slow devices
+
   static void init();
   //static MaybeError load_module(const Str &filename);
 
@@ -50,9 +54,10 @@ public:
   // Heap management
   //
   typedef enum {
-    HEAP_CODE,
-    HEAP_LOADER_TMP,
-    HEAP_PROCESS
+    HEAP_VM_INTERNAL, // vm needs this for stuff
+    HEAP_CODE,        // modules code goes here
+    HEAP_LOADER_TMP,  // loader uses this, discard after loading
+    HEAP_PROCESS      // per-process heap or something?
   } heap_t;
   static Heap *get_heap(heap_t);
 
@@ -62,7 +67,9 @@ public:
   // this is initialized in vm_loop(nullptr) call
   static const void **g_opcode_labels;
 
-  static void vm_loop(Process *proc);
+  // Takes next process from scheduler and runs for a while, eventually switching
+  // if the selected process yields or goes into receive/io wait.
+  static void vm_loop(bool init);
 
   //
   // Bif management
@@ -71,6 +78,8 @@ public:
   static bif1_fn resolve_bif1(mfarity_t &);
   static bif2_fn resolve_bif2(mfarity_t &);
   //static bif3_fn resolve_bif3(mfarity_t &);
+
+  static Scheduler *get_scheduler();
 
 private:
   // Does not check if atom existed before. Will break old values on overwrite

@@ -1,5 +1,7 @@
 #--- B
 badmatch
+badarg
+badarith
 
 #--- E
 erlang
@@ -8,6 +10,18 @@ exit
 
 #--- F
 false
+
+#--- H
+high
+
+#--- L
+low
+
+#--- N
+normal
+
+#--- O
+ok
 
 #--- T
 throw

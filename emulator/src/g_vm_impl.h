@@ -620,7 +620,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     boxed_fun_t *p = fun::box_fun(fe, p8, proc->get_pid(), ctx.regs);
 
     ctx.regs[0] = FunObject::make(p);
-    ctx.ip += 4;
+    ctx.ip += 1;
   }
 //  inline void opcode_try(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 104
 //  }
@@ -644,8 +644,24 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_is_boolean(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 114
 //  }
-//  inline void opcode_is_function2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 115
-//  }
+  inline void opcode_is_function2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 115
+    // @spec is_function2 Lbl Arg1 Arity
+    // @doc Test the type of Arg1 and jump to Lbl if it is not a function
+    // of arity Arity.
+    Term arg1(ctx.ip[1]);
+    Term arity(ctx.ip[2]);
+    // Check if its fun at all
+    if (!arg1.is_fun()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+
+    boxed_fun_t *bf = arg1.boxed_get_ptr<boxed_fun_t>();
+    if (arity.small_get_unsigned() != bf->get_arity()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+
+    ctx.ip += 3;
+  }
 //  inline void opcode_bs_start_match2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 116
 //  }
 //  inline void opcode_bs_get_integer2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 117

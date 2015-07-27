@@ -179,7 +179,7 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
   for (word_t i = 0; i < tab_sz; ++i) {
     auto atom_sz = r.read_var<word_t>();
     m_atoms.push_back(r.read_string(atom_sz));
-    G_LOG("atom: %s index %zu\n", m_atoms.back().c_str(), m_atoms.size()-1);
+//    G_LOG("atom: %s index %zu\n", m_atoms.back().c_str(), m_atoms.size()-1);
   }
 
   // Check first atom in table which is module name
@@ -284,7 +284,7 @@ MaybeError LoaderState::load_import_table(tool::Reader &r0)
     Term m = VM::to_atom(ms);
     Term f = VM::to_atom(fs);
     word_t arity = r.read_big_u32();
-    printf("import: %s:%s/%zu\n", ms.c_str(), fs.c_str(), arity);
+//    printf("import: %s:%s/%zu\n", ms.c_str(), fs.c_str(), arity);
     m_imports.push_back(mfarity_t(m, f, arity));
   }
 

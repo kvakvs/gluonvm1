@@ -4,11 +4,11 @@
 
 test() ->
     %[5,4,3,2,1] = rev([1,2,3,4,5]),
-    0 = recurse(10),
-    test_eq(),
-    test_list_ops(),
-    test_extcalls(),
-    test_case(),
+    %0 = recurse(10),
+    %test_eq(),
+    %test_list_ops(),
+    %test_extcalls(),
+    %test_case(),
     test_hof(),
     ok.
 

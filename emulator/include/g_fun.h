@@ -38,6 +38,10 @@ public:
   word_t old_uniq;
   fun_entry_t *fe;
   Term frozen[0]; // captured terms (closure)
+
+  word_t get_arity() const {
+    return (u8_t)(hdr >> 4);
+  }
 };
 #pragma clang diagnostic pop
 

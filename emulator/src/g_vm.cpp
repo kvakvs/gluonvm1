@@ -16,11 +16,12 @@ word_t VM::g_atom_counter; // initialized in init_predef_atoms
 Node *VM::g_this_node = nullptr;
 const void **VM::g_opcode_labels;
 Str VM::g_empty_str;
+Scheduler *VM::g_scheduler = nullptr;
 
 void VM::init()
 {
   g_this_node = new Node;
-  vm_loop(nullptr); // initialize labels
+  vm_loop(true); // initialize labels
   CodeServer::init();
   init_predef_atoms();
 }
@@ -124,6 +125,13 @@ bif2_fn VM::resolve_bif2(mfarity_t &mfa)
          mfa.arity);
 #endif
   return nullptr;
+}
+
+Scheduler *VM::get_scheduler() {
+  if (g_scheduler == nullptr) {
+    g_scheduler = Heap::alloc_object<Scheduler>(get_heap(HEAP_VM_INTERNAL));
+  }
+  return g_scheduler;
 }
 
 bif1_fn VM::resolve_bif1(mfarity_t &mfa)

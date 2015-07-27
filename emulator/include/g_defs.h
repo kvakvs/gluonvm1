@@ -5,6 +5,7 @@
 #include <list>
 #include <vector>
 #include <memory>
+#include <queue>
 
 #define G_DEBUG           1
 #define G_TEST            0
@@ -66,6 +67,9 @@ namespace gluon {
 
   template <typename A>
   using List = std::list<A>;
+
+  template <typename A>
+  using Queue = std::queue<A>;
 
   // Hardware abstractions
   namespace hw {

@@ -15,6 +15,7 @@ deallocate
 
 #--- funs, hofs ---
 make_fun2
+is_function2
 
 #--- list ops ---
 put_list
