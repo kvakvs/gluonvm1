@@ -16,6 +16,9 @@ public:
 
   word_t  num_free;   // how many extra terms with frozen values
   word_t  *code;
+
+  fun_entry_t(): mfa(Term::make_nil(), Term::make_nil(), 0) {
+  }
 };
 
 #pragma clang diagnostic push
@@ -37,6 +40,29 @@ public:
   Term frozen[0]; // captured terms (closure)
 };
 #pragma clang diagnostic pop
+
+//
+// Boxed callable functional object
+//
+class FunObject: public Term {
+public:
+  FunObject(word_t x): Term(x) {
+    G_ASSERT(is_fun());
+  }
+  FunObject(Term &other): Term(other.as_word()) {
+    G_ASSERT(is_fun());
+  }
+
+  //
+  // Boxed callable object (a fun)
+  //
+  static inline FunObject make(boxed_fun_t *p) {
+    return FunObject(term_tag::BoxedFun::create_from_ptr(p));
+  }
+  inline boxed_fun_t *get_object() const {
+    return boxed_get_ptr<boxed_fun_t>();
+  }
+};
 
 namespace fun {
 

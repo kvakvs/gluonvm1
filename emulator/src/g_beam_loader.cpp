@@ -30,14 +30,14 @@ public:
   Module::labels_t  m_labels;
   Map<fun_arity_t, label_index_t> m_exports;  // list of {f/arity} sequentially
   Module::imports_t m_imports;
-  Module::funs_t    m_funs;     // map({f/arity} => label_index)
+  Module::lambdas_t m_lambdas;
 
   LoaderState(): m_code(nullptr), m_code_size(0) {
   }
 
   MaybeError load_atom_table(tool::Reader &r, Term expected_name);
   MaybeError load_str_table(tool::Reader &r);
-  MaybeError load_fun_table(tool::Reader &r);
+  MaybeError load_lambda_table(tool::Reader &r);
   MaybeError load_export_table(tool::Reader &r);
   MaybeError load_import_table(tool::Reader &r);
   MaybeError load_code(tool::Reader &r);
@@ -92,7 +92,7 @@ protected:
                                      word_t len_code,
                                      word_t &tag, word_t &result);
   void replace_imp_index_with_ptr(word_t *p, Module *m);
-
+  void replace_lambda_index_with_ptr(word_t *p, Module *m);
   word_t parse_int(tool::Reader &r);
 };
 
@@ -134,7 +134,7 @@ Result<Module *> CodeServer::load_module_internal(Term expected_name,
     result.clear();
     if      (chunk == "Atom") { result = lstate.load_atom_table(r, expected_name); }
     else if (chunk == "Code") { result = lstate.load_code(r); }
-    else if (chunk == "FunT") { result = lstate.load_fun_table(r); }
+    else if (chunk == "FunT") { result = lstate.load_lambda_table(r); }
     else if (chunk == "ExpT") { result = lstate.load_export_table(r); }
     else if (chunk == "LitT") { result = lstate.load_literal_table(heap, r); }
     // else if (chunk == "LABL") { result = lstate.load_labels(heap, r); }
@@ -163,11 +163,6 @@ Result<Module *> LoaderState::finalize(Term modname) {
                                               modname,
                                               m_imports);
 
-  // Atoms are already in VM at this point
-  //newmod->m_name = modname;
-  //newmod->m_code.move(m_code);
-
-  //return success(newmod);
   auto result = beam_prepare_code(newmod, m_code, m_code_size);
   G_RETURN_REWRAP_IF_ERROR(result, Module*);
 
@@ -208,16 +203,17 @@ MaybeError LoaderState::load_str_table(tool::Reader &r0)
   return success();
 }
 
-MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
+MaybeError LoaderState::load_lambda_table(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
-  /*
   tool::Reader r = r0.clone(chunk_size);
 
   G_ASSERT(m_atoms.size() > 0);
-  word_t count = chunk_size / (6*4);
+  word_t count = r.read_big_u32();
   Term mod = VM::to_atom(m_atoms[0]);
 
-  for (word_t i = 0; i < count; ++i) {
+  for (word_t i = 0; i < count; ++i)
+  //while (r.get_remaining_count() > 6 * sizeof(u32_t))
+  {
     auto fun_atom_i = r.read_big_u32();
     auto arity      = r.read_big_u32();
     auto offset     = r.read_big_u32();
@@ -231,20 +227,20 @@ MaybeError LoaderState::load_fun_table(tool::Reader &r0) {
     const Str &f_str = atom_tab_index_to_str(fun_atom_i);
 
     fun_entry_t fe;
-    fe.mod = mod;
-    fe.fun = VM::to_atom(f_str);
-    fe.arity = arity;
-    fe.uniq[0] = offset; // use as temp storage
+    fe.mfa = mfarity_t(mod, VM::to_atom(f_str), arity);
+    fe.uniq[0] = (u32_t)offset; // use as temp storage, cast down to u32
     fe.uniq[1] = fe.uniq[2] = fe.uniq[3] = 0;
     fe.old_uniq = ouniq;
     fe.old_index = fe.index = index;
     fe.num_free = nfree;
     fe.code     = nullptr; // resolve later from uniq0
 
-    printf("read fun table: %s/%zu\n", fe.fun.atom_str().c_str(), arity);
-    m_funs[fun_arity_t(fe.fun, arity)] = fe;
+//    printf("read fun table: %s:%s/%zu\n",
+//           fe.mfa.mod.atom_str().c_str(),
+//           fe.mfa.fun.atom_str().c_str(),
+//           arity);
+    m_lambdas.push_back(fe);
   }
-  */
 
   r0.advance_align<4>(chunk_size);
   return success();
@@ -407,11 +403,10 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
   while (!r.is_end()) {
     // Get opcode info
     word_t opcode = (word_t)r.read_byte();
-    G_LOG("[0x%zx]: opcode=0x%zx %s; ", code.size(), opcode,
-          genop::opcode_name_map[opcode]);
+//    G_LOG("[0x%zx]: opcode=0x%zx %s; ", code.size(), opcode,
+//          genop::opcode_name_map[opcode]);
 
     if (opcode < 1 || opcode > genop::MAX_OPCODE) {
-//      G_FAIL("opcode too big");
       return "bad opcode";
     }
 
@@ -427,7 +422,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     if (opcode == genop::OPCODE_LINE) {
       auto a = parse_term(heap, r);
       G_RETURN_IF_ERROR_UNLIKELY(a);
-      a.get_result().println();
+//      a.get_result().println();
       continue;
     }
 
@@ -436,13 +431,13 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       auto pv_result = parse_term(heap, r);
       G_RETURN_IF_ERROR_UNLIKELY(pv_result);
       Term label = pv_result.get_result();
-      label.println();
+//      label.println();
       G_ASSERT(label.is_small());
 
       word_t l_id = label.small_get_unsigned();
       m_labels[l_id] = (&code.back())+1;
-      G_LOG("label %zu (0x%zx) offset 0x%zx", l_id, l_id, code.size());
-      puts("");
+//      G_LOG("label %zu (0x%zx) offset 0x%zx", l_id, l_id, code.size());
+//      puts("");
       continue;
     }
 
@@ -453,7 +448,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       G_RETURN_IF_ERROR(b);
       auto c = parse_term(heap, r);
       G_RETURN_IF_ERROR(c);
-      puts("");
+//      puts("");
       continue;
     }
 
@@ -464,7 +459,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 //           genop::opcode_name_map[opcode], opcode, op_ptr);
 
     arity = genop::arity_map[opcode];
-    G_LOG("arity=%zu args=(", arity);
+//    G_LOG("arity=%zu args=(", arity);
 
     word_t *first_arg = &code.back() + 1;
 
@@ -473,7 +468,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       G_RETURN_IF_ERROR_UNLIKELY(arg_result);
 
       Term arg = arg_result.get_result();
-      arg.print();
+//      arg.print();
 
       // Use runtime value 'Catch' to mark label references
       if (term_tag::Catch::check(arg.as_word())) {
@@ -481,9 +476,9 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       }
 
       code.push_back(arg.as_word());
-      printf("; ");
+//      printf("; ");
     }
-    printf(").\n");
+//    printf(").\n");
 
     // Things to resolve from imports:
     if (opcode == genop::OPCODE_BIF0)
@@ -504,6 +499,9 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     {
       // gc_bif1|2|3 Fail Live import_index ...Args Dst
       replace_imp_index_with_ptr(first_arg+2, m);
+    } else if (opcode == genop::OPCODE_MAKE_FUN2) {
+      // make_fun2 LambdaTableIndex
+      replace_lambda_index_with_ptr(first_arg, m);
     }
   }
 
@@ -519,10 +517,11 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 //  printf("exports processing: %zu items\n", m_exports.size());
   for (auto &e: m_exports) {
     auto ptr = m_labels[e.second.value];
-    printf("label export ptr 0x%zu\n", (word_t)ptr);
+//    printf("label export ptr 0x%zu\n", (word_t)ptr);
     exports[e.first] = ptr;
   }
   m->set_exports(exports);
+  m->set_lambdas(m_lambdas);
 
   return success();
 }
@@ -530,6 +529,12 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 void LoaderState::replace_imp_index_with_ptr(word_t *p, Module *m) {
   Term i(*p);
   Term j = Term::make_boxed(m->get_import_entry(i.small_get_unsigned()));
+  *p = j.as_word();
+}
+
+void LoaderState::replace_lambda_index_with_ptr(word_t *p, Module *m) {
+  Term i(*p);
+  Term j = Term::make_boxed(&m_lambdas[i.small_get_unsigned()]);
   *p = j.as_word();
 }
 
@@ -946,10 +951,10 @@ MaybeError LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
 
     // New value will be small int
     Term resolved_label = Term::make_boxed(m_labels[label_index]);
-    G_LOG("loader: resolving label %zu at 0x%zx to 0x%zx\n",
-           label_index,
-           code_index,
-           (word_t)resolved_label.boxed_get_ptr<word_t>());
+//    G_LOG("loader: resolving label %zu at 0x%zx to 0x%zx\n",
+//           label_index,
+//           code_index,
+//           (word_t)resolved_label.boxed_get_ptr<word_t>());
     code[code_index] = resolved_label.as_word();
   }
   return success();

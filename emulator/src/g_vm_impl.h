@@ -619,7 +619,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // Assuming that regs have all values ready to be frozen (copied to closure)
     boxed_fun_t *p = fun::box_fun(fe, p8, proc->get_pid(), ctx.regs);
 
-    ctx.regs[0] = Term::make_fun(p);
+    ctx.regs[0] = FunObject::make(p);
     ctx.ip += 4;
   }
 //  inline void opcode_try(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 104

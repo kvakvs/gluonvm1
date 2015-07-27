@@ -567,18 +567,10 @@ public:
     return term_tag::StackReference::value(m_val);
   }
 
-  //
-  // Boxed callable object (a fun)
-  //
-  static inline Term make_fun(boxed_fun_t *p) {
-    return Term(term_tag::BoxedFun::create_from_ptr(p));
-  }
   inline bool is_fun() const {
     return term_tag::BoxedFun::check(m_val);
   }
-  inline boxed_fun_t *fun_get_object() const {
-    return boxed_get_ptr<boxed_fun_t>();
-  }
+
 };
 
 static_assert(sizeof(Term) == sizeof(word_t),

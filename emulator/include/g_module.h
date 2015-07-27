@@ -17,15 +17,17 @@ class Heap;
 class Module {
 public:
   typedef Map<word_t, word_t *>         labels_t;
-  typedef Map<fun_arity_t, fun_entry_t> funs_t;
+  //typedef Map<fun_arity_t, fun_entry_t> funs_t;
   typedef Map<fun_arity_t, word_t *>    exports_t;
   typedef Vector<mfarity_t>             imports_t;
+  typedef Vector<fun_entry_t>           lambdas_t;
 
 private:
   Term      m_name;
   labels_t  m_labels;
   exports_t m_exports; // just list of {f/arity}
   imports_t m_imports;
+  lambdas_t m_lambdas;
 
 public:
   // Instruction layout in code: { void *label; Term args[arity] }
@@ -68,9 +70,16 @@ public:
   void set_exports(exports_t e) {
     m_exports = e;
   }
+  void set_lambdas(lambdas_t &la) {
+    m_lambdas = std::move(la);
+  }
   mfarity_t *get_import_entry(word_t i) {
     G_ASSERT(i < m_imports.size());
     return &(m_imports[i]);
+  }
+  fun_entry_t *get_lambda_entry(word_t i) {
+    G_ASSERT(i < m_lambdas.size());
+    return &(m_lambdas[i]);
   }
 
 protected:
