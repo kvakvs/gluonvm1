@@ -1,5 +1,10 @@
 test_heap
 move
+return
+allocate
+deallocate
+
+#--- funs, hofs ---
 call_only
 call
 call_last
@@ -9,13 +14,9 @@ gc_bif1
 gc_bif2
 bif1
 bif2
-return
-allocate
-deallocate
-
-#--- funs, hofs ---
 make_fun2
 is_function2
+call_fun
 
 #--- list ops ---
 put_list
@@ -31,3 +32,4 @@ is_eq_exact
 is_nonempty_list
 is_nil
 is_ge
+is_atom

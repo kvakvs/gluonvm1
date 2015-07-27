@@ -9,4 +9,6 @@
 + 2 plus
 == 2 equals
 =:= 2 equals_exact
+=< 2 less_equal
+>= 2 greater_equal
 length 1 length

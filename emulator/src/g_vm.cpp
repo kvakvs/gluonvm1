@@ -116,6 +116,8 @@ bif2_fn VM::resolve_bif2(mfarity_t &mfa)
     if (mfa.fun == atom::Q_PLUS)         { return &bif::bif_plus_2; }
     if (mfa.fun == atom::Q_EQUALS)       { return &bif::bif_equals_2; }
     if (mfa.fun == atom::Q_EQUALS_EXACT) { return &bif::bif_equals_exact_2; }
+    if (mfa.fun == atom::Q_LESS_EQUAL)   { return &bif::bif_less_equal_2; }
+    if (mfa.fun == atom::Q_GREATER_EQUAL){ return &bif::bif_greater_equal_2; }
   }
 
 #if G_DEBUG

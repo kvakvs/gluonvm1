@@ -424,5 +424,21 @@ Term bif_equals_exact_2(Process *, Term a, Term b)
   return atom::FALSE;
 }
 
+Term bif_less_equal_2(Process *, Term a, Term b)
+{
+  if (!is_term_smaller(b, a)) {
+    return atom::TRUE;
+  }
+  return atom::FALSE;
+}
+
+Term bif_greater_equal_2(Process *, Term a, Term b)
+{
+  if (!is_term_smaller(a, b)) {
+    return atom::TRUE;
+  }
+  return atom::FALSE;
+}
+
 } // ns bif
 } // ns gluon

@@ -235,10 +235,10 @@ MaybeError LoaderState::load_lambda_table(tool::Reader &r0) {
     fe.num_free = nfree;
     fe.code     = nullptr; // resolve later from uniq0
 
-//    printf("read fun table: %s:%s/%zu\n",
-//           fe.mfa.mod.atom_str().c_str(),
-//           fe.mfa.fun.atom_str().c_str(),
-//           arity);
+    printf("read fun table: %s:%s/%zu offset=%zu\n",
+           fe.mfa.mod.atom_str().c_str(),
+           fe.mfa.fun.atom_str().c_str(),
+           arity, offset);
     m_lambdas.push_back(fe);
   }
 
@@ -521,6 +521,11 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     exports[e.first] = ptr;
   }
   m->set_exports(exports);
+
+  for (auto &la: m_lambdas) {
+    auto ptr = m_labels[la.uniq[0]];
+    la.code = ptr;
+  }
   m->set_lambdas(m_lambdas);
 
   return success();

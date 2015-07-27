@@ -571,6 +571,10 @@ public:
     return term_tag::BoxedFun::check(m_val);
   }
 
+  inline bool is_export() const {
+    return term_tag::BoxedExport::check(m_val);
+  }
+
 };
 
 static_assert(sizeof(Term) == sizeof(word_t),

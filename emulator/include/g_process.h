@@ -19,6 +19,7 @@ typedef struct {
   word_t *cp = nullptr;
   word_t live = 0; // saved registers count
 
+  // TODO: maybe cache r0 in a local variable in vm loop?
   Term    regs[VM_MAX_REGS];
 #if FEATURE_FLOAT
   //float_t fp_regs[MAX_FP_REGS];

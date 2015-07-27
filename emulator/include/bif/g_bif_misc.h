@@ -17,6 +17,8 @@ Term bif_plus_2(Process *, Term a, Term b);
 Term bif_length_1(Process *, Term a);
 Term bif_equals_2(Process *, Term a, Term b);
 Term bif_equals_exact_2(Process *, Term a, Term b);
+Term bif_less_equal_2(Process *, Term a, Term b);
+Term bif_greater_equal_2(Process *, Term a, Term b);
 
 } // ns bif
 } // ns gluon

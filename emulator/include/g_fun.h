@@ -42,6 +42,9 @@ public:
   word_t get_arity() const {
     return (u8_t)(hdr >> 4);
   }
+  word_t get_num_free() const {
+    return hdr >> (4+8);
+  }
 };
 #pragma clang diagnostic pop
 

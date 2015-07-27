@@ -445,8 +445,15 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_is_number(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 47
 //  }
-//  inline void opcode_is_atom(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 48
-//  }
+  inline void opcode_is_atom(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 48
+    // @spec is_atom Lbl Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not an atom.
+    Term arg(ctx.ip[1]);
+    if (!arg.is_atom()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 2;
+  }
 //  inline void opcode_is_pid(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 49
 //  }
 //  inline void opcode_is_reference(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 50
@@ -544,8 +551,36 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_case_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 74
 //  }
-//  inline void opcode_call_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 75
-//  }
+  inline void opcode_call_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 75
+    // @spec call_fun Arity
+    // @doc Call a fun of arity Arity. Assume arguments in registers x(0) to
+    // x(Arity-1) and that the fun is in x(Arity). Save the next instruction as
+    // the return address in the CP register.
+    Term t_arity(ctx.ip[0]);
+    G_ASSERT(t_arity.is_small());
+
+    word_t arity = t_arity.small_get_unsigned();
+
+    Term fun(ctx.regs[arity]);
+    if (!fun.is_boxed()) {
+      return ctx.raise(proc, atom::ERROR, atom::BADFUN);
+    }
+    if (fun.is_fun()) {
+      boxed_fun_t *bf = fun.boxed_get_ptr<boxed_fun_t>();
+      // TODO: if bf.fe is null - unloaded fun
+      word_t num_free = bf->get_num_free();
+      G_ASSERT(arity + num_free < VM_MAX_REGS);
+      std::copy(bf->frozen, bf->frozen + num_free, ctx.regs + arity);
+
+      ctx.cp = ctx.ip + 1;
+      ctx.ip = bf->fe->code;
+      G_ASSERT(ctx.ip);
+      return;
+    } else if (fun.is_export()) {
+      // TODO: check BoxedExport too!
+      G_TODO("call_fun export");
+    }
+  }
 //  inline void opcode_make_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 76
 //  }
 //  inline void opcode_is_function(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 77
