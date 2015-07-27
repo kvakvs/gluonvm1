@@ -3,6 +3,7 @@ move
 return
 allocate
 deallocate
+select_val
 
 #--- funs, hofs ---
 call_only
@@ -24,6 +25,8 @@ get_list
 
 #--- errors ---
 badmatch
+case_end
+if_end
 
 #--- tests ---
 is_lt

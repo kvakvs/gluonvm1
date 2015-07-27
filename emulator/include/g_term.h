@@ -411,10 +411,12 @@ public:
     return is_small();
 #endif
   }
-  constexpr sword_t small_get_signed() const {
+  inline sword_t small_get_signed() const {
+    G_ASSERT(is_small());
     return term_tag::Smallint::value(m_val);
   }
   inline word_t small_get_unsigned() const {
+    G_ASSERT(is_small());
     sword_t v = term_tag::Smallint::value(m_val);
     G_ASSERT(v >= 0);
     return (word_t)v;
@@ -513,6 +515,12 @@ public:
     auto p = boxed_get_ptr<word_t>();
     G_ASSERT(p[0] > n);
     return Term(p[n+1]);
+  }
+  // Zero based index n
+  inline void tuple_set_element(word_t n, Term t) const {
+    auto p = boxed_get_ptr<word_t>();
+    G_ASSERT(p[0] > n);
+    p[n+1] = t.as_word();
   }
 
 #if FEATURE_MAPS

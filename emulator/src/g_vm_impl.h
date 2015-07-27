@@ -449,6 +449,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @spec is_atom Lbl Arg1
     // @doc Test the type of Arg1 and jump to Lbl if it is not an atom.
     Term arg(ctx.ip[1]);
+    DEREF(arg);
     if (!arg.is_atom()) {
       return ctx.jump(proc, Term(ctx.ip[0]));
     }
@@ -492,8 +493,24 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_test_arity(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 58
 //  }
-//  inline void opcode_select_val(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 59
-//  }
+  inline void opcode_select_val(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 59
+    // @spec select_val Arg FailLabel Destinations
+    // @doc Jump to the destination label corresponding to Arg
+    //      in the Destinations list, if no arity matches, jump to FailLabel.
+    Term arg(ctx.ip[0]);
+    DEREF(arg);
+
+    Term dst(ctx.ip[2]);
+    // TODO: binary search
+    Term *elements = dst.boxed_get_ptr<Term>();
+    word_t dst_arity = ((word_t *)elements)[0] / 2;
+    for (word_t i = 0; i < dst_arity; i++) {
+      if (elements[i*2+1] == arg) {
+        return ctx.jump(proc, elements[i*2+2]);
+      }
+    }
+    ctx.jump(proc, Term(ctx.ip[1]));
+  }
 //  inline void opcode_select_tuple_arity(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 60
 //  }
 //  inline void opcode_jump(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 61
@@ -547,10 +564,12 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   inline void opcode_badmatch(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 72
     return ctx.raise(proc, atom::ERROR, atom::BADMATCH);
   }
-//  inline void opcode_if_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 73
-//  }
-//  inline void opcode_case_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 74
-//  }
+  inline void opcode_if_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 73
+    return ctx.raise(proc, atom::ERROR, atom::IF_CLAUSE);
+  }
+  inline void opcode_case_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 74
+    return ctx.raise(proc, atom::ERROR, atom::CASE_CLAUSE);
+  }
   inline void opcode_call_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 75
     // @spec call_fun Arity
     // @doc Call a fun of arity Arity. Assume arguments in registers x(0) to
@@ -684,7 +703,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc Test the type of Arg1 and jump to Lbl if it is not a function
     // of arity Arity.
     Term arg1(ctx.ip[1]);
+    DEREF(arg1);
     Term arity(ctx.ip[2]);
+    DEREF(arity);
     // Check if its fun at all
     if (!arg1.is_fun()) {
       return ctx.jump(proc, Term(ctx.ip[0]));

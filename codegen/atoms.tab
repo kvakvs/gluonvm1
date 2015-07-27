@@ -4,6 +4,9 @@ badarith
 badfun
 badmatch
 
+#--- C
+case_clause
+
 #--- E
 erlang
 error
@@ -14,6 +17,9 @@ false
 
 #--- H
 high
+
+#--- I
+if_clause
 
 #--- L
 low

@@ -31,6 +31,9 @@ public:
   Map<fun_arity_t, label_index_t> m_exports;  // list of {f/arity} sequentially
   Module::imports_t m_imports;
   Module::lambdas_t m_lambdas;
+  // postponed select list with label numbers. Resolve to code pointers after
+  // loading finished
+  Vector<Term>    m_resolve_select_lists;
 
   LoaderState(): m_code(nullptr), m_code_size(0) {
   }
@@ -528,6 +531,16 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
   }
   m->set_lambdas(m_lambdas);
 
+  // Fix select lists (replace label numbers with code pointers)
+  for (Term t: m_resolve_select_lists) {
+    word_t t_arity = t.tuple_get_arity()/2;
+    for (word_t i = 0; i < t_arity; ++i) {
+      word_t l_index = t.tuple_get_element(i*2+1).small_get_unsigned();
+      word_t *ptr = m_labels[l_index];
+      t.tuple_set_element(i*2+1, Term::make_boxed(ptr));
+    }
+  }
+
   return success();
 }
 
@@ -855,7 +868,10 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
 //        base.print();
 //        printf("; %zu]\n", label);
       }
-      return success(Term::make_tuple(selectlist, length*2));
+      Term result = Term::make_tuple(selectlist, length*2);
+      // replace label numbers with pointers when loading finished
+      m_resolve_select_lists.push_back(result);
+      return success(result);
     }
 
     case Tag::Extended_FloatRegister: {
