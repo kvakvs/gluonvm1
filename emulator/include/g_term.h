@@ -371,7 +371,12 @@ public:
   inline Term cons_tail() const { return cons_get_element(1); }
   // Builds string as list of integers on heap
   static Term make_string(Heap *, const Str &);
+  bool is_cons_printable() const;
 protected:
+  static bool is_cons_printable_element(Term el);
+  static bool does_char_require_quoting(word_t c) {
+    return c == '\\' || c == '\"';
+  }
   inline Term cons_get_element(word_t n) const {
     G_ASSERT(n == 0 || n == 1);
     auto p = boxed_get_ptr<word_t>();

@@ -40,6 +40,24 @@ Term Term::make_string(Heap *heap, const Str &s)
   return str_term;
 }
 
+bool Term::is_cons_printable() const
+{
+  Term item = *this;
+  while (item.is_cons()) {
+    if (!is_cons_printable_element(item.cons_head())) {
+      return false;
+    }
+    item = item.cons_tail();
+  }
+  return item.is_nil();
+}
+
+bool Term::is_cons_printable_element(Term el) {
+  if (!el.is_small()) return false;
+  word_t c = el.small_get_unsigned();
+  return (c >= ' ' && c <= 127);
+}
+
 Str Term::atom_str() const
 {
   return VM::find_atom(*this);
@@ -53,11 +71,38 @@ void Term::print()
     return;
   }
   if (is_cons()) {
-    printf("[");
-    cons_head().print();
-    printf(",");
-    cons_tail().print();
-    printf("]");
+    if (is_cons_printable()) {
+      printf("\"");
+      word_t c = (u8_t)cons_head().small_get_unsigned();
+      if (does_char_require_quoting(c)) {
+        printf("\\");
+      }
+      printf("%c", (u8_t)c);
+      Term item = cons_tail();
+      while (item.is_cons()) {
+        c = item.cons_head().small_get_unsigned();
+        if (does_char_require_quoting(c)) {
+          printf("\\");
+        }
+        printf("%c", (u8_t)c);
+        item = item.cons_tail();
+      }
+      printf("\"");
+    } else {
+      printf("[");
+      cons_head().print();
+      Term item = cons_tail();
+      while (item.is_cons()) {
+        printf(",");
+        item.cons_head().print();
+        item = item.cons_tail();
+      }
+      if (!item.is_nil()) {
+        printf("|");
+        item.print();
+      }
+      printf("]");
+    }
   }
   else if (is_tuple()) {
     auto arity = tuple_get_arity();

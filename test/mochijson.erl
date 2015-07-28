@@ -26,9 +26,10 @@
 -export([decoder/1, decode/1]).
 -export([binary_encoder/1, binary_encode/1]).
 -export([binary_decoder/1, binary_decode/1]).
+-compile(export_all).
 
 % This is a macro to placate syntax highlighters..
--define(Q, $\").
+-define(Q, $\"). %"
 -define(ADV_COL(S, N), S#decoder{column=N+S#decoder.column}).
 -define(INC_COL(S), S#decoder{column=1+S#decoder.column}).
 -define(INC_LINE(S), S#decoder{column=1, line=1+S#decoder.line}).
