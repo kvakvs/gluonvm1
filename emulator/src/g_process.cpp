@@ -67,5 +67,19 @@ Term Process::bif_error(Term reason)
   return Term::make_non_value();
 }
 
+//void ProcessStack::println()
+//{
+//  if (size() < 2) {
+//    return;
+//  }
+//  printf("STACK: ");
+//  for (word_t i = 0; i < size()-1; i++) {
+//    printf("[%zu]=", i);
+//    get_y(i).print();
+//    printf("; ");
+//  }
+//  puts("");
+//}
+
 
 } // ns gluon

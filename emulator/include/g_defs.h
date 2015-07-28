@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <queue>
+//#include <stack>
 
 #define G_DEBUG           1
 #define G_TEST            0
@@ -68,8 +69,13 @@ namespace gluon {
   template <typename A>
   using List = std::list<A>;
 
+  // Single-ended queue with push to end/pop front operations
   template <typename A>
   using Queue = std::queue<A>;
+
+//  // Stack with single end and index operations
+//  template <typename A>
+//  using Stack = std::stack<A>;
 
   // Hardware abstractions
   namespace hw {
@@ -139,6 +145,7 @@ namespace gluon {
 
 // TODO: debug macro goes here
 #if G_DEBUG
+#   define G_HINT_INLINE
 #   define G_ASSERT(X) if (!(X)) { G_FAIL(#X); }
 #   define G_ASSERT_MSG(X, MSG) if (!(X)) { G_FAIL(MSG); }
 #   define G_TODO(what) { \
@@ -151,6 +158,7 @@ namespace gluon {
 
 #else // no G_DEBUG
 
+#   define G_HINT_INLINE inline
 #   define G_ASSERT(X)
 #   define G_ASSERT_MSG(X, MSG)
 #   define G_TODO(X)

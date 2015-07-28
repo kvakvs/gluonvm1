@@ -981,10 +981,10 @@ MaybeError LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
 
     // New value will be small int
     Term resolved_label = Term::make_boxed(m_labels[label_index]);
-//    G_LOG("loader: resolving label %zu at 0x%zx to 0x%zx\n",
-//           label_index,
-//           code_index,
-//           (word_t)resolved_label.boxed_get_ptr<word_t>());
+    G_LOG("loader: resolving label %zu at 0x%zx to 0x%zx\n",
+           label_index,
+           code_index,
+           (word_t)resolved_label.boxed_get_ptr<word_t>());
     code[code_index] = resolved_label.as_word();
   }
   return success();

@@ -68,7 +68,7 @@ void Term::print()
         printf(",");
       }
     }
-    printf("};");
+    printf("}");
   }
   else if (is_boxed()) {
     auto p = boxed_get_ptr<word_t>();

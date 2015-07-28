@@ -32,38 +32,43 @@ public:
   ProcessStack() {}
   void push(Term t) {
     cells.push_back(t);
+    //println();
   }
   Term pop() {
     Term t = cells.back();
     cells.pop_back();
+//    println();
     return t;
   }
-  void set(word_t offset, Term t) {
-    G_ASSERT(offset < cells.size());
-    cells[top_nth_index(offset)] = t;
+  void set_y(word_t offset, Term t) {
+    cells[index_for_y(offset)] = t;
+//    println();
   }
-  Term get(word_t offset) const {
-    G_ASSERT(offset < cells.size());
-    return cells[top_nth_index(offset)];
+  Term get_y(word_t offset) const {
+    return cells[index_for_y(offset)];
   }
   void push_n_nils(word_t n) {
-    cells.reserve(cells.size() + n);
-    while (n > 0) {
+    //cells.reserve(cells.size() + n);
+    for (word_t i = 0; i < n; ++i) {
       cells.push_back(Term::make_nil());
-      n--;
     }
+//    println();
   }
   void drop_n(word_t n) {
     G_ASSERT(cells.size() >= n);
     cells.resize(cells.size() - n);
+//    println();
   }
   word_t size() const {
     return cells.size();
   }
+//  void println();
 
 protected:
-  inline word_t top_nth_index(word_t offset) const {
-    return cells.size() - 1 - offset;
+  inline word_t index_for_y(word_t y) const {
+    // when we work with stack, there's always CP hanging on top
+    G_ASSERT(y < cells.size() - 1);
+    return cells.size() - 2 - y;
   }
 };
 

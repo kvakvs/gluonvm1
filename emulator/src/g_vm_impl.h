@@ -56,7 +56,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       i = regs[i.regx_get_value()];
     }
     else if (i.is_regy()) {
-      i = stack->get(i.regy_get_value());
+      i = stack->get_y(i.regy_get_value());
     }
 #if FEATURE_FLOAT
     else if (i.is_regfp()) {
@@ -78,7 +78,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       regs[x] = val;
     } else
     if (dst.is_regy()) {
-      stack->set(dst.regy_get_value(), val);
+      stack->set_y(dst.regy_get_value(), val);
     } else
 #if FEATURE_FLOAT
     if (dst.is_regfp()) {
@@ -105,11 +105,15 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     if (result.is_non_value()) {
       if (proc->m_bif_error_reason != atom::UNDEF) {
         // a real error happened
-        return raise(proc, atom::ERROR, proc->m_bif_error_reason);
+        Term reason = proc->m_bif_error_reason;
+        proc->m_bif_error_reason = Term::make_non_value();
+        return raise(proc, atom::ERROR, reason);
       }
+      // if it was undef - do nothing, it wasn't a bif - we just jump there
     } else {
       // simulate real call but return bif result instead
       regs[0] = result;
+      G_ASSERT(cp);
       ip = cp;
       cp = nullptr;
       return;
@@ -209,10 +213,12 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 #endif
   }
   bool check_bif_error(Process *p) {
-    if (p->m_bif_error_reason.is_non_value()) {
+    Term reason = p->m_bif_error_reason;
+    if (reason.is_non_value()) {
       return false; // good no error
     }
-    raise(p, atom::ERROR, p->m_bif_error_reason);
+    p->m_bif_error_reason = Term::make_non_value();
+    raise(p, atom::ERROR, reason);
     return true;
   }
 };
@@ -313,10 +319,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc Allocate space for StackNeed words on the stack. If a GC is needed
     //      during allocation there are Live number of live X registers.
     //      Also save the continuation pointer (CP) on the stack.
-    Term stack_need(ctx.ip[1]);
-    G_ASSERT(stack_need.is_small());
+    Term stack_need(ctx.ip[0]);
+    ctx.stack->push_n_nils(stack_need.small_get_unsigned());
     ctx.push_cp();
-    ctx.stack->push_n_nils((word_t)stack_need.small_get_signed());
     ctx.ip += 2;
   }
 //  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
@@ -338,8 +343,8 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc  Restore the continuation pointer (CP) from the stack and deallocate
     //       N+1 words from the stack (the + 1 is for the CP).
     Term n(ctx.ip[0]);
-    ctx.stack->drop_n((word_t)n.small_get_signed());
     ctx.pop_cp();
+    ctx.stack->drop_n(n.small_get_unsigned());
     ctx.ip++;
   }
   inline bool opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
