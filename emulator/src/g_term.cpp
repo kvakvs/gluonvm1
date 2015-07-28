@@ -74,10 +74,15 @@ void Term::print()
     auto p = boxed_get_ptr<word_t>();
     if (term_tag::is_cp<word_t>(p)) {
       printf("BOXED_CP(0x%zx)", (word_t)term_tag::untag_cp<word_t>(p));
-    } else {
-      printf("BOXED(0x%zx@0x%zx)", boxed_get_subtag(),
-             (word_t)boxed_get_ptr<void>());
+      return;
     }
+    if (is_fun()) {
+      printf("BOXED_FUN()");
+      return;
+    }
+    printf("BOXED(0x%zx@0x%zx)", boxed_get_subtag(),
+           (word_t)boxed_get_ptr<void>());
+
   }
   else if (is_nil()) {
     printf("NIL");

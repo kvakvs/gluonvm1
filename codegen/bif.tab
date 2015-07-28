@@ -11,5 +11,7 @@
 =:= 2 equals_exact
 =< 2 less_equal
 >= 2 greater_equal
+* 2 multiply
+/ 2 divide
 atom_to_list 1
 length 1

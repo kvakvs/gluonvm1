@@ -95,6 +95,8 @@ bif2_fn VM::resolve_bif2(mfarity_t &mfa)
   if (mfa.mod == atom::ERLANG) {
     if (mfa.fun == atom::Q_MINUS)        { return &bif::bif_minus_2; }
     if (mfa.fun == atom::Q_PLUS)         { return &bif::bif_plus_2; }
+    if (mfa.fun == atom::Q_MULTIPLY)     { return &bif::bif_multiply_2; }
+    if (mfa.fun == atom::Q_DIVIDE)       { return &bif::bif_divide_2; }
     if (mfa.fun == atom::Q_EQUALS)       { return &bif::bif_equals_2; }
     if (mfa.fun == atom::Q_EQUALS_EXACT) { return &bif::bif_equals_exact_2; }
     if (mfa.fun == atom::Q_LESS_EQUAL)   { return &bif::bif_less_equal_2; }

@@ -43,7 +43,7 @@ public:
     return (u8_t)(hdr >> 4);
   }
   word_t get_num_free() const {
-    return hdr >> (4+8);
+    return (hdr >> (4+8)) & 0x7ffff;
   }
 };
 #pragma clang diagnostic pop

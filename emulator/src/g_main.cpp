@@ -10,6 +10,7 @@ using namespace gluon;
 #if G_TEST
 static void run_tests(int argc, const char *argv[]) {
   term_test(argc, argv);
+  process_test(argc, argv);
 }
 #endif
 

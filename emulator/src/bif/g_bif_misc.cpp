@@ -157,44 +157,6 @@ bool is_term_smaller(Term a, Term b)
   G_IF_NODEBUG(return term_order(a) < term_order(b));
 }
 
-Term bif_minus_2(Process *, Term a, Term b)
-{
-  G_ASSERT(a.is_small());
-  G_ASSERT(b.is_small());
-  sword_t a_s = a.small_get_signed();
-  sword_t b_s = b.small_get_signed();
-  return Term::make_small(a_s - b_s);
-}
-
-Term bif_plus_2(Process *, Term a, Term b)
-{
-  G_ASSERT(a.is_small());
-  G_ASSERT(b.is_small());
-  sword_t a_s = a.small_get_signed();
-  sword_t b_s = b.small_get_signed();
-  return Term::make_small(a_s + b_s);
-}
-
-
-Term bif_length_1(Process *, Term a)
-{
-  if (a.is_nil()) {
-    return Term::make_small(0);
-  }
-
-  printf("length: "); a.println();
-  G_ASSERT(a.is_cons());
-  sword_t counter = 0;
-  while (a.is_cons()) {
-    a = a.cons_tail();
-    counter++;
-  }
-  if (!a.is_nil()) {
-    G_FAIL("throw badarg");
-  }
-  return Term::make_small(counter);
-}
-
 bool are_terms_equal(Term a, Term b, bool exact)
 {
   printf("are_terms_eq(exact=%d): ", (int)exact);
@@ -448,6 +410,65 @@ Term bif_atom_to_list_1(Process *proc, Term a)
 
   const Str &atom_str = VM::find_atom(a);
   return Term::make_string(proc->get_heap(), atom_str);
+}
+
+Term bif_minus_2(Process *proc, Term a, Term b)
+{
+  if (!a.is_small() || !b.is_small()) {
+    return proc->bif_error(atom::BADARITH);
+  }
+  sword_t a_s = a.small_get_signed();
+  sword_t b_s = b.small_get_signed();
+  return Term::make_small(a_s - b_s);
+}
+
+Term bif_plus_2(Process *proc, Term a, Term b)
+{
+  if (!a.is_small() || !b.is_small()) {
+    return proc->bif_error(atom::BADARITH);
+  }
+  sword_t a_s = a.small_get_signed();
+  sword_t b_s = b.small_get_signed();
+  return Term::make_small(a_s + b_s);
+}
+
+
+Term bif_length_1(Process *, Term a)
+{
+  if (a.is_nil()) {
+    return Term::make_small(0);
+  }
+
+  printf("length: "); a.println();
+  G_ASSERT(a.is_cons());
+  sword_t counter = 0;
+  while (a.is_cons()) {
+    a = a.cons_tail();
+    counter++;
+  }
+  if (!a.is_nil()) {
+    G_FAIL("throw badarg");
+  }
+  return Term::make_small(counter);
+}
+Term bif_multiply_2(Process *proc, Term a, Term b)
+{
+  if (!a.is_small() || !b.is_small()) {
+    return proc->bif_error(atom::BADARITH);
+  }
+  sword_t a_s = a.small_get_signed();
+  sword_t b_s = b.small_get_signed();
+  return Term::make_small(a_s * b_s);
+}
+
+Term bif_divide_2(Process *proc, Term a, Term b)
+{
+  if (!a.is_small() || !b.is_small()) {
+    return proc->bif_error(atom::BADARITH);
+  }
+  sword_t a_s = a.small_get_signed();
+  sword_t b_s = b.small_get_signed();
+  return Term::make_small(a_s / b_s);
 }
 
 } // ns bif

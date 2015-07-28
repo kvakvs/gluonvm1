@@ -681,8 +681,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       G_ASSERT(arity + num_free < VM_MAX_REGS);
       std::copy(bf->frozen, bf->frozen + num_free, ctx.regs + arity);
 
-      ctx.cp = ctx.ip + 1;
-      ctx.ip = bf->fe->code;
+      ctx.live = arity;
+      ctx.cp   = ctx.ip + 1;
+      ctx.ip   = bf->fe->code;
       G_ASSERT(ctx.ip);
       return;
     } else if (fun.is_export()) {
@@ -800,9 +801,11 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     if (!arg1.is_fun()) {
       return ctx.jump(proc, Term(ctx.ip[0]));
     }
-
+    // check arity
     boxed_fun_t *bf = arg1.boxed_get_ptr<boxed_fun_t>();
-    if (arity.small_get_unsigned() != bf->get_arity()) {
+    printf("is_function2 arity=%zu bf.numfree=%zu bf.arity=%zu\n",
+           arity.small_get_unsigned(), bf->get_num_free(), bf->get_arity());
+    if (arity.small_get_unsigned() + bf->get_num_free() != bf->get_arity()) {
       return ctx.jump(proc, Term(ctx.ip[0]));
     }
 

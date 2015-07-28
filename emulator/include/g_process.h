@@ -135,4 +135,8 @@ protected:
   MaybeError jump_to_mfa(mfarity_t &mfa);
 };
 
+#if G_TEST
+void process_test(int argc, const char *argv[]);
+#endif // TEST
+
 } // ns gluon

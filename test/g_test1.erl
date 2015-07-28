@@ -5,11 +5,12 @@
 test() ->
     %[5,4,3,2,1] = rev([1,2,3,4,5]),
     %0 = recurse(10),
-    %test_eq(),
+    %false = test_eq(),
     %test_list_ops(),
     %test_extcalls(),
     %test_case(),
     %test_hof(),
+    %test_hof_fold(),
     test_mochijson(),
     ok.
 
@@ -20,6 +21,16 @@ test_mochijson() ->
 test_hof() ->
     F = fun(A,B) -> A =< B end,
     [1,2,3,4] = lists:sort(F, [3,2,4,1]).
+
+test_hof_fold() ->
+    % test fold
+    M = 2,
+    G = fun(X, A) -> (X + A) * M end,
+    15 = my_foldl(G, 0, [1,2,3,4,5]). % sum fold
+
+my_foldl(F, Accu, [Hd|Tail]) ->
+    my_foldl(F, F(Hd, Accu), Tail);
+my_foldl(F, Accu, []) when is_function(F, 2) -> Accu.
 
 test_case() ->
     [1,2,3,4] = lists:sort([3,2,4,1]).

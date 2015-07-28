@@ -9,7 +9,7 @@
 //#include <stack>
 
 #define G_DEBUG           1
-#define G_TEST            0
+//#define G_TEST            1 - this is defined in CMakeLists
 #define G_HAVE_EXCEPTIONS 0
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN

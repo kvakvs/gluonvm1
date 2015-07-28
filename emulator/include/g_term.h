@@ -594,10 +594,6 @@ public:
 static_assert(sizeof(Term) == sizeof(word_t),
               "Term size should be same as machine word");
 
-#if G_TEST
-void term_test(int argc, const char *argv[]);
-#endif // TEST
-
 // A pair of atom and int arity, can be used as map key
 typedef Pair<Term, word_t> fun_arity_t;
 class mfarity_t {
@@ -619,5 +615,8 @@ typedef Term (*bif1_fn)(Process *, Term);
 typedef Term (*bif2_fn)(Process *, Term, Term);
 typedef Term (*bif3_fn)(Process *, Term, Term, Term);
 
+#if G_TEST
+void term_test(int argc, const char *argv[]);
+#endif // TEST
 
 } // ns gluon
