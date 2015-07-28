@@ -21,6 +21,10 @@ public:
   typedef Map<fun_arity_t, word_t *>    exports_t;
   typedef Vector<mfarity_t>             imports_t;
   typedef Vector<fun_entry_t>           lambdas_t;
+#if FEATURE_LINE_NUMBERS
+  typedef Vector<word_t>  line_refs_t;  // 24bit line + 8bit file index
+  typedef Vector<Term>    file_names_t; // atoms with file names
+#endif
 
 private:
   Term      m_name;
@@ -28,6 +32,10 @@ private:
   exports_t m_exports; // just list of {f/arity}
   imports_t m_imports;
   lambdas_t m_lambdas;
+#if FEATURE_LINE_NUMBERS
+  line_refs_t   m_line_refs;
+  file_names_t  m_file_names;
+#endif
 
 public:
   // Instruction layout in code: { void *label; Term args[arity] }
@@ -73,6 +81,14 @@ public:
   void set_lambdas(lambdas_t &la) {
     m_lambdas = std::move(la);
   }
+
+#if FEATURE_LINE_NUMBERS
+  void set_line_numbers(line_refs_t &lr, file_names_t &fn) {
+    m_line_refs = std::move(lr);
+    m_file_names = std::move(fn);
+  }
+#endif
+
   mfarity_t *get_import_entry(word_t i) {
     G_ASSERT(i < m_imports.size());
     return &(m_imports[i]);

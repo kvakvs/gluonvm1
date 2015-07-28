@@ -4,14 +4,10 @@
 #include "g_defs.h"
 #include "g_sys_stdlib.h"
 
-#if G_HAVE_EXCEPTIONS
-#define G_DEBUG_THROW_E if(e) { throw e; }
-#else
 #define G_DEBUG_THROW_E if(e) { \
   gluon::stdlib::fmt("debug throw: %s\n", e); \
   gluon::stdlib::abort(); \
   }
-#endif // G_HAVE_EXCEPTIONS
 
 namespace gluon {
 

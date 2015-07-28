@@ -231,8 +231,10 @@ namespace term_tag {
 
 namespace temporary {
 
+#if FEATURE_FLOAT
   const word_t DOUBLE_DATA_WORDS = sizeof(float_t)/sizeof(word_t);
   const word_t FLOAT_SIZE_OBJECT = DOUBLE_DATA_WORDS+1;
+#endif
 
   const word_t PORT_DATA_SIZE   = 28;
   const word_t PORT_NUM_SIZE    = PORT_DATA_SIZE;

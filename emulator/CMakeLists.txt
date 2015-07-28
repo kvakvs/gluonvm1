@@ -13,12 +13,18 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/src/
     )
-# debug, no optimization
-add_definitions(-DG_TEST=0 -O0 -g -ggdb -fno-exceptions -fno-rtti)
-#add_definitions(-DG_TEST=1 -O0 -g -ggdb)
-#add_definitions(-DG_TEST=0 -Os -fno-exceptions -fno-rtti)
+
+# Enables lot of printf debugging features as well as assertions everywhere in
+# the code. Makes things run slow.
+add_definitions(-DG_DEBUG=1)
+
+add_definitions(-DG_TEST=0 -fno-exceptions -fno-rtti) # normal compilation no test
+#add_definitions(-DG_TEST=1) # to run tests
+
+add_definitions(-O0 -g -ggdb)
+#add_definitions(-Os)
 # optimize for size AND generate asm, build will fail though
-#add_definitions(-DG_TEST=0 -S -Os -g -fno-exceptions -fno-rtti)
+#add_definitions(-S -Os -g)
 add_definitions(#-m32
     -Weverything #-Werror
     -Wno-c++98-compat-pedantic -Wno-missing-noreturn
@@ -33,6 +39,7 @@ set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS}
     -std=c99
     )
 set(SRC_LIST
+    include/g_FEATURE.h   # edit this to configure stuff
     include/g_defs.h
     include/g_error.h
     include/g_reader.h

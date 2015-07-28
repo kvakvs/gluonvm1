@@ -23,16 +23,15 @@ private:
   static atom_str_map_t g_atoms_reverse;
   static word_t         g_atom_counter;
 
-  static Node *g_this_node;
+  static Node           *g_this_node;
   // used as "" constant when atom is not found
-  static Str g_empty_str;
+  static Str            g_empty_str;
   static Scheduler      *g_scheduler;
 
 public:
   static const word_t SLICE_REDUCTIONS = 1000; // adjust this for slow devices
 
   static void init();
-  //static MaybeError load_module(const Str &filename);
 
   //
   // Atom table
@@ -47,7 +46,6 @@ public:
   //
   // Distribution
   //
-
   static Node *dist_this_node();
 
   //

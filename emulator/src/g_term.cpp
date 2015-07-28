@@ -67,11 +67,12 @@ Str Term::atom_str() const
 void Term::print()
 {
   if (m_val == 0) {
-    printf("ZERO");
+    printf("NOT_A_TERM");
     return;
   }
   if (is_cons()) {
     if (is_cons_printable()) {
+      // list is printable - print quotes and every character except tail
       printf("\"");
       word_t c = (u8_t)cons_head().small_get_unsigned();
       if (does_char_require_quoting(c)) {
@@ -89,6 +90,7 @@ void Term::print()
       }
       printf("\"");
     } else {
+      // not printable - dump terms and tail
       printf("[");
       cons_head().print();
       Term item = cons_tail();

@@ -34,6 +34,9 @@ schedule:
 
 next_instr:
   jmp_to = (void *)(*ctx.ip);
+#if FEATURE_LINE_NUMBERS
+  printf("L%zu ", ctx.line_number);
+#endif
   printf("[0x%zx]: ", (word_t)ctx.ip);
   ctx.ip++;
   goto *jmp_to;

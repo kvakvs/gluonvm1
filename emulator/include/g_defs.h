@@ -8,9 +8,8 @@
 #include <queue>
 //#include <stack>
 
-#define G_DEBUG           1
-//#define G_TEST            1 - this is defined in CMakeLists
-#define G_HAVE_EXCEPTIONS 0
+// set features for use in code in this file
+#include "g_FEATURE.h"
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #   define G_BIGENDIAN      0
@@ -27,15 +26,6 @@
 #else
 #   error "Define platform bit width detection code"
 #endif
-
-// If you enable this, bignums have to be implemented throughout loader and vm
-#define FEATURE_BIGNUM    0
-// If you enable this, floats have to be implemented throughout loader and vm
-#define FEATURE_FLOAT     0
-
-#define FEATURE_MAPS      0
-#define FEATURE_BINARIES  0
-#define FEATURE_ERL_DIST  0 /*Distribution features*/
 
 namespace gluon {
 
@@ -92,15 +82,17 @@ namespace gluon {
   using u8_t = unsigned char;
   using i8_t = signed char;
   using u16_t = unsigned char;
-  using i16_t = signed char;
+  using s16_t = signed char;
   using u32_t = unsigned int;
-  using i32_t = signed int;
+  using s32_t = signed int;
   using u64_t = unsigned long long;
-  using i64_t = signed long long;
+  using s64_t = signed long long;
 
+#if FEATURE_FLOAT
   using float_t = float;
   using f32_t = float;
   using f64_t = double;
+#endif
 
   // Used to shun debug printfs in release
   inline void dummy_printf(const char *, ...) {}
@@ -131,6 +123,25 @@ namespace gluon {
 
   static const word_t VM_MAX_REGS = 64; // (max arity of fun + captured terms)
   static const word_t VM_MAX_FP_REGS = 2;
+
+#if FEATURE_LINE_NUMBERS
+  namespace line {
+    constexpr bool is_valid_loc(word_t File, word_t Line) {
+        return (File < 255 && Line < ((1 << 24) - 1));
+    }
+    constexpr word_t make_location(word_t File, word_t Line) {
+      return (File << 24) | Line;
+    }
+    constexpr word_t get_loc_file(word_t Loc) {
+      return Loc >> 24;
+    }
+    constexpr word_t get_loc_line(word_t Loc) {
+      return Loc & ((1 << 24)-1);
+    }
+
+    const static word_t INVALID_LOC = make_location(0, 0);
+  } // ns line
+#endif
 
 } // ns gluon
 

@@ -5,6 +5,7 @@
 #include "g_ext_term.h"
 #include "g_heap.h"
 #include "g_module.h"
+#include "g_predef_atoms.h"
 
 // Generated opcode arity table
 #include "g_genop.h"
@@ -13,6 +14,13 @@
 #include "miniz/miniz.c"
 
 namespace gluon {
+
+#if FEATURE_LINE_NUMBERS
+typedef struct {
+  word_t pos;
+  word_t *code_pos;
+} line_instr_t;
+#endif
 
 class LoaderState {
 public:
@@ -35,6 +43,21 @@ public:
   // loading finished
   Vector<Term>    m_resolve_select_lists;
 
+#if FEATURE_LINE_NUMBERS
+  word_t        m_line_ref_count;
+  word_t        m_line_filename_count;
+  Module::line_refs_t   m_line_refs;
+  Module::file_names_t  m_file_names;
+
+  Vector<line_instr_t>  m_line_instr;
+  // Mapping fun# to code start for it
+  Vector<word_t *>      m_func_line;
+  //word_t                m_current_li = 0;
+  word_t      m_function_number = 0;
+  Term        m_current_function = atom::UNDEFINED;
+  word_t      m_current_fn_arity = 0;
+#endif
+
   LoaderState(): m_code(nullptr), m_code_size(0) {
   }
 
@@ -46,7 +69,7 @@ public:
   MaybeError load_code(tool::Reader &r);
   MaybeError load_literal_table(Heap *heap, tool::Reader &r);
   MaybeError load_labels(Heap *heap, tool::Reader &r);
-  MaybeError load_line_table(tool::Reader &r);
+  MaybeError load_line_table(Heap *heap, tool::Reader &r);
 
   inline const Str &atom_tab_index_to_str(word_t i) const {
     G_ASSERT(i <= m_atoms.size());
@@ -97,6 +120,10 @@ protected:
   void replace_imp_index_with_ptr(word_t *p, Module *m);
   void replace_lambda_index_with_ptr(word_t *p, Module *m);
   word_t parse_int(tool::Reader &r);
+#if FEATURE_LINE_NUMBERS
+  void beam_op_line(Vector<word_t> &code, Term arg);
+  void beam_op_func_info(Vector<word_t> &code, Term, Term, Term);
+#endif
 };
 
 Result<Module *> CodeServer::load_module_internal(Term expected_name,
@@ -146,7 +173,7 @@ Result<Module *> CodeServer::load_module_internal(Term expected_name,
     // CInf block
     // Attr block
     // Abst block
-    else if (chunk == "Line") { result = lstate.load_line_table(r); }
+    else if (chunk == "Line") { result = lstate.load_line_table(heap, r); }
     else {
       auto chunk_sz = r.read_big_u32();
       r.advance_align<4>(chunk_sz);
@@ -309,6 +336,10 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
   m_code_label_count = r.read_big_u32();
   m_code_fun_count   = r.read_big_u32();
 
+#if FEATURE_LINE_NUMBERS
+  m_func_line.reserve(m_code_fun_count);
+#endif
+
   // Just read code here, parse later
   m_code = r.get_ptr();
   m_code_size = chunk_size;
@@ -367,17 +398,66 @@ MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
   return success();
 }
 
-MaybeError LoaderState::load_line_table(tool::Reader &r0)
+MaybeError LoaderState::load_line_table(Heap *heap, tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
+  tool::Reader r = r0.clone(chunk_size);
 
+#if FEATURE_LINE_NUMBERS
   // u32 table_version=0
-  // u32 flags ignore
-  // u32 count in code chunk
-  // u32 count of line records
-  // u32 count of filenames
+  if (r.read_big_u32() != 0) {
+  // Wrong version. Silently ignore the line number chunk.
+    return "bad line info ver";
+  }
+
+  r.advance(4); // flags, ignore
+  word_t line_instr_count = r.read_big_u32();
+  m_line_instr.reserve(line_instr_count);
+
+  m_line_ref_count      = r.read_big_u32();
+  m_line_filename_count = r.read_big_u32();
+
   // line_record[] (1-base index)
-  // filename[] = u16 length + characters
+  // invalid location goes as index 0
+  m_line_refs.push_back(line::INVALID_LOC);
+
+  word_t fname_index = 0;
+  // First elements of ref table contain only offsets assuming they are for
+  // file #0
+  for (word_t i = 0; i < m_line_ref_count; ++i) {
+    auto pt_result = parse_term(heap, r);
+    G_RETURN_IF_ERROR_UNLIKELY(pt_result);
+
+    Term val = pt_result.get_result();
+    if (val.is_small()) {
+      // We've got an offset for current filename
+      word_t offs = val.small_get_unsigned();
+      if (G_LIKELY(line::is_valid_loc(fname_index, offs))) {
+        m_line_refs.push_back(line::make_location(fname_index, offs));
+        printf("line info: offs=%zu f=%zu\n", offs, fname_index);
+      } else {
+        m_line_refs.push_back(line::INVALID_LOC);
+        printf("line info: invalid loc\n");
+      }
+    } else if (val.is_atom()) {
+      // reference to another file
+      word_t a_id = val.atom_val();
+      if (a_id > m_line_filename_count) {
+        return "line info: bad file index";
+      }
+      fname_index = a_id;
+    }
+  }
+
+  // filenames[] = u16 length + characters
+  for (word_t i = 0; i < m_line_filename_count; ++i) {
+    word_t  name_sz = r.read_big_u16();
+    Str     name    = r.read_string(name_sz);
+    printf("line info: file %s\n", name.c_str());
+    m_file_names.push_back(VM::to_atom(name));
+  }
+
+#endif
 
   r0.advance_align<4>(chunk_size);
   return success();
@@ -425,7 +505,11 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     if (opcode == genop::OPCODE_LINE) {
       auto a = parse_term(heap, r);
       G_RETURN_IF_ERROR_UNLIKELY(a);
+#if FEATURE_LINE_NUMBERS
+      beam_op_line(code, a.get_result());
+#else
 //      a.get_result().println();
+#endif
       continue;
     }
 
@@ -451,7 +535,12 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       G_RETURN_IF_ERROR(b);
       auto c = parse_term(heap, r);
       G_RETURN_IF_ERROR(c);
+#if FEATURE_LINE_NUMBERS
+      beam_op_func_info(code,
+                        a.get_result(), b.get_result(), c.get_result());
+#else
 //      puts("");
+#endif
       continue;
     }
 
@@ -550,6 +639,9 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     }
   }
 
+#if FEATURE_LINE_NUMBERS
+  m->set_line_numbers(m_line_refs, m_file_names);
+#endif
   return success();
 }
 
@@ -558,6 +650,35 @@ void LoaderState::replace_imp_index_with_ptr(word_t *p, Module *m) {
   Term j = Term::make_boxed(m->get_import_entry(i.small_get_unsigned()));
   *p = j.as_word();
 }
+
+#if FEATURE_LINE_NUMBERS
+void LoaderState::beam_op_line(Vector<word_t> &code, Term arg)
+{
+  word_t index = arg.small_get_unsigned();
+  G_ASSERT(index < m_line_refs.size());
+
+  line_instr_t li;
+  li.code_pos = code.data();
+  li.pos = m_line_refs[index];
+  m_line_instr.push_back(li);
+}
+#endif
+
+#if FEATURE_LINE_NUMBERS
+void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
+{
+  // TODO: nif loading goes here
+  //m_function_number++;
+  //G_ASSERT(m_code_fun_count >= m_function_number);
+
+  m_current_function = f;
+  m_current_fn_arity = a.small_get_unsigned();
+
+  // save fun start address
+  //m_func_line[m_function_number] = code.data() + code.size();
+  m_func_line.push_back(code.data() + code.size());
+}
+#endif
 
 void LoaderState::replace_lambda_index_with_ptr(word_t *p, Module *m) {
   Term i(*p);

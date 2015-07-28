@@ -21,6 +21,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   // where code begins (for jumps)
   //word_t *base;
   ProcessStack *stack;
+#if FEATURE_LINE_NUMBERS
+  word_t line_number = 0;
+#endif
 
   void load(Process *proc) {
     runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
@@ -265,10 +268,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @spec call_ext Arity Destination
     // @doc Call the function of arity Arity pointed to by Destination.
     //      Save the next instruction as the return address in the CP register.
-    // TODO: reduction count
-    // TODO: yield and schedule
     // Term arity(ip[0]); // assert arity = destination.arity
-    // TODO: set live on reductions swap out ctx.live = (word_t)arity.small_get_value();
     Term boxed_mfa(ctx.ip[1]);
     ctx.cp = ctx.ip + 2;
 
@@ -929,8 +929,13 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_gc_bif3(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 152
 //  }
-//  inline void opcode_line(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 153
-//  }
+  inline void opcode_line(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 153
+#if FEATURE_LINE_NUMBERS
+    Term arg(ctx.ip[0]);
+    ctx.line_number = arg.small_get_unsigned();
+    ctx.ip++;
+#endif
+  }
 //  inline void opcode_put_map_assoc(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 154
 //  }
 //  inline void opcode_put_map_exact(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 155
