@@ -49,8 +49,9 @@ public:
   void path_append(const Str &p);
   void path_prepend(const Str &p);
 
-  // Find module, function and arity for code location and print it
-  void print_mfa(word_t *ptr) const;
+  // Find module, function and arity for code location and print it.
+  // Returns true if mfa was found and printed, else false
+  bool print_mfa(word_t *ptr) const;
   mfarity_t find_mfa(word_t *ptr) const;
 
 protected:

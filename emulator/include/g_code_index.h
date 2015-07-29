@@ -19,10 +19,9 @@ public:
   Range(word_t *s, word_t *e): start(s), end(e) {
   }
 
-  inline bool operator ==(const Range &p) const {
+  inline bool contains(word_t *p) const {
     // we only compare single pointer and store it in start, 'end' should be null
-    G_ASSERT(p.end == nullptr);
-    return p.start >= start && p.start < end;
+    return p >= start && p < end;
   }
   inline bool operator <(const Range &other) const {
     // Assume ranges don't overlap so we can only compare starts
@@ -32,6 +31,7 @@ public:
 
 template <typename T>
 class Index {
+public:
   Map<Range, T> m_ranges;
 
 public:
@@ -43,16 +43,22 @@ public:
   }
 
   // Find code location in tree of ranges
-  Module *find(word_t *x) const
+  T find(word_t *x) const
   {
-    auto iter = m_ranges.find(Range(x, nullptr));
-    if (iter == m_ranges.end()) {
-      return nullptr;
+    // I cannot into range search, something with lower_bound/upper_bound which
+    // compares ranges using operator < and that is too hard
+    // TODO: fix this
+    for (auto &i: m_ranges) {
+      if (i.first.contains(x)) { return i.second; }
     }
-    return iter->second;
+    return T();
   }
 };
 #endif
+
+#if G_TEST
+void range_test(int argc, const char *argv[]);
+#endif // TEST
 
 } // ns code
 } // ns gluon

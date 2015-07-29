@@ -34,10 +34,18 @@ schedule:
 
 next_instr:
   jmp_to = (void *)(*ctx.ip);
-#if FEATURE_LINE_NUMBERS
-  printf("L%zu ", ctx.line_number);
-#endif
+
+#if FEATURE_CODE_RANGES
+  printf("[");
+  if (VM::get_cs()->print_mfa(ctx.ip)) {
+    printf("]: ");
+  } else {
+    printf("0x%zx]: ", (word_t)ctx.ip);
+  }
+#else
   printf("[0x%zx]: ", (word_t)ctx.ip);
+#endif
+
   ctx.ip++;
   goto *jmp_to;
 """)

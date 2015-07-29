@@ -693,14 +693,14 @@ void LoaderState::beam_op_line(Vector<word_t> &code, Term arg)
 void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
 {
 #if FEATURE_CODE_RANGES
-  word_t *last_ptr = code.data() + code.size();
+  word_t *last_ptr = (&code.back()) + 1;
 
   // Finish previous function if it already started
   if (m_current_fun.first.is_value()) {
     code::Range range(CR.fun_begin, last_ptr);
-    printf("fun map: 0x%zx..0x%zx %s/%zu\n", (word_t)CR.fun_begin,
-           (word_t)last_ptr, m_current_fun.first.atom_c_str(),
-           m_current_fun.second);
+//    printf("fun map: 0x%zx..0x%zx %s/%zu\n", (word_t)CR.fun_begin,
+//           (word_t)last_ptr, m_current_fun.first.atom_c_str(),
+//           m_current_fun.second);
     CR.fun_map.add(range, m_current_fun);
   }
   if (f.is_non_value()) {
@@ -1149,10 +1149,9 @@ MaybeError LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
 
     // New value will be small int
     Term resolved_label = Term::make_boxed(m_labels[label_index]);
-    G_LOG("loader: resolving label %zu at 0x%zx to 0x%zx\n",
-           label_index,
-           code_index,
-           (word_t)resolved_label.boxed_get_ptr<word_t>());
+//    G_LOG("loader: resolving label %zu at 0x%zx to 0x%zx\n",
+//           label_index, code_index,
+//           (word_t)resolved_label.boxed_get_ptr<word_t>());
     code[code_index] = resolved_label.as_word();
   }
   return success();

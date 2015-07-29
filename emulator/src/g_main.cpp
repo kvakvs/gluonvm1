@@ -1,6 +1,7 @@
 #include "g_vm.h"
 #include "g_process.h"
 #include "g_code_server.h"
+#include "g_code_index.h"
 #include "g_error.h"
 
 #include <stdio.h>
@@ -11,6 +12,7 @@ using namespace gluon;
 static void run_tests(int argc, const char *argv[]) {
   term_test(argc, argv);
   process_test(argc, argv);
+  code::range_test(argc, argv);
 }
 #endif
 

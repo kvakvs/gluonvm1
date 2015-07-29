@@ -23,9 +23,14 @@ Result<word_t *> Module::resolve_label(label_index_t label)
   return success(m_labels[label.value]);
 }
 
+fun_arity_t Module::find_fun_arity(word_t *ptr) const
+{
+  return m_fun_index.find(ptr);
+}
+
 #if FEATURE_CODE_RANGES
 code::Range Module::get_code_range() {
-  return code::Range(m_code.data(), m_code.data() + m_code.size());
+  return code::Range(m_code.data(), (&m_code.back())+1);
 }
 #endif
 

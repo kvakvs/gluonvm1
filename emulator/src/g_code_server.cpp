@@ -26,7 +26,8 @@ MaybeError Server::load_module(Term name_atom, const u8_t *bytes, word_t size)
   // assume that mod already registered own functions in own fun index
   // code to fun/arity mapping should be updated on loading stage
 #if FEATURE_CODE_RANGES
-  m_mod_index.add(m->get_code_range(), m);
+  auto range = m->get_code_range();
+  m_mod_index.add(range, m);
 #endif
 
   return success();
@@ -80,6 +81,25 @@ void Server::path_append(const Str &p)
 void Server::path_prepend(const Str &p)
 {
   m_search_path.push_front(p);
+}
+
+bool Server::print_mfa(word_t *ptr) const {
+  auto mfa = find_mfa(ptr);
+  if (mfa.mod.is_non_value()) {
+    return false;
+  }
+  printf("%s:%s/%zu", mfa.mod.atom_c_str(), mfa.fun.atom_c_str(), mfa.arity);
+  return true;
+}
+
+mfarity_t Server::find_mfa(word_t *ptr) const
+{
+  Module *m = m_mod_index.find(ptr);
+  if (!m) {
+    return mfarity_t();
+  }
+  auto fa = m->find_fun_arity(ptr);
+  return mfarity_t(m->get_name(), fa.first, fa.second);
 }
 
 } // ns code

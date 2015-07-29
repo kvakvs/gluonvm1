@@ -93,6 +93,7 @@ public:
   void set_fun_ranges(code::Index<fun_arity_t> &ci) {
     m_fun_index = std::move(ci);
   }
+  fun_arity_t find_fun_arity(word_t *ptr) const;
 #endif
 
 #if FEATURE_LINE_NUMBERS
