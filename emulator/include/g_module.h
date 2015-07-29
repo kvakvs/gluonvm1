@@ -5,6 +5,7 @@
 #include "g_error.h"
 #include "g_reader.h"
 #include "g_fun.h"
+#include "g_code_index.h"
 
 namespace gluon {
 
@@ -21,6 +22,7 @@ public:
   typedef Map<fun_arity_t, word_t *>    exports_t;
   typedef Vector<mfarity_t>             imports_t;
   typedef Vector<fun_entry_t>           lambdas_t;
+
 #if FEATURE_LINE_NUMBERS
   typedef Vector<word_t>  line_refs_t;  // 24bit line + 8bit file index
   typedef Vector<Term>    file_names_t; // atoms with file names
@@ -32,6 +34,11 @@ private:
   exports_t m_exports; // just list of {f/arity}
   imports_t m_imports;
   lambdas_t m_lambdas;
+
+#if FEATURE_CODE_RANGES
+  // Map code range to fun/arity pair
+  code::Index<fun_arity_t> m_fun_index;
+#endif
 #if FEATURE_LINE_NUMBERS
   line_refs_t   m_line_refs;
   file_names_t  m_file_names;
@@ -81,6 +88,12 @@ public:
   void set_lambdas(lambdas_t &la) {
     m_lambdas = std::move(la);
   }
+#if FEATURE_CODE_RANGES
+  code::Range get_code_range();
+  void set_fun_ranges(code::Index<fun_arity_t> &ci) {
+    m_fun_index = std::move(ci);
+  }
+#endif
 
 #if FEATURE_LINE_NUMBERS
   void set_line_numbers(line_refs_t &lr, file_names_t &fn) {

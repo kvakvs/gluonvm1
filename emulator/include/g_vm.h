@@ -13,6 +13,9 @@ using atom_str_map_t = Map<Term, Str>;
 
 class Heap;
 class Process;
+namespace code {
+  class Server;
+} // ns code
 
 // Note: singleton, do not instantiate even
 class VM {
@@ -27,11 +30,13 @@ private:
   // used as "" constant when atom is not found
   static Str            g_empty_str;
   static Scheduler      *g_scheduler;
+  static code::Server   *g_cs;
 
 public:
   static const word_t SLICE_REDUCTIONS = 1000; // adjust this for slow devices
 
   static void init();
+  static code::Server *get_cs() { return g_cs; }
 
   //
   // Atom table

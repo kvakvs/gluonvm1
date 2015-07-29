@@ -1,5 +1,5 @@
 #include "g_vm.h"
-#include "g_codeserver.h"
+#include "g_code_server.h"
 #include "g_sys_fs.h"
 #include "g_sys_mem.h"
 #include "g_dist.h"
@@ -10,19 +10,22 @@
 
 namespace gluon {
 
-str_atom_map_t VM::g_atoms;
-atom_str_map_t VM::g_atoms_reverse;
-word_t VM::g_atom_counter; // initialized in init_predef_atoms
-Node *VM::g_this_node = nullptr;
-const void **VM::g_opcode_labels;
-Str VM::g_empty_str;
-Scheduler *VM::g_scheduler = nullptr;
+str_atom_map_t  VM::g_atoms;
+atom_str_map_t  VM::g_atoms_reverse;
+word_t          VM::g_atom_counter; // initialized in init_predef_atoms
+Node           *VM::g_this_node = nullptr;
+const void    **VM::g_opcode_labels;
+Str             VM::g_empty_str;
+Scheduler      *VM::g_scheduler = nullptr;
+code::Server   *VM::g_cs = nullptr;
 
 void VM::init()
 {
   g_this_node = new Node;
+  g_cs = new code::Server;
+
   vm_loop(true); // initialize labels
-  CodeServer::init();
+
   init_predef_atoms();
 }
 
@@ -37,14 +40,14 @@ Term VM::to_existing_atom(const Str &s) {
   if (iter != g_atoms.end()) {
     return iter->second;
   }
-  return Term::make_nil();
+  return NIL;
 }
 
 Term VM::new_atom(const Str &s) {
 //  auto iter = g_atoms.find(s);
 //  if (iter != g_atoms.end()) {
 //    G_FAIL("atom exists")
-//    G_IF_NODEBUG(return Term::make_nil());
+//    G_IF_NODEBUG(return NIL);
 //  }
   Term new_a = Term::make_atom(g_atom_counter);
   g_atoms[s]             = new_a;

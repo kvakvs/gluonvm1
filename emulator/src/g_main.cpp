@@ -1,6 +1,6 @@
 #include "g_vm.h"
 #include "g_process.h"
-#include "g_codeserver.h"
+#include "g_code_server.h"
 #include "g_error.h"
 
 #include <stdio.h>
@@ -26,10 +26,10 @@ int main(int argc, const char *argv[]) {
 
   // normal start
   //vm::load_module("../test/g_test1.S.gleam");
-  CodeServer::path_append("../test");
+  VM::get_cs()->path_append("../test");
 
   // create root process and set it to some entry function
-  Process *proc = new Process(Term::make_non_value());
+  Process *proc = new Process(NONVALUE);
 
   mfarity_t mfa(VM::to_atom("g_test1"), VM::to_atom("test"), 0);
 

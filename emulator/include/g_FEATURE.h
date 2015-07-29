@@ -24,5 +24,14 @@
 #define FEATURE_ERL_DIST      0
 
 // Loads line section from BEAM, enables 'line' opcodes in VM loop, resolves
-// line numbers for code locations.
-#define FEATURE_LINE_NUMBERS  1
+// line numbers for code locations. REQUIRES: FEATURE_CODE_RANGES=1 too
+#define FEATURE_LINE_NUMBERS  0
+
+// Can be used separately without FEATURE_LINE_NUMBERS. Stores ranges of code
+// addresses to quickly identify module and function (and line number if feature
+// is enabled) by code location.
+#define FEATURE_CODE_RANGES   1
+
+#if FEATURE_LINE_NUMBERS && !FEATURE_CODE_RANGES
+#   error "LINE_NUMBERS feature requires also CODE_RANGES"
+#endif

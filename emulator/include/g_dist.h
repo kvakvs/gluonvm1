@@ -7,7 +7,7 @@ namespace gluon {
 // Erl dist node implementation
 class Node {
 public:
-  Term m_sysname = Term::make_nil();
+  Term m_sysname = NIL;
   dist::creation_t m_creation = dist::INTERNAL_CREATION;
 };
 

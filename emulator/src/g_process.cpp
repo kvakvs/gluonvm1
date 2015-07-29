@@ -1,5 +1,5 @@
 #include "g_process.h"
-#include "g_codeserver.h"
+#include "g_code_server.h"
 #include "g_code.h"
 #include "g_module.h"
 #include "g_vm.h"
@@ -20,7 +20,8 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
 {
   G_ASSERT(this);
 
-  auto mod_result = CodeServer::find_module(mfa.mod, CodeServer::LOAD_IF_NOT_FOUND);
+  auto mod_result = VM::get_cs()->find_module(mfa.mod,
+                                              code::Server::LOAD_IF_NOT_FOUND);
   G_RETURN_IF_ERROR(mod_result);
   Module *mod = mod_result.get_result();
 
@@ -68,7 +69,7 @@ Result<Term> Process::spawn(mfarity_t &mfa, Term *args) {
 Term Process::bif_error(Term reason)
 {
   m_bif_error_reason = reason;
-  return Term::make_non_value();
+  return NONVALUE;
 }
 
 //void ProcessStack::println()
@@ -102,7 +103,7 @@ struct process_test_t: public fructose::test_base<process_test_t>
     s.push(Term::make_small_u(1)); // y[3]
     s.push_n_nils(3);              // y[0 1 2]
     s.push(Term::make_small_u(2)); // y[-1]
-    s.set_y(1, Term::make_non_value());
+    s.set_y(1, NONVALUE);
     fructose_assert(s.get_y(0).is_nil());
     fructose_assert(s.get_y(1).is_non_value());
     fructose_assert(s.get_y(2).is_nil());

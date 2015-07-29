@@ -24,7 +24,7 @@ Term Term::allocate_cons(Heap *heap, Term head, Term tail) {
 Term Term::make_string(Heap *heap, const Str &s)
 {
   if (s.empty()) {
-    return Term::make_nil();
+    return NIL;
   }
 
   word_t len = s.length();
@@ -33,7 +33,7 @@ Term Term::make_string(Heap *heap, const Str &s)
   Term str_term = Term::make_cons(h);
   for (word_t i = 0; i < len; i++) {
     h[0] = Term::make_small_u((word_t)s[i]);
-    h[1] = (i == len - 1) ? Term::make_nil() : Term::make_cons(h + 2);
+    h[1] = (i == len - 1) ? NIL : Term::make_cons(h + 2);
     h += 2;
   }
 
@@ -132,7 +132,7 @@ void Term::print()
 
   }
   else if (is_nil()) {
-    printf("NIL");
+    printf("[]");
   }
   else if (is_non_value()) {
     printf("NON_VALUE");
@@ -201,11 +201,11 @@ struct term_test_t: public fructose::test_base<term_test_t>
     fructose_assert(t_tuple.is_tuple());
   }
   void test_term_cmp(const std::string &tn) {
-    Term l1 = Term::allocate_cons(nullptr, Term::make_small(3), Term::make_nil());
+    Term l1 = Term::allocate_cons(nullptr, Term::make_small(3), NIL);
     Term l2 = Term::allocate_cons(nullptr, Term::make_small(2), l1);
     Term l3 = Term::allocate_cons(nullptr, Term::make_small(1), l2);
 
-    Term m1 = Term::allocate_cons(nullptr, Term::make_small(1), Term::make_nil());
+    Term m1 = Term::allocate_cons(nullptr, Term::make_small(1), NIL);
     Term m2 = Term::allocate_cons(nullptr, Term::make_small(2), m1);
     Term m3 = Term::allocate_cons(nullptr, Term::make_small(3), m2);
 

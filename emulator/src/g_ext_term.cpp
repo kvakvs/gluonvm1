@@ -123,10 +123,10 @@ Term read_map(Heap *heap, tool::Reader &r) {
 Term read_string_ext(Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u16();
   if (length == 0) {
-    return Term::make_nil();
+    return NIL;
   }
 
-  Term result = Term::make_nil();
+  Term result = NIL;
   Term *ref = &result;
 
   for (word_t i = 0; i < length; ++i) {
@@ -136,7 +136,7 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
     ref = &cons[1];
   }
 
-  *ref = Term::make_nil();
+  *ref = NIL;
 //  // TODO: this should allocate on long heap like in other vm loaders
 //  Term *elements = Heap::alloc<Term>(heap, length * 2);
 //  Term *write_p = elements;
@@ -154,7 +154,7 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
 Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u32();
 
-  Term result = Term::make_nil();
+  Term result = NIL;
   Term *ref = &result;
 
   for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
@@ -269,7 +269,7 @@ Result<Term> read_ext_term(Heap *heap, tool::Reader &r) {
     return error<Term>("FEATURE_MAPS");
 #endif
 
-  case NIL_EXT:     return success(Term::make_nil());
+  case NIL_EXT:     return success(NIL);
   case STRING_EXT:  return success(read_string_ext(heap, r));
   case LIST_EXT:    return read_list_ext(heap, r);
 

@@ -4,7 +4,7 @@
 
 #include "g_process.h"
 #include "g_module.h"
-#include "g_codeserver.h"
+#include "g_code_server.h"
 #include "bif/g_bif_misc.h"
 #include "g_genop.h"
 #include "g_predef_atoms.h"
@@ -109,7 +109,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       if (proc->m_bif_error_reason != atom::UNDEF) {
         // a real error happened
         Term reason = proc->m_bif_error_reason;
-        proc->m_bif_error_reason = Term::make_non_value();
+        proc->m_bif_error_reason = NONVALUE;
         return raise(proc, atom::ERROR, reason);
       }
       // if it was undef - do nothing, it wasn't a bif - we just jump there
@@ -122,8 +122,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       return;
     }
 
-    auto find_result = CodeServer::find_module(mfa->mod,
-                                               CodeServer::LOAD_IF_NOT_FOUND);
+    auto find_result = VM::get_cs()->find_module(mfa->mod,
+                                                 code::Server::LOAD_IF_NOT_FOUND);
     if (find_result.is_error()) {
       return raise(proc, atom::ERROR, atom::UNDEF);
     }
@@ -157,7 +157,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     swap_out_light(proc);
     regs[0] = type;
     regs[1] = reason;
-    proc->m_stack_trace = Term::make_non_value();
+    proc->m_stack_trace = NONVALUE;
     return exception(proc);
   }
 
@@ -220,7 +220,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     if (reason.is_non_value()) {
       return false; // good no error
     }
-    p->m_bif_error_reason = Term::make_non_value();
+    p->m_bif_error_reason = NONVALUE;
     raise(p, atom::ERROR, reason);
     return true;
   }

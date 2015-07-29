@@ -1,4 +1,4 @@
-#include "g_codeserver.h"
+#include "g_code_server.h"
 #include "g_vm.h"
 #include "g_sys_mem.h"
 #include "g_reader.h"
@@ -44,21 +44,34 @@ public:
   Vector<Term>    m_resolve_select_lists;
 
 #if FEATURE_LINE_NUMBERS
-  word_t        m_line_ref_count;
-  word_t        m_line_filename_count;
-  Module::line_refs_t   m_line_refs;
-  Module::file_names_t  m_file_names;
+  // Grouped in struct by feature
+  struct {
+    word_t        num_line_refs;
+    word_t        num_filenames;
+    Module::line_refs_t   line_refs;
+    Module::file_names_t  filenames;
 
-  Vector<line_instr_t>  m_line_instr;
-  // Mapping fun# to code start for it
-  Vector<word_t *>      m_func_line;
-  //word_t                m_current_li = 0;
-  word_t      m_function_number = 0;
-  Term        m_current_function = atom::UNDEFINED;
-  word_t      m_current_fn_arity = 0;
+    Vector<line_instr_t>  line_instr;
+    // Mapping fun# to code start for it
+    Vector<word_t *>      fun_code_map;
+    //word_t                m_current_li = 0;
+    word_t      fun_id = 0;
+  } LN;
+#endif
+#if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
+  fun_arity_t m_current_fun;
+#endif
+#if FEATURE_CODE_RANGES
+  // Grouped in struct by feature
+  struct {
+    word_t      *fun_begin;
+    // Maps f/arity to code ranges
+    code::Index<fun_arity_t> fun_map;
+  } CR;
 #endif
 
   LoaderState(): m_code(nullptr), m_code_size(0) {
+    m_current_fun.first = NONVALUE;
   }
 
   MaybeError load_atom_table(tool::Reader &r, Term expected_name);
@@ -120,15 +133,18 @@ protected:
   void replace_imp_index_with_ptr(word_t *p, Module *m);
   void replace_lambda_index_with_ptr(word_t *p, Module *m);
   word_t parse_int(tool::Reader &r);
+
 #if FEATURE_LINE_NUMBERS
   void beam_op_line(Vector<word_t> &code, Term arg);
+#endif
+#if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
   void beam_op_func_info(Vector<word_t> &code, Term, Term, Term);
 #endif
 };
 
-Result<Module *> CodeServer::load_module_internal(Term expected_name,
-                                                  const u8_t *bytes,
-                                                  word_t size) {
+Result<Module *> code::Server::load_module_internal(
+    Term expected_name, const u8_t *bytes, word_t size)
+{
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(bytes, size);
   LoaderState lstate;
@@ -337,7 +353,7 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
   m_code_fun_count   = r.read_big_u32();
 
 #if FEATURE_LINE_NUMBERS
-  m_func_line.reserve(m_code_fun_count);
+  LN.fun_code_map.reserve(m_code_fun_count);
 #endif
 
   // Just read code here, parse later
@@ -401,9 +417,10 @@ MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
 MaybeError LoaderState::load_line_table(Heap *heap, tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
-  tool::Reader r = r0.clone(chunk_size);
 
 #if FEATURE_LINE_NUMBERS
+  tool::Reader r = r0.clone(chunk_size);
+
   // u32 table_version=0
   if (r.read_big_u32() != 0) {
   // Wrong version. Silently ignore the line number chunk.
@@ -412,19 +429,19 @@ MaybeError LoaderState::load_line_table(Heap *heap, tool::Reader &r0)
 
   r.advance(4); // flags, ignore
   word_t line_instr_count = r.read_big_u32();
-  m_line_instr.reserve(line_instr_count);
+  LN.line_instr.reserve(line_instr_count);
 
-  m_line_ref_count      = r.read_big_u32();
-  m_line_filename_count = r.read_big_u32();
+  LN.num_line_refs      = r.read_big_u32();
+  LN.num_filenames = r.read_big_u32();
 
   // line_record[] (1-base index)
   // invalid location goes as index 0
-  m_line_refs.push_back(line::INVALID_LOC);
+  LN.line_refs.push_back(line::INVALID_LOC);
 
   word_t fname_index = 0;
   // First elements of ref table contain only offsets assuming they are for
   // file #0
-  for (word_t i = 0; i < m_line_ref_count; ++i) {
+  for (word_t i = 0; i < LN.num_line_refs; ++i) {
     auto pt_result = parse_term(heap, r);
     G_RETURN_IF_ERROR_UNLIKELY(pt_result);
 
@@ -433,16 +450,16 @@ MaybeError LoaderState::load_line_table(Heap *heap, tool::Reader &r0)
       // We've got an offset for current filename
       word_t offs = val.small_get_unsigned();
       if (G_LIKELY(line::is_valid_loc(fname_index, offs))) {
-        m_line_refs.push_back(line::make_location(fname_index, offs));
+        LN.line_refs.push_back(line::make_location(fname_index, offs));
         printf("line info: offs=%zu f=%zu\n", offs, fname_index);
       } else {
-        m_line_refs.push_back(line::INVALID_LOC);
+        LN.line_refs.push_back(line::INVALID_LOC);
         printf("line info: invalid loc\n");
       }
     } else if (val.is_atom()) {
       // reference to another file
       word_t a_id = val.atom_val();
-      if (a_id > m_line_filename_count) {
+      if (a_id > LN.num_filenames) {
         return "line info: bad file index";
       }
       fname_index = a_id;
@@ -450,11 +467,11 @@ MaybeError LoaderState::load_line_table(Heap *heap, tool::Reader &r0)
   }
 
   // filenames[] = u16 length + characters
-  for (word_t i = 0; i < m_line_filename_count; ++i) {
+  for (word_t i = 0; i < LN.num_filenames; ++i) {
     word_t  name_sz = r.read_big_u16();
     Str     name    = r.read_string(name_sz);
     printf("line info: file %s\n", name.c_str());
-    m_file_names.push_back(VM::to_atom(name));
+    LN.filenames.push_back(VM::to_atom(name));
   }
 
 #endif
@@ -535,7 +552,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       G_RETURN_IF_ERROR(b);
       auto c = parse_term(heap, r);
       G_RETURN_IF_ERROR(c);
-#if FEATURE_LINE_NUMBERS
+#if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
       beam_op_func_info(code,
                         a.get_result(), b.get_result(), c.get_result());
 #else
@@ -604,7 +621,13 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       // make_fun2 LambdaTableIndex
       replace_lambda_index_with_ptr(first_arg, m);
     }
-  }
+  } // end for all code
+
+#if FEATURE_CODE_RANGES
+  // mark end of code by adding last open fun to code index
+  beam_op_func_info(code, NONVALUE, NONVALUE, NONVALUE);
+  m->set_fun_ranges(CR.fun_map);
+#endif
 
   // TODO: just scan code and resolve in place maybe? don't have to accum labels
   auto stage2 = resolve_labels(postponed_labels, code);
@@ -639,8 +662,10 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     }
   }
 
+  // TODO: merge code and literal heap together maybe?
+
 #if FEATURE_LINE_NUMBERS
-  m->set_line_numbers(m_line_refs, m_file_names);
+  m->set_line_numbers(LN.line_refs, LN.filenames);
 #endif
   return success();
 }
@@ -655,28 +680,50 @@ void LoaderState::replace_imp_index_with_ptr(word_t *p, Module *m) {
 void LoaderState::beam_op_line(Vector<word_t> &code, Term arg)
 {
   word_t index = arg.small_get_unsigned();
-  G_ASSERT(index < m_line_refs.size());
+  G_ASSERT(index < LN.line_refs.size());
 
   line_instr_t li;
   li.code_pos = code.data();
-  li.pos = m_line_refs[index];
-  m_line_instr.push_back(li);
+  li.pos = LN.line_refs[index];
+  LN.line_instr.push_back(li);
 }
 #endif
 
-#if FEATURE_LINE_NUMBERS
+#if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
 void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
 {
+#if FEATURE_CODE_RANGES
+  word_t *last_ptr = code.data() + code.size();
+
+  // Finish previous function if it already started
+  if (m_current_fun.first.is_value()) {
+    code::Range range(CR.fun_begin, last_ptr);
+    printf("fun map: 0x%zx..0x%zx %s/%zu\n", (word_t)CR.fun_begin,
+           (word_t)last_ptr, m_current_fun.first.atom_c_str(),
+           m_current_fun.second);
+    CR.fun_map.add(range, m_current_fun);
+  }
+  if (f.is_non_value()) {
+    // we mark end of code by calling this with a non-value
+    return;
+  }
+#endif
+
   // TODO: nif loading goes here
   //m_function_number++;
   //G_ASSERT(m_code_fun_count >= m_function_number);
 
-  m_current_function = f;
-  m_current_fn_arity = a.small_get_unsigned();
+  m_current_fun = std::make_pair(f, a.small_get_unsigned());
 
+#if FEATURE_CODE_RANGES
+  CR.fun_begin = last_ptr;
+#endif
+
+#if FEATURE_LINE_NUMBERS
   // save fun start address
   //m_func_line[m_function_number] = code.data() + code.size();
-  m_func_line.push_back(code.data() + code.size());
+  LN.fun_code_map.push_back(code.data() + code.size());
+#endif
 }
 #endif
 
@@ -911,7 +958,7 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
 
   case Tag::Atom:
     if (val == 0) {
-      return success(Term::make_nil());
+      return success(NIL);
     } else if (val > m_atoms.size()) {
       return error<Term>("bad atom index");
     }
@@ -919,7 +966,7 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
 
   case Tag::Label:
     if (val == 0) {
-      return success(Term::make_non_value()); //Tag::NoLabel; // empty destination
+      return success(NONVALUE); //Tag::NoLabel; // empty destination
     } else if (val >= m_code_label_count) {
       return error<Term>("bad label");
     }

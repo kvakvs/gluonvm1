@@ -287,10 +287,12 @@ public:
   constexpr Term(): m_val(0) {}
   //constexpr Term(const Term &other): m_val(other.m_val) {}
 
-  constexpr static Term make_nil() {
+  // Do not call this; for better looking code use gluon::NIL const instead
+  constexpr static Term make_nil_() {
     return Term(term::NIL);
   }
-  constexpr static Term make_non_value() {
+  // Do not call this; for better looking code use gluon::NONVALUE const instead
+  constexpr static Term make_non_value_() {
     return Term(term::THE_NON_VALUE);
   }
 
@@ -399,6 +401,7 @@ public:
     return term_tag::Atom::value(m_val);
   }
   Str atom_str() const;
+  const char *atom_c_str() const { return atom_str().c_str(); }
 
   //
   // Small Integer
@@ -598,6 +601,9 @@ public:
 
 };
 
+const static Term NONVALUE = Term::make_non_value_();
+const static Term NIL = Term::make_nil_();
+
 static_assert(sizeof(Term) == sizeof(word_t),
               "Term size should be same as machine word");
 
@@ -608,8 +614,7 @@ public:
   Term    mod;
   Term    fun;
   word_t  arity;
-  mfarity_t(): mod(Term::make_non_value()), fun(Term::make_non_value()),
-               arity(0) {}
+  mfarity_t(): mod(NONVALUE), fun(NONVALUE), arity(0) {}
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {}
 #if G_DEBUG
   void println();

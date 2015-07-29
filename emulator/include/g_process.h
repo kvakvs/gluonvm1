@@ -50,7 +50,7 @@ public:
   void push_n_nils(word_t n) {
     //cells.reserve(cells.size() + n);
     for (word_t i = 0; i < n; ++i) {
-      cells.push_back(Term::make_nil());
+      cells.push_back(NIL);
     }
 //    println();
   }
@@ -80,14 +80,14 @@ protected:
 //------------------------------------------------------------------------------
 class Process {
 public:
-  Term          m_stack_trace = Term::make_non_value();
+  Term          m_stack_trace = NONVALUE;
   word_t        m_catch_level = 0;
-  Term          m_bif_error_reason = Term::make_non_value();
+  Term          m_bif_error_reason = NONVALUE;
 
 protected:
   runtime_ctx_t m_ctx;
   ProcessStack  m_stack;
-  Term          m_pid = Term::make_non_value();
+  Term          m_pid = NONVALUE;
   mfarity_t     m_init_call;
   bool          m_trap_exit = false;
   // TODO: process dict

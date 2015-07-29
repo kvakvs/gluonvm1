@@ -48,7 +48,8 @@ set(SRC_LIST
     include/g_sys_stdlib.h
 
     src/g_code.cpp       include/g_code.h
-    src/g_codeserver.cpp include/g_codeserver.h
+    src/g_code_index.cpp include/g_code_index.h
+    src/g_code_server.cpp include/g_code_server.h
     src/g_dist.cpp       include/g_dist.h
     src/g_ext_term.cpp   include/g_ext_term.h
     src/g_genop.cpp      include/g_genop.h        # generated via codegen/ script

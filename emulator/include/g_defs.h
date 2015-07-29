@@ -11,6 +11,11 @@
 // set features for use in code in this file
 #include "g_FEATURE.h"
 
+// Default value (set in CMakeLists.txt, do not edit here)
+#ifndef G_DEBUG
+#   define G_DEBUG 1
+#endif
+
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #   define G_BIGENDIAN      0
 #else

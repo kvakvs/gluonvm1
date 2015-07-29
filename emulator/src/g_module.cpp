@@ -23,4 +23,10 @@ Result<word_t *> Module::resolve_label(label_index_t label)
   return success(m_labels[label.value]);
 }
 
+#if FEATURE_CODE_RANGES
+code::Range Module::get_code_range() {
+  return code::Range(m_code.data(), m_code.data() + m_code.size());
+}
+#endif
+
 } // ns gluon

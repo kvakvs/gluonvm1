@@ -17,7 +17,7 @@ public:
   word_t  num_free;   // how many extra terms with frozen values
   word_t  *code;
 
-  fun_entry_t(): mfa(Term::make_nil(), Term::make_nil(), 0) {
+  fun_entry_t(): mfa(NIL, NIL, 0) {
   }
 };
 
