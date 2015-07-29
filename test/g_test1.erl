@@ -11,13 +11,21 @@ test() ->
     %test_case(),
     %test_hof(),
     %test_hof_fold(),
-    test_mochijson().
+    test_hof_nested().
+    %test_mochijson().
 
 %%-----------------------------------------------
 test_mochijson() ->
     %mochijson:encode({struct, [{hello, "world"}]}).
     % we need to go deeper to debuf
-    mochijson:json_encode_proplist([{hello, "world"}], {encoder, unicode, null}).
+    mochijson:json_encode_proplist([{h, w}], {encoder, unicode, null}).
+
+test_hof_nested() ->
+    % A HOF calling another HOF calling BIF, bam!
+    A = fun(X) -> atom_to_list(X) end,
+    B = fun(X, Accum) -> [A(X) | Accum] end,
+    ["d" | Z] = lists:foldl(B, [], [a,b,c,d]),
+    lists:reverse(Z).
 
 test_hof() ->
     F = fun(A,B) -> A =< B end,

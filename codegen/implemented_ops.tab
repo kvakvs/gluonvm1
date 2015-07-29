@@ -34,6 +34,7 @@ if_end
 is_tuple
 test_arity
 get_tuple_element
+put_tuple
 
 #--- tests ---
 is_lt

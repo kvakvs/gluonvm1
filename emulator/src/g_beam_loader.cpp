@@ -384,8 +384,8 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
   tool::Reader r(uncompressed.get(), uncompressed_size);
   auto count = r.read_big_u32();
 
-  G_LOG("compressed %zu bytes, uncomp %zu bytes, count %zu\n",
-         chunk_size, uncompressed_size, count);
+//  G_LOG("compressed %zu bytes, uncomp %zu bytes, count %zu\n",
+//         chunk_size, uncompressed_size, count);
   m_literals.reserve(count);
 
   for (word_t i = 0; i < count; ++i) {
@@ -395,9 +395,6 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
     G_RETURN_IF_ERROR(lit_result);
 
     auto lit = lit_result.get_result();
-#if G_DEBUG
-    lit.print();puts("");
-#endif
     m_literals.push_back(lit);
   }
 
@@ -560,6 +557,13 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 #endif
       continue;
     }
+
+//    if (opcode == genop::OPCODE_PUT) {
+//      // eliminate opcode and put only arg
+//      auto a = parse_term(heap, r);
+//      G_RETURN_IF_ERROR(a);
+//      code.push_back(a);
+//    }
 
     // Convert opcode into jump address
     op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);

@@ -29,6 +29,7 @@ int main(int argc, const char *argv[]) {
   // normal start
   //vm::load_module("../test/g_test1.S.gleam");
   VM::get_cs()->path_append("../test");
+  VM::get_cs()->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
 
   // create root process and set it to some entry function
   Process *proc = new Process(NONVALUE);

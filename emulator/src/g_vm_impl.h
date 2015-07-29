@@ -100,7 +100,6 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
     // check for bif, a nonvalue result with error flag set to undef means that
     // this was not a bif
-    // TODO: this can be done on load stage
     Term result = VM::apply_bif(proc, *mfa, regs);
     if (result.is_non_value()) {
       if (proc->m_bif_error_reason != atom::UNDEF) {
@@ -122,12 +121,14 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     auto find_result = VM::get_cs()->find_module(mfa->mod,
                                                  code::Server::LOAD_IF_NOT_FOUND);
     if (find_result.is_error()) {
+      G_LOG("ctx.jump_ext: %s\n", find_result.get_error());
       return raise(proc, atom::ERROR, atom::UNDEF);
     }
 
     Module *mod = find_result.get_result();
     auto find_fn_result = mod->resolve_function(mfa->fun, mfa->arity);
     if (find_fn_result.is_error()) {
+      G_LOG("ctx.jump_ext: %s\n", find_fn_result.get_error());
       return raise(proc, atom::ERROR, atom::UNDEF);
     }
     return jump_far(proc, mod, find_fn_result.get_result());
@@ -644,8 +645,34 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.move(result, dst);
     ctx.ip += 3;
   }
-//  inline void opcode_put_tuple(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 70
-//  }
+  inline void opcode_put_tuple(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 70
+    // @spec put_tuple Arity Dst
+    // followed by Arity 'put N' commands
+    Term t_arity(ctx.ip[0]);
+    Term dst(ctx.ip[1]);
+    ctx.ip += 2;
+
+    word_t arity = t_arity.small_get_unsigned();
+    if (G_UNLIKELY(arity == 0)) {
+      ctx.move(Term::make_zero_tuple(), dst);
+      return;
+    }
+
+    Term *elements = Heap::alloc<Term>(proc->get_heap(), arity+1);
+    Term *p = elements+1;
+    do {
+      // assert that ip[0] is opcode 'put' skip it and read its argument
+      Term value(ctx.ip[1]);
+      ctx.ip += 2;
+      DEREF(value);
+        printf("put ");
+        value.println();
+      *p = value;
+      p++;
+    } while (--arity != 0);
+
+    ctx.move(Term::make_tuple(elements, t_arity.small_get_unsigned()), dst);
+  }
 //  inline void opcode_put(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 71
 //  }
   inline void opcode_badmatch(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 72
