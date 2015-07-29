@@ -86,6 +86,7 @@ void Server::path_prepend(const Str &p)
 bool Server::print_mfa(word_t *ptr) const {
   auto mfa = find_mfa(ptr);
   if (mfa.mod.is_non_value()) {
+    printf("0x%zx", (word_t)ptr);
     return false;
   }
   printf("%s:%s/%zu", mfa.mod.atom_c_str(), mfa.fun.atom_c_str(), mfa.arity);

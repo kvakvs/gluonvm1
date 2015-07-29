@@ -32,11 +32,13 @@ public:
   ProcessStack() {}
   void push(Term t) {
     cells.push_back(t);
-    //println();
+//    printf("PUSHED 1 -- ");
+//    println();
   }
   Term pop() {
     Term t = cells.back();
     cells.pop_back();
+//    printf("POPPED 1 -- ");
 //    println();
     return t;
   }
@@ -48,21 +50,28 @@ public:
     return cells[index_for_y(offset)];
   }
   void push_n_nils(word_t n) {
-    //cells.reserve(cells.size() + n);
+    cells.reserve(cells.size() + n);
     for (word_t i = 0; i < n; ++i) {
       cells.push_back(NIL);
     }
+//    printf("PUSHED %zu NIL -- ", n);
 //    println();
   }
   void drop_n(word_t n) {
     G_ASSERT(cells.size() >= n);
     cells.resize(cells.size() - n);
+//    printf("DROPPED %zu -- ", n);
 //    println();
   }
   word_t size() const {
     return cells.size();
   }
-//  void println();
+
+#if G_DEBUG
+  void println();
+#else
+  inline void println() {}
+#endif
 
 protected:
   inline word_t index_for_y(word_t y) const {

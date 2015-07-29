@@ -6,4 +6,4 @@ BEAM = $(SRC:.erl=.beam)
 all: $(BEAM)
 
 %.beam: %.erl
-	erlc -S $< && erlc $< 
+	erlc +debug_info -S $< && erlc $< 

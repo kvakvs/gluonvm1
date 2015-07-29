@@ -37,11 +37,8 @@ next_instr:
 
 #if FEATURE_CODE_RANGES
   printf("[");
-  if (VM::get_cs()->print_mfa(ctx.ip)) {
-    printf("]: ");
-  } else {
-    printf("0x%zx]: ", (word_t)ctx.ip);
-  }
+  VM::get_cs()->print_mfa(ctx.ip); // prints mfarity or pointer
+  printf("]: ");
 #else
   printf("[0x%zx]: ", (word_t)ctx.ip);
 #endif

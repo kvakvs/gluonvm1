@@ -1,6 +1,8 @@
 #include "g_term.h"
 #include "g_vm.h"
 #include "g_heap.h"
+#include "g_code_server.h"
+#include "g_fun.h"
 
 #if G_TEST
 #include <fructose/fructose.h>
@@ -120,16 +122,22 @@ void Term::print()
   else if (is_boxed()) {
     auto p = boxed_get_ptr<word_t>();
     if (term_tag::is_cp<word_t>(p)) {
-      printf("BOXED_CP(0x%zx)", (word_t)term_tag::untag_cp<word_t>(p));
+      word_t *cp = term_tag::untag_cp<word_t>(p);
+      printf("#CP<");
+      VM::get_cs()->print_mfa(cp);
+      printf(">");
       return;
     }
     if (is_fun()) {
-      printf("BOXED_FUN()");
+      printf("#Fun<");
+      auto bf = boxed_get_ptr<boxed_fun_t>();
+      VM::get_cs()->print_mfa(bf->fe->code);
+      printf(">");
       return;
     }
-    printf("BOXED(0x%zx@0x%zx)", boxed_get_subtag(),
-           (word_t)boxed_get_ptr<void>());
-
+    printf("#Box<0x%zx;", (word_t)boxed_get_ptr<word_t>());
+    VM::get_cs()->print_mfa(boxed_get_ptr<word_t>());
+    printf(">");
   }
   else if (is_nil()) {
     printf("[]");
