@@ -16,9 +16,9 @@ test() ->
 
 %%-----------------------------------------------
 test_mochijson() ->
-    %mochijson:encode({struct, [{hello, "world"}]}).
+    mochijson:encode({struct, [{hello, "world"}]}).
     % we need to go deeper to debuf
-    mochijson:json_encode_proplist([{hello, "world"}], {encoder, unicode, null}).
+    %mochijson:json_encode_proplist([{hello, "world"}], {encoder, unicode, null}).
 
 test_hof_nested() ->
     C = fun(X, _) -> X end,

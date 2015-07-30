@@ -23,14 +23,14 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   //word_t *base;
   ProcessStack *stack;
 
-  void println() {
-#if G_DEBUG
-    puts("---------");
-    printf("CP=");
-    VM::get_cs()->print_mfa(cp);
-    printf("; ");
-    stack->println();
-#endif
+  inline void println() {
+//#if G_DEBUG
+//    puts("---------");
+//    printf("CP=");
+//    VM::get_cs()->print_mfa(cp);
+//    printf("; ");
+//    stack->println();
+//#endif
   }
 
   void load(Process *proc) {
