@@ -2,6 +2,9 @@
 #include "g_process.h"
 #include "g_predef_atoms.h"
 #include "g_vm.h"
+#include "g_heap.h"
+#include "g_module.h"
+#include "g_code_server.h"
 
 namespace gluon {
 namespace bif {
@@ -472,9 +475,31 @@ Term bif_divide_2(Process *proc, Term a, Term b)
 }
 
 // Create an export value
-Term bif_make_fun_3(Process *proc, Term m, Term f, Term arity)
+Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
 {
+  word_t arity = arity_t.small_get_unsigned();
+
   // Box export (1 word for boxed tag and 1 word reference to export_t)
+  // TODO: calculate is_bif for new object
+  mfarity_t mfa(mod, f, arity);
+  void *biffn = VM::find_bif(mfa);
+  export_t *box = Heap::alloc_object<export_t>(proc->get_heap(),
+                                               biffn != nullptr);
+  box->mfa = mfa;
+  if (biffn == nullptr) {
+    // Find module
+    auto m_result = VM::get_cs()->find_module(mod, code::LOAD_IF_NOT_FOUND);
+    if (m_result.is_error()) {
+      return proc->bif_error(atom::UNDEF);
+    }
+    // Find export in module
+    Module *m = m_result.get_result();
+    word_t *code = m->find_export(fun_arity_t(f, arity));
+    box->code = code;
+  } else {
+    box->bif_fn = biffn;
+  }
+  return Term::make_boxed_export(box);
 }
 
 } // ns bif

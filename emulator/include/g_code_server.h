@@ -24,6 +24,11 @@ namespace code {
 
 using mod_map_t = Map<Term, Module *>;
 
+typedef enum {
+  FIND_EXISTING,
+  LOAD_IF_NOT_FOUND
+} find_opt_t;
+
 class Server {
 private:
   mod_map_t   m_modules;
@@ -41,10 +46,6 @@ public:
   // Pass nil as name to take name automatically from the module
   MaybeError load_module(Term name_atom, const u8_t *bytes, word_t size);
 
-  typedef enum {
-    FIND_EXISTING,
-    LOAD_IF_NOT_FOUND
-  } find_opt_t;
   Result<Module *> find_module(Term m, find_opt_t opt);
   void path_append(const Str &p);
   void path_prepend(const Str &p);

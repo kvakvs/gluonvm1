@@ -11,17 +11,25 @@ namespace gluon {
 
 class Heap;
 
-typedef struct {
+class export_t {
+  // first field stores bits used to tag boxed value and boolean bif flag
+  // (shifted left by BOXED_SUBTAG_BITS)
+  word_t m_is_bif;
+public:
   mfarity_t mfa;
-  bool      is_bif;
   union {
     word_t *code;
-    bif0_fn bif0;
-    bif1_fn bif1;
-    bif2_fn bif2;
-    bif3_fn bif3;
+    void   *bif_fn; // use VM::apply_bif
   };
-} export_t;
+
+  export_t(bool b): m_is_bif(term_tag::BoxedExport::create_subtag((word_t)b)) {
+  }
+
+  static const word_t BIF_BIT = (1U << term_tag::BOXED_SUBTAG_BITS);
+  inline bool is_bif() const {
+    return (m_is_bif & BIF_BIT) == BIF_BIT;
+  }
+};
 
 //
 // Class Module represents a single Erlang module with code. When multiple
@@ -81,8 +89,10 @@ public:
     G_ASSERT(ptr < m_code.size());
     return m_code[ptr];
   }
+  word_t *find_export(const fun_arity_t &fa);
 
   // Resolves function in current module to a code pointer
+  // TODO: duplicates find_export, replace with fun table search or remove?
   Result<word_t *> resolve_function(Term f, word_t arity);
 
   // Resolves label to a code pointer

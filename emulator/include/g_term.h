@@ -5,6 +5,7 @@
 namespace gluon {
 
 class Heap;
+class export_t; // in g_module.h
 
 namespace term_tag {
 
@@ -591,12 +592,18 @@ public:
     return term_tag::StackReference::value(m_val);
   }
 
-  inline bool is_fun() const {
+  inline bool is_boxed_fun() const {
     return term_tag::BoxedFun::check(m_val);
   }
 
-  inline bool is_export() const {
+  inline bool is_boxed_export() const {
     return term_tag::BoxedExport::check(m_val);
+  }
+  static inline Term make_boxed_export(export_t *ex) {
+    // Assuming that pointer has subtag in first word of memory already
+    word_t val = term_tag::BoxedExport::create_from_ptr(ex);
+    G_ASSERT(term_tag::BoxedExport::check(val));
+    return Term(val);
   }
 
 };
@@ -617,6 +624,7 @@ public:
   mfarity_t(): mod(NONVALUE), fun(NONVALUE), arity(0) {}
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {}
 #if G_DEBUG
+  void print();
   void println();
 #endif
 };

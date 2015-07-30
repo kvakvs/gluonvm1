@@ -20,8 +20,7 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
 {
   G_ASSERT(this);
 
-  auto mod_result = VM::get_cs()->find_module(mfa.mod,
-                                              code::Server::LOAD_IF_NOT_FOUND);
+  auto mod_result = VM::get_cs()->find_module(mfa.mod, code::LOAD_IF_NOT_FOUND);
   G_RETURN_IF_ERROR(mod_result);
   Module *mod = mod_result.get_result();
 

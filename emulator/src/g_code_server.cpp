@@ -62,7 +62,7 @@ Result<Module *> Server::find_module(Term m, find_opt_t load)
 {
   auto iter = m_modules.find(m);
   if (iter == m_modules.end()) {
-    if (load == Server::FIND_EXISTING) {
+    if (load == code::FIND_EXISTING) {
       return error<Module *>("function not found");
     } else {
       auto res = load_module(m);

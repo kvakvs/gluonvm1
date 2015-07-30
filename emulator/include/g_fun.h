@@ -54,10 +54,10 @@ public:
 class FunObject: public Term {
 public:
   FunObject(word_t x): Term(x) {
-    G_ASSERT(is_fun());
+    G_ASSERT(is_boxed_fun());
   }
   FunObject(Term &other): Term(other.as_word()) {
-    G_ASSERT(is_fun());
+    G_ASSERT(is_boxed_fun());
   }
 
   //

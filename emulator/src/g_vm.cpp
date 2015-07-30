@@ -92,6 +92,11 @@ Heap *VM::get_heap(VM::heap_t) {
   return nullptr;
 }
 
+bif0_fn VM::resolve_bif0(mfarity_t &mfa)
+{
+  return nullptr;
+}
+
 bif1_fn VM::resolve_bif1(mfarity_t &mfa)
 {
   G_ASSERT(mfa.arity == 1);
@@ -142,9 +147,40 @@ bif3_fn VM::resolve_bif3(mfarity_t &mfa)
   return nullptr;
 }
 
+// TODO: replace with bif search indes
+void *VM::find_bif(mfarity_t &mfa)
+{
+  switch (mfa.arity) {
+  case 0: {
+      auto b0 = resolve_bif0(mfa);
+      return (void *)b0;
+    }
+  case 1: {
+      auto b1 = resolve_bif1(mfa);
+      return (void *)b1;
+    }
+  case 2: {
+      auto b2 = resolve_bif2(mfa);
+      return (void *)b2;
+    }
+  case 3: {
+      auto b3 = resolve_bif3(mfa);
+      return (void *)b3;
+    }
+  }
+  return nullptr;
+}
+
 Term VM::apply_bif(Process *proc, mfarity_t &mfa, Term *args)
 {
   switch (mfa.arity) {
+  case 0: {
+      auto b0 = resolve_bif0(mfa);
+      if (b0) {
+        return b0(proc);
+      }
+      break;
+    }
   case 1: {
       auto b1 = resolve_bif1(mfa);
       if (b1) {
@@ -166,6 +202,20 @@ Term VM::apply_bif(Process *proc, mfarity_t &mfa, Term *args)
       }
       break;
     }
+  }
+  return proc->bif_error(atom::UNDEF);
+}
+
+Term VM::apply_bif(Process *proc, word_t arity, void *fn, Term *args)
+{
+  if (!fn) {
+    return proc->bif_error(atom::BADFUN);
+  }
+  switch (arity) {
+  case 0: return ((bif0_fn)fn)(proc);
+  case 1: return ((bif1_fn)fn)(proc, args[0]);
+  case 2: return ((bif2_fn)fn)(proc, args[0], args[1]);
+  case 3: return ((bif3_fn)fn)(proc, args[0], args[1], args[2]);
   }
   return proc->bif_error(atom::UNDEF);
 }

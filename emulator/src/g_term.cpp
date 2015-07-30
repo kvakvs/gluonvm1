@@ -3,6 +3,7 @@
 #include "g_heap.h"
 #include "g_code_server.h"
 #include "g_fun.h"
+#include "g_module.h" // for export_t class
 
 #if G_TEST
 #include <fructose/fructose.h>
@@ -128,14 +129,26 @@ void Term::print()
       printf(">");
       return;
     }
-    if (is_fun()) {
+    if (is_boxed_fun()) {
       printf("#Fun<");
       auto bf = boxed_get_ptr<boxed_fun_t>();
       VM::get_cs()->print_mfa(bf->fe->code);
       printf(">");
       return;
     }
-    printf("#Box<Tag=%zu;", boxed_get_subtag());
+    if (is_boxed_export()) {
+      printf("#ExportedFun<");
+      auto ex = boxed_get_ptr<export_t>();
+      ex->mfa.print();
+      printf(";");
+      if (ex->is_bif()) {
+        printf("bif");
+      } else {
+        VM::get_cs()->print_mfa(ex->code);
+      }
+      printf(">");
+      return;
+    }    printf("#Box<Tag=%zu;", boxed_get_subtag());
     VM::get_cs()->print_mfa(boxed_get_ptr<word_t>());
     printf(">");
   }
@@ -179,14 +192,17 @@ void Term::println()
   puts("");
 }
 
-void mfarity_t::println()
+void mfarity_t::println() {
+  print();
+  puts("");
+}
+
+void mfarity_t::print()
 {
-  printf("MFA(");
   mod.print();
   printf(":");
   fun.print();
   printf("/%zu", arity);
-  puts(")");
 }
 
 #endif // DEBUG

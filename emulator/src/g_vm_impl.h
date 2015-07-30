@@ -10,6 +10,7 @@
 #include "g_predef_atoms.h"
 #include "g_fun.h"
 #include "g_heap.h"
+#include "g_vm.h"
 
 #include <cstring>
 
@@ -100,26 +101,28 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
     // check for bif, a nonvalue result with error flag set to undef means that
     // this was not a bif
-    Term result = VM::apply_bif(proc, *mfa, regs);
-    if (result.is_non_value()) {
-      if (proc->m_bif_error_reason != atom::UNDEF) {
-        // a real error happened
-        Term reason = proc->m_bif_error_reason;
-        proc->m_bif_error_reason = NONVALUE;
-        return raise(proc, atom::ERROR, reason);
+    void *bif_fn = VM::find_bif(*mfa);
+    if (bif_fn) {
+      Term result = VM::apply_bif(proc, mfa->arity, bif_fn, regs);
+      if (result.is_non_value()) {
+        if (proc->m_bif_error_reason != atom::UNDEF) {
+          // a real error happened
+          Term reason = proc->m_bif_error_reason;
+          proc->m_bif_error_reason = NONVALUE;
+          return raise(proc, atom::ERROR, reason);
+        }
+        // if it was undef - do nothing, it wasn't a bif - we just jump there
+      } else {
+        // simulate real call but return bif result instead
+        regs[0] = result;
+        G_ASSERT(cp);
+        ip = cp;
+        cp = nullptr;
+        return;
       }
-      // if it was undef - do nothing, it wasn't a bif - we just jump there
-    } else {
-      // simulate real call but return bif result instead
-      regs[0] = result;
-      G_ASSERT(cp);
-      ip = cp;
-      cp = nullptr;
-      return;
     }
 
-    auto find_result = VM::get_cs()->find_module(mfa->mod,
-                                                 code::Server::LOAD_IF_NOT_FOUND);
+    auto find_result = VM::get_cs()->find_module(mfa->mod, code::LOAD_IF_NOT_FOUND);
     if (find_result.is_error()) {
       G_LOG("ctx.jump_ext: %s\n", find_result.get_error());
       return raise(proc, atom::ERROR, atom::UNDEF);
@@ -706,7 +709,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       // TODO: make tuple {badfun, f_args}
       return ctx.raise(proc, atom::ERROR, atom::BADFUN);
     }
-    if (fun.is_fun()) {
+    if (fun.is_boxed_fun()) {
       boxed_fun_t *bf = fun.boxed_get_ptr<boxed_fun_t>();
       if (bf->get_arity() != arity) {
         // TODO: make tuple {badarity, f_args}
@@ -722,9 +725,20 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       ctx.ip   = bf->fe->code;
       G_ASSERT(ctx.ip);
       return;
-    } else if (fun.is_export()) {
-      // TODO: check BoxedExport too!
-      G_TODO("call_fun export");
+    } else if (fun.is_boxed_export()) {
+      export_t *ex = fun.boxed_get_ptr<export_t>();
+      G_ASSERT(arity == ex->mfa.arity);
+      if (ex->is_bif()) {
+        Term result = VM::apply_bif(proc, arity, ex->code, ctx.regs);
+        if (ctx.check_bif_error(proc)) { return; }
+        ctx.regs[0] = result;
+        ctx.ip++;
+      } else {
+        ctx.live = arity;
+        ctx.cp   = ctx.ip + 1;
+        ctx.ip   = ex->code;
+        return;
+      }
     } else {
       // TODO: make tuple {badfun, f_args} (same as above)
       return ctx.raise(proc, atom::ERROR, atom::BADFUN);
@@ -837,14 +851,19 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term arity(ctx.ip[2]);
     DEREF(arity);
     // Check if its fun at all
-    if (!arg1.is_fun()) {
-      return ctx.jump(proc, Term(ctx.ip[0]));
-    }
-    // check arity
-    boxed_fun_t *bf = arg1.boxed_get_ptr<boxed_fun_t>();
-//    printf("is_function2 arity=%zu bf.numfree=%zu bf.arity=%zu\n",
-//           arity.small_get_unsigned(), bf->get_num_free(), bf->get_arity());
-    if (arity.small_get_unsigned() + bf->get_num_free() != bf->get_arity()) {
+    if (arg1.is_boxed_fun()) {
+      // check arity
+      boxed_fun_t *bf = arg1.boxed_get_ptr<boxed_fun_t>();
+      if (arity.small_get_unsigned() + bf->get_num_free() != bf->get_arity()) {
+        return ctx.jump(proc, Term(ctx.ip[0]));
+      }
+    } else if (arg1.is_boxed_export()) {
+      // check arity
+      export_t *ex = arg1.boxed_get_ptr<export_t>();
+      if (arity.small_get_unsigned() != ex->mfa.arity) {
+        return ctx.jump(proc, Term(ctx.ip[0]));
+      }
+    } else {
       return ctx.jump(proc, Term(ctx.ip[0]));
     }
 
