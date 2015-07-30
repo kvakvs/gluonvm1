@@ -74,14 +74,18 @@ Term Process::bif_error(Term reason)
 #if G_DEBUG
 void ProcessStack::println()
 {
-  if (size() < 2) {
-    return;
-  }
-  printf("STACK: ");
-  for (word_t i = 0; i < size()-1; i++) {
-    printf("[%zu]=", i);
-    get_y(i).print();
+  printf("STACK[%zu words]: ", size());
+  if (size() > 0) {
+    printf("[-1]=");
+    cells.back().print();
     printf("; ");
+  }
+  if (size() > 1) {
+    for (word_t i = 0; i < size()-1; i++) {
+      printf("[%zu]=", i);
+      get_y(i).print();
+      printf("; ");
+    }
   }
   puts("");
 }

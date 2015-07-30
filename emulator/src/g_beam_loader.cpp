@@ -175,7 +175,7 @@ Result<Module *> code::Server::load_module_internal(
       G_LOG("beam offset 0x%zx\n", r.get_ptr() - bytes);
       return error<Module *>("bad beam format");
     }
-    G_LOG("BEAM section %s\n", chunk.c_str());
+    //G_LOG("BEAM section %s\n", chunk.c_str());
 
     result.clear();
     if      (chunk == "Atom") { result = lstate.load_atom_table(r, expected_name); }
@@ -543,11 +543,12 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     }
 
     if (opcode == genop::OPCODE_FUNC_INFO) {
-      auto a = parse_term(heap, r);
+      tool::Reader r1 = r.clone();
+      auto a = parse_term(heap, r1);
       G_RETURN_IF_ERROR(a)
-      auto b = parse_term(heap, r);
+      auto b = parse_term(heap, r1);
       G_RETURN_IF_ERROR(b);
-      auto c = parse_term(heap, r);
+      auto c = parse_term(heap, r1);
       G_RETURN_IF_ERROR(c);
 #if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
       beam_op_func_info(code,
@@ -555,7 +556,8 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 #else
 //      puts("");
 #endif
-      continue;
+      // FALL THROUGH AND EMIT THE OPCODE
+      //continue;
     }
 
 //    if (opcode == genop::OPCODE_PUT) {

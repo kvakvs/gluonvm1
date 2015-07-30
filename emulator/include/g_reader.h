@@ -19,6 +19,10 @@ public:
     Reader new_r(m_ptr, new_size);
     return new_r;
   }
+  Reader clone() {
+    Reader new_r(m_ptr, (word_t)(m_limit - m_ptr));
+    return new_r;
+  }
 
   inline u8_t read_byte() {
     // TODO: make this runtime error, not assertion

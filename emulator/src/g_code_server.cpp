@@ -50,6 +50,7 @@ MaybeError Server::load_module(Term name)
       f.seek(0);
       f.read(tmp_buffer, size);
 
+      printf("Loading BEAM %s\n", path.c_str());
       auto    result = load_module(name, tmp_buffer, size);
       Heap::free_bytes(heap, tmp_buffer);
       return result;

@@ -23,6 +23,16 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   //word_t *base;
   ProcessStack *stack;
 
+  void println() {
+#if G_DEBUG
+    puts("---------");
+    printf("CP=");
+    VM::get_cs()->print_mfa(cp);
+    printf("; ");
+    stack->println();
+#endif
+  }
+
   void load(Process *proc) {
     runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
 //    mod  = proc_ctx.mod;
@@ -97,6 +107,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   void jump_ext(Process *proc, Term mfa_box) {
     G_ASSERT(mfa_box.is_boxed());
     mfarity_t *mfa = mfa_box.boxed_get_ptr<mfarity_t>();
+    printf("ctx.jump_ext -> ");
     mfa->println();
 
     // check for bif, a nonvalue result with error flag set to undef means that
@@ -111,7 +122,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
           proc->m_bif_error_reason = NONVALUE;
           return raise(proc, atom::ERROR, reason);
         }
-        // if it was undef - do nothing, it wasn't a bif - we just jump there
+        // if it was undef - do nothing, it wasn't a bif - we just continue
       } else {
         // simulate real call but return bif result instead
         regs[0] = result;
@@ -195,10 +206,19 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
   void push_cp() {
     stack->push(Term::make_boxed_cp(cp));
+    cp = nullptr;
   }
   void pop_cp() {
     Term p = stack->pop();
     cp = term_tag::untag_cp<word_t>(p.boxed_get_ptr<word_t>());
+  }
+  inline void stack_allocate(word_t n) {
+    stack->push_n_nils(n);
+    push_cp();
+  }
+  inline void stack_deallocate(word_t n) {
+    pop_cp();
+    stack->drop_n(n);
   }
 
   void print_args(word_t arity) {
@@ -233,8 +253,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
 //  inline void opcode_label(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 1
 //  }
-//  inline void opcode_func_info(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 2
-//  }
+  inline void opcode_func_info(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 2
+    return ctx.raise(proc, atom::ERROR, atom::FUNCTION_CLAUSE);
+  }
 //  inline void opcode_int_code_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 3
 //  }
   inline void opcode_call(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 4
@@ -247,14 +268,15 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.jump(proc, Term(ctx.ip[1]));
   }
   inline void opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
-    // @spec call_last Arity Label Dellocate
+    // @spec call_last Arity Label Deallocate
     // @doc Deallocate and do a tail recursive call to the function at Label.
     // Do not update the CP register. Before the call deallocate Deallocate
     // words of stack.
     Term arity(ctx.ip[0]);
-    ctx.live = (word_t)arity.small_get_signed();
+    ctx.live = arity.small_get_unsigned();
+
     Term n(ctx.ip[2]);
-    ctx.stack->drop_n(n.small_get_unsigned());
+    ctx.stack_deallocate(n.small_get_unsigned());
     ctx.jump(proc, Term(ctx.ip[1]));
   }
   inline void opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
@@ -277,8 +299,18 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.live = a.small_get_unsigned();
     return ctx.jump_ext(proc, boxed_mfa);
   }
-//  inline void opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
-//  }
+  inline void opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
+    // @spec call_ext_last Arity Destination Deallocate
+    // @doc Deallocate and do a tail call to function of arity Arity pointed
+    // to by Destination. Do not update the CP register. Deallocate Deallocate
+    // words from the stack before the call.
+    Term boxed_mfa(ctx.ip[1]);
+    Term a(ctx.ip[0]);
+    Term dealloc(ctx.ip[2]);
+    ctx.live = a.small_get_unsigned();
+    ctx.stack_deallocate(dealloc.small_get_unsigned());
+    return ctx.jump_ext(proc, boxed_mfa);
+  }
 //  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
 //  }
   inline void opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
@@ -322,8 +354,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //      Also save the continuation pointer (CP) on the stack.
     Term stack_need(ctx.ip[0]);
     // TODO: ignore stack contents for speedup (note allocate_zero must fill NILs)
-    ctx.stack->push_n_nils(stack_need.small_get_unsigned());
-    ctx.push_cp();
+    ctx.stack_allocate(stack_need.small_get_unsigned());
     ctx.ip += 2;
   }
 //  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
@@ -351,8 +382,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc  Restore the continuation pointer (CP) from the stack and deallocate
     //       N+1 words from the stack (the + 1 is for the CP).
     Term n(ctx.ip[0]);
-    ctx.pop_cp();
-    ctx.stack->drop_n(n.small_get_unsigned());
+    ctx.stack_deallocate(n.small_get_unsigned());
     ctx.ip++;
   }
   inline bool opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
@@ -705,10 +735,6 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     word_t arity = t_arity.small_get_unsigned();
 
     Term fun(ctx.regs[arity]);
-    if (!fun.is_boxed()) {
-      // TODO: make tuple {badfun, f_args}
-      return ctx.raise(proc, atom::ERROR, atom::BADFUN);
-    }
     if (fun.is_boxed_fun()) {
       boxed_fun_t *bf = fun.boxed_get_ptr<boxed_fun_t>();
       if (bf->get_arity() != arity) {

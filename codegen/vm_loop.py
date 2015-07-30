@@ -34,6 +34,7 @@ schedule:
 
 next_instr:
   jmp_to = (void *)(*ctx.ip);
+  ctx.println();
 
 #if FEATURE_CODE_RANGES
   printf("[");

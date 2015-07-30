@@ -104,11 +104,6 @@ bif1_fn VM::resolve_bif1(mfarity_t &mfa)
     if (mfa.fun == atom::LENGTH)       { return &bif::bif_length_1; }
     if (mfa.fun == atom::ATOM_TO_LIST) { return &bif::bif_atom_to_list_1; }
   }
-
-#if G_DEBUG
-  printf("ERROR bif1 undef ");
-  mfa.println();
-#endif
   return nullptr;
 }
 
@@ -125,11 +120,6 @@ bif2_fn VM::resolve_bif2(mfarity_t &mfa)
     if (mfa.fun == atom::Q_LESS_EQUAL)   { return &bif::bif_less_equal_2; }
     if (mfa.fun == atom::Q_GREATER_EQUAL){ return &bif::bif_greater_equal_2; }
   }
-
-#if G_DEBUG
-  printf("ERROR bif2 undef ");
-  mfa.println();
-#endif
   return nullptr;
 }
 
@@ -139,11 +129,6 @@ bif3_fn VM::resolve_bif3(mfarity_t &mfa)
   if (mfa.mod == atom::ERLANG) {
     if (mfa.fun == atom::MAKE_FUN) { return &bif::bif_make_fun_3; }
   }
-
-#if G_DEBUG
-  printf("ERROR bif3 undef ");
-  mfa.println();
-#endif
   return nullptr;
 }
 

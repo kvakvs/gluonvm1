@@ -21,12 +21,10 @@ test_mochijson() ->
     mochijson:json_encode_proplist([{h, w}], {encoder, unicode, null}).
 
 test_hof_nested() ->
-    %C = fun(X, Accum) -> [atom_to_list(X) | Accum] end,
-    %Z = lists:foldl(C, [], [a,b]),
-    Z = lists:map(fun erlang:atom_to_list/1, [a,b]),
+    C = fun(X, _) -> X end,
+    %[{b} | Z] = lists:foldl(C, [], [a,b]),
+    Z = lists:foldl(C, [], [a]),
     lists:reverse(Z).
-    %["b" | Z] = lists:foldl(B, [], [a,b]),
-    %lists:reverse(Z).
 
 test_hof() ->
     F = fun(A,B) -> A =< B end,
