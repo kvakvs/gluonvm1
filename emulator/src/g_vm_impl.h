@@ -737,7 +737,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term fun(ctx.regs[arity]);
     if (fun.is_boxed_fun()) {
       boxed_fun_t *bf = fun.boxed_get_ptr<boxed_fun_t>();
-      if (bf->get_arity() != arity) {
+      if (bf->get_arity() != arity + bf->get_num_free()) {
         // TODO: make tuple {badarity, f_args}
         return ctx.raise(proc, atom::ERROR, atom::BADARITY);
       }
