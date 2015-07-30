@@ -318,14 +318,21 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //      during allocation there are Live number of live X registers.
     //      Also save the continuation pointer (CP) on the stack.
     Term stack_need(ctx.ip[0]);
+    // TODO: ignore stack contents for speedup (note allocate_zero must fill NILs)
     ctx.stack->push_n_nils(stack_need.small_get_unsigned());
     ctx.push_cp();
     ctx.ip += 2;
   }
 //  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
 //  }
-//  inline void opcode_allocate_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 14
-//  }
+  inline void opcode_allocate_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 14
+    // @spec allocate_zero StackNeed Live
+    // @doc Allocate space for StackNeed words on the stack. If a GC is needed
+    //      during allocation there are Live number of live X registers.
+    //      Clear the new stack words. (By writing NIL.)
+    //      Also save the continuation pointer (CP) on the stack.
+    return opcode_allocate(proc, ctx);
+  }
 //  inline void opcode_allocate_heap_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 15
 //  }
   inline void opcode_test_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 16
@@ -696,10 +703,15 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
     Term fun(ctx.regs[arity]);
     if (!fun.is_boxed()) {
+      // TODO: make tuple {badfun, f_args}
       return ctx.raise(proc, atom::ERROR, atom::BADFUN);
     }
     if (fun.is_fun()) {
       boxed_fun_t *bf = fun.boxed_get_ptr<boxed_fun_t>();
+      if (bf->get_arity() != arity) {
+        // TODO: make tuple {badarity, f_args}
+        return ctx.raise(proc, atom::ERROR, atom::BADARITY);
+      }
       // TODO: if bf.fe is null - unloaded fun
       word_t num_free = bf->get_num_free();
       G_ASSERT(arity + num_free < VM_MAX_REGS);
@@ -713,6 +725,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     } else if (fun.is_export()) {
       // TODO: check BoxedExport too!
       G_TODO("call_fun export");
+    } else {
+      // TODO: make tuple {badfun, f_args} (same as above)
+      return ctx.raise(proc, atom::ERROR, atom::BADFUN);
     }
   }
 //  inline void opcode_make_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 76

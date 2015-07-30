@@ -92,6 +92,21 @@ Heap *VM::get_heap(VM::heap_t) {
   return nullptr;
 }
 
+bif1_fn VM::resolve_bif1(mfarity_t &mfa)
+{
+  G_ASSERT(mfa.arity == 1);
+  if (mfa.mod == atom::ERLANG) {
+    if (mfa.fun == atom::LENGTH)       { return &bif::bif_length_1; }
+    if (mfa.fun == atom::ATOM_TO_LIST) { return &bif::bif_atom_to_list_1; }
+  }
+
+#if G_DEBUG
+  printf("ERROR bif1 undef ");
+  mfa.println();
+#endif
+  return nullptr;
+}
+
 bif2_fn VM::resolve_bif2(mfarity_t &mfa)
 {
   G_ASSERT(mfa.arity == 2);
@@ -107,7 +122,21 @@ bif2_fn VM::resolve_bif2(mfarity_t &mfa)
   }
 
 #if G_DEBUG
-  printf("ERROR bif2 undef");
+  printf("ERROR bif2 undef ");
+  mfa.println();
+#endif
+  return nullptr;
+}
+
+bif3_fn VM::resolve_bif3(mfarity_t &mfa)
+{
+  G_ASSERT(mfa.arity == 3);
+  if (mfa.mod == atom::ERLANG) {
+    if (mfa.fun == atom::MAKE_FUN) { return &bif::bif_make_fun_3; }
+  }
+
+#if G_DEBUG
+  printf("ERROR bif3 undef ");
   mfa.println();
 #endif
   return nullptr;
@@ -130,6 +159,13 @@ Term VM::apply_bif(Process *proc, mfarity_t &mfa, Term *args)
       }
       break;
     }
+  case 3: {
+      auto b3 = resolve_bif3(mfa);
+      if (b3) {
+        return b3(proc, args[0], args[1], args[2]);
+      }
+      break;
+    }
   }
   return proc->bif_error(atom::UNDEF);
 }
@@ -141,19 +177,5 @@ Scheduler *VM::get_scheduler() {
   return g_scheduler;
 }
 
-bif1_fn VM::resolve_bif1(mfarity_t &mfa)
-{
-  G_ASSERT(mfa.arity == 1);
-  if (mfa.mod == atom::ERLANG) {
-    if (mfa.fun == atom::LENGTH)       { return &bif::bif_length_1; }
-    if (mfa.fun == atom::ATOM_TO_LIST) { return &bif::bif_atom_to_list_1; }
-  }
-
-#if G_DEBUG
-  printf("ERROR bif1 undef");
-  mfa.println();
-#endif
-  return nullptr;
-}
 
 } // ns gluon

@@ -471,5 +471,11 @@ Term bif_divide_2(Process *proc, Term a, Term b)
   return Term::make_small(a_s / b_s);
 }
 
+// Create an export value
+Term bif_make_fun_3(Process *proc, Term m, Term f, Term arity)
+{
+  // Box export (1 word for boxed tag and 1 word reference to export_t)
+}
+
 } // ns bif
 } // ns gluon

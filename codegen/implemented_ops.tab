@@ -2,6 +2,7 @@ test_heap
 move
 return
 allocate
+allocate_zero
 deallocate
 select_val
 trim

@@ -11,6 +11,18 @@ namespace gluon {
 
 class Heap;
 
+typedef struct {
+  mfarity_t mfa;
+  bool      is_bif;
+  union {
+    word_t *code;
+    bif0_fn bif0;
+    bif1_fn bif1;
+    bif2_fn bif2;
+    bif3_fn bif3;
+  };
+} export_t;
+
 //
 // Class Module represents a single Erlang module with code. When multiple
 // versions of same module are loaded, you'll find one Module for each version

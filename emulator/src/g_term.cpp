@@ -135,7 +135,7 @@ void Term::print()
       printf(">");
       return;
     }
-    printf("#Box<0x%zx;", (word_t)boxed_get_ptr<word_t>());
+    printf("#Box<Tag=%zu;", boxed_get_subtag());
     VM::get_cs()->print_mfa(boxed_get_ptr<word_t>());
     printf(">");
   }
