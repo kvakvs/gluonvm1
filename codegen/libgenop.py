@@ -37,6 +37,8 @@ def filter_comments(lst):
 implemented_ops = filter_comments(file("implemented_ops.tab").read().split("\n"))
 atom_tab = []
 bif_tab = []
+atom_id_tab = {} # string() -> int()         - maps atom string to integer
+id_atom_tab = {} # int() -> dict({atom, id}) - maps atom id to atom record
 
 def is_printable(s):
     printable = string.ascii_letters + string.digits + "_"
@@ -45,21 +47,46 @@ def is_printable(s):
             return False
     return True
 
+def bif_cname(b):
+    if len(b) >= 3: return b[2]
+    else: return b[0]
+
+def atom_constname(a):
+    if 'cname' in a:
+        return "Q_" + a['cname'].upper()
+    else:
+        return a['atom'].upper()
+
+atom_id = 1
+def atom_add(a):
+    global atom_tab, atom_id, atom_id_tab, id_atom_tab
+    adict = a
+    adict['id'] = atom_id
+    atom_tab.append(adict)
+    atom_id_tab[a['atom']] = atom_id # name to id map
+    id_atom_tab[atom_id] = a         # id to atom map
+    atom_id += 1
+
 def load_bifs():
     global bif_tab, atom_tab
     atoms = filter_comments(file("atoms.tab").read().split("\n"))
     for a in atoms:
-        atom_tab.append({'atom': a})
+        atom_add({'atom': a})
 
     bifs = filter_comments(file("bif.tab").read().split("\n"))
+    bif_tab0 = []
     for b in bifs:
         b = b.split()
         if len(b) >= 3: cname = b[2]
         else: cname = b[0]
-        bif_tab.append({'atom': b[0], 'arity': int(b[1]), 'cname': cname})
+        bif_tab0.append({'atom': b[0], 'arity': int(b[1]), 'cname': cname})
 
-        if is_printable(b[0]): atom_tab.append({'atom': b[0]})
-        else: atom_tab.append({'atom': b[0], 'cname': cname})
+        if is_printable(b[0]): atom_add({'atom': b[0]})
+        else: atom_add({'atom': b[0], 'cname': cname})
+
+    global atom_id_tab
+    # sort by atom id plus arity if atom ids equal
+    bif_tab = sorted(bif_tab0, key=lambda b: atom_id_tab[b['atom']] * 1000 + b['arity'])
 
 def load():
     load_opcodes()

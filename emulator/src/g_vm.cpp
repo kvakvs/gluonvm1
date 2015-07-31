@@ -6,7 +6,11 @@
 #include "g_heap.h"
 #include "g_predef_atoms.h"
 #include "g_process.h"
+
 #include "bif/g_bif_misc.h"
+#include "g_vm_bif_tab.h"
+
+#include <algorithm>
 
 namespace gluon {
 
@@ -132,26 +136,26 @@ bif3_fn VM::resolve_bif3(mfarity_t &mfa)
   return nullptr;
 }
 
-// TODO: replace with bif search indes
+static bool
+find_bif_compare_fun(const bif::bif_index_t &a, const bif::bif_index_t &b) {
+  return a.fun < b.fun || a.arity < b.arity;
+}
+
 void *VM::find_bif(mfarity_t &mfa)
 {
-  switch (mfa.arity) {
-  case 0: {
-      auto b0 = resolve_bif0(mfa);
-      return (void *)b0;
-    }
-  case 1: {
-      auto b1 = resolve_bif1(mfa);
-      return (void *)b1;
-    }
-  case 2: {
-      auto b2 = resolve_bif2(mfa);
-      return (void *)b2;
-    }
-  case 3: {
-      auto b3 = resolve_bif3(mfa);
-      return (void *)b3;
-    }
+  if (mfa.mod != atom::ERLANG) {
+    return nullptr;
+  }
+
+  bif::bif_index_t sample;
+  sample.fun = mfa.fun;
+  sample.arity = mfa.arity;
+  auto i = std::lower_bound(&bif::g_bif_table[0],
+                           &bif::g_bif_table[bif::BIF_TABLE_SIZE],
+                           sample,
+                           find_bif_compare_fun);
+  if (i->fun == mfa.fun && i->arity == mfa.arity) {
+    return i->bif_fn;
   }
   return nullptr;
 }

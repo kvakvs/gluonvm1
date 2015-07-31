@@ -148,6 +148,7 @@ namespace gluon {
   } // ns line
 #endif
 
+
 } // ns gluon
 
 // Branch prediction helper macros, use when something is going to happen much

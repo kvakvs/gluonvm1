@@ -1,6 +1,7 @@
 #pragma once
 
 #include "g_defs.h"
+#include <algorithm>
 
 namespace gluon {
 
@@ -29,6 +30,12 @@ public:
   }
 };
 
+//template <typename T>
+//inline bool custom_compare(const std::pair<Range, T> &a,
+//                           const std::pair<Range, T> &b) {
+//  return a.first < b.first;
+//}
+
 template <typename T>
 class Index {
 public:
@@ -52,6 +59,13 @@ public:
       if (i.first.contains(x)) { return i.second; }
     }
     return T();
+//    auto find = std::make_pair(Range(x, nullptr), T());
+//    auto i = std::lower_bound(m_ranges.begin(), m_ranges.end(), find,
+//                              custom_compare<T>);
+//    if (i->first.contains(x)) {
+//      return i->second;
+//    }
+//    return T();
   }
 };
 #endif
