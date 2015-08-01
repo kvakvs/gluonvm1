@@ -5,6 +5,7 @@
 #include "g_heap.h"
 #include "g_module.h"
 #include "g_code_server.h"
+#include "g_term_helpers.h"
 
 namespace gluon {
 namespace bif {
@@ -412,7 +413,10 @@ Term bif_atom_to_list_1(Process *proc, Term a)
   }
 
   const Str &atom_str = VM::find_atom(a);
-  return Term::make_string(proc->get_heap(), atom_str);
+//  return term::build_string(proc->get_heap(), atom_str);
+  auto x = term::build_string(proc->get_heap(), atom_str);
+  x.println();
+  return x;
 }
 
 Term bif_minus_2(Process *proc, Term a, Term b)
@@ -500,6 +504,65 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
     box->bif_fn = biffn;
   }
   return Term::make_boxed_export(box);
+}
+
+static Term integer_to_list(Process *proc, Term n, word_t base)
+{
+  if (base < 2 || base > 36) {
+    return proc->bif_error(atom::BADARG);
+  }
+
+  if (n.is_small()) {
+    sword_t v = n.small_get_signed();
+
+    char buf[16];
+    char *ptr = buf + sizeof(buf) - 1;
+    const char *endptr = ptr;
+    // We do not need trailing zero as we use end pointer to delimit string
+
+    bool is_neg = v < 0;
+
+    if (v < 0) {
+      v = -v;
+    }
+
+    do {
+      word_t d = (word_t)v % base;
+      v /= 10;
+      *ptr-- = '0' + (char)d;
+    } while (v > 0);
+
+    if (is_neg) {
+      *ptr = '-';
+    } else {
+      ptr++;
+    }
+
+    return term::build_list(proc->get_heap(),
+                            const_cast<const char *>(ptr), endptr);
+  }
+#if FEATURE_BIGNUM
+  else if (is_boxed(N) && is_bignum(peel_boxed(N))) {
+    //TODO: unbounded alloc: burn fat
+    bignum_t *bn = (bignum_t *)peel_boxed(N);
+    int n = bignum_str_size(bn);
+    char buf[n];
+    bignum_to_str(&proc->hp, bn, buf);
+    return heap_strz(&proc->hp, buf);
+  }
+#endif
+
+  return proc->bif_error(atom::BADARG);
+}
+
+Term bif_integer_to_list_1(Process *proc, Term n)
+{
+  return integer_to_list(proc, n, 10);
+}
+
+Term bif_integer_to_list_2(Process *proc, Term n, Term base)
+{
+  return integer_to_list(proc, n, base.small_get_unsigned());
 }
 
 } // ns bif

@@ -374,8 +374,6 @@ public:
   }
   inline Term cons_head() const { return cons_get_element(0); }
   inline Term cons_tail() const { return cons_get_element(1); }
-  // Builds string as list of integers on heap
-  static Term make_string(Heap *, const Str &);
   bool is_cons_printable() const;
 protected:
   static bool is_cons_printable_element(Term el);

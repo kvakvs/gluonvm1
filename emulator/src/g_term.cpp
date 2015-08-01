@@ -4,6 +4,7 @@
 #include "g_code_server.h"
 #include "g_fun.h"
 #include "g_module.h" // for export_t class
+#include "g_term_helpers.h"
 
 #if G_TEST
 #include <fructose/fructose.h>
@@ -22,25 +23,6 @@ Term Term::allocate_cons(Heap *heap, Term head, Term tail) {
   d[0] = head;
   d[1] = tail;
   return make_cons(d);
-}
-
-Term Term::make_string(Heap *heap, const Str &s)
-{
-  if (s.empty()) {
-    return NIL;
-  }
-
-  word_t len = s.length();
-  Term *h = Heap::alloc<Term>(heap, 2 * len);
-
-  Term str_term = Term::make_cons(h);
-  for (word_t i = 0; i < len; i++) {
-    h[0] = Term::make_small_u((word_t)s[i]);
-    h[1] = (i == len - 1) ? NIL : Term::make_cons(h + 2);
-    h += 2;
-  }
-
-  return str_term;
 }
 
 bool Term::is_cons_printable() const

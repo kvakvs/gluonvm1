@@ -77,11 +77,6 @@ public:
   //
   // Bif management
   //
-  static bif0_fn resolve_bif0(mfarity_t &);
-  static bif1_fn resolve_bif1(mfarity_t &);
-  static bif2_fn resolve_bif2(mfarity_t &);
-  static bif3_fn resolve_bif3(mfarity_t &);
-
   static Term apply_bif(Process *proc, mfarity_t &mfa, Term *args);
   static void *find_bif(mfarity_t &mfa);
   static Term apply_bif(Process *proc, word_t arity, void *fn, Term *args);

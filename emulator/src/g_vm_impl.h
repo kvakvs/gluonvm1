@@ -11,6 +11,7 @@
 #include "g_fun.h"
 #include "g_heap.h"
 #include "g_vm.h"
+#include "g_term_helpers.h"
 
 #include <cstring>
 
@@ -321,7 +322,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[3]);
 
     mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
-    bif1_fn fn1 = VM::resolve_bif1(*mfa);
+    bif1_fn fn1 = (bif1_fn)VM::find_bif(*mfa);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
@@ -339,7 +340,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[4]);
 
     mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
-    bif2_fn fn2 = VM::resolve_bif2(*mfa);
+    bif2_fn fn2 = (bif2_fn)VM::find_bif(*mfa);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);
@@ -767,7 +768,10 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       }
     } else {
       // TODO: make tuple {badfun, f_args} (same as above)
-      return ctx.raise(proc, atom::ERROR, atom::BADFUN);
+      term::TupleBuilder tb(proc->get_heap(), 2);
+      tb.add(atom::BADFUN);
+      tb.add(fun);
+      return ctx.raise(proc, atom::ERROR, tb.make_tuple());
     }
   }
 //  inline void opcode_make_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 76
@@ -922,7 +926,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[4]);
 
     mfarity_t *mfa = boxed_fun.boxed_get_ptr<mfarity_t>();
-    bif1_fn fn1 = VM::resolve_bif1(*mfa);
+    bif1_fn fn1 = (bif1_fn)VM::find_bif(*mfa);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
@@ -944,7 +948,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[5]);
 
     mfarity_t *mfa = boxed_fun.boxed_get_ptr<mfarity_t>();
-    bif2_fn fn2 = VM::resolve_bif2(*mfa);
+    bif2_fn fn2 = (bif2_fn)VM::find_bif(*mfa);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);

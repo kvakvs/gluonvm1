@@ -60,6 +60,8 @@ def atom_constname(a):
 atom_id = 1
 def atom_add(a):
     global atom_tab, atom_id, atom_id_tab, id_atom_tab
+    if a['atom'] in atom_id_tab: #exists
+        return
     adict = a
     adict['id'] = atom_id
     atom_tab.append(adict)
