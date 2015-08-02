@@ -138,7 +138,10 @@ namespace term_tag {
       return (word_t)(v << L1_TAG_BITS) | TAG_L0_L1;
     }
     constexpr static sword_t value(word_t t) {
-      return (sword_t)t >> L1_TAG_BITS;
+      return ((sword_t)t) >> L1_TAG_BITS;
+    }
+    constexpr static word_t value_u(word_t t) {
+      return t >> L1_TAG_BITS;
     }
   };
 
@@ -427,12 +430,12 @@ public:
   }
   inline sword_t small_get_signed() const {
     G_ASSERT(is_small());
+//    printf("small_get_s val=0x%zx val=0x%zx\n", m_val, term_tag::Smallint::value(m_val));
     return term_tag::Smallint::value(m_val);
   }
   inline word_t small_get_unsigned() const {
     G_ASSERT(is_small());
-    sword_t v = term_tag::Smallint::value(m_val);
-    G_ASSERT(v >= 0);
+    word_t v = term_tag::Smallint::value_u(m_val);
     return (word_t)v;
   }
   inline static bool are_both_small(Term a, Term b) {

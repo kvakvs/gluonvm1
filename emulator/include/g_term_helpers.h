@@ -43,6 +43,9 @@ template <typename Iter> inline word_t length(Iter iter, Iter to) {
   }
   return result;
 }
+template <> inline word_t length<const char *>(const char *iter, const char *to) {
+  return (word_t)(to - iter);
+}
 
 template <typename Iter>
 Term build_list(Heap *heap, Iter iter, Iter to) {

@@ -21,7 +21,8 @@ test_mochijson() ->
                                {last_name, "Chapman"},
                                {email, "mchapman0@ihg.com"},
                                {country, "Dominican Republic"},
-                               {ip_address, "139.67.84.237"}
+                               {ip_address, 1234567},
+                               {nested, {struct, [ {test_neg, -10000}, {test, 10000} ]}}
                                ]}).
     % we need to go deeper to debuf
     %mochijson:json_encode_proplist([{hello, "world"}], {encoder, unicode, null}).

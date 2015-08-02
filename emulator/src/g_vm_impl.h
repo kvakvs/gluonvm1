@@ -264,7 +264,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc Call the function at Label.
     //      Save the next instruction as the return address in the CP register.
     Term arity(ctx.ip[0]);
-    ctx.live = (word_t)arity.small_get_signed();
+    ctx.live = arity.small_get_unsigned();
     ctx.cp = ctx.ip + 2;
     ctx.jump(proc, Term(ctx.ip[1]));
   }

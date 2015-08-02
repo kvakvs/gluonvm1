@@ -506,29 +506,30 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
   return Term::make_boxed_export(box);
 }
 
-static Term integer_to_list(Process *proc, Term n, word_t base)
+static Term integer_to_list(Process *proc, Term n, sword_t base)
 {
-  if (base < 2 || base > 36) {
+  if (base < 2 || base > 36 || !n.is_small()) {
     return proc->bif_error(atom::BADARG);
   }
 
   if (n.is_small()) {
+    printf("i2l n.val=%zx\n", n.as_word());
     sword_t v = n.small_get_signed();
 
     char buf[16];
     char *ptr = buf + sizeof(buf) - 1;
-    const char *endptr = ptr;
+    const char *endptr = ptr + 1;
     // We do not need trailing zero as we use end pointer to delimit string
 
     bool is_neg = v < 0;
-
-    if (v < 0) {
+    if (is_neg) {
       v = -v;
     }
 
     do {
-      word_t d = (word_t)v % base;
-      v /= 10;
+      sword_t d = v % base;
+      if (d >= 10) { d += 'A' - '9' + 1; }
+      v /= base;
       *ptr-- = '0' + (char)d;
     } while (v > 0);
 
@@ -562,7 +563,7 @@ Term bif_integer_to_list_1(Process *proc, Term n)
 
 Term bif_integer_to_list_2(Process *proc, Term n, Term base)
 {
-  return integer_to_list(proc, n, base.small_get_unsigned());
+  return integer_to_list(proc, n, base.small_get_signed());
 }
 
 } // ns bif

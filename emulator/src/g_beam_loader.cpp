@@ -782,17 +782,17 @@ Result<word_t> LoaderState::get_tag_and_value_2(tool::Reader &r,
     } else if (count == sizeof(word_t)) {
       // The value must be positive (or the encoded value would have been
       // 1 byte longer).
-      result = r.read_big<word_t>();
+      result = r.read_big_s();
 
     } else if (count < sizeof(word_t)) {
-      result = r.read_big<word_t>(count);
+      result = r.read_big_s(count);
       // If the sign bit is set, the value is negative (not allowed).
       if (result & (word_t)(1UL << (count * 8 - 1))) {
         return success((word_t)Tag::Overflow);
       }
 
     } else {
-      result = r.read_big<word_t>(count);
+      result = r.read_big_s(count);
       return success((word_t)Tag::Overflow);
     }
 
@@ -806,7 +806,7 @@ Result<word_t> LoaderState::get_tag_and_value_2(tool::Reader &r,
   sword_t val;
 
   if (count <= sizeof(val)) {
-    val = r.read_big<sword_t>(count);
+    val = r.read_big_s(count);
     val = ((val << 8 * (sizeof(val) - count)) >> 8 * (sizeof(val) - count));
 
     if (Term::does_fit_into_small(val)) {
