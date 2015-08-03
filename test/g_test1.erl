@@ -11,19 +11,12 @@ test() ->
     %test_case(),
     %test_hof(),
     %test_hof_fold(),
-    %test_hof_nested().
+    %test_hof_nested(),
     test_mochijson().
 
 %%-----------------------------------------------
 test_mochijson() ->
-    mochijson:encode({struct, [{id, 1},
-                               {first_name, "Matthew"},
-                               {last_name, "Chapman"},
-                               {email, "mchapman0@ihg.com"},
-                               {country, "Dominican Republic"},
-                               {ip_address, 1234567},
-                               {nested, {struct, [ {test_neg, -10000}, {test, 10000} ]}}
-                               ]}).
+    mochijson:encode({struct, [ {test_neg, -10000}, {test, 10000} ]}).
     % we need to go deeper to debuf
     %mochijson:json_encode_proplist([{hello, "world"}], {encoder, unicode, null}).
 

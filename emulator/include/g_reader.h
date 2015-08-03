@@ -97,8 +97,12 @@ public:
     m_ptr += 4;
     return result;
   }
-  sword_t read_big(word_t bytes) {
+  sword_t read_big_s(word_t bytes) {
     sword_t result = read_byte();
+    if (result & 128) {
+      // set all bytes above first to 0xFF
+      result = (sword_t)((~0xFFul) | (word_t)result);
+    }
     for (word_t i = 1; i < bytes; i++) {
       result <<= 8;
       result += read_byte();

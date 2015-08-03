@@ -143,16 +143,16 @@ protected:
   Result<Term> parse_term(Heap *, tool::Reader &r);
 
   static u8_t parse_tag(tool::Reader &r, u8_t value, int tag=-1);
-  static Result<Term> parse_int(tool::Reader &r, u8_t first);
+  static Result<Term> parse_int_term(tool::Reader &r, u8_t first);
   inline static bool is_base_tag(u8_t t) { return t < Tag::Extended_Base; }
-  static Result<Term> parse_create_int(tool::Reader &r, u8_t first);
+  static Result<Term> create_int_term(tool::Reader &r, u8_t first);
   static Result<Term> parse_bigint(tool::Reader & /*r*/, word_t /*byte_count*/);
   static Result<Term> parse_float(tool::Reader & /*r*/);
   static Result<Term> parse_alloclist(tool::Reader &r);
-  sword_t parse_small_int(tool::Reader &r, u8_t first);
-  sword_t parse_create_small_int(tool::Reader &r, u8_t tag);
+  static Pair<sword_t, bool> parse_small_int(tool::Reader &r, u8_t first);
+  static Pair<sword_t, bool> parse_create_small_int(tool::Reader &r, u8_t tag);
   // Returns result + overflow flag, overflow means we want to read bigint
-  Pair<sword_t, bool> read_signed_word(tool::Reader &r, word_t count);
+  static Pair<sword_t, bool> read_signed_word(tool::Reader &r, word_t count);
 };
 
 Result<Module *> code::Server::load_module_internal(
@@ -753,217 +753,19 @@ void LoaderState::replace_lambda_index_with_ptr(word_t *p, Module *m) {
   *p = j.as_word();
 }
 
-#if 0
-Result<word_t> LoaderState::get_tag_and_value_2(tool::Reader &r,
-                                                word_t len_code,
-                                                word_t &tag, word_t &result)
-{
-  word_t count;
-
-  // Retrieve the size of the value in bytes
-  len_code >>= 5;
-
-  if (len_code < 7) {
-    count = len_code + 2;
-  } else {
-    word_t sztag;
-    word_t len_word;
-
-    G_ASSERT(len_code == 7);
-    auto gt_result = get_tag_and_value(r, sztag, len_word);
-    G_RETURN_REWRAP_IF_ERROR(gt_result, word_t);
-    if (sztag != Tag::Literal) {
-      return error<word_t>("literal tag expected");
-    }
-    count = len_word + 9;
-  }
-
-  // The value for tags except Tag::Integer must be an unsigned integer
-  // fitting in a word_t. If it does not fit, we'll indicate overflow
-  // by changing the tag to Tag::Overflow.
-  if (tag != Tag::Integer) {
-    if (count == sizeof(word_t) + 1) {
-      // The encoded value has one more byte than a word_t.
-      // It will still fit in an word_t if the most significant
-      // byte is 0.
-      word_t msb;
-      msb = r.read_byte();
-      result = r.read_big<word_t>();
-
-      if (msb != 0) {
-        // Overflow: Negative or too big.
-        return success((word_t)Tag::Overflow);
-      }
-    } else if (count == sizeof(word_t)) {
-      // The value must be positive (or the encoded value would have been
-      // 1 byte longer).
-      result = r.read_big_s();
-
-    } else if (count < sizeof(word_t)) {
-      result = r.read_big_s(count);
-      // If the sign bit is set, the value is negative (not allowed).
-      if (result & (word_t)(1UL << (count * 8 - 1))) {
-        return success((word_t)Tag::Overflow);
-      }
-
-    } else {
-      result = r.read_big_s(count);
-      return success((word_t)Tag::Overflow);
-    }
-
-    return success(tag);
-  }
-
-  //
-  // Tag::Integer: First handle values up to the size of an word_t (i.e.
-  // either a small or a bignum).
-  //
-  sword_t val;
-
-  if (count <= sizeof(val)) {
-    val = r.read_big_s(count);
-    val = ((val << 8 * (sizeof(val) - count)) >> 8 * (sizeof(val) - count));
-
-    if (Term::does_fit_into_small(val)) {
-      result = val;
-      return success((word_t)Tag::Integer);
-    } else {
-#if FEATURE_BIGNUM
-      *result = new_literal(stp, &hp, BIG_UINT_HEAP_SIZE);
-      (void) small_to_big(val, hp);
-      return TAG_q;
-#else
-      G_FAIL("FEATURE_BIGNUM");
-#endif
-    }
-  }
-
-#if FEATURE_BIGNUM
-  //
-  // Make sure that the number will fit in our temporary buffer
-  // (including margin).
-  //
-  if (count + 8 > sizeof(default_buf)) {
-    bigbuf = (uint8_t *)erts_alloc(ERTS_ALC_T_LOADER_TMP, count + 8);
-  }
-
-  /*
-   * Copy the number reversed to our temporary buffer.
-   */
-
-  GetString(stp, s, count);
-
-  for (i = 0; i < count; i++) {
-    bigbuf[count - i - 1] = *s++;
-  }
-
-  /*
-   * Check if the number is negative, and negate it if so.
-   */
-
-  if ((bigbuf[count - 1] & 0x80) != 0) {
-    unsigned carry = 1;
-
-    neg = 1;
-
-    for (i = 0; i < count; i++) {
-      bigbuf[i] = ~bigbuf[i] + carry;
-      carry = (bigbuf[i] == 0 && carry == 1);
-    }
-
-    ASSERT(carry == 0);
-  }
-
-  /*
-   * Align to word boundary.
-   */
-
-  if (bigbuf[count - 1] == 0) {
-    count--;
-  }
-
-  if (bigbuf[count - 1] == 0) {
-    LoadError0(stp, "bignum not normalized");
-  }
-
-  while (count % sizeof(Eterm) != 0) {
-    bigbuf[count++] = 0;
-  }
-
-  /*
-   * Allocate heap space for the bignum and copy it.
-   */
-
-  arity = count / sizeof(Eterm);
-  *result = new_literal(stp, &hp, arity + 1);
-
-  if (is_nil(bytes_to_big(bigbuf, count, neg, hp))) {
-    goto load_error;
-  }
-
-  if (bigbuf != default_buf) {
-    erts_free(ERTS_ALC_T_LOADER_TMP, (void *) bigbuf);
-  }
-
-  return TAG_q;
-#else
-      G_FAIL("FEATURE_BIGNUM");
-#endif // bignum
-
-//load_error:
-
-//  if (bigbuf != default_buf) {
-//    erts_free(ERTS_ALC_T_LOADER_TMP, (void *) bigbuf);
-//  }
-
-//  return -1;
-}
-#endif
-
-#if 0
-MaybeError LoaderState::get_tag_and_value(tool::Reader &r,
-                                          word_t &tag, word_t &value) {
-  auto w = r.read_byte();
-  tag = w & 0x07;
-  if ((w & 0x08) == 0) {
-    value = w >> 4;
-  } else if ((w & 0x10) == 0) {
-    value = (w >> 5) << 8;
-    w = r.read_byte();
-    value |= w;
-  } else {
-    auto res2 = get_tag_and_value_2(r, w, tag, value);
-    G_RETURN_IF_ERROR_UNLIKELY(res2);
-    tag = res2.get_result();
-  }
-  return success();
-}
-#endif //0
-
-#if 0
-word_t LoaderState::parse_int(tool::Reader &r) {
-  word_t tag, val;
-
-  auto gt_result = get_tag_and_value(r, tag, val);
-  G_ASSERT(gt_result.is_success());
-//  if (tag != Tag::Literal && tag != Tag::Integer) {
-//    return error<word_t>("parse_int: lit/int tag expected");
-//  }
-  return val;
-}
-#endif //0
-
-
-
 Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
 {
   u8_t first = r.read_byte();
   u8_t tag   = parse_tag(r, first);
+
+  //
+  // Base tagged values (int, literal, atom, label, register, character)
+  //
   if (is_base_tag(tag)) {
-//    auto pi_result = parse_int(r, first);
-//    G_RETURN_REWRAP_IF_ERROR_UNLIKELY(pi_result, Term);
-//    Term val = pi_result.get_result();
-    word_t val = (word_t)parse_small_int(r, first);
+    auto psi_result = parse_small_int(r, first);
+    G_ASSERT(psi_result.second == false); // assert there's no overflow
+    // TODO: on overflow read bigint or something
+    word_t val = (word_t)psi_result.first;
 
     if (tag == Tag::Integer || tag == Tag::Literal) {
       return success(Term::make_small((sword_t)val));
@@ -1003,12 +805,16 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
       }
       return success(Term::make_small_u(val));
     }
-  } // ---- END BASE TAGS --- BEGIN EXTENDED ---
+  }
+  // ---- END BASE TAGS --- BEGIN EXTENDED ---
+  //
   else if (tag == Tag::Extended_Float) {
     return parse_float(r);
   }
   else if (tag == Tag::Extended_List) {
-    word_t length = parse_small_int(r, r.read_byte());
+    auto psi = parse_small_int(r, r.read_byte());
+    G_ASSERT(psi.second == false); // assert no overflow
+    word_t length = (word_t)psi.first;
     length /= 2;
     term::TupleBuilder tb(heap, length * 2);
 
@@ -1019,7 +825,8 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
       tb.add(base);
 
       auto label = parse_small_int(r, r.read_byte());
-      tb.add(Term::make_small(label));
+      G_ASSERT(label.second == false); // assert no overflow
+      tb.add(Term::make_small(label.first));
     }
     Term result = tb.make_tuple();
     // replace label numbers with pointers when loading finished
@@ -1045,7 +852,7 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
     return parse_alloclist(r);
   }
   else if (tag == Tag::Extended_Literal) {
-    auto lit_result = parse_int(r, r.read_byte());
+    auto lit_result = parse_int_term(r, r.read_byte());
     G_RETURN_REWRAP_IF_ERROR_UNLIKELY(lit_result, Term);
     word_t val1 = lit_result.get_result().small_get_unsigned();
 
@@ -1067,19 +874,20 @@ u8_t LoaderState::parse_tag(tool::Reader &r, u8_t value, int tag) {
   return (tag & 0x7);
 }
 
-Result<Term> LoaderState::parse_int(tool::Reader &r, u8_t first) {
+Result<Term> LoaderState::parse_int_term(tool::Reader &r, u8_t first) {
   u8_t tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
-  return parse_create_int(r, first);
+  return create_int_term(r, first);
 }
 
-Result<Term> LoaderState::parse_create_int(tool::Reader &r, u8_t tag)
+Result<Term> LoaderState::create_int_term(tool::Reader &r, u8_t tag)
 {
   if (tag & 0x08) {  // xxxx1xxx
     if (tag & 0x10) {  // xxx11xxx - extended
       if ((tag & 0xe0) == 0xe0) { // length encoded in the tag
-        Term tmp = parse_create_int(r, tag).get_result(); // feeling lucky
-        auto length = tmp.small_get_unsigned() + (tag >> 5) + 2;
+        auto tmp = parse_small_int(r, tag);
+        G_ASSERT(tmp.second == false); // assert no overflow
+        auto length = tmp.first + (tag >> 5) + 2;
         return parse_bigint(r, length);
       } else {
         return parse_bigint(r, 2 + (tag >> 5));
@@ -1094,7 +902,8 @@ Result<Term> LoaderState::parse_create_int(tool::Reader &r, u8_t tag)
   }
 }
 
-sword_t LoaderState::parse_small_int(tool::Reader &r, u8_t first) {
+Pair<sword_t, bool>
+LoaderState::parse_small_int(tool::Reader &r, u8_t first) {
   u8_t tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
   return parse_create_small_int(r, first);
@@ -1107,23 +916,24 @@ LoaderState::read_signed_word(tool::Reader &r, word_t count) {
     // The encoded value has one more byte than an size_t. It will still fit
     // in an size_t if the most significant byte is 0.
     u8_t msb = r.read_byte();
-    sword_t result = (sword_t)r.read_big_u32();
-    return std::make_pair(result, msb == 0); // let caller decide if overflow is ok
+    sword_t result = r.read_big_s(4);
+    return std::make_pair(result, msb == 0); // caller decides if overflow is ok
   }
   if (count == sizeof(word_t)) {
     // The value must be positive (or the encoded value would have been
     // one byte longer)
-    return std::make_pair(r.read_big_u32(), false);
+    return std::make_pair(r.read_big_s(4), false);
   }
   if (count < sizeof(word_t)) {
     // If the sign bit is set, the value is negative (not allowed).
     bool overflow = (r.peek_byte() & ((size_t)1 << (count * 8 - 1)));
-    return std::make_pair(r.read_big(count), overflow);
+    return std::make_pair(r.read_big_s(count), overflow);
   }
   G_FAIL("oops");
 }
 
-sword_t LoaderState::parse_create_small_int(tool::Reader &r, u8_t tag)
+Pair<sword_t, bool>
+LoaderState::parse_create_small_int(tool::Reader &r, u8_t tag)
 {
   if (tag & 0x08) {  // xxxx1xxx
     if (tag & 0x10) {  // xxx11xxx - extended
@@ -1131,18 +941,17 @@ sword_t LoaderState::parse_create_small_int(tool::Reader &r, u8_t tag)
       if (len_code < 7) {
         word_t count = len_code + 2;
         G_ASSERT(count <= sizeof(word_t));
-
-        auto pair = read_signed_word(r, count);
-        return pair.first;
+        return read_signed_word(r, count);
       }
       // Read int which will encode length - we skip it here, it is too big
-      G_FAIL("smallint too big");
+      //G_FAIL("smallint too big");
+      return std::make_pair(0L, true);
     } else {
       auto w = r.read_byte();
-      return ((sword_t)(tag & 0xe0) << 3) | w;
+      return std::make_pair(((sword_t)(tag & 0xe0) << 3) | w, false);
     }
   }
-  return (tag >> 4);
+  return std::make_pair(tag >> 4, false);
 }
 
 Result<Term> LoaderState::parse_bigint(tool::Reader &, word_t) {
