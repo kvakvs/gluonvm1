@@ -12,16 +12,15 @@ class TupleBuilder {
   word_t m_index;
   Term *m_elements;
 public:
-  TupleBuilder(Heap *heap, word_t arity): m_arity(arity), m_index(1) {
+  TupleBuilder(Heap *heap, word_t arity): m_arity(arity), m_index(0) {
     m_elements = Heap::alloc<Term>(heap, arity + 1);
   }
   inline void add(Term x) {
-    G_ASSERT(m_index <= m_arity);
-    m_index++;
-    m_elements[m_index] = x;
+    G_ASSERT(m_index < m_arity);
+    m_elements[++m_index] = x;
   }
   inline Term make_tuple() {
-    G_ASSERT(m_index == m_arity + 1)
+    G_ASSERT(m_index == m_arity)
     return Term::make_tuple(m_elements, m_arity);
   }
 };

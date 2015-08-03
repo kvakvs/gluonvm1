@@ -24,6 +24,9 @@ public:
     return new_r;
   }
 
+  inline u8_t peek_byte() {
+    return *m_ptr;
+  }
   inline u8_t read_byte() {
     // TODO: make this runtime error, not assertion
     G_ASSERT(m_ptr < m_limit);
@@ -60,23 +63,23 @@ public:
     return result;
   }
   // TODO: Sanity check for overflow?
-  template <typename T>
-  T read_var() {
-    T result = 0;
-//    // read no more than 5 (9 on 64-bit) 7-bit chunks for sanity
-//    int limit = G_HARDWARE_BITS / 7 + 1;
-    u8_t b = read_byte();
-    while (b & 0x80) {
-      result <<= 7;
-      result += (T)b & 0x7f;
-      b = read_byte();
+//  template <typename T>
+//  T read_var() {
+//    T result = 0;
+////    // read no more than 5 (9 on 64-bit) 7-bit chunks for sanity
+////    int limit = G_HARDWARE_BITS / 7 + 1;
+//    u8_t b = read_byte();
+//    while (b & 0x80) {
+//      result <<= 7;
+//      result += (T)b & 0x7f;
+//      b = read_byte();
 
-//      limit--;
-//      G_ASSERT(limit >= 0);
-    }
-    result <<= 7;
-    return result + (T)b;
-  }
+////      limit--;
+////      G_ASSERT(limit >= 0);
+//    }
+//    result <<= 7;
+//    return result + (T)b;
+//  }
 
   void read_bytes(u8_t *dst, word_t sz) {
     std::copy(m_ptr, m_ptr+sz, dst);
@@ -94,14 +97,14 @@ public:
     m_ptr += 4;
     return result;
   }
-//  template <typename T> T read_big(word_t bytes=sizeof(T)) {
-//    T result = 0;
-//    for (word_t i = 0; i < bytes; i++) {
-//      result <<= 8;
-//      result += read_byte();
-//    }
-//    return result;
-//  }
+  sword_t read_big(word_t bytes) {
+    sword_t result = read_byte();
+    for (word_t i = 1; i < bytes; i++) {
+      result <<= 8;
+      result += read_byte();
+    }
+    return result;
+  }
   inline void advance(word_t x) {
     assert_remaining_at_least(x);
     m_ptr += x;
