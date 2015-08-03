@@ -18,6 +18,15 @@ Build with cmake (run `cmake_linux.sh`, then in `_build/` directory run `make`).
 `CMakeLists.txt` work with QtCreator as IDE not to mention cmake supporting host of
 other IDEs.
 
+# TODO
+
+* Processes (simple scheduling is done just not connected to the whole thing yet)
+* Messages
+* Make proper heap and stack
+* Simple GC
+* Binaries
+* Floats maybe?
+
 ## apps/asm, apps/emuemu and apps/prototype
 
 Few apps which are currently out of use, but were created to help me learn BEAM universe:
