@@ -94,14 +94,14 @@ public:
     m_ptr += 4;
     return result;
   }
-  template <typename T> T read_big(word_t bytes=sizeof(T)) {
-    T result = 0;
-    for (word_t i = 0; i < bytes; i++) {
-      result <<= 8;
-      result += read_byte();
-    }
-    return result;
-  }
+//  template <typename T> T read_big(word_t bytes=sizeof(T)) {
+//    T result = 0;
+//    for (word_t i = 0; i < bytes; i++) {
+//      result <<= 8;
+//      result += read_byte();
+//    }
+//    return result;
+//  }
   inline void advance(word_t x) {
     assert_remaining_at_least(x);
     m_ptr += x;

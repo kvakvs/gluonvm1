@@ -127,6 +127,7 @@ namespace gluon {
 //  } code_ptr_t;
 
   static const word_t VM_MAX_REGS = 64; // (max arity of fun + captured terms)
+  static const word_t VM_MAX_STACK = 128; // is not enforced anywhere yet
   static const word_t VM_MAX_FP_REGS = 2;
 
 #if FEATURE_LINE_NUMBERS

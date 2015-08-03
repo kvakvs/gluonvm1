@@ -6,6 +6,7 @@
 #include "g_heap.h"
 #include "g_module.h"
 #include "g_predef_atoms.h"
+#include "g_term_helpers.h"
 
 // Generated opcode arity table
 #include "g_genop.h"
@@ -107,32 +108,31 @@ protected:
     Label         = 5,    // TAG_f
     Character     = 6,    // TAG_h
     Extended      = 7,    // TAG_z extended (list, float etc)
-    Extended_Float         = 0,
-    Extended_List          = 1,
-    Extended_FloatRegister = 2,
-    Extended_AllocList     = 3,
-    Extended_Literal       = 4,
+    Extended_Base          = 8,
+    Extended_Float         = 8+0,
+    Extended_List          = 8+1, // Select list for 'case X of'
+    Extended_FloatRegister = 8+2,
+    Extended_AllocList     = 8+3,
+    Extended_Literal       = 8+4,
 
-    // The following operand types are only used in the loader.
-    NIL       = 8,
-    NoLabel   = 9,
-    Register  = 10,  // TAG_r
-    V         = 11,
-    L         = 12,
-    LiteralRef  = 13, // TAG_q
-    Overflow  = 14,   // overflow/bigint
+//    // The following operand types are only used in the loader.
+//    NIL       = 8,
+//    NoLabel   = 9,
+//    Register  = 10,  // TAG_r
+//    V         = 11,
+//    L         = 12,
+//    LiteralRef  = 13, // TAG_q
+//    Overflow  = 14,   // overflow/bigint
     };};
 
   MaybeError resolve_labels(const Vector<word_t> &postponed_labels,
                             Vector<word_t> &code);
-  Result<Term> parse_term(Heap *, tool::Reader &r);
-  MaybeError get_tag_and_value(tool::Reader &r, word_t &tag, word_t &value);
-  Result<word_t> get_tag_and_value_2(tool::Reader &r,
-                                     word_t len_code,
-                                     word_t &tag, word_t &result);
+//  MaybeError get_tag_and_value(tool::Reader &r, word_t &tag, word_t &value);
+//  Result<word_t> get_tag_and_value_2(tool::Reader &r,
+//                                     word_t len_code,
+//                                     word_t &tag, word_t &result);
   void replace_imp_index_with_ptr(word_t *p, Module *m);
   void replace_lambda_index_with_ptr(word_t *p, Module *m);
-  word_t parse_int(tool::Reader &r);
 
 #if FEATURE_LINE_NUMBERS
   void beam_op_line(Vector<word_t> &code, Term arg);
@@ -140,6 +140,17 @@ protected:
 #if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
   void beam_op_func_info(Vector<word_t> &code, Term, Term, Term);
 #endif
+  Result<Term> parse_term(Heap *, tool::Reader &r);
+
+  static u8_t parse_tag(tool::Reader &r, u8_t value, int tag=-1);
+  static Result<Term> parse_int(tool::Reader &r, u8_t first);
+  inline static bool is_base_tag(u8_t t) { return t < Tag::Extended_Base; }
+  static Result<Term> parse_create_int(tool::Reader &r, u8_t first);
+  static Result<Term> parse_bigint(tool::Reader & /*r*/, word_t /*byte_count*/);
+  static Result<Term> parse_float(tool::Reader & /*r*/);
+  static Result<Term> parse_alloclist(tool::Reader &r);
+  sword_t parse_small_int(tool::Reader &r, u8_t first);
+  sword_t parse_create_small_int(tool::Reader &r, u8_t tag);
 };
 
 Result<Module *> code::Server::load_module_internal(
@@ -536,6 +547,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       G_ASSERT(label.is_small());
 
       word_t l_id = label.small_get_unsigned();
+      G_ASSERT(l_id < m_code_label_count);
       m_labels[l_id] = (&code.back())+1;
 //      G_LOG("label %zu (0x%zx) offset 0x%zx", l_id, l_id, code.size());
 //      puts("");
@@ -739,6 +751,7 @@ void LoaderState::replace_lambda_index_with_ptr(word_t *p, Module *m) {
   *p = j.as_word();
 }
 
+#if 0
 Result<word_t> LoaderState::get_tag_and_value_2(tool::Reader &r,
                                                 word_t len_code,
                                                 word_t &tag, word_t &result)
@@ -903,7 +916,9 @@ Result<word_t> LoaderState::get_tag_and_value_2(tool::Reader &r,
 
 //  return -1;
 }
+#endif
 
+#if 0
 MaybeError LoaderState::get_tag_and_value(tool::Reader &r,
                                           word_t &tag, word_t &value) {
   auto w = r.read_byte();
@@ -921,7 +936,9 @@ MaybeError LoaderState::get_tag_and_value(tool::Reader &r,
   }
   return success();
 }
+#endif //0
 
+#if 0
 word_t LoaderState::parse_int(tool::Reader &r) {
   word_t tag, val;
 
@@ -932,9 +949,124 @@ word_t LoaderState::parse_int(tool::Reader &r) {
 //  }
   return val;
 }
+#endif //0
+
+
 
 Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
 {
+  u8_t first = r.read_byte();
+  u8_t tag   = parse_tag(r, first);
+  if (is_base_tag(tag)) {
+//    auto pi_result = parse_int(r, first);
+//    G_RETURN_REWRAP_IF_ERROR_UNLIKELY(pi_result, Term);
+//    Term val = pi_result.get_result();
+    word_t val = (word_t)parse_small_int(r, first);
+
+    if (tag == Tag::Integer || tag == Tag::Literal) {
+      return success(Term::make_small((sword_t)val));
+    }
+    if (tag == Tag::Atom) {
+      if (val == 0) {
+        return success(NIL);
+      } else if (val >= m_atoms.size()) {
+        return error<Term>("bad atom index");
+      }
+      return success(VM::to_atom(atom_tab_index_to_str(val)));
+    }
+    if (tag == Tag::Label) {
+      if (val == 0) {
+        return success(NONVALUE); //Tag::NoLabel; // empty destination
+      } else if (val >= m_code_label_count) {
+        return error<Term>("bad label");
+      }
+      // special value to be recognized by label resolver
+      return success(Term::make_catch(val));
+    }
+    if (tag == Tag::XRegister) {
+      if (val >= VM_MAX_REGS) {
+        return error<Term>("invalid x register");
+      }
+      return success(Term::make_regx(val));
+    }
+    if (tag == Tag::YRegister) {
+      if (val >= VM_MAX_STACK) {
+        return error<Term>("invalid y register");
+      }
+      return success(Term::make_regy(val));
+    }
+    if (tag == Tag::Character) {
+      if (val > 65535) {
+        return error<Term>("invalid character range");
+      }
+      return success(Term::make_small_u(val));
+    }
+  } // ---- END BASE TAGS --- BEGIN EXTENDED ---
+  else if (tag == Tag::Extended_Float) {
+    return parse_float(r);
+  }
+  else if (tag == Tag::Extended_List) {
+//      pc, lst_field = self._parse_selectlist(pc)
+//      for i in range(len(lst_field)):
+//          ((tag, val), label) = lst_field[i]
+//          if tag == opcodes.TAG_INTEGER:
+//              val = self._check_const_table(const_table, val)
+//          elif tag == opcodes.TAG_ATOM and not val == 0:
+//              val = global_atom_table.search_index(atoms[val - 1])
+//              lst_field[i] = ((tag, val), label)
+//    auto pi_result = parse_int(r, first);
+//    G_RETURN_REWRAP_IF_ERROR_UNLIKELY(pi_result, Term);
+//    word_t length = pi_result.get_result().small_get_unsigned();
+    word_t length = parse_small_int(r, r.read_byte());
+    length /= 2;
+    term::TupleBuilder tb(heap, length * 2);
+    //Term *selectlist = Heap::alloc<Term>(heap, length * 2 + 1);
+
+    for (word_t i = 0; i < length; ++i) {
+      auto base_result = parse_term(heap, r);
+      G_RETURN_REWRAP_IF_ERROR_UNLIKELY(base_result, Term);
+      Term base = base_result.get_result();
+      tb.add(base);
+
+      auto label = parse_small_int(r, r.read_byte());
+      tb.add(Term::make_small(label));
+    }
+    Term result = tb.make_tuple();
+    // replace label numbers with pointers when loading finished
+    m_resolve_select_lists.push_back(result);
+    return success(result);
+  }
+  else if (tag == Tag::Extended_FloatRegister) {
+#if FEATURE_FLOAT
+//      pc, val = self._parse_floatreg(pc)
+//      args.append((tag, val))
+    gt_result = get_tag_and_value(r, tag, val);
+    G_RETURN_REWRAP_IF_ERROR_UNLIKELY(gt_result, Term);
+    if (tag != Tag::Literal) {
+      return error<Term>("fpreg: literal tag expected");
+    }
+    type = Tag::L;
+    break;
+#else
+    return error<Term>("FEATURE_FLOAT");
+#endif
+  }
+  else if (tag == Tag::Extended_AllocList) {
+    return parse_alloclist(r);
+  }
+  else if (tag == Tag::Extended_Literal) {
+    auto lit_result = parse_int(r, r.read_byte());
+    G_RETURN_REWRAP_IF_ERROR_UNLIKELY(lit_result, Term);
+    word_t val1 = lit_result.get_result().small_get_unsigned();
+
+    if (val1 >= m_literals.size()) {
+      return error<Term>("bad literal index");
+    }
+    return success(m_literals[val1]);
+  }
+  return error<Term>("bad extended tag");
+
+#if 0
   word_t type, val;
   auto gt_result = get_tag_and_value(r, type, val);
   G_RETURN_REWRAP_IF_ERROR_UNLIKELY(gt_result, Term);
@@ -1029,12 +1161,7 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
     case Tag::Extended_List: {
       // case select list
       // contains pairs of (literal table reference; label)
-//      if (arg + 1 != arity) {
-//        LoadError0(stp, "list argument must be the last argument");
-//      }
-      //auto l_result = parse_int(r);
-      //G_RETURN_REWRAP_IF_ERROR_UNLIKELY(l_result, Term);
-      //word_t length = l_result.get_result();
+
       word_t length = parse_int(r) / 2;
       Term *selectlist = Heap::alloc<Term>(heap, length * 2 + 1);
 
@@ -1141,12 +1268,157 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
   default:
     return error<Term>("bad tag");
   }
+#endif //0
+}
+
+u8_t LoaderState::parse_tag(tool::Reader &r, u8_t value, int tag) {
+  if (tag == -1) {
+    tag = value;
+  }
+  if ((tag & 0x7) == Tag::Extended) {
+    return ((u8_t)tag >> 4) + Tag::Extended_Base;
+  }
+  return (tag & 0x7);
+}
+
+Result<Term> LoaderState::parse_int(tool::Reader &r, u8_t first) {
+  u8_t tag = parse_tag(r, first);
+  G_ASSERT(tag < Tag::Extended_Base);
+  return parse_create_int(r, first);
+}
+
+Result<Term> LoaderState::parse_create_int(tool::Reader &r, u8_t tag)
+{
+  if (tag & 0x08) {  // xxxx1xxx
+    if (tag & 0x10) {  // xxx11xxx - extended
+      if ((tag & 0xe0) == 0xe0) { // length encoded in the tag
+        Term tmp = parse_create_int(r, tag).get_result(); // feeling lucky
+        auto length = tmp.small_get_unsigned() + (tag >> 5) + 2;
+        return parse_bigint(r, length);
+      } else {
+        return parse_bigint(r, 2 + (tag >> 5));
+      }
+    } else {
+      auto w = r.read_byte();
+      Term result = Term::make_small(((sword_t)(tag & 0xe0) << 3) | w);
+      return success(result);
+    }
+  } else {
+    return success(Term::make_small(tag >> 4));
+  }
+}
+
+sword_t LoaderState::parse_small_int(tool::Reader &r, u8_t first) {
+  u8_t tag = parse_tag(r, first);
+  G_ASSERT(tag < Tag::Extended_Base);
+  return parse_create_small_int(r, first);
+}
+
+sword_t LoaderState::parse_create_small_int(tool::Reader &r, u8_t tag)
+{
+  if (tag & 0x08) {  // xxxx1xxx
+    if (tag & 0x10) {  // xxx11xxx - extended
+      word_t len_code = tag >> 5;
+      if (len_code < 7) {
+        word_t count = len_code + 2;
+        G_ASSERT(count <= sizeof(word_t));
+        sword_t result = r.read_byte();
+        bool negative = (result & 0x80);
+
+        count--;
+        for (word_t i = 0; i < count; ++i) {
+          result <<= 8;
+          result += r.read_byte();
+        }
+        if (negative) {
+          // fill with 0xff until the size (ugly hax)
+          sword_t mask = 0xff << (8 * count);
+          for (word_t i = count; i < sizeof(word_t); ++i) {
+            result |= mask;
+            mask <<= 8;
+          }
+        }
+        return result;
+      }
+      // Read int which will encode length - we skip it here, it is too big
+      G_FAIL("smallint too big");
+    } else {
+      auto w = r.read_byte();
+      return ((sword_t)(tag & 0xe0) << 3) | w;
+    }
+  }
+  return (tag >> 4);
+}
+
+Result<Term> LoaderState::parse_bigint(tool::Reader &, word_t) {
+#if FEATURE_BIGNUM
+#error "todo load bignum from reader"
+#else
+  return error<Term>("FEATURE_BIGINT");
+#endif
+}
+
+Result<Term> LoaderState::parse_float(tool::Reader &) {
+#if FEATURE_FLOAT
+#error "todo load float from reader"
+#else
+  return error<Term>("FEATURE_FLOAT");
+#endif
+}
+
+Result<Term> LoaderState::parse_alloclist(tool::Reader &r)
+{
+#if 0
+  word_t n;
+  word_t type1;
+  word_t val1;
+  word_t words = 0;
+
+  gt_result = get_tag_and_value(r, tag, n);
+  G_RETURN_REWRAP_IF_ERROR_UNLIKELY(gt_result, Term);
+
+  if (tag != Tag::Literal) {
+    return error<Term>("a_list: literal tag expected");
+  }
+
+  while (n-- > 0) {
+    gt_result = get_tag_and_value(r, tag, type1);
+    if (tag != Tag::Literal) {
+      return error<Term>("a_list: literal tag expected");
+    }
+    gt_result = get_tag_and_value(r, tag, val1);
+    if (tag != Tag::Literal) {
+      return error<Term>("a_list: literal tag expected");
+    }
+
+    switch (type1) {
+    case 0: // Heap words
+      words += val1;
+      break;
+
+    case 1:
+#if FEATURE_FLOAT
+      words += FLOAT_SIZE_OBJECT * val;
+      break;
+#else
+      return error<Term>("FEATURE_FLOAT");
+#endif
+
+    default:
+      return error<Term>("a_list: bad allocation descr");
+    }
+  }
+
+  type = Tag::Literal;
+  val = words;
+#endif
+  G_FAIL("alloc list?");
 }
 
 MaybeError LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
                                        Vector<word_t> &code)
 {
-//  word_t *base = code.data();
+  //  word_t *base = code.data();
   for (word_t i = 0; i < postponed_labels.size(); ++i) {
     word_t code_index = postponed_labels[i];
 

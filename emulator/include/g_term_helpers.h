@@ -16,12 +16,12 @@ public:
     m_elements = Heap::alloc<Term>(heap, arity + 1);
   }
   inline void add(Term x) {
-    G_ASSERT(m_index < m_arity);
+    G_ASSERT(m_index <= m_arity);
     m_index++;
     m_elements[m_index] = x;
   }
   inline Term make_tuple() {
-    G_ASSERT(m_index == m_arity)
+    G_ASSERT(m_index == m_arity + 1)
     return Term::make_tuple(m_elements, m_arity);
   }
 };
