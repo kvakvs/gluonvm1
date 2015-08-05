@@ -12,8 +12,8 @@ class TupleBuilder {
   word_t m_index;
   Term *m_elements;
 public:
-  TupleBuilder(Heap *heap, word_t arity): m_arity(arity), m_index(0) {
-    m_elements = Heap::alloc<Term>(heap, arity + 1);
+  TupleBuilder(ProcessHeap *heap, word_t arity): m_arity(arity), m_index(0) {
+    m_elements = (Term *)heap->h_alloc(arity + 1);
   }
   inline void add(Term x) {
     G_ASSERT(m_index < m_arity);
@@ -47,14 +47,14 @@ template <> inline word_t length<const char *>(const char *iter, const char *to)
 }
 
 template <typename Iter>
-Term build_list(Heap *heap, Iter iter, Iter to) {
+Term build_list(ProcessHeap *heap, Iter iter, Iter to) {
   if (iter == to) {
     return ::gluon::NIL;
   }
 
   word_t len = length(iter, to);
   printf("len=%zu\n", len);
-  Term *h = Heap::alloc<Term>(heap, 2 * len);
+  Term *h = (Term *)heap->h_alloc(2 * len);
 
   Term result = Term::make_cons(h);
   word_t i = 0;
@@ -69,7 +69,7 @@ Term build_list(Heap *heap, Iter iter, Iter to) {
 }
 
 // Builds string as list of integers on heap
-static inline Term build_string(Heap *heap, const Str &s) {
+static inline Term build_string(ProcessHeap *heap, const Str &s) {
   return build_list(heap, s.begin(), s.end());
 }
 

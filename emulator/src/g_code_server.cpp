@@ -3,6 +3,7 @@
 #include "g_sys_fs.h"
 #include "g_heap.h"
 #include "g_vm.h"
+#include "g_process.h"
 
 namespace gluon {
 namespace code {
@@ -13,9 +14,10 @@ namespace code {
 //void Server::init() {
 //}
 
-MaybeError Server::load_module(Term name_atom, const u8_t *bytes, word_t size)
+MaybeError Server::load_module(Process *proc,
+                               Term name_atom, const u8_t *bytes, word_t size)
 {
-  auto lm_result = load_module_internal(name_atom, bytes, size);
+  auto lm_result = load_module_internal(proc->get_heap(), name_atom, bytes, size);
   G_RETURN_IF_ERROR(lm_result);
 
   // TODO: module versions for hot code loading
@@ -33,7 +35,7 @@ MaybeError Server::load_module(Term name_atom, const u8_t *bytes, word_t size)
   return success();
 }
 
-MaybeError Server::load_module(Term name)
+MaybeError Server::load_module(Process *proc, Term name)
 {
   // Scan for locations where module file can be found
   Str mod_filename = name.atom_str() + ".beam";
@@ -51,7 +53,7 @@ MaybeError Server::load_module(Term name)
       f.read(tmp_buffer, size);
 
       printf("Loading BEAM %s\n", path.c_str());
-      auto    result = load_module(name, tmp_buffer, size);
+      auto    result = load_module(proc, name, tmp_buffer, size);
       Heap::free_bytes(heap, tmp_buffer);
       return result;
     }
@@ -59,14 +61,14 @@ MaybeError Server::load_module(Term name)
   return "module not found";
 }
 
-Result<Module *> Server::find_module(Term m, find_opt_t load)
+Result<Module *> Server::find_module(Process *proc, Term m, find_opt_t load)
 {
   auto iter = m_modules.find(m);
   if (iter == m_modules.end()) {
     if (load == code::FIND_EXISTING) {
       return error<Module *>("function not found");
     } else {
-      auto res = load_module(m);
+      auto res = load_module(proc, m);
       G_RETURN_REWRAP_IF_ERROR(res, Module *);
       return success(m_modules[m]);
     }

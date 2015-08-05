@@ -42,11 +42,12 @@ private:
 public:
   Server() {}
 //  void init();
-  MaybeError load_module(Term name_atom);
+  MaybeError load_module(Process *proc, Term name_atom);
   // Pass nil as name to take name automatically from the module
-  MaybeError load_module(Term name_atom, const u8_t *bytes, word_t size);
+  MaybeError load_module(Process *proc, Term name_atom,
+                         const u8_t *bytes, word_t size);
 
-  Result<Module *> find_module(Term m, find_opt_t opt);
+  Result<Module *> find_module(Process *proc, Term m, find_opt_t opt);
   void path_append(const Str &p);
   void path_prepend(const Str &p);
 
@@ -56,7 +57,8 @@ public:
   mfarity_t find_mfa(word_t *ptr) const;
 
 protected:
-  Result<Module *> load_module_internal(Term expected_name_or_nil,
+  Result<Module *> load_module_internal(ProcessHeap *heap,
+                                        Term expected_name_or_nil,
                                         const u8_t *bytes, word_t size);
 };
 

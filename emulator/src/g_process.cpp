@@ -20,7 +20,8 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
 {
   G_ASSERT(this);
 
-  auto mod_result = VM::get_cs()->find_module(mfa.mod, code::LOAD_IF_NOT_FOUND);
+  auto mod_result = VM::get_cs()->find_module(this, mfa.mod,
+                                              code::LOAD_IF_NOT_FOUND);
   G_RETURN_IF_ERROR(mod_result);
   Module *mod = mod_result.get_result();
 
@@ -35,10 +36,7 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
   return success();
 }
 
-Heap *Process::get_heap()
-{
-  return VM::get_heap(VM::HEAP_PROCESS);
-}
+
 
 //word_t *Process::get_code_base() const {
 //  return m_module->m_code.data();

@@ -10,9 +10,9 @@ Term read_atom_string_i8(tool::Reader &r);
 Result<Term> read_tagged_atom_string(tool::Reader &r);
 Node *get_node(Term /*sysname*/, dist::creation_t /*creation*/);
 Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation);
-Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity);
-Term read_string_ext(Heap *heap, tool::Reader &r);
-Result<Term> read_list_ext(Heap *heap, tool::Reader &r);
+Result<Term> read_tuple(ProcessHeap *heap, tool::Reader &r, word_t arity);
+Term read_string_ext(ProcessHeap *heap, tool::Reader &r);
+Result<Term> read_list_ext(ProcessHeap *heap, tool::Reader &r);
 
 
 // Reads long atom as string and attempts to create it in atom table.
@@ -70,18 +70,18 @@ Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
   return error<Term>("FEATURE_ERL_DIST");
 }
 
-Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity) {
+Result<Term> read_tuple(ProcessHeap *heap, tool::Reader &r, word_t arity) {
   if (arity == 0) {
     return success(Term::make_zero_tuple());
   }
 
-  Term *elements = Heap::alloc<Term>(heap, arity+1);
+  Term *elements = (Term *)heap->h_alloc(arity+1);
 
   // fill elements or die horribly if something does not decode
   for (word_t i = 0; i < arity; ++i) {
     auto elem_result = read_ext_term(heap, r);
     if (elem_result.is_error()) {
-      Heap::free_terms(heap, elements, arity);
+      //Heap::free(heap, elements); // assume GC will find this shame?
       return elem_result;
     }
     elements[i+1] = elem_result.get_result();
@@ -91,7 +91,7 @@ Result<Term> read_tuple(Heap *heap, tool::Reader &r, word_t arity) {
 }
 
 
-Result<Term> read_ext_term_with_marker(Heap *heap, tool::Reader &r) {
+Result<Term> read_ext_term_with_marker(ProcessHeap *heap, tool::Reader &r) {
   r.assert_byte(ETF_MARKER);
   return read_ext_term(heap, r);
 }
@@ -120,7 +120,7 @@ Term read_map(Heap *heap, tool::Reader &r) {
 #endif // FEATURE_MAPS
 
 
-Term read_string_ext(Heap *heap, tool::Reader &r) {
+Term read_string_ext(ProcessHeap *heap, tool::Reader &r) {
   word_t length = r.read_big_u16();
   if (length == 0) {
     return NIL;
@@ -130,7 +130,7 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
   Term *ref = &result;
 
   for (word_t i = 0; i < length; ++i) {
-    Term *cons = Heap::alloc<Term>(heap, 2);
+    Term *cons = (Term *)heap->h_alloc(2);
     cons[0] = Term::make_small(r.read_byte());
     *ref = Term::make_cons(cons);
     ref = &cons[1];
@@ -151,14 +151,14 @@ Term read_string_ext(Heap *heap, tool::Reader &r) {
   return result;
 }
 
-Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
+Result<Term> read_list_ext(ProcessHeap *heap, tool::Reader &r) {
   word_t length = r.read_big_u32();
 
   Term result = NIL;
   Term *ref = &result;
 
   for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
-    Term *cons = Heap::alloc<Term>(heap, 2); // TODO: more efficient allocation
+    Term *cons = (Term *)heap->h_alloc(2);
 
     auto v_result = read_ext_term(heap, r);
     if (v_result.is_error()) {
@@ -180,7 +180,7 @@ Result<Term> read_list_ext(Heap *heap, tool::Reader &r) {
 }
 
 
-Result<Term> read_ext_term(Heap *heap, tool::Reader &r) {
+Result<Term> read_ext_term(ProcessHeap *heap, tool::Reader &r) {
   auto t = r.read_byte();
   switch (t) {
   case COMPRESSED:

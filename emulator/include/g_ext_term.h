@@ -49,9 +49,9 @@ namespace etf {
   };
 
   // Term will be parsed and stored on heap (reads byte=131 first as an ETF tag)
-  Result<Term> read_ext_term_with_marker(Heap *heap, tool::Reader &r);
+  Result<Term> read_ext_term_with_marker(ProcessHeap *heap, tool::Reader &r);
   // Term will be parsed and stored on heap (reads type tag first)
-  Result<Term> read_ext_term(Heap *heap, tool::Reader &r);
+  Result<Term> read_ext_term(ProcessHeap *heap, tool::Reader &r);
 
 } // ns etf
 } // ns gluon

@@ -2,22 +2,14 @@
 
 namespace gluon {
 
-u8_t *Heap::alloc_bytes(Heap *h, word_t bytes)
+word_t *ProcessHeap::h_alloc(word_t n)
 {
-  if (!h) {
-    return new u8_t[bytes];
-  }
-  G_TODO("g_heap::alloc");
-  G_IF_NODEBUG(return nullptr;)
-}
+  // TODO: grow or something
+  G_ASSERT(m_htop + n < m_sp);
 
-void Heap::free_bytes(Heap *h, u8_t *p)
-{
-  if (!h) {
-    delete p;
-    return;
-  }
-  G_TODO("g_heap::free");
+  auto result = m_htop;
+  m_htop += n;
+  return result;
 }
 
 

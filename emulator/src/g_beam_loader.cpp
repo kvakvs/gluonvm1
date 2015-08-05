@@ -25,6 +25,7 @@ typedef struct {
 
 class LoaderState {
 public:
+  ProcessHeap     *m_heap;
   Vector<Str>     m_atoms;
   const u8_t     *m_code; // not owned data
   word_t          m_code_size;
@@ -81,9 +82,9 @@ public:
   MaybeError load_export_table(tool::Reader &r);
   MaybeError load_import_table(tool::Reader &r);
   MaybeError load_code(tool::Reader &r);
-  MaybeError load_literal_table(Heap *heap, tool::Reader &r);
-  MaybeError load_labels(Heap *heap, tool::Reader &r);
-  MaybeError load_line_table(Heap *heap, tool::Reader &r);
+  MaybeError load_literal_table(tool::Reader &r);
+  MaybeError load_labels(tool::Reader &r);
+  MaybeError load_line_table(tool::Reader &r);
 
   inline const Str &atom_tab_index_to_str(word_t i) const {
     G_ASSERT(i <= m_atoms.size());
@@ -94,7 +95,6 @@ public:
   Result<Module *> finalize(Term modname);
   // Parse raw code creating jump table with decoded args
   MaybeError beam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
-  void get_tag_and_value(Heap *heap, tool::Reader &r, word_t &tag, word_t &val);
 
 protected:
   struct Tag { enum {
@@ -140,7 +140,7 @@ protected:
 #if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
   void beam_op_func_info(Vector<word_t> &code, Term, Term, Term);
 #endif
-  Result<Term> parse_term(Heap *, tool::Reader &r);
+  Result<Term> parse_term(tool::Reader &r);
 
   static u8_t parse_tag(tool::Reader &r, u8_t value, int tag=-1);
   static Result<Term> parse_int_term(tool::Reader &r, u8_t first);
@@ -155,12 +155,14 @@ protected:
   static Pair<sword_t, bool> read_signed_word(tool::Reader &r, word_t count);
 };
 
-Result<Module *> code::Server::load_module_internal(
+Result<Module *> code::Server::load_module_internal(ProcessHeap *heap,
     Term expected_name, const u8_t *bytes, word_t size)
 {
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(bytes, size);
+
   LoaderState lstate;
+  lstate.m_heap = heap;
 
   r.assert_remaining_at_least(4+4+4);
   Str for1_header = r.read_string(4);
@@ -175,8 +177,6 @@ Result<Module *> code::Server::load_module_internal(
   if (beam_header != "BEAM") {
     return error<Module *>("not BEAM file");
   }
-
-  Heap *heap = VM::get_heap(VM::HEAP_LOADER_TMP);
 
   MaybeError result;
   while (1) {
@@ -195,14 +195,14 @@ Result<Module *> code::Server::load_module_internal(
     else if (chunk == "Code") { result = lstate.load_code(r); }
     else if (chunk == "FunT") { result = lstate.load_lambda_table(r); }
     else if (chunk == "ExpT") { result = lstate.load_export_table(r); }
-    else if (chunk == "LitT") { result = lstate.load_literal_table(heap, r); }
-    // else if (chunk == "LABL") { result = lstate.load_labels(heap, r); }
+    else if (chunk == "LitT") { result = lstate.load_literal_table(r); }
+    // else if (chunk == "LABL") { result = lstate.load_labels(r); }
     else if (chunk == "StrT") { result = lstate.load_str_table(r); }
     else if (chunk == "ImpT") { result = lstate.load_import_table(r); }
     // CInf block
     // Attr block
     // Abst block
-    else if (chunk == "Line") { result = lstate.load_line_table(heap, r); }
+    else if (chunk == "Line") { result = lstate.load_line_table(r); }
     else {
       auto chunk_sz = r.read_big_u32();
       r.advance_align<4>(chunk_sz);
@@ -216,11 +216,7 @@ Result<Module *> code::Server::load_module_internal(
 }
 
 Result<Module *> LoaderState::finalize(Term modname) {
-  Heap *heap = VM::get_heap(VM::HEAP_CODE);
-
-  Module *newmod = Heap::alloc_object<Module>(heap, // then go constructor args:
-                                              modname,
-                                              m_imports);
+  Module *newmod = m_heap->h_alloc_object<Module>(modname, m_imports);
 
   auto result = beam_prepare_code(newmod, m_code, m_code_size);
   G_RETURN_REWRAP_IF_ERROR(result, Module*);
@@ -377,16 +373,16 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
   return success();
 }
 
-MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
+MaybeError LoaderState::load_literal_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r1 = r0.clone(chunk_size);
 
   auto uncompressed_size = r1.read_big_u32();
-  UniquePtr<u8_t> compressed(Heap::alloc_bytes(heap, chunk_size));
+  UniquePtr<u8_t> compressed((u8_t *)m_heap->h_alloc_bytes(chunk_size));
   r1.read_bytes(compressed.get(), chunk_size);
 
-  UniquePtr<u8_t> uncompressed(Heap::alloc_bytes(heap, uncompressed_size));
+  UniquePtr<u8_t> uncompressed((u8_t *)m_heap->h_alloc_bytes(uncompressed_size));
 
   auto result = mz_uncompress(uncompressed.get(), &uncompressed_size,
                               compressed.get(), chunk_size);
@@ -404,7 +400,7 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
   for (word_t i = 0; i < count; ++i) {
     /*auto lit_sz =*/ r.read_big_u32();
 
-    auto lit_result = etf::read_ext_term_with_marker(heap, r);
+    auto lit_result = etf::read_ext_term_with_marker(m_heap, r);
     G_RETURN_IF_ERROR(lit_result);
 
     auto lit = lit_result.get_result();
@@ -415,7 +411,7 @@ MaybeError LoaderState::load_literal_table(Heap *heap, tool::Reader &r0)
   return success();
 }
 
-MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
+MaybeError LoaderState::load_labels(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
 //  tool::Reader r = r0.clone(chunk_size);
@@ -424,7 +420,7 @@ MaybeError LoaderState::load_labels(Heap * /*heap*/, tool::Reader &r0)
   return success();
 }
 
-MaybeError LoaderState::load_line_table(Heap *heap, tool::Reader &r0)
+MaybeError LoaderState::load_line_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
 
@@ -530,7 +526,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
     // line/1 opcode
     if (opcode == genop::OPCODE_LINE) {
-      auto a = parse_term(heap, r);
+      auto a = parse_term(r);
       G_RETURN_IF_ERROR_UNLIKELY(a);
 #if FEATURE_LINE_NUMBERS
       beam_op_line(code, a.get_result());
@@ -542,7 +538,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
     // label/1 opcode - save offset to labels table
     if (opcode == genop::OPCODE_LABEL) {
-      auto pv_result = parse_term(heap, r);
+      auto pv_result = parse_term(r);
       G_RETURN_IF_ERROR_UNLIKELY(pv_result);
       Term label = pv_result.get_result();
 //      label.println();
@@ -558,11 +554,11 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
     if (opcode == genop::OPCODE_FUNC_INFO) {
       tool::Reader r1 = r.clone();
-      auto a = parse_term(heap, r1);
+      auto a = parse_term(r1);
       G_RETURN_IF_ERROR(a)
-      auto b = parse_term(heap, r1);
+      auto b = parse_term(r1);
       G_RETURN_IF_ERROR(b);
-      auto c = parse_term(heap, r1);
+      auto c = parse_term(r1);
       G_RETURN_IF_ERROR(c);
 #if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
       beam_op_func_info(code,
@@ -593,7 +589,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     word_t *first_arg = &code.back() + 1;
 
     for (word_t a = 0; a < arity; ++a) {
-      auto arg_result = parse_term(heap, r);
+      auto arg_result = parse_term(r);
       G_RETURN_IF_ERROR_UNLIKELY(arg_result);
 
       Term arg = arg_result.get_result();
@@ -753,7 +749,7 @@ void LoaderState::replace_lambda_index_with_ptr(word_t *p, Module *m) {
   *p = j.as_word();
 }
 
-Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
+Result<Term> LoaderState::parse_term(tool::Reader &r)
 {
   u8_t first = r.read_byte();
   u8_t tag   = parse_tag(r, first);
@@ -816,10 +812,10 @@ Result<Term> LoaderState::parse_term(Heap *heap, tool::Reader &r)
     G_ASSERT(psi.second == false); // assert no overflow
     word_t length = (word_t)psi.first;
     length /= 2;
-    term::TupleBuilder tb(heap, length * 2);
+    term::TupleBuilder tb(m_heap, length * 2);
 
     for (word_t i = 0; i < length; ++i) {
-      auto base_result = parse_term(heap, r);
+      auto base_result = parse_term(r);
       G_RETURN_REWRAP_IF_ERROR_UNLIKELY(base_result, Term);
       Term base = base_result.get_result();
       tb.add(base);

@@ -134,7 +134,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       }
     }
 
-    auto find_result = VM::get_cs()->find_module(mfa->mod, code::LOAD_IF_NOT_FOUND);
+    auto find_result = VM::get_cs()->find_module(proc, mfa->mod,
+                                                 code::LOAD_IF_NOT_FOUND);
     if (find_result.is_error()) {
       G_LOG("ctx.jump_ext: %s\n", find_result.get_error());
       return raise(proc, atom::ERROR, atom::UNDEF);
@@ -699,7 +700,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       return;
     }
 
-    Term *elements = Heap::alloc<Term>(proc->get_heap(), arity+1);
+    Term *elements = (Term *)proc->heap_alloc(arity+1);
     Term *p = elements+1;
     do {
       // assert that ip[0] is opcode 'put' skip it and read its argument
@@ -840,9 +841,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term boxed_fe(ctx.ip[0]);
     fun_entry_t *fe = boxed_fe.boxed_get_ptr<fun_entry_t>();
 
-    word_t *p8 = Heap::alloc<word_t>(
-          proc->get_heap(),
-          word_size(sizeof(boxed_fun_t)) + fe->num_free
+    // TODO: mark boxed memory somehow so GC can recognize its size?
+    word_t *p8 = proc->heap_alloc(
+          ProcessHeap::calculate_word_size(sizeof(boxed_fun_t)) + fe->num_free
           );
     // Assuming that regs have all values ready to be frozen (copied to closure)
     boxed_fun_t *p = fun::box_fun(fe, p8, proc->get_pid(), ctx.regs);

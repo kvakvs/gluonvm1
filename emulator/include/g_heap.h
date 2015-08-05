@@ -100,8 +100,9 @@ class Heap {
 public:
   Heap() = delete;
 
-  // h = nullptr will allocate on global C++ heap for debugging
-  static u8_t *alloc_bytes(Heap *h, word_t bytes);
+  static u8_t *alloc_bytes(Heap *, word_t bytes) {
+    return new u8_t[bytes];
+  }
 
   template <typename T>
   static inline T *alloc(Heap *h, word_t count) {
@@ -110,23 +111,56 @@ public:
   }
 
   template <typename T, typename... Args>
-  static inline T *alloc_object(Heap *h, Args&&... args) {
-    // NOTE: will call constructor
+  static inline T *alloc_object(Heap *h, Args&&... args) { // NOTE: calls ctor
     u8_t *bytes = alloc_bytes(h, sizeof(T));
     return new(bytes)T(std::forward<Args>(args)...);
   }
 
-  static void free_bytes(Heap *h, u8_t *p);
+  static void free_bytes(Heap *, u8_t *p) {
+    delete p;
+    return;
+  }
 
   template <typename T>
-  static void free(Heap *h, T *p) {
-    // NOTE: does not call dtor
+  static void free(Heap *h, T *p) { // NOTE: does not call dtor
     return free_bytes(h, reinterpret_cast<u8_t *>(p));
   }
-  // Marks nested terms as unused (assuming no references to them)
-  static void free_terms(Heap *h, Term *terms, word_t /*count*/) {
-    // TODO: marking
-    free(h, terms);
+};
+
+static const word_t DEFAULT_PROC_HEAP_WORDS = 100000;
+
+class ProcessHeap {
+  Vector<word_t> m_heap;  // vector size is also used as limit
+  word_t      *m_sp;      // stack top pointer, grows down from heap end
+  word_t      *m_htop;    // heap top pointer grows from 0 up
+public:
+  ProcessHeap() {
+    m_heap.resize(DEFAULT_PROC_HEAP_WORDS);
+    m_sp = &m_heap.back();
+    m_htop = &m_heap.front();
+  }
+
+  template <typename T>
+  static constexpr word_t calculate_storage_size() {
+    return ((sizeof(T) + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
+  }
+  static constexpr word_t calculate_word_size(word_t bytes) {
+    return ((bytes + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
+  }
+
+  // Grows htop and gives requested memory
+  word_t *h_alloc(word_t);
+
+  // TODO: Mark memory so that GC will know its size
+  inline word_t *h_alloc_bytes(word_t bytes) {
+    return h_alloc(calculate_word_size(bytes));
+  }
+
+  // TODO: Mark memory so that GC will know its size
+  template <typename T, typename... Args>
+  inline T *h_alloc_object(Args&&... args) { // NOTE: calls ctor
+    word_t *bytes = h_alloc(calculate_storage_size<T>());
+    return new(bytes)T(std::forward<Args>(args)...);
   }
 };
 

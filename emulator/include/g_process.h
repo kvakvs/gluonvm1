@@ -3,6 +3,7 @@
 #include "g_defs.h"
 #include "g_term.h"
 #include "g_error.h"
+#include "g_heap.h"
 
 namespace gluon {
 
@@ -88,6 +89,7 @@ public:
 protected:
   runtime_ctx_t m_ctx;
   ProcessStack  m_stack;
+  ProcessHeap   m_heap;
   Term          m_pid = NONVALUE;
   mfarity_t     m_init_call;
   bool          m_trap_exit = false;
@@ -116,7 +118,17 @@ public:
   ProcessStack *get_stack() {
     return &m_stack;
   }
-  Heap *get_heap();
+
+  //
+  // Process memory thingies
+  //
+
+  ProcessHeap *get_heap() {
+    return &m_heap;
+  }
+  inline word_t *heap_alloc(word_t num_words) {
+    return m_heap.h_alloc(num_words);
+  }
 
   // Not inlined, ask module for pointer to its code. Safety off!
   word_t *get_ip() const;

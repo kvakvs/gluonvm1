@@ -487,12 +487,11 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
   // TODO: calculate is_bif for new object
   mfarity_t mfa(mod, f, arity);
   void *biffn = VM::find_bif(mfa);
-  export_t *box = Heap::alloc_object<export_t>(proc->get_heap(),
-                                               biffn != nullptr);
+  export_t *box = proc->get_heap()->h_alloc_object<export_t>(biffn != nullptr);
   box->mfa = mfa;
   if (biffn == nullptr) {
     // Find module
-    auto m_result = VM::get_cs()->find_module(mod, code::LOAD_IF_NOT_FOUND);
+    auto m_result = VM::get_cs()->find_module(proc, mod, code::LOAD_IF_NOT_FOUND);
     if (m_result.is_error()) {
       return proc->bif_error(atom::UNDEF);
     }
