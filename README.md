@@ -1,22 +1,24 @@
 ## THE NEXT <span style="color:silver">~~BIG~~</span> small THING™
 # Gluon Erlang Abstract Machine
 
-A configurable and small virtual machine which runs bytecode derived from and 
-very similar to Erlang BEAM. The goal is to go smaller than several tens of 
-kilobytes (oh well, under megabyte would be cool).
+A configurable and small virtual machine which runs Erlang BEAM bytecode. Many
+simplifications have been made to keep code small at the cost of speed.
+The goal is to go smaller than several tens of kilobytes (oh well, under
+megabyte would be cool).
 
-Idea of minimization is to track features used by code automatically plus allow
-programmer to specify certain features he'd like to have or not have, then 
-compile core VM with these features as executable or firmware. 
+Features used in code can be configured at compile time when you want to squeeze
+VM into a particularly small platform.
 
 ## emulator/
 
 C++ implementation of minimalistic BEAM virtual machine. Has simple configurable
 feature settings in `include/g_defs.h` (like distribution, float, bignum support etc).
 
-Build with cmake (run `cmake_linux.sh`, then in `_build/` directory run `make`). 
-`CMakeLists.txt` work with QtCreator as IDE not to mention cmake supporting host of
-other IDEs.
+Requires CMake, Clang (probably will work with GCC too?).
+
+Run `make` in project directory, run `make` in codegen/, then run `make` in emulator/
+directory. `CMakeLists.txt` work with QtCreator as IDE not to mention cmake 
+supporting host of other IDEs.
 
 # TODO
 
@@ -27,6 +29,7 @@ other IDEs.
 * Binaries
 * Floats maybe?
 
+# Deprecated
 ## apps/asm, apps/emuemu and apps/prototype
 
 Few apps which are currently out of use, but were created to help me learn BEAM universe:

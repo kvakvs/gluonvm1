@@ -127,13 +127,37 @@ public:
   }
 };
 
-static const word_t DEFAULT_PROC_HEAP_WORDS = 100000;
+static const word_t DEFAULT_PROC_HEAP_WORDS = 100;
+
+// Heap node for growing process heap. We begin with small enough heap and grow
+// every time when we run out of memory in last node.
+class PHNode {
+public:
+  PHNode *m_next;
+  word_t *m_start; // this points at first free space and grows
+  word_t *m_limit; // marks end of node
+
+  inline word_t get_avail() const {
+    G_ASSERT(m_limit < m_start);
+    return (word_t)(m_limit - m_start);
+  }
+};
 
 class ProcessHeap {
-  Vector<word_t> m_heap;  // vector size is also used as limit
-  word_t      *m_sp;      // stack top pointer, grows down from heap end
-  word_t      *m_htop;    // heap top pointer grows from 0 up
+  //
+  // Stack
+  //
+  PHNode    *m_stack_node = nullptr;
+  word_t    *m_s_top;     // stack tip, grows down from heap end
+  word_t    *m_s_bottom;  // stack bottom, delimits stack growth
+
+  //
+  // Heap
+  //
+  PHNode    *m_current = &m_first;
+
 public:
+  // Created by Process class
   ProcessHeap() {
     m_heap.resize(DEFAULT_PROC_HEAP_WORDS);
     m_sp = &m_heap.back();

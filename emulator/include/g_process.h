@@ -88,7 +88,7 @@ public:
 
 protected:
   runtime_ctx_t m_ctx;
-  ProcessStack  m_stack;
+  ProcessStack  m_stack; // TODO: remove merge with processheap
   ProcessHeap   m_heap;
   Term          m_pid = NONVALUE;
   mfarity_t     m_init_call;
