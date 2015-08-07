@@ -57,7 +57,7 @@ public:
   mfarity_t find_mfa(word_t *ptr) const;
 
 protected:
-  Result<Module *> load_module_internal(ProcessHeap *heap,
+  Result<Module *> load_module_internal(proc::Heap *heap,
                                         Term expected_name_or_nil,
                                         const u8_t *bytes, word_t size);
 };

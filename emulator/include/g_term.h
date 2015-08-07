@@ -5,7 +5,7 @@
 namespace gluon {
 
 class Heap;
-class ProcessHeap; // in g_heap.h
+namespace proc { class Heap; } // in g_heap.h
 class export_t; // in g_module.h
 
 namespace term_tag {
@@ -369,7 +369,7 @@ public:
   // Cons is a boxed value pointing at two words in memory: a head and a tail
   //
   // TODO: make a cool variadic helper to build lists
-  static Term allocate_cons(ProcessHeap *heap, Term head, Term tail);
+  static Term allocate_cons(proc::Heap *heap, Term head, Term tail);
   inline static Term make_cons(Term *box) {
     return Term(term_tag::Cons::create_from_ptr<Term>(box));
   }

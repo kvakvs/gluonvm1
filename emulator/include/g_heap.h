@@ -127,42 +127,81 @@ public:
   }
 };
 
-static const word_t DEFAULT_PROC_HEAP_WORDS = 100;
+namespace proc {
 
-// Heap node for growing process heap. We begin with small enough heap and grow
-// every time when we run out of memory in last node.
-class PHNode {
+static const word_t DEFAULT_PROC_HEAP_WORDS = 100;
+static const word_t DEFAULT_PROC_STACK_WORDS = 50;
+// Allocated heap segments sequentially grow from DEFAULT_PROC_HEAP_WORDS (100)
+// up to 2^HEAP_SEGMENT_GROWTH_MAX (100*2^8=100kb on 32bit or 200kb on 64bit)
+// All new blocks after 8th will be capped at this size.
+static const word_t HEAP_SEGMENT_GROWTH_MAX = 8;
+
+class Heap;
+
+// Heap node for process heap. We begin with small enough heap and grow
+// by allocating double that every time when we run out of memory in last
+// node. Fields of Node take first words of the heap then follows free memory.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-length-array"
+class Node {
 public:
-  PHNode *m_next;
-  word_t *m_start; // this points at first free space and grows
-  word_t *m_limit; // marks end of node
+  static const word_t FIELDS_WORD_SIZE = 3; // how many words this class takes
+  static_assert(DEFAULT_PROC_STACK_WORDS < DEFAULT_PROC_HEAP_WORDS - FIELDS_WORD_SIZE,
+                "default stack does not fit default heap size");
+
+  Node *next = nullptr;
+  word_t *start;  // this points at first free space and grows
+  word_t *limit;  // marks end of node
+  word_t heap_start[0]; // marks end of headers and beginning of heap
+
+  static Node *create(word_t sz_words);
 
   inline word_t get_avail() const {
-    G_ASSERT(m_limit < m_start);
-    return (word_t)(m_limit - m_start);
+    G_ASSERT(limit >= start);
+    return (word_t)(limit - start);
+  }
+  // Allocated memory is not tagged in any way except regular term bitfields
+  inline word_t *allocate_words(word_t n) {
+    auto result = start;
+    start += n;
+    return result;
   }
 };
+#pragma clang diagnostic pop
 
-class ProcessHeap {
-  //
-  // Stack
-  //
-  PHNode    *m_stack_node = nullptr;
-  word_t    *m_s_top;     // stack tip, grows down from heap end
-  word_t    *m_s_bottom;  // stack bottom, delimits stack growth
+//
+// Stack
+//
+class Stack {
+  Node      *m_node = nullptr;  // where stack is
+  word_t    *m_top;             // stack tip, grows down from heap end
+  word_t    *m_bottom;          // stack bottom, delimits stack growth
+public:
+  // Lowers 'limit' by 'size' words, puts stack there
+  void put_stack(Node *h_node, word_t size);
+};
+
+//
+// Segmented heap which grows by allocating double the last segment size
+// and never shrinks (until process dies). Also contains stack which may migrate
+// out of its home node.
+//
+class Heap {
+  Stack m_stack;
 
   //
   // Heap
   //
-  PHNode    *m_current = &m_first;
+
+  // track count of nodes allocated, each new is double of previous
+  word_t m_node_count = 1;
+  Node  *m_current;
+  Node  *m_root;
 
 public:
-  // Created by Process class
-  ProcessHeap() {
-    m_heap.resize(DEFAULT_PROC_HEAP_WORDS);
-    m_sp = &m_heap.back();
-    m_htop = &m_heap.front();
-  }
+  // Allocates DEFAULT_PROC_HEAP_WORDS and writes Node header there, uses it as
+  // initial heap node
+  Heap();
 
   template <typename T>
   static constexpr word_t calculate_storage_size() {
@@ -188,4 +227,5 @@ public:
   }
 };
 
+} // ns proc
 } // ns gluon

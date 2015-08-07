@@ -843,7 +843,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
     // TODO: mark boxed memory somehow so GC can recognize its size?
     word_t *p8 = proc->heap_alloc(
-          ProcessHeap::calculate_word_size(sizeof(boxed_fun_t)) + fe->num_free
+          proc::Heap::calculate_word_size(sizeof(boxed_fun_t)) + fe->num_free
           );
     // Assuming that regs have all values ready to be frozen (copied to closure)
     boxed_fun_t *p = fun::box_fun(fe, p8, proc->get_pid(), ctx.regs);

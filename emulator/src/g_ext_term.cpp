@@ -10,9 +10,9 @@ Term read_atom_string_i8(tool::Reader &r);
 Result<Term> read_tagged_atom_string(tool::Reader &r);
 Node *get_node(Term /*sysname*/, dist::creation_t /*creation*/);
 Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation);
-Result<Term> read_tuple(ProcessHeap *heap, tool::Reader &r, word_t arity);
-Term read_string_ext(ProcessHeap *heap, tool::Reader &r);
-Result<Term> read_list_ext(ProcessHeap *heap, tool::Reader &r);
+Result<Term> read_tuple(proc::Heap *heap, tool::Reader &r, word_t arity);
+Term read_string_ext(proc::Heap *heap, tool::Reader &r);
+Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r);
 
 
 // Reads long atom as string and attempts to create it in atom table.
@@ -70,7 +70,7 @@ Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
   return error<Term>("FEATURE_ERL_DIST");
 }
 
-Result<Term> read_tuple(ProcessHeap *heap, tool::Reader &r, word_t arity) {
+Result<Term> read_tuple(proc::Heap *heap, tool::Reader &r, word_t arity) {
   if (arity == 0) {
     return success(Term::make_zero_tuple());
   }
@@ -91,7 +91,7 @@ Result<Term> read_tuple(ProcessHeap *heap, tool::Reader &r, word_t arity) {
 }
 
 
-Result<Term> read_ext_term_with_marker(ProcessHeap *heap, tool::Reader &r) {
+Result<Term> read_ext_term_with_marker(proc::Heap *heap, tool::Reader &r) {
   r.assert_byte(ETF_MARKER);
   return read_ext_term(heap, r);
 }
@@ -120,7 +120,7 @@ Term read_map(Heap *heap, tool::Reader &r) {
 #endif // FEATURE_MAPS
 
 
-Term read_string_ext(ProcessHeap *heap, tool::Reader &r) {
+Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u16();
   if (length == 0) {
     return NIL;
@@ -151,7 +151,7 @@ Term read_string_ext(ProcessHeap *heap, tool::Reader &r) {
   return result;
 }
 
-Result<Term> read_list_ext(ProcessHeap *heap, tool::Reader &r) {
+Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u32();
 
   Term result = NIL;
@@ -180,7 +180,7 @@ Result<Term> read_list_ext(ProcessHeap *heap, tool::Reader &r) {
 }
 
 
-Result<Term> read_ext_term(ProcessHeap *heap, tool::Reader &r) {
+Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
   auto t = r.read_byte();
   switch (t) {
   case COMPRESSED:

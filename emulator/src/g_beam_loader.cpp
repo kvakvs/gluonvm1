@@ -25,7 +25,7 @@ typedef struct {
 
 class LoaderState {
 public:
-  ProcessHeap     *m_heap;
+  proc::Heap     *m_heap;
   Vector<Str>     m_atoms;
   const u8_t     *m_code; // not owned data
   word_t          m_code_size;
@@ -155,7 +155,7 @@ protected:
   static Pair<sword_t, bool> read_signed_word(tool::Reader &r, word_t count);
 };
 
-Result<Module *> code::Server::load_module_internal(ProcessHeap *heap,
+Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
     Term expected_name, const u8_t *bytes, word_t size)
 {
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
@@ -491,7 +491,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
                                           const u8_t *bytes, word_t sz)
 {
   // TODO: use some other heap?
-  Heap *heap = VM::get_heap(VM::HEAP_LOADER_TMP);
+  //Heap *heap = VM::get_heap(VM::HEAP_LOADER_TMP);
 
   tool::Reader r(bytes, sz);
 

@@ -89,7 +89,7 @@ public:
 protected:
   runtime_ctx_t m_ctx;
   ProcessStack  m_stack; // TODO: remove merge with processheap
-  ProcessHeap   m_heap;
+  proc::Heap    m_heap;
   Term          m_pid = NONVALUE;
   mfarity_t     m_init_call;
   bool          m_trap_exit = false;
@@ -123,7 +123,7 @@ public:
   // Process memory thingies
   //
 
-  ProcessHeap *get_heap() {
+  proc::Heap *get_heap() {
     return &m_heap;
   }
   inline word_t *heap_alloc(word_t num_words) {
