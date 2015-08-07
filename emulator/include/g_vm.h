@@ -11,7 +11,9 @@ namespace gluon {
 using str_atom_map_t = Map<Str, Term>;
 using atom_str_map_t = Map<Term, Str>;
 
-class Heap;
+namespace vm {
+  class Heap;
+}
 class Process;
 namespace code {
   class Server;
@@ -60,9 +62,9 @@ public:
     HEAP_VM_INTERNAL, // vm needs this for stuff
     HEAP_CODE,        // modules code goes here
     HEAP_LOADER_TMP,  // loader uses this, discard after loading
-    HEAP_PROCESS      // per-process heap or something?
+    HEAP_LARGE_BINARY
   } heap_t;
-  static Heap *get_heap(heap_t);
+  static vm::Heap *get_heap(heap_t);
 
   //
   // VM loop and loop labels

@@ -8,7 +8,7 @@ namespace gluon {
 
 class Term;
 
-
+#if 0
 template<typename T>
 struct ZoneAlloc
 {
@@ -95,7 +95,21 @@ private:
   Vector<std::unique_ptr<value_holder[]>> m_mem;
   Vector<T *> m_avail;
 };
+#endif //0
 
+
+template <typename T>
+static constexpr word_t calculate_storage_size() {
+  return ((sizeof(T) + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
+}
+static constexpr word_t calculate_word_size(word_t bytes) {
+  return ((bytes + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
+}
+
+namespace vm {
+
+// VM heap is abstract interface which gets memory from underlying system.
+// Simplification: using standard new and delete
 class Heap {
 public:
   Heap() = delete;
@@ -127,6 +141,7 @@ public:
   }
 };
 
+} // ns vm
 namespace proc {
 
 static const word_t DEFAULT_PROC_HEAP_WORDS = 100;
@@ -203,14 +218,6 @@ public:
   // initial heap node
   Heap();
 
-  template <typename T>
-  static constexpr word_t calculate_storage_size() {
-    return ((sizeof(T) + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
-  }
-  static constexpr word_t calculate_word_size(word_t bytes) {
-    return ((bytes + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
-  }
-
   // Grows htop and gives requested memory
   word_t *h_alloc(word_t);
 
@@ -225,7 +232,8 @@ public:
     word_t *bytes = h_alloc(calculate_storage_size<T>());
     return new(bytes)T(std::forward<Args>(args)...);
   }
-};
+
+}; // class Heap
 
 } // ns proc
 } // ns gluon

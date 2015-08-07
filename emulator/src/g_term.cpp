@@ -5,6 +5,8 @@
 #include "g_fun.h"
 #include "g_module.h" // for export_t class
 #include "g_term_helpers.h"
+#include "g_heap.h"
+#include "g_binary.h"
 
 #if G_TEST
 #include <fructose/fructose.h>
@@ -172,6 +174,30 @@ void Term::println()
 {
   print();
   puts("");
+}
+
+Term Term::make_binary(proc::Heap *h, word_t bytes)
+{
+  // This many bytes fits boxed subtag value. Going larger means storing size
+  // elsewhere or losing significant bit from the size
+  G_ASSERT(bytes < term_tag::BOXED_MAX_SUBTAG_VALUE);
+
+  word_t words = calculate_word_size(bytes);
+  if (bytes <= bin::HEAP_BIN_LIMIT) {
+    word_t *box = h->h_alloc(words + 1);
+    box[0] = term_tag::BoxedProcBin::create_subtag(bytes);
+    return Term(term_tag::BoxedProcBin::create_from_ptr<word_t>(box));
+  } else {
+    // Large bin, with boxed refcount and pointer
+    word_t *box = h->h_alloc(2);
+    vm::Heap *binheap = VM::get_heap(VM::HEAP_LARGE_BINARY);
+    word_t *memory = vm::Heap::alloc<word_t>(binheap,
+                                             words + 1);
+    memory[0] = 1; // refcount=1
+    box[0] = term_tag::BoxedHeapBin::create_subtag(bytes);
+    box[1] = (word_t)memory;
+    return Term(term_tag::BoxedHeapBin::create_from_ptr(box));
+  }
 }
 
 void mfarity_t::println() {

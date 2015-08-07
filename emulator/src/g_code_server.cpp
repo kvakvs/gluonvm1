@@ -47,14 +47,14 @@ MaybeError Server::load_module(Process *proc, Term name)
       auto open_result = f.open(path);
       G_RETURN_IF_ERROR_UNLIKELY(open_result);
       word_t  size = f.size();
-      Heap    *heap = VM::get_heap(VM::HEAP_CODE);
-      u8_t    *tmp_buffer = Heap::alloc_bytes(heap, size);
+      vm::Heap *heap = VM::get_heap(VM::HEAP_CODE);
+      u8_t    *tmp_buffer = vm::Heap::alloc_bytes(heap, size);
       f.seek(0);
       f.read(tmp_buffer, size);
 
       printf("Loading BEAM %s\n", path.c_str());
       auto    result = load_module(proc, name, tmp_buffer, size);
-      Heap::free_bytes(heap, tmp_buffer);
+      vm::Heap::free_bytes(heap, tmp_buffer);
       return result;
     }
   }

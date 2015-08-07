@@ -47,6 +47,7 @@ set(SRC_LIST
     include/g_sys_mem.h
     include/g_sys_stdlib.h
 
+    src/g_binary.cpp     include/g_binary.h
     src/g_code.cpp       include/g_code.h
     src/g_code_index.cpp include/g_code_index.h
     src/g_code_server.cpp include/g_code_server.h

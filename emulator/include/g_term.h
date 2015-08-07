@@ -4,7 +4,7 @@
 
 namespace gluon {
 
-class Heap;
+namespace vm { class Heap; } // g_heap.h
 namespace proc { class Heap; } // in g_heap.h
 class export_t; // in g_module.h
 
@@ -59,7 +59,7 @@ namespace term_tag {
       return compress_pointer(p) | TAG;
     }
     template <typename T>
-    inline static T *value_ptr(word_t x) {
+    inline static T *expand_ptr(word_t x) {
       return expand_pointer<T>(x & ~MASK);
     }
     constexpr static word_t create(word_t v) {
@@ -151,6 +151,8 @@ namespace term_tag {
   //
   const word_t BOXED_SUBTAG_BITS = 4;
   const word_t BOXED_SUBTAG_MASK = 0x0F;
+  const word_t BOXED_MAX_SUBTAG_VALUE
+    = (1UL << (get_hardware_bits() - BOXED_SUBTAG_BITS)) - 1;
 
   inline word_t boxed_subtag(word_t *p) {
     return p[0] & BOXED_SUBTAG_MASK;
@@ -175,22 +177,35 @@ namespace term_tag {
     BOXED_SUB_BIN     = 15,
   };
 
-  static inline word_t get_boxed_subtag(word_t x) {
-    return Boxed::value_ptr<word_t>(x)[0] & BOXED_SUBTAG_MASK;
+  // Takes least 4 bits of subtag
+  static constexpr word_t get_subtag(word_t x) {
+    return x & BOXED_SUBTAG_MASK;
+  }
+  // Removes least 4 bits of subtag returning what's left
+  static constexpr word_t get_subtag_value(word_t x) {
+    return x >> BOXED_SUBTAG_BITS;
+  }
+  // Takes m_val from Term, converts to pointer and reads subtag (least 4 bits)
+  static inline word_t unbox_and_get_subtag(word_t x) {
+    return Boxed::expand_ptr<word_t>(x)[0] & BOXED_SUBTAG_MASK;
   }
 
   template <word_t SUBTAG> struct BOXED_SUBTAG {
-    // Takes a term value, and checks if it is boxed and points at SUBTAG
-    static inline bool check(word_t x) {
-      return Boxed::check(x) && get_boxed_subtag(x) == SUBTAG;
+    // Takes a term value, converts to pointer, checks if it was boxed, then
+    // follows the pointer and checks that first word is tagged with SUBTAG
+    static inline bool unbox_and_check(word_t x) {
+      return Boxed::check(x) && unbox_and_get_subtag(x) == SUBTAG;
+    }
+    static constexpr bool check_subtag(word_t x) {
+      return get_subtag(x) == SUBTAG;
     }
     template <typename T>
     inline static word_t create_from_ptr(T *p) {
       return Boxed::create_from_ptr<T>(p);
     }
     template <typename T>
-    inline static T *value_ptr(word_t x) {
-      return Boxed::value_ptr<T>(x);
+    inline static T *expand_ptr(word_t x) {
+      return Boxed::expand_ptr<T>(x);
     }
     static constexpr word_t create_subtag(word_t x) {
       return (x << BOXED_SUBTAG_BITS) | SUBTAG;
@@ -330,7 +345,7 @@ public:
   //
   template <typename T> inline T *boxed_get_ptr() const {
     G_ASSERT(is_boxed() || is_tuple() || is_cons());
-    return term_tag::Boxed::value_ptr<T>(m_val);
+    return term_tag::Boxed::expand_ptr<T>(m_val);
   }
 //  template <typename T> inline T *boxed_get_ptr_unsafe() const {
 //    return term_tag::Boxed::value_ptr<T>(m_val);
@@ -504,7 +519,7 @@ public:
     return term_tag::ShortPort::check(m_val);
   }
   constexpr bool is_port() const {
-    return is_short_port() || term_tag::BoxedPort::check(m_val);
+    return is_short_port() || term_tag::BoxedPort::unbox_and_check(m_val);
   }
   constexpr word_t short_port_get_value() const {
     return term_tag::ShortPort::value(m_val);
@@ -595,19 +610,63 @@ public:
   }
 
   inline bool is_boxed_fun() const {
-    return term_tag::BoxedFun::check(m_val);
+    return term_tag::BoxedFun::unbox_and_check(m_val);
   }
 
   inline bool is_boxed_export() const {
-    return term_tag::BoxedExport::check(m_val);
+    return term_tag::BoxedExport::unbox_and_check(m_val);
   }
   static inline Term make_boxed_export(export_t *ex) {
     // Assuming that pointer has subtag in first word of memory already
     word_t val = term_tag::BoxedExport::create_from_ptr(ex);
-    G_ASSERT(term_tag::BoxedExport::check(val));
+    G_ASSERT(term_tag::BoxedExport::unbox_and_check(val));
     return Term(val);
   }
 
+  //
+  // Binaries small and large
+  //
+  // Small size binaries are allocated on the local heap (BOXED_PROC_BIN subtag)
+  // There is no refcount, always copy
+  // --boxedptr--> <<Size, Subtag:4>> Bytes[size]
+  //
+  // Large binaries are refcounted on the large binary heap (BOXED_HEAP_BIN)
+  // Large binary refers to a size=2 box where p[1] is pointer to large heap bin
+  // First word of large heap bin is refcount
+  // --boxedptr--> <<Size, Subtag:4>> --data-ptr--> Refcount Bytes[size]
+  //
+  static Term make_binary(proc::Heap *h, word_t bytes);
+
+  inline bool is_proc_binary() const {
+    return term_tag::BoxedProcBin::unbox_and_check(m_val);
+  }
+  inline bool is_heap_binary() const {
+    return term_tag::BoxedHeapBin::unbox_and_check(m_val);
+  }
+  inline bool is_binary() const {
+    //return is_heap_binary() || is_proc_binary();
+    word_t *p = boxed_get_ptr<word_t>();
+    return term_tag::BoxedProcBin::check_subtag(p[0])
+        || term_tag::BoxedHeapBin::check_subtag(p[0]);
+  }
+  inline word_t binary_get_size() const {
+    G_ASSERT(is_binary()); // this is slow but debug only
+    word_t *p = boxed_get_ptr<word_t>();
+    // both types of binary have size in subtag word
+    return term_tag::get_subtag_value(p[0]);
+  }
+  template <typename T>
+  inline T *binary_get() const {
+    G_ASSERT(is_binary()); // this is slow but debug only
+    word_t *p = boxed_get_ptr<word_t>();
+    if (term_tag::BoxedProcBin::check_subtag(p[0])) {
+      return (T *)(p + 1);
+    }
+    G_ASSERT(term_tag::BoxedHeapBin::check_subtag(p[0]));
+    // Get pointer to large binary, add 1 word offset and cast it to T *
+    word_t *large_ptr = (word_t *)p[1];
+    return (T *)(large_ptr + 1);
+  }
 };
 
 const static Term NONVALUE = Term::make_non_value_();

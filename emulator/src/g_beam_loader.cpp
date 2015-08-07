@@ -7,6 +7,7 @@
 #include "g_module.h"
 #include "g_predef_atoms.h"
 #include "g_term_helpers.h"
+#include "g_binary.h"
 
 // Generated opcode arity table
 #include "g_genop.h"
@@ -379,18 +380,17 @@ MaybeError LoaderState::load_literal_table(tool::Reader &r0)
   tool::Reader r1 = r0.clone(chunk_size);
 
   auto uncompressed_size = r1.read_big_u32();
-  UniquePtr<u8_t> compressed((u8_t *)m_heap->h_alloc_bytes(chunk_size));
-  r1.read_bytes(compressed.get(), chunk_size);
+  Term compressed = Term::make_binary(m_heap, chunk_size);
+  r1.read_bytes(compressed.binary_get<u8_t>(), chunk_size);
 
-  UniquePtr<u8_t> uncompressed((u8_t *)m_heap->h_alloc_bytes(uncompressed_size));
-
-  auto result = mz_uncompress(uncompressed.get(), &uncompressed_size,
-                              compressed.get(), chunk_size);
+  Term uncompressed = Term::make_binary(m_heap, uncompressed_size);
+  auto result = mz_uncompress(uncompressed.binary_get<u8_t>(), &uncompressed_size,
+                              compressed.binary_get<u8_t>(), chunk_size);
   if (result != MZ_OK) {
     return "beam LitT error";
   }
 
-  tool::Reader r(uncompressed.get(), uncompressed_size);
+  tool::Reader r(uncompressed.binary_get<u8_t>(), uncompressed_size);
   auto count = r.read_big_u32();
 
 //  G_LOG("compressed %zu bytes, uncomp %zu bytes, count %zu\n",

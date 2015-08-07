@@ -27,7 +27,7 @@ word_t *Heap::h_alloc(word_t n)
 }
 
 Node *Node::create(word_t sz_words) {
-  word_t *mem = new word_t(sz_words);
+  word_t *mem = new word_t[sz_words];
   auto n = new (mem) Node;
   n->start = n->heap_start;
   n->limit = n->start + sz_words - sizeof(Node);

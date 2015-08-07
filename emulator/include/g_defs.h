@@ -58,6 +58,10 @@ namespace gluon {
   template <typename V>
   using UniquePtr = std::unique_ptr<V>;
 
+  // Self-deleting refcounted copyable pointer
+  template <typename V>
+  using RcPtr = std::shared_ptr<V>;
+
   template <typename A, typename B>
   using Pair = std::pair<A, B>;
 

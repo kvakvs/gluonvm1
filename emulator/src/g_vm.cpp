@@ -92,7 +92,7 @@ Node *VM::dist_this_node() {
 }
 
 // For now all heaps are located in normal C++ heap
-Heap *VM::get_heap(VM::heap_t) {
+vm::Heap *VM::get_heap(VM::heap_t) {
   return nullptr;
 }
 
@@ -150,7 +150,7 @@ Term VM::apply_bif(Process *proc, word_t arity, void *fn, Term *args)
 
 Scheduler *VM::get_scheduler() {
   if (g_scheduler == nullptr) {
-    g_scheduler = Heap::alloc_object<Scheduler>(get_heap(HEAP_VM_INTERNAL));
+    g_scheduler = vm::Heap::alloc_object<Scheduler>(get_heap(HEAP_VM_INTERNAL));
   }
   return g_scheduler;
 }
