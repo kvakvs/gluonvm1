@@ -20,11 +20,18 @@ Run `make` in project directory, run `make` in codegen/, then run `make` in emul
 directory. `CMakeLists.txt` work with QtCreator as IDE not to mention cmake 
 supporting host of other IDEs.
 
+# Features (Done)
+
+* Simple scheduler (no process scheduling done yet, but algorithms are in place)
+* Processes (just one but work in progress)
+* Process heaps and stack (GC is TODO)
+* Some BIFs
+* Some opcodes (can run sequential Erlang)
+
 # TODO
 
-* Processes (simple scheduling is done just not connected to the whole thing yet)
+* Reductions and scheduling
 * Messages
-* Make proper heap and stack
 * Simple GC
 * Binaries
 * Floats maybe?
