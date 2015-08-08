@@ -189,11 +189,46 @@ public:
 //
 class Stack {
   Node      *m_node = nullptr;  // where stack is
+  word_t    *m_end;             // stack underflow mark
   word_t    *m_top;             // stack tip, grows down from heap end
   word_t    *m_bottom;          // stack bottom, delimits stack growth
+
 public:
   // Lowers 'limit' by 'size' words, puts stack there
   void put_stack(Node *h_node, word_t size);
+
+  void set_y(word_t index, word_t value) {
+    G_ASSERT(get_used() >= index + 1);
+    m_top[index+1] = value;
+  }
+  word_t get_y(word_t index) const {
+    G_ASSERT(get_used() >= index + 1);
+    return m_top[index+1];
+  }
+  void push(word_t x) {
+    G_ASSERT(get_avail() > 0);
+    m_top--;
+    *m_top = x;
+  }
+  word_t pop() {
+    G_ASSERT(get_used() > 0);
+    auto result = *m_top;
+    m_top++;
+    return result;
+  }
+  void push_n_nils(word_t n);
+  void drop_n(word_t n) {
+    G_ASSERT(get_used() >= n);
+    m_top += n;
+  }
+  word_t get_avail() const {
+    G_ASSERT(m_top >= m_bottom);
+    return (word_t)(m_top - m_bottom);
+  }
+  word_t get_used() const {
+    G_ASSERT(m_top <= m_end);
+    return (word_t)(m_end - m_top);
+  }
 };
 
 //
@@ -202,16 +237,16 @@ public:
 // out of its home node.
 //
 class Heap {
-  Stack m_stack;
-
   //
   // Heap
   //
-
   // track count of nodes allocated, each new is double of previous
   word_t m_node_count = 1;
   Node  *m_current;
   Node  *m_root;
+
+public:
+  Stack m_stack;
 
 public:
   // Allocates DEFAULT_PROC_HEAP_WORDS and writes Node header there, uses it as
@@ -232,7 +267,6 @@ public:
     word_t *bytes = h_alloc(calculate_storage_size<T>());
     return new(bytes)T(std::forward<Args>(args)...);
   }
-
 }; // class Heap
 
 } // ns proc

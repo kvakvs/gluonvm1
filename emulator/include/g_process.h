@@ -27,6 +27,7 @@ typedef struct {
 #endif
 } runtime_ctx_t;
 
+#if 0
 class ProcessStack {
   Vector<Term> cells;
 public:
@@ -73,6 +74,7 @@ protected:
     return cells.size() - 2 - y;
   }
 };
+#endif //0
 
 //------------------------------------------------------------------------------
 // Thread of execution in VM
@@ -88,7 +90,7 @@ public:
 
 protected:
   runtime_ctx_t m_ctx;
-  ProcessStack  m_stack; // TODO: remove merge with processheap
+  //ProcessStack  m_stack; // TODO: remove merge with processheap
   proc::Heap    m_heap;
   Term          m_pid = NONVALUE;
   mfarity_t     m_init_call;
@@ -114,9 +116,6 @@ public:
   }
   runtime_ctx_t &get_runtime_ctx() {
     return m_ctx;
-  }
-  ProcessStack *get_stack() {
-    return &m_stack;
   }
 
   //

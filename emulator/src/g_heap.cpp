@@ -1,4 +1,5 @@
 #include "g_heap.h"
+#include "g_term.h"
 
 namespace gluon {
 namespace proc {
@@ -34,15 +35,21 @@ Node *Node::create(word_t sz_words) {
   return n;
 }
 
-void Stack::put_stack(Node *h_node, word_t size) {
+void Stack::put_stack(Node *stk_node, word_t size) {
   // Assume current node in heap has memory for stack
-  G_ASSERT(h_node->get_avail() >= size);
-  m_node = h_node;
+  G_ASSERT(stk_node->get_avail() >= size);
+  m_node = stk_node;
   // Shrink node by stack size. Set 'top' to end of node's memory and 'bottom'
   // to new end (where stack will overflow).
-  m_top = m_node->limit;
+  m_end = m_top = stk_node->limit;
   m_node->limit -= size;
   m_bottom = m_node->limit;
+}
+
+void Stack::push_n_nils(word_t n) {
+  G_ASSERT(get_avail() >= n);
+  m_top -= n;
+  std::fill_n(m_top, n, term::NIL);
 }
 
 

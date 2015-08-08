@@ -69,6 +69,7 @@ Term Process::bif_error(Term reason)
   return NONVALUE;
 }
 
+#if 0
 #if G_DEBUG
 void ProcessStack::println()
 {
@@ -88,6 +89,7 @@ void ProcessStack::println()
   puts("");
 }
 #endif
+#endif //0
 
 //
 //====================================

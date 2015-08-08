@@ -274,7 +274,7 @@ namespace dist {
   const creation_t INTERNAL_CREATION = 255;
 } // ns dist
 
-  namespace term {
+namespace term {
   const word_t NIL = term_tag::Special::create(~0UL);
   const word_t THE_NON_VALUE = term_tag::Special::create(0);
 

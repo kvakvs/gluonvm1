@@ -20,10 +20,10 @@ namespace gluon {
 namespace impl {
 
 struct vm_runtime_ctx_t: runtime_ctx_t {
-  // where code begins (for jumps)
-  //word_t *base;
-  ProcessStack *stack;
+  proc::Heap *heap;
 
+  inline proc::Stack &stack() { return heap->m_stack; }
+  inline const proc::Stack &stack() const { return heap->m_stack; }
   inline void println() {
 //#if G_DEBUG
 //    puts("---------");
@@ -42,7 +42,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     live = proc_ctx.live;
     std::memcpy(regs, proc_ctx.regs, sizeof(Term)*live);
 
-    stack = proc->get_stack();
+    heap = proc->get_heap();
     //base  = proc->get_code_base();
     // TODO: update heap top
   }
@@ -68,7 +68,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       i = regs[i.regx_get_value()];
     }
     else if (i.is_regy()) {
-      i = stack->get_y(i.regy_get_value());
+      i = Term(stack().get_y(i.regy_get_value()));
     }
 #if FEATURE_FLOAT
     else if (i.is_regfp()) {
@@ -90,7 +90,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       regs[x] = val;
     } else
     if (dst.is_regy()) {
-      stack->set_y(dst.regy_get_value(), val);
+      stack().set_y(dst.regy_get_value(), val.as_word());
     } else
 #if FEATURE_FLOAT
     if (dst.is_regfp()) {
@@ -207,20 +207,20 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 */
   }
   void push_cp() {
-    stack->push(Term::make_boxed_cp(cp));
+    stack().push(Term::make_boxed_cp(cp).as_word());
     cp = nullptr;
   }
   void pop_cp() {
-    Term p = stack->pop();
+    Term p(stack().pop());
     cp = term_tag::untag_cp<word_t>(p.boxed_get_ptr<word_t>());
   }
   inline void stack_allocate(word_t n) {
-    stack->push_n_nils(n);
+    stack().push_n_nils(n);
     push_cp();
   }
   inline void stack_deallocate(word_t n) {
     pop_cp();
-    stack->drop_n(n);
+    stack().drop_n(n);
   }
 
   void print_args(word_t arity) {
@@ -683,7 +683,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     DEREF(h);
     DEREF(t);
     Term dst(ctx.ip[2]);
-    Term result = Term::allocate_cons(proc->get_heap(), h, t);
+    Term result = Term::allocate_cons(ctx.heap, h, t);
     ctx.move(result, dst);
     ctx.ip += 3;
   }
@@ -769,7 +769,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       }
     } else {
       // TODO: make tuple {badfun, f_args} (same as above)
-      term::TupleBuilder tb(proc->get_heap(), 2);
+      term::TupleBuilder tb(ctx.heap, 2);
       tb.add(atom::BADFUN);
       tb.add(fun);
       return ctx.raise(proc, atom::ERROR, tb.make_tuple());
@@ -981,9 +981,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @spec trim N Remaining
     // @doc Reduce the stack usage by N words, keeping the CP on the top.
     Term n(ctx.ip[0]);
-    auto masq_cp = ctx.stack->pop();
-    ctx.stack->drop_n(n.small_get_unsigned());
-    ctx.stack->push(masq_cp);
+    auto masq_cp = ctx.stack().pop();
+    ctx.stack().drop_n(n.small_get_unsigned());
+    ctx.stack().push(masq_cp);
     ctx.ip += 2;
   }
 //  inline void opcode_bs_init_bits(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 137
