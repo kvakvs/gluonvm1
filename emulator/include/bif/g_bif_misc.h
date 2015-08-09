@@ -11,6 +11,7 @@ namespace bif {
 
 bool is_term_smaller(Term a, Term b);
 bool are_terms_equal(Term a, Term b, bool exact);
+word_t length(Term list);
 
 Term bif_make_fun_3(Process *, Term m, Term f, Term arity);
 Term bif_minus_2(Process *, Term a, Term b);

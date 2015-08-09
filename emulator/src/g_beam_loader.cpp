@@ -784,13 +784,13 @@ Result<Term> LoaderState::parse_term(tool::Reader &r)
       return success(Term::make_catch(val));
     }
     if (tag == Tag::XRegister) {
-      if (val >= VM_MAX_REGS) {
+      if (val >= vm::MAX_REGS) {
         return error<Term>("invalid x register");
       }
       return success(Term::make_regx(val));
     }
     if (tag == Tag::YRegister) {
-      if (val >= VM_MAX_STACK) {
+      if (val >= vm::MAX_STACK) {
         return error<Term>("invalid y register");
       }
       return success(Term::make_regy(val));

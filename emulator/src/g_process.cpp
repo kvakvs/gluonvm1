@@ -5,6 +5,7 @@
 #include "g_vm.h"
 #include "g_error.h"
 #include "g_predef_atoms.h"
+#include "g_term_helpers.h"
 
 #if G_TEST
 #include <fructose/fructose.h>
@@ -63,10 +64,30 @@ Result<Term> Process::spawn(mfarity_t &mfa, Term *args) {
   return success(get_pid());
 }
 
+Term Process::bif_error(Term error_tag, Term reason)
+{
+  term::TupleBuilder tb(get_heap(), 2);
+  tb.add(error_tag);
+  tb.add(reason);
+  m_bif_error_reason = tb.make_tuple();
+  return NONVALUE;
+}
+
 Term Process::bif_error(Term reason)
 {
   m_bif_error_reason = reason;
   return NONVALUE;
+}
+
+Term Process::bif_error(Term reason, const char *str)
+{
+  Term err = term::build_string(get_heap(), str);
+  return bif_error(reason, err);
+}
+
+Term Process::bif_badarg(Term reason)
+{
+  return bif_error(atom::BADARG, reason);
 }
 
 #if 0

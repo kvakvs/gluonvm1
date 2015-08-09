@@ -21,9 +21,9 @@ typedef struct {
   word_t live = 0; // saved registers count
 
   // TODO: maybe cache r0 in a local variable in vm loop?
-  Term    regs[VM_MAX_REGS];
+  Term    regs[vm::MAX_REGS];
 #if FEATURE_FLOAT
-  //float_t fp_regs[MAX_FP_REGS];
+  //float_t fp_regs[vm::MAX_FP_REGS];
 #endif
 } runtime_ctx_t;
 
@@ -117,6 +117,7 @@ public:
   runtime_ctx_t &get_runtime_ctx() {
     return m_ctx;
   }
+  Term get_group_leader() const { return m_group_leader; }
 
   //
   // Process memory thingies
@@ -140,6 +141,9 @@ public:
   // Returns no_val and sets bif error flag in process. Use in bifs to signal
   // error condition: return proc->bif_error(reason);
   Term bif_error(Term reason);
+  Term bif_error(Term reason, const char *str); // builds {ErrorTag, "text"}
+  Term bif_error(Term error_tag, Term reason); // builds tuple {ErrorTag, Reason}
+  Term bif_badarg(Term reason); // builds tuple {badarg, Reason}
 
 protected:
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args

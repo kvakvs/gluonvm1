@@ -10,6 +10,19 @@
 namespace gluon {
 namespace bif {
 
+word_t length(Term list) {
+  if (list.is_nil()) {
+    return 0;
+  }
+  word_t result = 0;
+  do {
+    result++;
+    list = list.cons_tail();
+  } while (list.is_cons());
+  return result;
+}
+
+
 #if 0
 static int term_order(Term t)
 {

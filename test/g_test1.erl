@@ -12,9 +12,13 @@ test() ->
     %test_hof(),
     %test_hof_fold(),
     %test_hof_nested(),
-    test_mochijson().
+    test_ring().
+    %test_mochijson().
 
 %%-----------------------------------------------
+test_ring() ->
+    ring:create(10).
+
 test_mochijson() ->
     mochijson:encode({struct, [ {test_neg, -10000}, {test, 10000} ]}).
     % we need to go deeper to debuf

@@ -31,12 +31,31 @@ bool Term::is_cons_printable() const
 {
   Term item = *this;
   while (item.is_cons()) {
-    if (!is_cons_printable_element(item.cons_head())) {
+    Term tmp;
+    item.cons_head_tail(tmp, item);
+    if (!is_cons_printable_element(tmp)) {
       return false;
     }
-    item = item.cons_tail();
   }
   return item.is_nil();
+}
+
+word_t Term::cons_to_array(Term *arr, word_t limit)
+{
+  if (is_nil()) {
+    return 0;
+  }
+
+  *arr = cons_head();
+  Term i = cons_tail();
+  word_t n = 1;
+  while (n < limit && i.is_cons()) {
+    // splits i into head and tail, tail is assigned to i again
+    i.cons_head_tail(*arr, i);
+    ++arr;
+    ++n;
+  }
+  return n;
 }
 
 bool Term::is_cons_printable_element(Term el) {

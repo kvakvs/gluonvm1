@@ -13,8 +13,20 @@
 >= 2 greater_equal
 * 2 multiply
 / 2 divide
+
+#--- A
 atom_to_list 1
-length 1
-make_fun 3
+
+#--- I
 integer_to_list 1
 integer_to_list 2
+
+#--- L
+length 1
+
+#--- M
+make_fun 3
+
+#--- S
+self 0
+spawn 3

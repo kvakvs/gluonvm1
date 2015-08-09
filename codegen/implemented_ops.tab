@@ -3,6 +3,7 @@ move
 return
 allocate
 allocate_zero
+allocate_heap
 deallocate
 select_val
 trim
@@ -18,6 +19,7 @@ call_ext_last
 call_ext_only
 gc_bif1
 gc_bif2
+bif0
 bif1
 bif2
 make_fun2

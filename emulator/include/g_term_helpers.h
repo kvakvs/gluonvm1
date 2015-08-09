@@ -68,10 +68,10 @@ Term build_list(proc::Heap *heap, Iter iter, Iter to) {
   return result;
 }
 
+Term build_string(proc::Heap *h, const char *cstr);
+
 // Builds string as list of integers on heap
-static inline Term build_string(proc::Heap *heap, const Str &s) {
-  return build_list(heap, s.begin(), s.end());
-}
+Term build_string(proc::Heap *heap, const Str &s);
 
 } // ns term
 } // ns gluon

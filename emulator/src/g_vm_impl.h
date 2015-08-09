@@ -313,8 +313,20 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.stack_deallocate(dealloc.small_get_unsigned());
     return ctx.jump_ext(proc, boxed_mfa);
   }
-//  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
-//  }
+  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
+    // bif0 import_index Dst - cannot fail
+    Term boxed_mfa(ctx.ip[0]);
+    Term result_dst(ctx.ip[1]);
+
+    mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
+    bif0_fn fn0 = (bif0_fn)VM::find_bif(*mfa);
+    G_ASSERT(fn0);
+
+    Term result = fn0(proc);
+    //if (ctx.check_bif_error(proc)) { return; }
+    ctx.move(result, result_dst);
+    ctx.ip += 2;
+  }
   inline void opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
     // bif1 Fail import_index Arg1 Dst
     Term boxed_mfa(ctx.ip[1]);
@@ -359,8 +371,16 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.stack_allocate(stack_need.small_get_unsigned());
     ctx.ip += 2;
   }
-//  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
-//  }
+  inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
+    // @spec allocate_heap StackNeed HeapNeed Live
+    // @doc Allocate space for StackNeed words on the stack and ensure there is
+    //      space for HeapNeed words on the heap. If a GC is needed
+    //      save Live number of X registers.
+    //      Also save the continuation pointer (CP) on the stack.
+    Term stack_need(ctx.ip[0]);
+    ctx.stack_allocate(stack_need.small_get_unsigned());
+    ctx.ip += 3;
+  }
   inline void opcode_allocate_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 14
     // @spec allocate_zero StackNeed Live
     // @doc Allocate space for StackNeed words on the stack. If a GC is needed
@@ -745,7 +765,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       }
       // TODO: if bf.fe is null - unloaded fun
       word_t num_free = bf->get_num_free();
-      G_ASSERT(arity + num_free < VM_MAX_REGS);
+      G_ASSERT(arity + num_free < vm::MAX_REGS);
       std::copy(bf->frozen, bf->frozen + num_free, ctx.regs + arity);
 
       ctx.live = arity;

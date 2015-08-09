@@ -114,25 +114,16 @@ namespace gluon {
     explicit label_index_t(word_t x): value(x) {}
   };
 
-//  // Index in code table, wrapped to create a distinct compile-time type
-//  typedef struct code_offset_t {
-//    word_t value;
-//    static inline code_offset_t wrap(word_t x) {
-//      code_offset_t co;
-//      co.value = x;
-//      return co;
-//    }
-//  } code_offset_t;
+  namespace vm {
+    // How many reds will a process be allowed to run before next proc wakes up
+    // Adjust this for slow devices. 2000 is used for regular modern hardware.
+    static const word_t SLICE_REDUCTIONS = 1000;
 
-//  class Module;
-//  typedef struct {
-//    Module *module;
-//    code_offset_t offset;
-//  } code_ptr_t;
-
-  static const word_t VM_MAX_REGS = 64; // (max arity of fun + captured terms)
-  static const word_t VM_MAX_STACK = 128; // is not enforced anywhere yet
-  static const word_t VM_MAX_FP_REGS = 2;
+    static const word_t MAX_FUN_ARITY = 16;
+    static const word_t MAX_REGS = 64; // (max arity of fun + captured terms)
+    static const word_t MAX_STACK = 128; // is not enforced anywhere yet
+    static const word_t MAX_FP_REGS = 2;
+  } // vm
 
 #if FEATURE_LINE_NUMBERS
   namespace line {

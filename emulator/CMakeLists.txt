@@ -71,6 +71,7 @@ set(SRC_LIST
     src/g_vm_impl.h # because all stuff is inline here
 
     src/bif/g_bif_misc.cpp include/bif/g_bif_misc.h
+    src/bif/g_bif_proc.cpp include/bif/g_bif_proc.h
 
     # Header-only test framework
     src/fructose/fructose.h

@@ -391,9 +391,20 @@ public:
   inline bool is_cons() const {
     return term_tag::Cons::check(m_val);
   }
+  inline bool is_list() const {
+    return is_nil() || is_cons();
+  }
   inline Term cons_head() const { return cons_get_element(0); }
   inline Term cons_tail() const { return cons_get_element(1); }
+  // Takes head and tail at once
+  void cons_head_tail(Term &h, Term &t) const {
+    auto p = boxed_get_ptr<word_t>();
+    h = Term(p[0]);
+    t = Term(p[1]);
+  }
   bool is_cons_printable() const;
+  // Unfolds list into linear array using limit as array max size
+  word_t cons_to_array(Term *arr, word_t limit);
 protected:
   static bool is_cons_printable_element(Term el);
   static bool does_char_require_quoting(word_t c) {
@@ -683,7 +694,9 @@ public:
   Term    fun;
   word_t  arity;
   mfarity_t(): mod(NONVALUE), fun(NONVALUE), arity(0) {}
-  mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {}
+  mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {
+    G_ASSERT(a <= vm::MAX_FUN_ARITY);
+  }
 #if G_DEBUG
   void print();
   void println();

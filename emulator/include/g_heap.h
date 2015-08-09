@@ -1,6 +1,8 @@
 #pragma once
 
 #include "g_defs.h"
+#include "g_error.h"
+
 #include <memory>
 //#include <vector>
 
@@ -142,10 +144,11 @@ public:
 };
 
 } // ns vm
+
 namespace proc {
 
-static const word_t DEFAULT_PROC_HEAP_WORDS = 100;
-static const word_t DEFAULT_PROC_STACK_WORDS = 50;
+static const word_t DEFAULT_PROC_HEAP_WORDS = 100000;
+static const word_t DEFAULT_PROC_STACK_WORDS = 5000;
 // Allocated heap segments sequentially grow from DEFAULT_PROC_HEAP_WORDS (100)
 // up to 2^HEAP_SEGMENT_GROWTH_MAX (100*2^8=100kb on 32bit or 200kb on 64bit)
 // All new blocks after 8th will be capped at this size.
@@ -268,6 +271,12 @@ public:
     return new(bytes)T(std::forward<Args>(args)...);
   }
 }; // class Heap
+
+
+// Performs copy of terms between [start, end) not inclusive end, to dstheap.
+bool copy_terms(Heap *dstheap, const Term *start, const Term *end,
+                Term *dst);
+
 
 } // ns proc
 } // ns gluon

@@ -35,8 +35,6 @@ private:
   static code::Server   *g_cs;
 
 public:
-  static const word_t SLICE_REDUCTIONS = 1000; // adjust this for slow devices
-
   static void init();
   static code::Server *get_cs() { return g_cs; }
 
