@@ -7,6 +7,7 @@
 #
 - 2 minus
 + 2 plus
+++ 2 plusplus
 == 2 equals
 =:= 2 equals_exact
 =< 2 less_equal

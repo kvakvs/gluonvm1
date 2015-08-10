@@ -52,6 +52,33 @@ void Stack::push_n_nils(word_t n) {
   std::fill_n(m_top, n, term::NIL);
 }
 
+// Takes all terms between 'start' and 'end', and copies them to 'dstheap', new
+// resulting terms are placed in array 'dst' which should be large enough.
+bool copy_terms(Heap *dstheap, const Term *start, const Term *end, Term *dst)
+{
+  while (start < end) {
+    *dst = copy_one_term(dstheap, *start);
+    start++;
+    dst++;
+  }
+  return true;
+}
+
+// Copies one term 't' to 'dstheap' returns new clone term located in new heap
+Term copy_one_term(Heap *dstheap, Term t) {
+  // Immediate values go immediately out
+  if (t.is_non_value()
+      || t.is_nil()
+      || t.is_small()
+      || t.is_atom()
+      || t.is_short_pid()
+      || t.is_short_port())
+  {
+    return t;
+  }
+  t.println();
+  G_TODO("notimpl clone");
+}
 
 } // ns proc
 } // ns gluon

@@ -397,7 +397,7 @@ public:
   inline Term cons_head() const { return cons_get_element(0); }
   inline Term cons_tail() const { return cons_get_element(1); }
   // Takes head and tail at once
-  void cons_head_tail(Term &h, Term &t) const {
+  inline void cons_head_tail(Term &h, Term &t) const {
     auto p = boxed_get_ptr<word_t>();
     h = Term(p[0]);
     t = Term(p[1]);

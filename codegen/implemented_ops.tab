@@ -4,10 +4,14 @@ return
 allocate
 allocate_zero
 allocate_heap
+allocate_heap_zero
 deallocate
 select_val
 trim
 jump
+
+#--- send/recv ---
+send
 
 #--- funs, hofs ---
 func_info

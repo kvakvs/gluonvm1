@@ -273,10 +273,11 @@ public:
 }; // class Heap
 
 
-// Performs copy of terms between [start, end) not inclusive end, to dstheap.
-bool copy_terms(Heap *dstheap, const Term *start, const Term *end,
-                Term *dst);
-
+// Takes all terms between 'start' and 'end', and copies them to 'dstheap', new
+// resulting terms are placed in array 'dst' which should be large enough.
+bool copy_terms(Heap *dstheap, const Term *start, const Term *end, Term *dst);
+// Copies one term 't' to 'dstheap' returns new clone term located in new heap
+Term copy_one_term(Heap *dstheap, Term t);
 
 } // ns proc
 } // ns gluon

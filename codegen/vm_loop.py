@@ -22,7 +22,7 @@ print("""void VM::vm_loop(bool init) {
   void *jmp_to;
   Process *proc;
   Scheduler *sched = VM::get_scheduler();
-  word_t reductions = VM::SLICE_REDUCTIONS;
+  word_t reductions = vm::SLICE_REDUCTIONS;
 
   if (init) {
     goto vm_jump_table_init;

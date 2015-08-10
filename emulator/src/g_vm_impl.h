@@ -389,8 +389,16 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //      Also save the continuation pointer (CP) on the stack.
     return opcode_allocate(proc, ctx);
   }
-//  inline void opcode_allocate_heap_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 15
-//  }
+  inline void opcode_allocate_heap_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 15
+    // @spec allocate_heap_zero StackNeed HeapNeed Live
+    // @doc Allocate space for StackNeed words on the stack and HeapNeed words
+    // on the heap. If a GC is needed during allocation there are Live number
+    // of live X registers. Clear the new stack words. (By writing NIL.) Also
+    // save the continuation pointer (CP) on the stack.
+    Term stack_need(ctx.ip[0]);
+    ctx.stack_allocate(stack_need.small_get_unsigned());
+    ctx.ip += 3;
+  }
   inline void opcode_test_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 16
     // @spec test_heap HeapNeed Live
     // @doc Ensure there is space for HeapNeed words on the heap. If a GC is needed
@@ -419,8 +427,16 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.cp = nullptr;
     return true; // keep running vm loop
   }
-//  inline void opcode_send(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 20
-//  }
+  inline void opcode_send(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 20
+    // @spec send
+    // @doc  Send argument in x(1) as a message to the destination process in x(0).
+    //       The message in x(1) ends up as the result of the send in x(0).
+    Term dest(ctx.ip[0]);
+    Term msg(ctx.ip[1]);
+    //proc->send(dest, msg);
+    ctx.regs[0] = ctx.regs[1];
+    ctx.regs[1] = NIL;
+  }
 //  inline void opcode_remove_message(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 21
 //  }
 //  inline void opcode_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 22

@@ -10,16 +10,17 @@
 namespace gluon {
 namespace bif {
 
-word_t length(Term list) {
+// Returns pair of {length, proper=true/improper=false}
+Pair<word_t, bool> length(Term list) {
   if (list.is_nil()) {
-    return 0;
+    return std::make_pair(0, true);
   }
   word_t result = 0;
   do {
     result++;
     list = list.cons_tail();
   } while (list.is_cons());
-  return result;
+  return std::make_pair(result, list.is_nil());
 }
 
 
@@ -576,6 +577,48 @@ Term bif_integer_to_list_1(Process *proc, Term n)
 Term bif_integer_to_list_2(Process *proc, Term n, Term base)
 {
   return integer_to_list(proc, n, base.small_get_signed());
+}
+
+Term bif_plusplus_2(Process *proc, Term a, Term b)
+{
+  if (!a.is_list()) {
+    return proc->bif_badarg(a);
+  }
+  if (a.is_nil()) {
+    return b;
+  }
+  if (b.is_nil()) {
+    return a;
+  }
+
+  auto len = length(a);
+  if (len.second == false) {
+    return proc->bif_badarg(a);  // a must be proper list
+  }
+
+  Term *htop = (Term *)proc->heap_alloc(len.first * 2);
+  Term result(Term::make_cons(htop));
+
+  //word_t *term_data = peel_cons(As);
+  Term td = a;
+
+  do {
+    td.cons_head_tail(htop[0], htop[1]);
+
+    Term *tail_ref = &htop[1];
+    htop += 2;
+
+    if (tail_ref->is_nil()) {
+      *tail_ref = b; // cons the second list
+      break;
+    }
+
+    G_ASSERT(tail_ref->is_cons());
+    td = *tail_ref;
+    *tail_ref = Term::make_cons(htop);
+  } while (1);
+
+  return result;
 }
 
 } // ns bif

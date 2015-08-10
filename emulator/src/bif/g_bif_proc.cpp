@@ -20,7 +20,7 @@ Term bif_spawn_3(Process *proc, Term m, Term f, Term args)
   if (!args.is_list()) { return proc->bif_badarg(args); }
   // TODO: on process control blocks' heap
   Process *new_proc = new Process(proc->get_group_leader());
-  mfarity_t mfa(m, f, bif::length(args));
+  mfarity_t mfa(m, f, bif::length(args).first);
 
   // A process (proc) spawning another process, and gives args from its heap
   // We should clone args to new process' registers

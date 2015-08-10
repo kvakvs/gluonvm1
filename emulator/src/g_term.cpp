@@ -47,8 +47,11 @@ word_t Term::cons_to_array(Term *arr, word_t limit)
   }
 
   *arr = cons_head();
+  arr++;
+
   Term i = cons_tail();
   word_t n = 1;
+
   while (n < limit && i.is_cons()) {
     // splits i into head and tail, tail is assigned to i again
     i.cons_head_tail(*arr, i);
