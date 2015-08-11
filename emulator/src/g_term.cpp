@@ -73,7 +73,7 @@ Str Term::atom_str() const
 }
 
 #if G_DEBUG
-void Term::print()
+void Term::print() const
 {
   if (m_val == 0) {
     printf("NOT_A_TERM");
@@ -196,7 +196,7 @@ void Term::print()
   }
 }
 
-void Term::println()
+void Term::println() const
 {
   print();
   puts("");

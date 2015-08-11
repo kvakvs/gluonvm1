@@ -621,5 +621,21 @@ Term bif_plusplus_2(Process *proc, Term a, Term b)
   return result;
 }
 
+Term bif_hd_1(Process *proc, Term a)
+{
+  if (!a.is_cons()) {
+    return proc->bif_badarg(a);
+  }
+  return a.cons_head();
+}
+
+Term bif_tl_1(Process *proc, Term a)
+{
+  if (!a.is_cons()) {
+    return proc->bif_badarg(a);
+  }
+  return a.cons_tail();
+}
+
 } // ns bif
 } // ns gluon

@@ -583,8 +583,8 @@ public:
 #endif
 
 #if G_DEBUG
-  void print();
-  void println();
+  void print() const;
+  void println() const;
 #endif
 
   //

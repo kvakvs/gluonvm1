@@ -103,6 +103,8 @@ find_bif_compare_fun(const bif::bif_index_t &a, const bif::bif_index_t &b) {
 
 void *VM::find_bif(mfarity_t &mfa)
 {
+  mfa.println();
+
   if (mfa.mod != atom::ERLANG) {
     return nullptr;
   }
@@ -114,6 +116,7 @@ void *VM::find_bif(mfarity_t &mfa)
                            &bif::g_bif_table[bif::BIF_TABLE_SIZE],
                            sample,
                            find_bif_compare_fun);
+  (i->fun).println();
   if (i->fun == mfa.fun && i->arity == mfa.arity) {
     return i->bif_fn;
   }

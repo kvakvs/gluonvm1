@@ -18,6 +18,9 @@
 #--- A
 atom_to_list 1
 
+#--- H
+hd 1
+
 #--- I
 integer_to_list 1
 integer_to_list 2
@@ -31,3 +34,6 @@ make_fun 3
 #--- S
 self 0
 spawn 3
+
+#--- T
+tl 1
