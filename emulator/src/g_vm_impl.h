@@ -158,9 +158,10 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 
   void jump(Process *proc, Term t) {
-    G_ASSERT(t.is_boxed());
-    printf("ctx.jump -> 0x%zx\n", (word_t)t.boxed_get_ptr<word_t>());
-    ip = t.boxed_get_ptr<word_t>();
+    G_ASSERT(t.is_boxed() && term_tag::is_cp(t.boxed_get_ptr<word_t>()));
+    word_t *t_ptr = term_tag::untag_cp(t.boxed_get_ptr<word_t>());
+    printf("ctx.jump -> " FMT_0xHEX "\n", (word_t)t_ptr);
+    ip = t_ptr;
     // TODO: some meaningful assertion here?
     //G_ASSERT(ip > base);
     //G_ASSERT(ip < proc->m_module->m_code.size() + base);
@@ -786,7 +787,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
       ctx.live = arity;
       ctx.cp   = ctx.ip + 1;
-      ctx.ip   = bf->fe->code;
+      ctx.ip   = bf->fun_entry->code;
       G_ASSERT(ctx.ip);
       return;
     } else if (fun.is_boxed_export()) {

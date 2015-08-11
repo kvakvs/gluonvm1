@@ -186,7 +186,7 @@ Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
     if ((chunk[0] < 'A' || chunk[0] > 'Z')    // always uppercase
         || (chunk[1] < 'A' || chunk[1] > 'z') // can be upper or lowercase
         || (chunk[2] < 'a' || chunk[2] > 'z')) { // lowercase
-      G_LOG("beam offset 0x%zx\n", r.get_ptr() - bytes);
+      G_LOG("beam offset " FMT_0xHEX "\n", r.get_ptr() - bytes);
       return error<Module *>("bad beam format");
     }
     //G_LOG("BEAM section %s\n", chunk.c_str());
@@ -235,7 +235,7 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
   for (word_t i = 0; i < tab_sz; ++i) {
     auto atom_sz = r.read_byte();
     m_atoms.push_back(r.read_string(atom_sz));
-//    G_LOG("atom: %s index %zu\n", m_atoms.back().c_str(), m_atoms.size()-1);
+//    G_LOG("atom: %s index " FMT_UWORD "\n", m_atoms.back().c_str(), m_atoms.size()-1);
   }
 
   // Check first atom in table which is module name
@@ -291,7 +291,7 @@ MaybeError LoaderState::load_lambda_table(tool::Reader &r0) {
     fe.num_free = nfree;
     fe.code     = nullptr; // resolve later from uniq0
 
-    printf("read fun table: %s:%s/%zu offset=%zu\n",
+    printf("read fun table: %s:%s/" FMT_UWORD " offset=" FMT_UWORD "\n",
            fe.mfa.mod.atom_str().c_str(),
            fe.mfa.fun.atom_str().c_str(),
            arity, offset);
@@ -317,7 +317,7 @@ MaybeError LoaderState::load_export_table(tool::Reader &r0) {
 
     auto arity = r.read_big_u32();
     auto label = r.read_big_u32();
-//    printf("load export %s/%zu @label %zu\n", f.atom_str().c_str(), arity, label);
+//    printf("load export %s/" FMT_UWORD " @label %zu\n", f.atom_str().c_str(), arity, label);
 
     m_exports[fun_arity_t(f, arity)] = label_index_t(label);
   }
@@ -340,7 +340,7 @@ MaybeError LoaderState::load_import_table(tool::Reader &r0)
     Term m = VM::to_atom(ms);
     Term f = VM::to_atom(fs);
     word_t arity = r.read_big_u32();
-//    printf("import: %s:%s/%zu\n", ms.c_str(), fs.c_str(), arity);
+//    printf("import: %s:%s/" FMT_UWORD "\n", ms.c_str(), fs.c_str(), arity);
     m_imports.push_back(mfarity_t(m, f, arity));
   }
 
@@ -393,7 +393,7 @@ MaybeError LoaderState::load_literal_table(tool::Reader &r0)
   tool::Reader r(uncompressed.binary_get<u8_t>(), uncompressed_size);
   auto count = r.read_big_u32();
 
-//  G_LOG("compressed %zu bytes, uncomp %zu bytes, count %zu\n",
+//  G_LOG("compressed " FMT_UWORD " bytes, uncomp " FMT_UWORD " bytes, count " FMT_UWORD "\n",
 //         chunk_size, uncompressed_size, count);
   m_literals.reserve(count);
 
@@ -457,7 +457,7 @@ MaybeError LoaderState::load_line_table(tool::Reader &r0)
       word_t offs = val.small_get_unsigned();
       if (G_LIKELY(line::is_valid_loc(fname_index, offs))) {
         LN.line_refs.push_back(line::make_location(fname_index, offs));
-        printf("line info: offs=%zu f=%zu\n", offs, fname_index);
+        printf("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
       } else {
         LN.line_refs.push_back(line::INVALID_LOC);
         printf("line info: invalid loc\n");
@@ -509,7 +509,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
   while (!r.is_end()) {
     // Get opcode info
     word_t opcode = (word_t)r.read_byte();
-//    G_LOG("[0x%zx]: opcode=0x%zx %s; ", code.size(), opcode,
+//    G_LOG("[" FMT_0xHEX "]: opcode=" FMT_0xHEX " %s; ", code.size(), opcode,
 //          genop::opcode_name_map[opcode]);
 
     if (opcode < 1 || opcode > genop::MAX_OPCODE) {
@@ -547,7 +547,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       word_t l_id = label.small_get_unsigned();
       G_ASSERT(l_id < m_code_label_count);
       m_labels[l_id] = (&code.back())+1;
-//      G_LOG("label %zu (0x%zx) offset 0x%zx", l_id, l_id, code.size());
+//      G_LOG("label " FMT_UWORD " (" FMT_0xHEX ") offset " FMT_0xHEX, l_id, l_id, code.size());
 //      puts("");
       continue;
     }
@@ -580,11 +580,11 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     // Convert opcode into jump address
     op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
     code.push_back(op_ptr);
-//    G_LOG("loader: op %s (opcode 0x%zx) ptr 0x%zx\n",
+//    G_LOG("loader: op %s (opcode " FMT_0xHEX ") ptr " FMT_0xHEX "\n",
 //           genop::opcode_name_map[opcode], opcode, op_ptr);
 
     arity = genop::arity_map[opcode];
-//    G_LOG("arity=%zu args=(", arity);
+//    G_LOG("arity=" FMT_UWORD " args=(", arity);
 
     word_t *first_arg = &code.back() + 1;
 
@@ -654,10 +654,10 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
   // Move exports from m_exports to this table, resolving labels to code offsets
   Module::exports_t exports;
-//  printf("exports processing: %zu items\n", m_exports.size());
+//  printf("exports processing: " FMT_UWORD " items\n", m_exports.size());
   for (auto &e: m_exports) {
     auto ptr = m_labels[e.second.value];
-//    printf("label export ptr 0x%zu\n", (word_t)ptr);
+//    printf("label export ptr " FMT_0xHEX "\n", (word_t)ptr);
     exports[e.first] = ptr;
   }
   m->set_exports(exports);
@@ -674,7 +674,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     for (word_t i = 0; i < t_arity; ++i) {
       word_t l_index = t.tuple_get_element(i*2+1).small_get_unsigned();
       word_t *ptr = m_labels[l_index];
-      t.tuple_set_element(i*2+1, Term::make_boxed(ptr));
+      t.tuple_set_element(i*2+1, Term::make_boxed_cp(ptr));
     }
   }
 
@@ -714,7 +714,7 @@ void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
   // Finish previous function if it already started
   if (m_current_fun.first.is_value()) {
     code::Range range(CR.fun_begin, last_ptr);
-//    printf("fun map: 0x%zx..0x%zx %s/%zu\n", (word_t)CR.fun_begin,
+//    printf("fun map: " FMT_0xHEX ".." FMT_0xHEX " %s/" FMT_UWORD "\n", (word_t)CR.fun_begin,
 //           (word_t)last_ptr, m_current_fun.first.atom_c_str(),
 //           m_current_fun.second);
     CR.fun_map.add(range, m_current_fun);
@@ -1026,8 +1026,8 @@ MaybeError LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
     word_t label_index = term_tag::Catch::value(code[code_index]);
 
     // New value will be small int
-    Term resolved_label = Term::make_boxed(m_labels[label_index]);
-//    G_LOG("loader: resolving label %zu at 0x%zx to 0x%zx\n",
+    Term resolved_label = Term::make_boxed_cp(m_labels[label_index]);
+//    G_LOG("loader: resolving label " FMT_UWORD " at " FMT_0xHEX " to " FMT_0xHEX "\n",
 //           label_index, code_index,
 //           (word_t)resolved_label.boxed_get_ptr<word_t>());
     code[code_index] = resolved_label.as_word();

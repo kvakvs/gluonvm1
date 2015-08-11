@@ -33,7 +33,7 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
   G_ASSERT(ip);
 
   m_ctx.ip = ip;
-  printf("Process::jump_to_mfa -> 0x%zx\n", (word_t)m_ctx.ip);
+  printf("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)m_ctx.ip);
   return success();
 }
 
@@ -110,7 +110,7 @@ void Process::incoming_send(Term value)
 #if G_DEBUG
 void ProcessStack::println()
 {
-  printf("STACK[%zu words]: ", size());
+  printf("STACK[" FMT_UWORD "words]: ", size());
   if (size() > 0) {
     printf("[-1]=");
     cells.back().print();
@@ -118,7 +118,7 @@ void ProcessStack::println()
   }
   if (size() > 1) {
     for (word_t i = 0; i < size()-1; i++) {
-      printf("[%zu]=", i);
+      printf("[" FMT_UWORD "]=", i);
       get_y(i).print();
       printf("; ");
     }

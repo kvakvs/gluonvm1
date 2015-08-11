@@ -138,7 +138,11 @@ void Term::print()
     if (is_boxed_fun()) {
       printf("#Fun<");
       auto bf = boxed_get_ptr<boxed_fun_t>();
-      VM::get_cs()->print_mfa(bf->fe->code);
+//      if ((word_t)(bf->fun_entry) < 0x1000) {
+//        printf(FMT_0xHEX, (word_t)bf->fun_entry);
+//      } else {
+        VM::get_cs()->print_mfa(bf->fun_entry->code);
+//      }
       printf(">");
       return;
     }
@@ -154,7 +158,7 @@ void Term::print()
       }
       printf(">");
       return;
-    }    printf("#Box<Tag=%zu;", boxed_get_subtag());
+    }    printf("#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
     VM::get_cs()->print_mfa(boxed_get_ptr<word_t>());
     printf(">");
   }
@@ -168,27 +172,27 @@ void Term::print()
     printf("'%s'", atom_str().c_str());
   }
   else if (is_small()) {
-    printf("%zi", small_get_signed());
+    printf(FMT_SWORD, small_get_signed());
   }
   else if (is_catch()) {
-    printf("CATCH(0x%zx)", catch_val());
+    printf("CATCH(" FMT_0xHEX ")", catch_val());
   }
   else if (is_short_pid()) {
     printf("PID");
   }
   else if (is_regx()) {
-    printf("X[%zu]", regx_get_value());
+    printf("X[" FMT_UWORD "]", regx_get_value());
   }
 #if FEATURE_FLOAT
   else if (is_regfp()) {
-    printf("FP[%zu]", regfp_get_value());
+    printf("FP[" FMT_UWORD "]", regfp_get_value());
   }
 #endif
   else if (is_regy()) {
-    printf("Y[%zu]", regy_get_value());
+    printf("Y[" FMT_UWORD "]", regy_get_value());
   }
   else {
-    printf("UNKNOWN(%zx)", m_val);
+    printf("UNKNOWN(" FMT_0xHEX ")", m_val);
   }
 }
 
@@ -232,7 +236,7 @@ void mfarity_t::print()
   mod.print();
   printf(":");
   fun.print();
-  printf("/%zu", arity);
+  printf("/" FMT_UWORD, arity);
 }
 
 #endif // DEBUG

@@ -526,7 +526,7 @@ static Term integer_to_list(Process *proc, Term n, sword_t base)
   }
 
   if (n.is_small()) {
-    printf("i2l n.val=%zx\n", n.as_word());
+    printf("i2l n.val=" FMT_0xHEX "\n", n.as_word());
     sword_t v = n.small_get_signed();
 
     char buf[16];

@@ -117,6 +117,9 @@ void *VM::find_bif(mfarity_t &mfa)
   if (i->fun == mfa.fun && i->arity == mfa.arity) {
     return i->bif_fn;
   }
+
+  printf("bif not found: ");
+  mfa.println();
   return nullptr;
 }
 

@@ -36,7 +36,7 @@ public:
   u32_t  uniq[4];
   word_t old_index;
   word_t old_uniq;
-  fun_entry_t *fe;
+  fun_entry_t *fun_entry;
   Term frozen[0]; // captured terms (closure)
 
   word_t get_arity() const {

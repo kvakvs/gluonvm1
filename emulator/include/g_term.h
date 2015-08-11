@@ -457,7 +457,7 @@ public:
   }
   inline sword_t small_get_signed() const {
     G_ASSERT(is_small());
-//    printf("small_get_s val=0x%zx val=0x%zx\n", m_val, term_tag::Smallint::value(m_val));
+//    printf("small_get_s val=" FMT_0xHEX " val=" FMT_0xHEX "\n", m_val, term_tag::Smallint::value(m_val));
     return term_tag::Smallint::value(m_val);
   }
   inline word_t small_get_unsigned() const {

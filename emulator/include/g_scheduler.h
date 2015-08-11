@@ -14,7 +14,7 @@ private:
   Queue<Process *> m_low_q;     // lowest priority (background)
   Queue<Process *> m_normal_q;  // normal priority (8x low)
   Queue<Process *> m_high_q;    // highest (realtime) priority
-  word_t           m_pid_counter = 1;
+  word_t           m_pid_counter = 0;
   Process         *m_current     = nullptr;
 
   Map<Term, Process *>  m_pid_to_proc;

@@ -1,4 +1,4 @@
-.PHONY: debug testerlfiles compile vg
+.PHONY: codegen debug testerlfiles compile vg
 
 debug: testerlfiles compile
 	gdb _build/gluon
@@ -6,8 +6,11 @@ debug: testerlfiles compile
 testerlfiles:
 	cd ../test/ && make && cd ../emulator
 
-compile:
-	cd _build && make && cd ..
+compile: codegen
+	cd _build && make -j4 && cd ..
 
 vg: compile
 	valgrind --leak-check=yes --log-file="valgrind.txt" _build/gluon
+
+codegen:
+	cd ../codegen && make && cd ../emulator

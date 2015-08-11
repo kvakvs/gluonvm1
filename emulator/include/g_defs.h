@@ -32,6 +32,11 @@
 #   error "Define platform bit width detection code"
 #endif
 
+#define FMT_HEX "%zx"
+#define FMT_0xHEX "0x" FMT_HEX
+#define FMT_SWORD "%zi"
+#define FMT_UWORD "%zu"
+
 namespace gluon {
 
   constexpr unsigned int get_hardware_bits() {

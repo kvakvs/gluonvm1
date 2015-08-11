@@ -12,10 +12,15 @@ test() ->
     %test_hof(),
     %test_hof_fold(),
     %test_hof_nested(),
+    %test_lc(),
     test_ring().
     %test_mochijson().
 
 %%-----------------------------------------------
+test_lc() ->
+  NumNodes = 5,
+  [ID || ID <- lists:seq(1, NumNodes)].
+
 test_ring() ->
     ring:create(10).
 

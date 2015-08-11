@@ -18,7 +18,7 @@ boxed_fun_t *box_fun(fun_entry_t *fe, word_t *mem, Term pid, Term *frozen)
   //::memcpy(&bf->uniq, fe->uniq, sizeof(u32_t) * 4);
   bf->old_index = fe->old_index;
   bf->old_uniq = fe->old_uniq;
-  bf->fe = fe;
+  bf->fun_entry = fe;
   std::copy(frozen, frozen + fe->num_free, bf->frozen);
   //::memcpy(bf->frozen, frozen, fe->num_free * sizeof(Term));
 
