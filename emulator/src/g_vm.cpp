@@ -98,7 +98,7 @@ vm::Heap *VM::get_heap(VM::heap_t) {
 
 static bool
 find_bif_compare_fun(const bif::bif_index_t &a, const bif::bif_index_t &b) {
-  return a.fun < b.fun || a.arity < b.arity;
+  return a.fun < b.fun || (a.fun == b.fun && a.arity < b.arity);
 }
 
 void *VM::find_bif(mfarity_t &mfa)
