@@ -2,6 +2,7 @@
 
 #include "g_defs.h"
 #include "g_error.h"
+#include "g_term.h"
 
 namespace gluon {
 
@@ -16,6 +17,8 @@ private:
   word_t           m_pid_counter = 1;
   Process         *m_current     = nullptr;
 
+  Map<Term, Process *>  m_pid_to_proc;
+
   //
   // Scheduling algorithm
   //
@@ -27,6 +30,7 @@ public:
   MaybeError add_runnable(Process *p);
   Process *next();
   MaybeError queue_by_priority(Process *p);
+  Process *find(Term pid) const;
 };
 
 } // ns gluon

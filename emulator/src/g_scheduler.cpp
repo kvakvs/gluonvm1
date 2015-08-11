@@ -12,6 +12,7 @@ MaybeError Scheduler::add_runnable(Process *p)
   auto new_pid = Term::make_short_pid(m_pid_counter++);
   p->set_pid(new_pid);
 
+  m_pid_to_proc[new_pid] = p;
   return queue_by_priority(p);
 }
 
@@ -27,6 +28,18 @@ MaybeError Scheduler::queue_by_priority(Process *p) {
     return "bad prio";
   }
   return success();
+}
+
+Process *Scheduler::find(Term pid) const
+{
+  if (pid.is_pid() == false) {
+    return nullptr;
+  }
+  auto i = m_pid_to_proc.find(pid);
+  if (i == m_pid_to_proc.end()) {
+    return nullptr;
+  }
+  return i->second;
 }
 
 Process *Scheduler::next()

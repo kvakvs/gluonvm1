@@ -433,7 +433,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //       The message in x(1) ends up as the result of the send in x(0).
     Term dest(ctx.ip[0]);
     Term msg(ctx.ip[1]);
-    //proc->send(dest, msg);
+    proc->send(dest, msg);
     ctx.regs[0] = ctx.regs[1];
     ctx.regs[1] = NIL;
   }

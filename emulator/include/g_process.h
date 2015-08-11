@@ -105,6 +105,8 @@ protected:
     m_pid = pid;
   }
 
+  List<Term> m_mailbox; // Stuff arrives here, TODO: make this on process heap
+
 public:
   Process() = delete;
   Process(Term gleader);
@@ -144,6 +146,12 @@ public:
   Term bif_error(Term reason, const char *str); // builds {ErrorTag, "text"}
   Term bif_error(Term error_tag, Term reason); // builds tuple {ErrorTag, Reason}
   Term bif_badarg(Term reason); // builds tuple {badarg, Reason}
+
+  //
+  // Send/receive thingies
+  //
+  void send(Term pid, Term value);
+  void incoming_send(Term value);
 
 protected:
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args

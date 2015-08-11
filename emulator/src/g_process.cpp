@@ -90,6 +90,22 @@ Term Process::bif_badarg(Term reason)
   return bif_error(atom::BADARG, reason);
 }
 
+void Process::send(Term pid, Term value)
+{
+  Process *other = VM::get_scheduler()->find(pid);
+  if (!other) {
+    return;
+  }
+  // Clone local value to value on remote heap
+  Term dst_value = proc::copy_one_term(other->get_heap(), value);
+  other->incoming_send(dst_value);
+}
+
+void Process::incoming_send(Term value)
+{
+  m_mailbox.push_back(value);
+}
+
 #if 0
 #if G_DEBUG
 void ProcessStack::println()
