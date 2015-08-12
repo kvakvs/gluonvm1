@@ -32,6 +32,7 @@ public:
   Process *next();
   MaybeError queue_by_priority(Process *p);
   Process *find(Term pid) const;
+  void exit_process(Process *p, Term reason);
 };
 
 } // ns gluon

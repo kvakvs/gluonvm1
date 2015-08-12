@@ -30,6 +30,7 @@ print("""void VM::vm_loop(bool init) {
 
 schedule:
   proc = sched->next();
+  if (!proc) { return; } // program finished
   ctx.load(proc); // get copies of quick access data from environment
 
 next_instr:
@@ -69,7 +70,7 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
         elif op['name'] == 'return':
             # special instruction which can interrupt loop
             print("  if (! impl::opcode_%s(proc, ctx)) {\n" % (op['name']))
-            print("    return;\n")
+            print("    goto schedule;\n")
             print("  }\n")
         else:
             print("  impl::opcode_%s(proc, ctx);" % (op['name']))

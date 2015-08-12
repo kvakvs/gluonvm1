@@ -134,6 +134,19 @@ void Process::msg_next()
   }
 }
 
+void Process::msg_mark_(word_t label)
+{
+  m_mbox_label = label;
+  m_mbox_saved = m_mbox_ptr;
+}
+
+void Process::msg_set_(word_t label)
+{
+  if (m_mbox_label == label) {
+    m_mbox_ptr = m_mbox_saved;
+  }
+}
+
 #if 0
 #if G_DEBUG
 void ProcessStack::println()

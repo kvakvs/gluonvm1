@@ -427,9 +427,10 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @spec return
     // @doc  Return to the address in the continuation pointer (CP).
     if (!ctx.cp) {
-      // nowhere to return: end program
+      // nowhere to return: end process
+      proc->finished();
       ctx.save(proc);
-      return false; // break vm loop
+      return false; // yield
     }
     ctx.ip = ctx.cp;
     ctx.cp = nullptr;
@@ -1117,10 +1118,26 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_on_load(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 149
 //  }
-//  inline void opcode_recv_mark(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 150
-//  }
-//  inline void opcode_recv_set(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 151
-//  }
+  //
+  // R14A
+  //
+  inline void opcode_recv_mark(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 150
+    // @spec recv_mark Label
+    // @doc  Save the end of the message queue and the address of the label
+    // Label so that a recv_set instruction can start scanning the inbox from
+    // this position.
+    proc->msg_mark_(ctx.ip[0]);
+    ctx.ip++;
+  }
+  inline void opcode_recv_set(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 151
+    // @spec recv_set Label
+    // @doc Check that the saved mark points to Label and set the save pointer
+    // in the message queue to the last position of the message queue saved by
+    // the recv_mark instruction.
+    proc->msg_set_(ctx.ip[0]);
+    ctx.ip++;
+    // ip+1 points to the next iop, supposedly loop_rec
+  }
 //  inline void opcode_gc_bif3(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 152
 //  }
 //  inline void opcode_line(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 153

@@ -18,6 +18,8 @@ loop_rec
 loop_rec_end
 remove_message
 wait
+recv_mark
+recv_set
 
 #--- funs, hofs ---
 func_info

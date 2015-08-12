@@ -51,5 +51,16 @@ Term bif_group_leader_2(Process *, Term pid, Term gl)
   return atom::OK;
 }
 
+Term bif_is_process_alive_1(Process *proc, Term pid)
+{
+  if (!pid.is_short_pid()) {
+    return proc->bif_badarg(pid);
+  }
+  if (VM::get_scheduler()->find(pid) == nullptr) {
+    return atom::FALSE;
+  }
+  return atom::TRUE;
+}
+
 } // ns bif
 } // ns gluonl

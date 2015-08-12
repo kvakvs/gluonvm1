@@ -79,8 +79,8 @@ keysearch(_, _, _) ->
       List :: [T],
       T :: term().
 
-member(_, _) ->
-    erlang:nif_error(undef).
+%member(_, _) ->
+%    erlang:nif_error(undef).
 
 %% Shadowed by erl_bif_types: lists:reverse/2
 -spec reverse(List1, Tail) -> List2 when
@@ -98,10 +98,10 @@ member(_, _) ->
 %%  test if X is a member of the list L
 %%  Now a BIF!
 
-%member(X, [X|_]) -> true;
-%member(X, [_|Y]) ->
-%	member(X, Y);
-%member(X, []) -> false.
+member(X, [X|_]) -> true;
+member(X, [_|Y]) ->
+	member(X, Y);
+member(X, []) -> false.
 
 %% append(X, Y) appends lists X and Y
 

@@ -28,6 +28,26 @@ typedef struct {
 } runtime_ctx_t;
 
 
+namespace proc {
+  typedef enum {
+    SR_NONE,
+    SR_YIELD,       // process willingly gave up run queue
+    SR_WAIT,        // process entered infinite or timed wait
+    SR_FINISHED     // process normally finished
+  } slice_result_t;
+
+  // Scheduler sets mark which is the current queue for this process
+  typedef enum {
+    Q_NONE,
+    Q_PENDING_TIMERS,
+    Q_HIGH,
+    Q_NORMAL,
+    Q_LOW,
+    Q_TIMED_WAIT,
+    Q_INF_WAIT,
+  } sched_queue_t;
+} // ns proc
+
 //------------------------------------------------------------------------------
 // Thread of execution in VM
 // Has own heap (well TODO, using shared now)
@@ -50,19 +70,37 @@ protected:
   // TODO: process dict
   Term          m_group_leader;
   Term          m_priority; // an atom: 'low', 'high' or 'normal'
-  // TODO: result (is exiting, reason, put back in sched queue for reason)
+  // result after slice of CPU time is consumed or process yielded
+  // (is exiting, reason, put back in sched queue for reason)
+  proc::slice_result_t m_slice_result = proc::SR_NONE;
+  // Which queue we belong to
+  proc::sched_queue_t  m_current_queue = proc::Q_NONE;
 
   friend class Scheduler;
   void set_pid(Term pid) {
     m_pid = pid;
   }
 
+  //
+  // Mailbox
+  //
   List<Term> m_mbox; // Stuff arrives here, TODO: make this on process heap
   List<Term>::const_iterator m_mbox_ptr = m_mbox.end();
+  // Set by recv_mark opcode and read by recv_set opcode
+  word_t m_mbox_label;
+  List<Term>::const_iterator m_mbox_saved;
 
 public:
   Process() = delete;
   Process(Term gleader);
+
+  void finished() {
+    m_slice_result = proc::SR_FINISHED;
+  }
+  inline proc::slice_result_t get_slice_result() const {
+    return m_slice_result;
+  }
+
   Term get_pid() const {
     return m_pid;
   }
@@ -109,6 +147,10 @@ public:
   Term msg_current();
   void msg_remove();
   void msg_next();
+  // implementation of recv_mark opcode
+  void msg_mark_(word_t);
+  // implementation of recv_set opcode
+  void msg_set_(word_t);
 
 protected:
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args

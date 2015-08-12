@@ -28,7 +28,7 @@ create(NumNodes) when is_integer(NumNodes), NumNodes > 1 ->
 
 %% collects the exit messages from the nodes
 getexits([]) ->
-  io:format("[Coord] Done.~n"),
+  %io:format("[Coord] Done.~n"),
   ok;
 getexits(Nodes) ->
   receive
@@ -70,7 +70,7 @@ connect_([N1, N2 | Nodes]) ->
 node(ID, CrdId) ->
   receive
     {CrdId, connect, NxtNdId} ->
-      io:format("[~p:~p] got my next ~p~n", [ID, self(), NxtNdId]),
+      %io:format("[~p:~p] got my next ~p~n", [ID, self(), NxtNdId]),
       node(ID, CrdId, NxtNdId)
   end.
 
@@ -84,7 +84,7 @@ node(ID, CrdId, NxtNdId) ->
 	  NxtNdId ! {token, Val + 1},
 	  node(ID, CrdId, NxtNdId);
 	true ->
-	  io:format("[~p:~p] token value ~p~n", [ID, self(), Val]),
+	  %io:format("[~p:~p] token value ~p~n", [ID, self(), Val]),
 	  case erlang:is_process_alive(NxtNdId) of
 	    true ->
 	      NxtNdId ! {token, Val + 1};

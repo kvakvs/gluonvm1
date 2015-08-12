@@ -20,10 +20,13 @@ MaybeError Scheduler::queue_by_priority(Process *p) {
   auto prio = p->get_priority();
   if (prio == atom::NORMAL) {
     m_normal_q.push(p);
+    p->m_current_queue = proc::Q_NORMAL;
   } else if (prio == atom::LOW) {
     m_low_q.push(p);
+    p->m_current_queue = proc::Q_LOW;
   } else if (prio == atom::HIGH) {
     m_high_q.push(p);
+    p->m_current_queue = proc::Q_HIGH;
   } else {
     return "bad prio";
   }
@@ -42,14 +45,51 @@ Process *Scheduler::find(Term pid) const
   return i->second;
 }
 
+void Scheduler::exit_process(Process *p, Term reason)
+{
+  // assert that process is not in any queue
+  G_ASSERT(p->m_current_queue == proc::Q_NONE);
+  // root process exits with halt()
+  //G_ASSERT(p->get_registered_name() != atom::INIT);
+
+  // TODO: ets tables
+  // TODO: notify monitors
+  // TODO: cancel known timers who target this process
+  // TODO: notify links
+  // TODO: unregister name if registered
+  // TODO: if pending timers - become zombie and sit in pending timers queue
+  printf("process finished ");
+  p->get_pid().print();
+  printf("; result X[0]=");
+  p->get_runtime_ctx().regs[0].println();
+
+  delete p;
+}
+
 Process *Scheduler::next()
 {
-  // TODO: check previous process exit or sleep status (slice_result)
-
-  // TODO: put back in run queue, or receive/wait queue
   if (m_current) {
-    queue_by_priority(m_current);
-    m_current = nullptr;
+    G_ASSERT(m_current->m_current_queue == proc::Q_NONE);
+
+    switch (m_current->get_slice_result()) {
+    case proc::SR_YIELD:
+    case proc::SR_NONE: {
+        queue_by_priority(m_current);
+        m_current = nullptr;
+      } break;
+
+    case proc::SR_FINISHED: { // normal exit
+        exit_process(m_current, atom::NORMAL);
+        m_current = nullptr;
+      } break;
+
+      // TODO: WAIT put into infinite or timed wait queue
+      // TODO: PURGE_PROCS running on old code
+      // TODO: EXIT ERROR THROW
+    case proc::SR_WAIT:
+    //default:
+      G_FAIL("unknown slice result");
+    } // switch slice result
   }
 
   while (m_current == nullptr) {
@@ -84,6 +124,7 @@ Process *Scheduler::next()
     } // select proc from q
 
     if (next_proc) {
+      next_proc->m_current_queue = proc::Q_NONE;
       return m_current = next_proc;
     }
 
