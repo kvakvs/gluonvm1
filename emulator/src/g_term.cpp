@@ -178,7 +178,7 @@ void Term::print() const
     printf("CATCH(" FMT_0xHEX ")", catch_val());
   }
   else if (is_short_pid()) {
-    printf("PID");
+    printf("#Pid<" FMT_0xHEX ">", short_pid_get_value());
   }
   else if (is_regx()) {
     printf("X[" FMT_UWORD "]", regx_get_value());

@@ -105,7 +105,8 @@ protected:
     m_pid = pid;
   }
 
-  List<Term> m_mailbox; // Stuff arrives here, TODO: make this on process heap
+  List<Term> m_mbox; // Stuff arrives here, TODO: make this on process heap
+  List<Term>::const_iterator m_mbox_ptr = m_mbox.end();
 
 public:
   Process() = delete;
@@ -152,6 +153,9 @@ public:
   //
   void send(Term pid, Term value);
   void incoming_send(Term value);
+  Term msg_current();
+  void msg_remove();
+  void msg_next();
 
 protected:
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args

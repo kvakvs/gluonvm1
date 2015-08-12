@@ -12,6 +12,10 @@ jump
 
 #--- send/recv ---
 send
+loop_rec
+loop_rec_end
+remove_message
+wait
 
 #--- funs, hofs ---
 func_info

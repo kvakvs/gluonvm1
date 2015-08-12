@@ -57,7 +57,12 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
   // TODO: swap_out: save r0, stack top and heap top
   inline void swap_out_light(Process *proc) {
-    // update only heap top
+    // Make this little lighter
+    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+    proc_ctx.ip   = ip;
+    proc_ctx.cp   = cp;
+    proc_ctx.live = live;
+    std::memcpy(proc_ctx.regs, regs, sizeof(Term)*live);
   }
 
   // For special immed1 types (register and stack ref) convert them to their
@@ -438,16 +443,40 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.regs[0] = ctx.regs[1];
     ctx.regs[1] = NIL;
   }
-//  inline void opcode_remove_message(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 21
-//  }
+  inline void opcode_remove_message(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 21
+    // @spec remove_message
+    // @doc  Unlink the current message from the message queue and store a
+    //       pointer to the message in x(0). Remove any timeout.
+    proc->msg_remove();
+  }
 //  inline void opcode_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 22
 //  }
-//  inline void opcode_loop_rec(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 23
-//  }
-//  inline void opcode_loop_rec_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 24
-//  }
-//  inline void opcode_wait(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 25
-//  }
+  inline void opcode_loop_rec(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 23
+    // @spec loop_rec Label Source
+    // @doc  Loop over the message queue, if it is empty jump to Label.
+    Term msg = proc->msg_current();
+    if (msg.is_non_value()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    //ctx.move(msg, Term(ctx.ip[1]));
+    ctx.regs[0] = msg;
+    ctx.ip += 2;
+  }
+  inline void opcode_loop_rec_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 24
+    // @spec loop_rec_end Label
+    // @doc  Advance the save pointer to the next message and jump back to Label.
+    proc->msg_next();
+    ctx.jump(proc, Term(ctx.ip[1]));
+  }
+  inline void opcode_wait(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 25
+    // @spec wait Label
+    // @doc  Suspend the processes and set the entry point to the beginning of the
+    //       receive loop at Label.
+
+    // Schedule out for infinity with reason WAIT
+    ctx.ip++;
+    ctx.swap_out_light(proc);
+  }
 //  inline void opcode_wait_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 26
 //  }
 //  inline void opcode_m_plus(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 27

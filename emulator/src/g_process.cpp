@@ -103,7 +103,32 @@ void Process::send(Term pid, Term value)
 
 void Process::incoming_send(Term value)
 {
-  m_mailbox.push_back(value);
+  m_mbox.push_back(value);
+}
+
+Term Process::msg_current()
+{
+  if (m_mbox.empty()) {
+    return NONVALUE;
+  }
+  if (m_mbox_ptr == m_mbox.end()) {
+    m_mbox_ptr = m_mbox.begin();
+  }
+  return *m_mbox_ptr;
+}
+
+void Process::msg_remove()
+{
+  if (m_mbox_ptr == m_mbox.end()) {
+    m_mbox_ptr = m_mbox.begin();
+  }
+  m_mbox_ptr = m_mbox.erase(m_mbox_ptr);
+}
+
+void Process::msg_next()
+{
+  G_ASSERT(m_mbox_ptr != m_mbox.end());
+  m_mbox_ptr++;
 }
 
 #if 0

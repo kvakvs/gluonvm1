@@ -49,13 +49,20 @@ next_instr:
 """)
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     op = libgenop.ops_by_code[opcode]
+    # unconditional code end
+    print("OP_%s: // opcode: %d" % (op['name'], opcode))
     if op['name'] == "int_code_end":
-        print("""OP_%s: // opcode: %s
-  goto vm_end;
-""" % (op['name'], opcode))
+        print("  goto vm_end;\n")
         continue
 
-    print("OP_%s: // opcode: %d" % (op['name'], opcode))
+    # unconditional scheduling
+    if op['name'] in ['wait']:
+        print("""  impl::opcode_%s(proc, ctx);
+  goto schedule;
+""" % (op['name']))
+        continue
+
+    # call handler or print TODO error
     if op['name'] in libgenop.implemented_ops:
         print('  printf("%s/%d args=");' % (op['name'], op['arity']))
         print('  ctx.print_args(%d);' % (op['arity']))
