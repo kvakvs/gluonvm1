@@ -11,7 +11,7 @@
 -module(ring).
 -export([create/1, node/2, connect/1]).
 
--define(MAXVAL, 100000).
+-define(MAXVAL, 5).
 
 %% creates the ring's nodes, connects them in a ring, sends the token in the
 %% ring, and collects the exit messages from the nodes

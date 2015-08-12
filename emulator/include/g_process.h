@@ -27,54 +27,6 @@ typedef struct {
 #endif
 } runtime_ctx_t;
 
-#if 0
-class ProcessStack {
-  Vector<Term> cells;
-public:
-  ProcessStack() {}
-  void push(Term t) {
-    cells.push_back(t);
-  }
-  Term pop() {
-    Term t = cells.back();
-    cells.pop_back();
-    return t;
-  }
-  void set_y(word_t offset, Term t) {
-    cells[index_for_y(offset)] = t;
-  }
-  Term get_y(word_t offset) const {
-    return cells[index_for_y(offset)];
-  }
-  void push_n_nils(word_t n) {
-    if (!n) return;
-    cells.reserve(cells.size() + n);
-    for (word_t i = 0; i < n; ++i) {
-      cells.push_back(NIL);
-    }
-  }
-  void drop_n(word_t n) {
-    G_ASSERT(cells.size() >= n);
-    cells.resize(cells.size() - n);
-  }
-  word_t size() const {
-    return cells.size();
-  }
-
-#if G_DEBUG
-  void println();
-#else
-  inline void println() {}
-#endif
-
-protected:
-  inline word_t index_for_y(word_t y) const {
-    // when we work with stack, there's always CP hanging on top
-    G_ASSERT(y < cells.size() - 1);
-    return cells.size() - 2 - y;
-  }
-};
-#endif //0
 
 //------------------------------------------------------------------------------
 // Thread of execution in VM
@@ -151,7 +103,7 @@ public:
   //
   // Send/receive thingies
   //
-  void send(Term pid, Term value);
+  void msg_send(Term pid, Term value);
   void incoming_send(Term value);
   Term msg_current();
   void msg_remove();

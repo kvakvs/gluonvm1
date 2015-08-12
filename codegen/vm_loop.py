@@ -36,12 +36,14 @@ next_instr:
   jmp_to = (void *)(*ctx.ip);
   ctx.println();
 
-#if FEATURE_CODE_RANGES
   printf("[");
+  proc->get_pid().print();
+  printf(";");
+#if FEATURE_CODE_RANGES
   VM::get_cs()->print_mfa(ctx.ip); // prints mfarity or pointer
   printf("]: ");
 #else
-  printf("[0x%zx]: ", (word_t)ctx.ip);
+  printf("0x%zx]: ", (word_t)ctx.ip);
 #endif
 
   ctx.ip++;

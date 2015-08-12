@@ -26,8 +26,9 @@ private:
   word_t m_normal_count;
 
 public:
-  // Register process in one of queues according to its priority
-  MaybeError add_runnable(Process *p);
+  // Register process in one of queues according to its priority. New pid is set
+  MaybeError add_new_runnable(Process *p);
+
   Process *next();
   MaybeError queue_by_priority(Process *p);
   Process *find(Term pid) const;

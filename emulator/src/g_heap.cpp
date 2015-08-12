@@ -76,6 +76,17 @@ Term copy_one_term(Heap *dstheap, Term t) {
   {
     return t;
   }
+  if (t.is_tuple()) {
+    word_t arity   = t.tuple_get_arity();
+    Term *new_t  = (Term *)dstheap->h_alloc(arity + 1);
+    Term *this_t = t.boxed_get_ptr<Term>();
+    new_t[0] = this_t[0];
+    // Deep clone
+    for (word_t i = 1; i <= arity; ++i) {
+      new_t[i] = copy_one_term(dstheap, this_t[i]);
+    }
+    return Term::make_tuple_prepared(new_t);
+  }
   t.println();
   G_TODO("notimpl clone");
 }

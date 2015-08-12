@@ -58,7 +58,7 @@ Result<Term> Process::spawn(mfarity_t &mfa, Term *args) {
 
   // TODO: set context cp to some special exit function or handle exit another way
 
-  auto add_result = VM::get_scheduler()->add_runnable(this);
+  auto add_result = VM::get_scheduler()->add_new_runnable(this);
   G_RETURN_REWRAP_IF_ERROR(add_result, Term);
 
   return success(get_pid());
@@ -90,15 +90,21 @@ Term Process::bif_badarg(Term reason)
   return bif_error(atom::BADARG, reason);
 }
 
-void Process::send(Term pid, Term value)
+void Process::msg_send(Term pid, Term value)
 {
+  // TODO: send to tuple {dst,node}, and to registered atom, and to port
+  G_ASSERT(pid.is_pid());
+
   Process *other = VM::get_scheduler()->find(pid);
   if (!other) {
+    printf("msg_send pid not found: ");
+    pid.println();
     return;
   }
   // Clone local value to value on remote heap
   Term dst_value = proc::copy_one_term(other->get_heap(), value);
   other->incoming_send(dst_value);
+  // TODO: also inform scheduler?
 }
 
 void Process::incoming_send(Term value)
@@ -121,14 +127,18 @@ void Process::msg_remove()
 {
   if (m_mbox_ptr == m_mbox.end()) {
     m_mbox_ptr = m_mbox.begin();
+  } else {
+    m_mbox_ptr = m_mbox.erase(m_mbox_ptr);
   }
-  m_mbox_ptr = m_mbox.erase(m_mbox_ptr);
 }
 
 void Process::msg_next()
 {
-  G_ASSERT(m_mbox_ptr != m_mbox.end());
-  m_mbox_ptr++;
+  if (m_mbox_ptr == m_mbox.end()) {
+    m_mbox_ptr = m_mbox.begin();
+  } else {
+    m_mbox_ptr++;
+  }
 }
 
 #if 0

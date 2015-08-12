@@ -58,11 +58,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   // TODO: swap_out: save r0, stack top and heap top
   inline void swap_out_light(Process *proc) {
     // Make this little lighter
-    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
-    proc_ctx.ip   = ip;
-    proc_ctx.cp   = cp;
-    proc_ctx.live = live;
-    std::memcpy(proc_ctx.regs, regs, sizeof(Term)*live);
+    return save(proc);
   }
 
   // For special immed1 types (register and stack ref) convert them to their
@@ -411,8 +407,14 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // save Live number of X registers.
     ctx.ip += 2;
   }
-//  inline void opcode_init(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 17
-//  }
+  inline void opcode_init(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 17
+    // @spec init N
+    // @doc  Clear the Nth stack word. (By writing NIL.)
+    Term y_reg(ctx.ip[0]);
+    G_ASSERT(y_reg.is_regy());
+    ctx.stack().set_y(y_reg.regy_get_value(), term::NIL);
+    ctx.ip++;
+  }
   inline void opcode_deallocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 18
     // @spec deallocate N
     // @doc  Restore the continuation pointer (CP) from the stack and deallocate
@@ -437,9 +439,15 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @spec send
     // @doc  Send argument in x(1) as a message to the destination process in x(0).
     //       The message in x(1) ends up as the result of the send in x(0).
-    Term dest(ctx.ip[0]);
-    Term msg(ctx.ip[1]);
-    proc->send(dest, msg);
+    Term dest(ctx.regs[0]);
+    Term msg(ctx.regs[1]);
+
+    printf("send ");
+    msg.print();
+    printf(" -> ");
+    dest.println();
+
+    proc->msg_send(dest, msg);
     ctx.regs[0] = ctx.regs[1];
     ctx.regs[1] = NIL;
   }
@@ -459,6 +467,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       return ctx.jump(proc, Term(ctx.ip[0]));
     }
     //ctx.move(msg, Term(ctx.ip[1]));
+    printf("loop_rec msg=");
+    msg.println();
+
     ctx.regs[0] = msg;
     ctx.ip += 2;
   }
@@ -466,7 +477,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @spec loop_rec_end Label
     // @doc  Advance the save pointer to the next message and jump back to Label.
     proc->msg_next();
-    ctx.jump(proc, Term(ctx.ip[1]));
+    ctx.jump(proc, Term(ctx.ip[0]));
   }
   inline void opcode_wait(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 25
     // @spec wait Label
@@ -474,7 +485,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //       receive loop at Label.
 
     // Schedule out for infinity with reason WAIT
-    ctx.ip++;
+    ctx.jump(proc, Term(ctx.ip[0]));
     ctx.swap_out_light(proc);
   }
 //  inline void opcode_wait_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 26

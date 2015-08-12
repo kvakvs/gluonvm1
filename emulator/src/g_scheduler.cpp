@@ -5,7 +5,7 @@
 
 namespace gluon {
 
-MaybeError Scheduler::add_runnable(Process *p)
+MaybeError Scheduler::add_new_runnable(Process *p)
 {
   G_ASSERT(p->get_pid().is_pid() == false);
 
@@ -48,7 +48,7 @@ Process *Scheduler::next()
 
   // TODO: put back in run queue, or receive/wait queue
   if (m_current) {
-    add_runnable(m_current);
+    queue_by_priority(m_current);
     m_current = nullptr;
   }
 

@@ -3,6 +3,7 @@
         ]).
 
 test() ->
+    [
     %[5,4,3,2,1] = rev([1,2,3,4,5]),
     %0 = recurse(10),
     %false = test_eq(),
@@ -13,16 +14,25 @@ test() ->
     %test_hof_fold(),
     %test_hof_nested(),
     %test_lc(),
-    test_ring().
+    %test_send_receive(),
+    test_ring(),
     %test_mochijson().
+    done].
 
 %%-----------------------------------------------
+test_send_receive() ->
+    self() ! test,
+    receive
+        test -> ok;
+        X -> {fail, X}
+    end.
+
 test_lc() ->
   NumNodes = 5,
   [ID || ID <- lists:seq(1, NumNodes)].
 
 test_ring() ->
-    ring:create(10).
+    ring:create(3).
 
 test_mochijson() ->
     mochijson:encode({struct, [ {test_neg, -10000}, {test, 10000} ]}).

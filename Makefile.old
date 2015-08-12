@@ -1,6 +1,8 @@
-.PHONY: codegen test_erl asm compile
-compile:
-	rebar3 compile
+.PHONY: codegen test_erl
+#.PHONY: compile asm
+
+#compile:
+#	rebar3 compile
 
 #asm: codegen test_erl compile
 #asm: test_erl

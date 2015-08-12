@@ -547,6 +547,10 @@ public:
     ((word_t *)elements)[0] = arity;
     return Term(term_tag::Tuple::create_from_ptr(elements));
   }
+  // Does not set arity field, assuming that element values are already all set
+  static inline Term make_tuple_prepared(Term *elements) {
+    return Term(term_tag::Tuple::create_from_ptr(elements));
+  }
   constexpr bool is_tuple() const {
     return term_tag::Tuple::check(m_val);
   }

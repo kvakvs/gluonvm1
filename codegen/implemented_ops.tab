@@ -8,6 +8,7 @@ allocate_heap_zero
 deallocate
 select_val
 trim
+init
 jump
 
 #--- send/recv ---
