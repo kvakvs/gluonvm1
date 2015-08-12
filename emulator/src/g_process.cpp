@@ -54,7 +54,8 @@ Result<Term> Process::spawn(mfarity_t &mfa, Term *args) {
   auto j_result = jump_to_mfa(mfa);
   G_RETURN_REWRAP_IF_ERROR(j_result, Term);
 
-  // TODO: copy args to registers
+  std::copy(args, args+mfa.arity, m_ctx.regs);
+  m_ctx.live = mfa.arity;
 
   // TODO: set context cp to some special exit function or handle exit another way
 

@@ -57,22 +57,20 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
         print("  goto vm_end;\n")
         continue
 
-    # unconditional scheduling
-    if op['name'] in ['wait']:
-        print("""  impl::opcode_%s(proc, ctx);
-  goto schedule;
-""" % (op['name']))
-        continue
-
     # call handler or print TODO error
     if op['name'] in libgenop.implemented_ops:
         print('  printf("%s/%d args=");' % (op['name'], op['arity']))
         print('  ctx.print_args(%d);' % (op['arity']))
-        if op['name'] == 'return':
+        # unconditional scheduling
+        if op['name'] in ['wait']:
+            print("  impl::opcode_%s(proc, ctx);\n" % (op['name']))
+            print("  goto schedule;\n")
+            continue
+        elif op['name'] == 'return':
             # special instruction which can interrupt loop
-            print("""  if (! impl::opcode_%s(proc, ctx)) {
-    return;
-  }""" % (op['name']))
+            print("  if (! impl::opcode_%s(proc, ctx)) {\n" % (op['name']))
+            print("    return;\n")
+            print("  }\n")
         else:
             print("  impl::opcode_%s(proc, ctx);" % (op['name']))
         print("  goto next_instr;")

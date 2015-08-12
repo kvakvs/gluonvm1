@@ -12,26 +12,25 @@ VM into a particularly small platform.
 ## emulator/
 
 C++ implementation of minimalistic BEAM virtual machine. Has simple configurable
-feature settings in `include/g_defs.h` (like distribution, float, bignum support etc).
+feature settings in `include/g_FEATURES.h` (like distribution, float, bignum support
+etc).
 
 Requires CMake, Clang (probably will work with GCC too?).
 
-Run `make` in project directory, run `make` in codegen/, then run `make` in emulator/
-directory. `CMakeLists.txt` work with QtCreator as IDE not to mention cmake 
-supporting host of other IDEs.
+Run `make` in emulator/ directory. `CMakeLists.txt` work with QtCreator as IDE not
+to mention cmake supporting host of other IDEs.
 
 # Features (Done)
 
-* Simple scheduler (no process scheduling done yet, but algorithms are in place)
-* Processes (just one but work in progress)
-* Process heaps and stack (GC is TODO)
-* Some BIFs
+* Processes, heaps and stack (no GC yet)
+* Simple scheduler
+* Messages
+* Some BIFs (amount of them growing)
 * Some opcodes (can run sequential Erlang)
 
 # TODO
 
 * Reductions and scheduling
-* Messages
 * Simple GC
 * Binaries
 * Floats maybe?
