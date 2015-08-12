@@ -38,14 +38,6 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
 }
 
 
-
-//word_t *Process::get_code_base() const {
-//  return m_module->m_code.data();
-//}
-//word_t *Process::get_ip() const {
-//  return m_ctx.mod->m_code.data() + m_ip.offset.value;
-//}
-
 Result<Term> Process::spawn(mfarity_t &mfa, Term *args) {
   // Check that we aren't on any scheduler yet
   G_ASSERT(false == m_pid.is_pid());

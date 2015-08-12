@@ -29,6 +29,7 @@ int main(int argc, const char *argv[]) {
   // normal start
   //vm::load_module("../test/g_test1.S.gleam");
   VM::get_cs()->path_append("../test");
+  VM::get_cs()->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
   VM::get_cs()->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
 
   // create root process and set it to some entry function
@@ -42,6 +43,7 @@ int main(int argc, const char *argv[]) {
   }
 
   // Run some code
+  proc->set_group_leader(proc->get_pid());
   VM::vm_loop(false);
 
   // Print x0 as result

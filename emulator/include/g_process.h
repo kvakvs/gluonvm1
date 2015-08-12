@@ -73,6 +73,7 @@ public:
     return m_ctx;
   }
   Term get_group_leader() const { return m_group_leader; }
+  void set_group_leader(Term pid) { m_group_leader = pid; }
 
   //
   // Process memory thingies

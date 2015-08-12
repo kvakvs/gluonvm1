@@ -39,5 +39,17 @@ Term bif_spawn_3(Process *proc, Term m, Term f, Term args)
   return new_proc->get_pid();
 }
 
+Term bif_group_leader_0(Process *proc)
+{
+  return proc->get_group_leader();
+}
+
+Term bif_group_leader_2(Process *, Term pid, Term gl)
+{
+  Process *other = VM::get_scheduler()->find(pid);
+  other->set_group_leader(pid);
+  return atom::OK;
+}
+
 } // ns bif
 } // ns gluonl

@@ -618,8 +618,16 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     }
     ctx.ip += 2;
   }
-//  inline void opcode_is_pid(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 49
-//  }
+  inline void opcode_is_pid(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 49
+    // @spec is_pid Lbl Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not a pid.
+    Term arg(ctx.ip[1]);
+    DEREF(arg);
+    if (!arg.is_pid()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 2;
+  }
 //  inline void opcode_is_reference(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 50
 //  }
 //  inline void opcode_is_port(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 51
@@ -695,9 +703,10 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term arg(ctx.ip[0]);
     DEREF(arg);
 
-    Term dst(ctx.ip[2]);
+    Term fail_label(ctx.ip[2]);
+
     // TODO: binary search
-    Term *elements = dst.boxed_get_ptr<Term>();
+    Term *elements = fail_label.boxed_get_ptr<Term>();
     word_t dst_arity = ((word_t *)elements)[0] / 2;
     for (word_t i = 0; i < dst_arity; i++) {
       if (elements[i*2+1] == arg) {
@@ -706,8 +715,27 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     }
     ctx.jump(proc, Term(ctx.ip[1]));
   }
-//  inline void opcode_select_tuple_arity(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 60
-//  }
+  inline void opcode_select_tuple_arity(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 60
+    // @spec select_tuple_arity Tuple FailLabel Destinations
+    // @doc Check the arity of the tuple Tuple and jump to the corresponding
+    //      destination label, if no arity matches, jump to FailLabel.
+    Term arg(ctx.ip[0]);
+    DEREF(arg);
+//    word_t arity = arg.tuple_get_arity();
+
+    // TODO: refactor this fun and select_val into shared fun
+    Term fail_label(ctx.ip[2]);
+
+    // TODO: binary search
+    Term *elements = fail_label.boxed_get_ptr<Term>();
+    word_t dst_arity = ((word_t *)elements)[0] / 2;
+    for (word_t i = 0; i < dst_arity; i++) {
+      if (elements[i*2+1] == arg) {
+        return ctx.jump(proc, elements[i*2+2]);
+      }
+    }
+    ctx.jump(proc, Term(ctx.ip[1]));
+  }
   inline void opcode_jump(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 61
     return ctx.jump(proc, Term(ctx.ip[0]));
   }

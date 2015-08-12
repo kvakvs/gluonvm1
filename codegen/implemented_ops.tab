@@ -7,6 +7,7 @@ allocate_heap
 allocate_heap_zero
 deallocate
 select_val
+select_tuple_arity
 trim
 init
 jump
@@ -62,6 +63,7 @@ is_integer
 is_float
 is_list
 is_binary
+is_pid
 
 #--- debug ---
 #line - processed on load stage and removed

@@ -18,6 +18,10 @@
 #--- A
 atom_to_list 1
 
+#--- G
+group_leader 0
+group_leader 2
+
 #--- H
 hd 1
 

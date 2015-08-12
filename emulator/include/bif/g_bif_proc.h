@@ -11,6 +11,8 @@ namespace bif {
 
 Term bif_self_0(Process *);
 Term bif_spawn_3(Process *, Term m, Term f, Term args);
+Term bif_group_leader_0(Process *);
+Term bif_group_leader_2(Process *, Term pid, Term gl);
 
 } // ns bif
 } // ns gluon
