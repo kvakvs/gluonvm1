@@ -33,7 +33,8 @@ namespace proc {
     SR_NONE,
     SR_YIELD,       // process willingly gave up run queue
     SR_WAIT,        // process entered infinite or timed wait
-    SR_FINISHED     // process normally finished
+    SR_FINISHED,    // process normally finished
+    SR_EXCEPTION,   // error, exit or throw
   } slice_result_t;
 
   // Scheduler sets mark which is the current queue for this process
@@ -72,7 +73,10 @@ protected:
   Term          m_priority; // an atom: 'low', 'high' or 'normal'
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
+  // TODO: make this union to save space
   proc::slice_result_t m_slice_result = proc::SR_NONE;
+  Term m_slice_result_reason = NONVALUE;
+
   // Which queue we belong to
   proc::sched_queue_t  m_current_queue = proc::Q_NONE;
 

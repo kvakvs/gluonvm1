@@ -85,7 +85,9 @@ Process *Scheduler::next()
 
       // TODO: WAIT put into infinite or timed wait queue
       // TODO: PURGE_PROCS running on old code
-      // TODO: EXIT ERROR THROW
+    case proc::SR_EXCEPTION: {
+        exit_process(m_current, m_current->m_slice_result_reason);
+      } break;
     case proc::SR_WAIT:
     //default:
       G_FAIL("unknown slice result");
