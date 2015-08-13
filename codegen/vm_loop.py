@@ -22,7 +22,6 @@ print("""void VM::vm_loop(bool init) {
   void *jmp_to;
   Process *proc;
   Scheduler *sched = VM::get_scheduler();
-  word_t reductions = vm::SLICE_REDUCTIONS;
 
   if (init) {
     goto vm_jump_table_init;
@@ -62,16 +61,21 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     if op['name'] in libgenop.implemented_ops:
         print('  printf("%s/%d args=");' % (op['name'], op['arity']))
         print('  ctx.print_args(%d);' % (op['arity']))
+
         # unconditional scheduling
         if op['name'] in ['wait']:
-            print("  impl::opcode_%s(proc, ctx);\n" % (op['name']))
-            print("  goto schedule;\n")
+            print("  impl::opcode_%s(proc, ctx);" % (op['name']))
+            print("  goto schedule;")
             continue
-        elif op['name'] == 'return':
+        # conditional scheduling - false means we yield
+        elif op['name'] in ['return', 'call', 'call_only', 'call_last',
+                            'call_ext', 'call_fun', 'call_ext_only', 
+                            'call_ext_last', 'bif0', 'bif1', 'bif2',
+                            'gc_bif1', 'gc_bif2']:
             # special instruction which can interrupt loop
-            print("  if (! impl::opcode_%s(proc, ctx)) {\n" % (op['name']))
-            print("    goto schedule;\n")
-            print("  }\n")
+            print("  if (G_UNLIKELY(impl::opcode_%s(proc, ctx) == impl::SCHEDULE_NEXT)) {" % (op['name']))
+            print("    goto schedule;")
+            print("  }")
         else:
             print("  impl::opcode_%s(proc, ctx);" % (op['name']))
         print("  goto next_instr;")

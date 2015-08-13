@@ -19,8 +19,15 @@ namespace gluon {
 
 namespace impl {
 
+typedef enum {
+  SCHEDULE_NEXT,
+  KEEP_GOING
+} want_schedule_t;
+
+// Struct represents process context also holds vm loop local variables
 struct vm_runtime_ctx_t: runtime_ctx_t {
   proc::Heap *heap;
+  sword_t reductions = 0;
 
   inline proc::Stack &stack() { return heap->m_stack; }
   inline const proc::Stack &stack() const { return heap->m_stack; }
@@ -34,6 +41,20 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 //#endif
   }
 
+  // returns false if process should yield (for call ops for example)
+  want_schedule_t consume_reduction(Process *p) {
+    reductions--;
+    if (G_UNLIKELY(reductions <= 0)) {
+      // ASSERT that we're standing on first instruction of fun after fun_info
+      // ip[-4] == fun_info
+      // TODO: remove live from all call opcodes and uncomment this
+      // live = ip[-1];
+      swap_out_light(p);
+      return SCHEDULE_NEXT;
+    }
+    return KEEP_GOING;
+  }
+
   void load(Process *proc) {
     runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
 //    mod  = proc_ctx.mod;
@@ -45,6 +66,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     heap = proc->get_heap();
     //base  = proc->get_code_base();
     // TODO: update heap top
+    reductions = vm::SLICE_REDUCTIONS;
   }
   void save(Process *proc) {
     runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
@@ -252,8 +274,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 };
 
 #define DEREF(var) if ((var).is_immed()) { ctx.resolve_immed(var); }
-void opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx);
-void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
+want_schedule_t opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx);
+want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
 //  inline void opcode_label(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 1
 //  }
@@ -262,7 +284,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   }
 //  inline void opcode_int_code_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 3
 //  }
-  inline void opcode_call(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 4
+  inline want_schedule_t opcode_call(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 4
     // @spec call Arity Label
     // @doc Call the function at Label.
     //      Save the next instruction as the return address in the CP register.
@@ -270,8 +292,9 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.live = arity.small_get_unsigned();
     ctx.cp = ctx.ip + 2;
     ctx.jump(proc, Term(ctx.ip[1]));
+    return ctx.consume_reduction(proc);
   }
-  inline void opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
+  inline want_schedule_t opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
     // @spec call_last Arity Label Deallocate
     // @doc Deallocate and do a tail recursive call to the function at Label.
     // Do not update the CP register. Before the call deallocate Deallocate
@@ -282,16 +305,18 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term n(ctx.ip[2]);
     ctx.stack_deallocate(n.small_get_unsigned());
     ctx.jump(proc, Term(ctx.ip[1]));
+    return ctx.consume_reduction(proc);
   }
-  inline void opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
+  inline want_schedule_t opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
     // @spec call_only Arity Label
     // @doc Do a tail recursive call to the function at Label.
     //      Do not update the CP register.
     Term arity(ctx.ip[0]);
     ctx.live = arity.small_get_unsigned();
     ctx.jump(proc, Term(ctx.ip[1]));
+    return ctx.consume_reduction(proc);
   }
-  inline void opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
+  inline want_schedule_t opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
     // @spec call_ext Arity Destination
     // @doc Call the function of arity Arity pointed to by Destination.
     //      Save the next instruction as the return address in the CP register.
@@ -301,9 +326,10 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
     Term a(ctx.ip[0]);
     ctx.live = a.small_get_unsigned();
-    return ctx.jump_ext(proc, boxed_mfa);
+    ctx.jump_ext(proc, boxed_mfa);
+    return ctx.consume_reduction(proc);
   }
-  inline void opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
+  inline want_schedule_t opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
     // @spec call_ext_last Arity Destination Deallocate
     // @doc Deallocate and do a tail call to function of arity Arity pointed
     // to by Destination. Do not update the CP register. Deallocate Deallocate
@@ -313,9 +339,11 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term dealloc(ctx.ip[2]);
     ctx.live = a.small_get_unsigned();
     ctx.stack_deallocate(dealloc.small_get_unsigned());
-    return ctx.jump_ext(proc, boxed_mfa);
+    ctx.jump_ext(proc, boxed_mfa);
+    return ctx.consume_reduction(proc);
   }
-  inline void opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
+
+  inline want_schedule_t opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
     // bif0 import_index Dst - cannot fail
     Term boxed_mfa(ctx.ip[0]);
     Term result_dst(ctx.ip[1]);
@@ -328,8 +356,10 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //if (ctx.check_bif_error(proc)) { return; }
     ctx.move(result, result_dst);
     ctx.ip += 2;
+    return ctx.consume_reduction(proc);
   }
-  inline void opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
+
+  inline want_schedule_t opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
     // bif1 Fail import_index Arg1 Dst
     Term boxed_mfa(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
@@ -341,11 +371,13 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
-    if (ctx.check_bif_error(proc)) { return; }
+    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
     ctx.move(result, result_dst);
     ctx.ip += 4;
+    return ctx.consume_reduction(proc);
   }
-  inline void opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
+
+  inline want_schedule_t opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
     // bif1 Fail import_index Arg1 Arg2 Dst
     Term boxed_mfa(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
@@ -359,10 +391,12 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);
-    if (ctx.check_bif_error(proc)) { return; }
+    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
     ctx.move(result, result_dst);
     ctx.ip += 5;
+    return ctx.consume_reduction(proc);
   }
+
   inline void opcode_allocate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 12
     // @spec allocate StackNeed Live
     // @doc Allocate space for StackNeed words on the stack. If a GC is needed
@@ -373,6 +407,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.stack_allocate(stack_need.small_get_unsigned());
     ctx.ip += 2;
   }
+
   inline void opcode_allocate_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 13
     // @spec allocate_heap StackNeed HeapNeed Live
     // @doc Allocate space for StackNeed words on the stack and ensure there is
@@ -383,6 +418,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.stack_allocate(stack_need.small_get_unsigned());
     ctx.ip += 3;
   }
+
   inline void opcode_allocate_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 14
     // @spec allocate_zero StackNeed Live
     // @doc Allocate space for StackNeed words on the stack. If a GC is needed
@@ -391,6 +427,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //      Also save the continuation pointer (CP) on the stack.
     return opcode_allocate(proc, ctx);
   }
+
   inline void opcode_allocate_heap_zero(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 15
     // @spec allocate_heap_zero StackNeed HeapNeed Live
     // @doc Allocate space for StackNeed words on the stack and HeapNeed words
@@ -401,6 +438,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.stack_allocate(stack_need.small_get_unsigned());
     ctx.ip += 3;
   }
+
   inline void opcode_test_heap(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 16
     // @spec test_heap HeapNeed Live
     // @doc Ensure there is space for HeapNeed words on the heap. If a GC is needed
@@ -423,18 +461,18 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.stack_deallocate(n.small_get_unsigned());
     ctx.ip++;
   }
-  inline bool opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
+  inline want_schedule_t opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
     // @spec return
     // @doc  Return to the address in the continuation pointer (CP).
     if (!ctx.cp) {
       // nowhere to return: end process
       proc->finished();
       ctx.save(proc);
-      return false; // yield
+      return SCHEDULE_NEXT;
     }
     ctx.ip = ctx.cp;
     ctx.cp = nullptr;
-    return true; // keep running vm loop
+    return KEEP_GOING;
   }
   inline void opcode_send(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 20
     // @spec send
@@ -480,14 +518,16 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     proc->msg_next();
     ctx.jump(proc, Term(ctx.ip[0]));
   }
-  inline void opcode_wait(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 25
+  inline void opcode_wait(Process *p, vm_runtime_ctx_t &ctx) { // opcode: 25
     // @spec wait Label
     // @doc  Suspend the processes and set the entry point to the beginning of the
     //       receive loop at Label.
 
     // Schedule out for infinity with reason WAIT
-    ctx.jump(proc, Term(ctx.ip[0]));
-    ctx.swap_out_light(proc);
+    p->set_slice_result(proc::SR_WAIT);
+    ctx.jump(p, Term(ctx.ip[0]));
+    ctx.swap_out_light(p);
+    // we always yield after wait
   }
 //  inline void opcode_wait_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 26
 //  }
@@ -832,7 +872,7 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   inline void opcode_case_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 74
     return ctx.raise(proc, atom::ERROR, atom::CASE_CLAUSE);
   }
-  inline void opcode_call_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 75
+  inline want_schedule_t opcode_call_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 75
     // @spec call_fun Arity
     // @doc Call a fun of arity Arity. Assume arguments in registers x(0) to
     // x(Arity-1) and that the fun is in x(Arity). Save the next instruction as
@@ -847,7 +887,8 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       boxed_fun_t *bf = fun.boxed_get_ptr<boxed_fun_t>();
       if (bf->get_arity() != arity + bf->get_num_free()) {
         // TODO: make tuple {badarity, f_args}
-        return ctx.raise(proc, atom::ERROR, atom::BADARITY);
+        ctx.raise(proc, atom::ERROR, atom::BADARITY);
+        return SCHEDULE_NEXT;
       }
       // TODO: if bf.fe is null - unloaded fun
       word_t num_free = bf->get_num_free();
@@ -858,40 +899,40 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       ctx.cp   = ctx.ip + 1;
       ctx.ip   = bf->fun_entry->code;
       G_ASSERT(ctx.ip);
-      return;
     } else if (fun.is_boxed_export()) {
       export_t *ex = fun.boxed_get_ptr<export_t>();
       G_ASSERT(arity == ex->mfa.arity);
       if (ex->is_bif()) {
         Term result = VM::apply_bif(proc, arity, ex->code, ctx.regs);
-        if (ctx.check_bif_error(proc)) { return; }
+        if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
         ctx.regs[0] = result;
         ctx.ip++;
       } else {
         ctx.live = arity;
         ctx.cp   = ctx.ip + 1;
         ctx.ip   = ex->code;
-        return;
       }
     } else {
       // TODO: make tuple {badfun, f_args} (same as above)
       term::TupleBuilder tb(ctx.heap, 2);
       tb.add(atom::BADFUN);
       tb.add(fun);
-      return ctx.raise(proc, atom::ERROR, tb.make_tuple());
+      ctx.raise(proc, atom::ERROR, tb.make_tuple());
     }
+    return ctx.consume_reduction(proc);
   }
 //  inline void opcode_make_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 76
 //  }
 //  inline void opcode_is_function(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 77
 //  }
-  inline void opcode_call_ext_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 78
+  inline want_schedule_t opcode_call_ext_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 78
     // @spec call_ext_only Arity Label
     // Do a tail recursive call to the function at Label. Do not update CP.
     Term boxed_mfa(ctx.ip[1]);
     Term a(ctx.ip[0]);
     ctx.live = a.small_get_unsigned();
-    return ctx.jump_ext(proc, boxed_mfa);
+    ctx.jump_ext(proc, boxed_mfa);
+    return ctx.consume_reduction(proc);
   }
 //  inline void opcode_bs_start_match(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 79
 //  }
@@ -1022,7 +1063,8 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_bs_restore2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 123
 //  }
-  inline void opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 124
+
+  inline want_schedule_t opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 124
     // @spec gc_bif1 Lbl Live Bif Arg Reg
     // @doc Call the bif Bif with the argument Arg, and store the result in Reg.
     // On failure jump to Lbl. Do a garbage collection if necessary to allocate
@@ -1037,11 +1079,13 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
-    if (ctx.check_bif_error(proc)) { return; }
+    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
     ctx.move(result, result_dst);
     ctx.ip += 5;
+    return ctx.consume_reduction(proc);
   }
-  inline void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 125
+
+  inline want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 125
     // @spec gc_bif2 Lbl Live Bif Arg1 Arg2 Reg
     // @doc Call the bif Bif with the arguments Arg1 and Arg2, and store the
     // result in Reg. On failure jump to Lbl. Do a garbage collection if
@@ -1059,9 +1103,10 @@ void opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);
-    if (ctx.check_bif_error(proc)) { return; }
+    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
     ctx.move(result, result_dst);
     ctx.ip += 6;
+    return ctx.consume_reduction(proc);
   }
 //  inline void opcode_bs_final2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 126
 //  }

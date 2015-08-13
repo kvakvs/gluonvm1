@@ -122,7 +122,7 @@ namespace gluon {
   namespace vm {
     // How many reds will a process be allowed to run before next proc wakes up
     // Adjust this for slow devices. 2000 is used for regular modern hardware.
-    static const word_t SLICE_REDUCTIONS = 1000;
+    static const word_t SLICE_REDUCTIONS = 250;
 
     static const word_t MAX_FUN_ARITY = 16;
     static const word_t MAX_REGS = 64; // (max arity of fun + captured terms)

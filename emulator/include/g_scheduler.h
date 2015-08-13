@@ -14,6 +14,9 @@ private:
   Queue<Process *> m_low_q;     // lowest priority (background)
   Queue<Process *> m_normal_q;  // normal priority (8x low)
   Queue<Process *> m_high_q;    // highest (realtime) priority
+  List<Process *> m_inf_wait;    // on infinite receive
+  List<Process *> m_timed_wait;  // on timed receive
+
   word_t           m_pid_counter = 0;
   Process         *m_current     = nullptr;
 
@@ -33,6 +36,8 @@ public:
   MaybeError queue_by_priority(Process *p);
   Process *find(Term pid) const;
   void exit_process(Process *p, Term reason);
+  // Wake up if process was waiting or timed-waiting
+  void on_new_message(Process *p);
 };
 
 } // ns gluon

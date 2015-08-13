@@ -47,6 +47,8 @@ namespace proc {
     Q_TIMED_WAIT,
     Q_INF_WAIT,
   } sched_queue_t;
+
+  const word_t WAIT_INFINITE = ~0UL;
 } // ns proc
 
 //------------------------------------------------------------------------------
@@ -76,6 +78,7 @@ protected:
   // TODO: make this union to save space
   proc::slice_result_t m_slice_result = proc::SR_NONE;
   Term m_slice_result_reason = NONVALUE;
+  word_t m_slice_result_wait = proc::WAIT_INFINITE;
 
   // Which queue we belong to
   proc::sched_queue_t  m_current_queue = proc::Q_NONE;
@@ -104,6 +107,7 @@ public:
   inline proc::slice_result_t get_slice_result() const {
     return m_slice_result;
   }
+  inline void set_slice_result(proc::slice_result_t sr) { m_slice_result = sr; }
 
   Term get_pid() const {
     return m_pid;

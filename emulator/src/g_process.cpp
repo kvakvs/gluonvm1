@@ -97,7 +97,7 @@ void Process::msg_send(Term pid, Term value)
   // Clone local value to value on remote heap
   Term dst_value = proc::copy_one_term(other->get_heap(), value);
   other->incoming_send(dst_value);
-  // TODO: also inform scheduler?
+  VM::get_scheduler()->on_new_message(other); // wake up receiver
 }
 
 void Process::incoming_send(Term value)
