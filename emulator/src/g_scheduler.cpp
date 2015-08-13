@@ -3,8 +3,6 @@
 #include "g_process.h"
 #include "g_sys_stdlib.h"
 
-#include <algorithm>
-
 namespace gluon {
 
 MaybeError Scheduler::add_new_runnable(Process *p)
@@ -19,15 +17,19 @@ MaybeError Scheduler::add_new_runnable(Process *p)
 }
 
 MaybeError Scheduler::queue_by_priority(Process *p) {
+  G_ASSERT(!contains(m_normal_q, p));
+  G_ASSERT(!contains(m_low_q, p));
+  G_ASSERT(!contains(m_high_q, p));
+
   auto prio = p->get_priority();
   if (prio == atom::NORMAL) {
-    m_normal_q.push(p);
+    m_normal_q.push_back(p);
     p->m_current_queue = proc::Q_NORMAL;
   } else if (prio == atom::LOW) {
-    m_low_q.push(p);
+    m_low_q.push_back(p);
     p->m_current_queue = proc::Q_LOW;
   } else if (prio == atom::HIGH) {
-    m_high_q.push(p);
+    m_high_q.push_back(p);
     p->m_current_queue = proc::Q_HIGH;
   } else {
     return "bad prio";
@@ -60,11 +62,18 @@ void Scheduler::exit_process(Process *p, Term reason)
   // TODO: notify links
   // TODO: unregister name if registered
   // TODO: if pending timers - become zombie and sit in pending timers queue
-  printf("process finished ");
+  printf("Scheduler::exit_process ");
   p->get_pid().print();
+  printf("; reason=");
+  reason.print();
   printf("; result X[0]=");
   p->get_runtime_ctx().regs[0].println();
 
+//  m_inf_wait.erase(p);
+//  m_timed_wait.erase(p);
+  G_ASSERT(!contains(m_normal_q, p));
+  G_ASSERT(!contains(m_low_q, p));
+  G_ASSERT(!contains(m_high_q, p));
   m_pid_to_proc.erase(p->get_pid());
   delete p;
 }
@@ -73,13 +82,17 @@ void Scheduler::on_new_message(Process *p)
 {
 //  printf("sched: new message to ");
 //  p->get_pid().println();
+  auto current_q = p->m_current_queue;
 
-  if (p->m_current_queue == proc::Q_INF_WAIT) {
-    auto iter = std::find(m_inf_wait.begin(), m_inf_wait.end(), p);
-    if (iter != m_inf_wait.end()) {
-      m_inf_wait.erase(iter);
-    }
-  } else if (p->m_current_queue == proc::Q_TIMED_WAIT) {
+  if (current_q == proc::Q_NORMAL ||
+      current_q == proc::Q_HIGH ||
+      current_q == proc::Q_LOW) {
+    return;
+  }
+
+  if (current_q == proc::Q_INF_WAIT) {
+    m_inf_wait.erase(p);
+  } else if (current_q == proc::Q_TIMED_WAIT) {
     G_TODO("timed wait new message");
   }
   p->m_current_queue = proc::Q_NONE;
@@ -112,13 +125,13 @@ Process *Scheduler::next()
 
     case proc::SR_WAIT: {
         if (m_current->m_slice_result_wait == proc::WAIT_INFINITE) {
-          m_inf_wait.push_back(m_current);
+          m_inf_wait.insert(m_current);
           m_current->m_current_queue = proc::Q_INF_WAIT;
           m_current = nullptr;
         }
       } break;
     //default:
-      G_FAIL("unknown slice result");
+      // G_FAIL("unknown slice result");
     } // switch slice result
   }
 
@@ -130,30 +143,34 @@ Process *Scheduler::next()
     Process *next_proc = nullptr;
 
     // See if any are waiting in realtime (high) priority queue
-    if (!m_high_q.empty()) {
+    if (         !m_high_q.empty()) {
       next_proc = m_high_q.front();
-      m_high_q.pop();
+                  m_high_q.pop_front();
     } else if (m_normal_count < NORMAL_ADVANTAGE) {
-      if (!m_normal_q.empty()) {
+      if (         !m_normal_q.empty()) {
         next_proc = m_normal_q.front();
-        m_normal_q.pop();
-      } else if (!m_low_q.empty()) {
+                    m_normal_q.pop_front();
+      } else if (  !m_low_q.empty()) {
         next_proc = m_low_q.front();
-        m_low_q.pop();
+                    m_low_q.pop_front();
       }
       m_normal_count++;
     } else {
-      if (!m_low_q.empty()) {
+      if (         !m_low_q.empty()) {
         next_proc = m_low_q.front();
-        m_low_q.pop();
-      } else if (!m_normal_q.empty()) {
+                    m_low_q.pop_front();
+      } else if (  !m_normal_q.empty()) {
         next_proc = m_normal_q.front();
-        m_normal_q.pop();
+                    m_normal_q.pop_front();
       }
       m_normal_count = 0;
     } // select proc from q
 
     if (next_proc) {
+      printf("Scheduler::next() -> ");
+      printf("(Q=%d) ", (int)next_proc->m_current_queue);
+      next_proc->get_pid().println();
+
       next_proc->m_current_queue = proc::Q_NONE;
       return m_current = next_proc;
     }

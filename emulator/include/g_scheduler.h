@@ -4,6 +4,8 @@
 #include "g_error.h"
 #include "g_term.h"
 
+#include <algorithm>
+
 namespace gluon {
 
 class Process;
@@ -11,11 +13,13 @@ class Process;
 // A single core process scheduler with timers, queues and stuff
 class Scheduler {
 private:
-  Queue<Process *> m_low_q;     // lowest priority (background)
-  Queue<Process *> m_normal_q;  // normal priority (8x low)
-  Queue<Process *> m_high_q;    // highest (realtime) priority
-  List<Process *> m_inf_wait;    // on infinite receive
-  List<Process *> m_timed_wait;  // on timed receive
+  using queue_t = List<Process *>;
+  using wait_room_t = Set<Process *>;
+  queue_t m_low_q;     // lowest priority (background)
+  queue_t m_normal_q;  // normal priority (8x low)
+  queue_t m_high_q;    // highest (realtime) priority
+  wait_room_t m_inf_wait;    // on infinite receive
+  wait_room_t m_timed_wait;  // on timed receive
 
   word_t           m_pid_counter = 0;
   Process         *m_current     = nullptr;
@@ -38,6 +42,14 @@ public:
   void exit_process(Process *p, Term reason);
   // Wake up if process was waiting or timed-waiting
   void on_new_message(Process *p);
+
+protected:
+  inline static bool contains(queue_t &q, Process *p) {
+    return std::find(q.begin(), q.end(), p) != q.end();
+  }
+  inline static bool contains(wait_room_t &q, Process *p) {
+    return q.find(p) != q.end();
+  }
 };
 
 } // ns gluon

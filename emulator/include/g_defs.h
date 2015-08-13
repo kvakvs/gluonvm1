@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <map>
 #include <list>
@@ -76,6 +77,10 @@ namespace gluon {
   // Single-ended queue with push to end/pop front operations
   template <typename A>
   using Queue = std::queue<A>;
+
+  template <typename A>
+  using Set = std::set<A>;
+
 
 //  // Stack with single end and index operations
 //  template <typename A>
