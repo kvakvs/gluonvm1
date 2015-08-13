@@ -65,6 +65,7 @@ void Scheduler::exit_process(Process *p, Term reason)
   printf("; result X[0]=");
   p->get_runtime_ctx().regs[0].println();
 
+  m_pid_to_proc.erase(p->get_pid());
   delete p;
 }
 
@@ -106,7 +107,9 @@ Process *Scheduler::next()
       // TODO: PURGE_PROCS running on old code
     case proc::SR_EXCEPTION: {
         exit_process(m_current, m_current->m_slice_result_reason);
+        m_current = nullptr;
       } break;
+
     case proc::SR_WAIT: {
         if (m_current->m_slice_result_wait == proc::WAIT_INFINITE) {
           m_inf_wait.push_back(m_current);
