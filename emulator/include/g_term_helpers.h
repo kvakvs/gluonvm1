@@ -13,11 +13,12 @@ class TupleBuilder {
   Term *m_elements;
 public:
   TupleBuilder(proc::Heap *heap, word_t arity): m_arity(arity), m_index(0) {
-    m_elements = (Term *)heap->h_alloc(arity + 1);
+    m_elements = (Term *)heap->h_alloc(layout::TUPLE::box_size(arity));
   }
   inline void add(Term x) {
     G_ASSERT(m_index < m_arity);
-    m_elements[++m_index] = x;
+    layout::TUPLE::element(m_elements, m_index) = x;
+    m_index++;
   }
   inline Term make_tuple() {
     G_ASSERT(m_index == m_arity)
@@ -54,14 +55,16 @@ Term build_list(proc::Heap *heap, Iter iter, Iter to) {
 
   word_t len = length(iter, to);
   printf("len=" FMT_UWORD "\n", len);
-  Term *h = (Term *)heap->h_alloc(2 * len);
+  Term *h = (Term *)heap->h_alloc(layout::CONS::BOX_SIZE * len);
 
   Term result = Term::make_cons(h);
   word_t i = 0;
   for(; iter != to; iter++) {
-    h[0] = make_term(*iter);
-    h[1] = (i == len - 1) ? ::gluon::NIL : Term::make_cons(h + 2);
-    h += 2;
+    layout::CONS::head(h) = make_term(*iter);
+    layout::CONS::tail(h) = (i == len - 1)
+                            ? ::gluon::NIL
+                            : Term::make_cons(h + layout::CONS::BOX_SIZE);
+    h += layout::CONS::BOX_SIZE;
     i++;
   }
 

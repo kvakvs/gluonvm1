@@ -75,19 +75,18 @@ Result<Term> read_tuple(proc::Heap *heap, tool::Reader &r, word_t arity) {
     return success(Term::make_zero_tuple());
   }
 
-  Term *elements = (Term *)heap->h_alloc(arity+1);
+  Term *cells = (Term *)heap->h_alloc(layout::TUPLE::box_size(arity));
 
   // fill elements or die horribly if something does not decode
   for (word_t i = 0; i < arity; ++i) {
     auto elem_result = read_ext_term(heap, r);
     if (elem_result.is_error()) {
-      //Heap::free(heap, elements); // assume GC will find this shame?
       return elem_result;
     }
-    elements[i+1] = elem_result.get_result();
+    layout::TUPLE::element(cells, i) = elem_result.get_result();
   }
 
-  return success(Term::make_tuple(elements, arity));
+  return success(Term::make_tuple(cells, arity));
 }
 
 
@@ -130,24 +129,13 @@ Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
   Term *ref = &result;
 
   for (word_t i = 0; i < length; ++i) {
-    Term *cons = (Term *)heap->h_alloc(2);
-    cons[0] = Term::make_small(r.read_byte());
+    Term *cons = (Term *)heap->h_alloc(layout::CONS::BOX_SIZE);
+    layout::CONS::head(cons) = Term::make_small(r.read_byte());
     *ref = Term::make_cons(cons);
-    ref = &cons[1];
+    ref = &layout::CONS::tail(cons);
   }
 
   *ref = NIL;
-//  // TODO: this should allocate on long heap like in other vm loaders
-//  Term *elements = Heap::alloc<Term>(heap, length * 2);
-//  Term *write_p = elements;
-
-//  for (int i = length - 1; i >= 0; i--) {
-//    Term cons = Term::make_cons(write_p);
-//    *write_p++ = Term::make_small(r.read_byte());
-//    *write_p++ = result;
-//    result = cons;
-//  }
-
   return result;
 }
 
@@ -158,16 +146,16 @@ Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r) {
   Term *ref = &result;
 
   for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
-    Term *cons = (Term *)heap->h_alloc(2);
+    Term *cons = (Term *)heap->h_alloc(layout::CONS::BOX_SIZE);
 
     auto v_result = read_ext_term(heap, r);
     if (v_result.is_error()) {
       return v_result;
     }
 
-    cons[0] = v_result.get_result();
+    layout::CONS::head(cons) = v_result.get_result();
     *ref = Term::make_cons(cons);
-    ref = &cons[1];
+    ref = &layout::CONS::tail(cons);
   }
 
   auto tail_result = read_ext_term(heap, r);

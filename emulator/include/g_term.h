@@ -293,6 +293,105 @@ namespace term {
 
 class boxed_fun_t;
 
+//
+// Define layouts of boxes for boxed terms, tuple and cons
+//
+namespace layout {
+  // Cons layout has no place for bit tag
+  struct CONS {
+    static const word_t BOX_SIZE = 2;
+
+    template <typename Cell>
+    static inline Cell &head(Cell *box) {
+      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      return box[0];
+    }
+
+    template <typename Cell>
+    static inline Cell &tail(Cell *box) {
+      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      return box[1];
+    }
+
+    template <typename Cell>
+    static inline Cell &element(Cell *box, word_t i) {
+      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      return box[i];
+    }
+  };
+
+  // Tuple layout has no place for bit tag.
+  // First goes arity, then elements
+  struct TUPLE {
+    static const word_t BOX_EXTRA = 1;
+
+    static inline word_t box_size(word_t Arity) { return Arity + BOX_EXTRA; }
+
+    template <typename Cell>
+    static inline Cell &arity(Cell *box) {
+      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      return box[0];
+    }
+
+    template <typename Cell>
+    static inline Cell &element(Cell *box, word_t i) {
+      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      return box[i+BOX_EXTRA];
+    }
+  };
+
+  // Process-heap (small) and heap (large) binary layout
+  struct BINARY {
+    // both types of binary have size in first (subtag) word
+    static inline word_t get_byte_size(word_t *p) {
+      return term_tag::get_subtag_value(p[0]);
+    }
+  };
+
+  // Box structure
+  // word_t { size, tag_bits: 4 }; u8_t data[size]
+  struct PROC_BIN {
+    static const word_t BOX_EXTRA = 1;
+
+    static inline word_t box_size(word_t bytes);
+
+    static inline void set_byte_size(word_t *box, word_t bytes) {
+      box[0] = term_tag::BoxedProcBin::create_subtag(bytes);
+    }
+
+    template <typename Cell>
+    static inline Cell *data(Cell *box) {
+      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      return box+1;
+    }
+  };
+
+  // Box is located on external heap
+  // Box structure
+  // word_t { size, tag_bits: 4}; word_t refcount; u8_t data[size]
+  struct HEAP_BIN {
+    static const word_t BOX_EXTRA = 2;
+
+    static inline word_t box_size(word_t bytes);
+
+    static inline void set_byte_size(word_t *box, word_t bytes) {
+      box[0] = term_tag::BoxedHeapBin::create_subtag(bytes);
+    }
+
+    template <typename Cell>
+    static inline Cell *data(Cell *box) {
+      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      return box + BOX_EXTRA;
+    }
+
+    template <typename Cell>
+    static inline Cell &refcount(Cell *box) {
+      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      return box[1];
+    }
+  };
+} // ns layout
+
 // This wrap is here to make strong type difference between hardware hw::Word
 // (which is just a machine size unsigned integer) and term type, which is
 // complex bitfield structure.
@@ -341,15 +440,12 @@ public:
   }
 
   //
-  // Pointer magic
+  // Boxed pointer magic
   //
   template <typename T> inline T *boxed_get_ptr() const {
     G_ASSERT(is_boxed() || is_tuple() || is_cons());
     return term_tag::Boxed::expand_ptr<T>(m_val);
   }
-//  template <typename T> inline T *boxed_get_ptr_unsafe() const {
-//    return term_tag::Boxed::value_ptr<T>(m_val);
-//  }
   template <typename T> inline static Term make_boxed(T *x) {
     return Term(term_tag::Boxed::create_from_ptr<T>(x));
   }
@@ -399,8 +495,8 @@ public:
   // Takes head and tail at once
   inline void cons_head_tail(Term &h, Term &t) const {
     auto p = boxed_get_ptr<word_t>();
-    h = Term(p[0]);
-    t = Term(p[1]);
+    h = Term(layout::CONS::head(p));
+    t = Term(layout::CONS::tail(p));
   }
   bool is_cons_printable() const;
   // Unfolds list into linear array using limit as array max size
@@ -413,7 +509,7 @@ protected:
   inline Term cons_get_element(word_t n) const {
     G_ASSERT(n == 0 || n == 1);
     auto p = boxed_get_ptr<word_t>();
-    return Term(p[n]);
+    return Term(layout::CONS::element(p, n));
   }
 
 public:
@@ -524,7 +620,7 @@ public:
     return term_tag::ShortPid::value(m_val);
   }
   //
-  // Port id (Oid)
+  // Port id (Outled id, Oid)
   //
   constexpr bool is_short_port() const {
     return term_tag::ShortPort::check(m_val);
@@ -544,7 +640,7 @@ public:
   }
   // NOTE: Elements should contain 1 extra slot for arity!
   static inline Term make_tuple(Term *elements, word_t arity) {
-    ((word_t *)elements)[0] = arity;
+    layout::TUPLE::arity((word_t *)elements) = arity;
     return Term(term_tag::Tuple::create_from_ptr(elements));
   }
   // Does not set arity field, assuming that element values are already all set
@@ -557,19 +653,19 @@ public:
   inline word_t tuple_get_arity() const {
     G_ASSERT(is_tuple());
     auto p = boxed_get_ptr<word_t>();
-    return p[0];
+    return layout::TUPLE::arity(p);
   }
   // Zero based index n
   inline Term tuple_get_element(word_t n) const {
     auto p = boxed_get_ptr<word_t>();
-    G_ASSERT(p[0] > n);
-    return Term(p[n+1]);
+    G_ASSERT(layout::TUPLE::arity(p) > n);
+    return Term(layout::TUPLE::element(p, n));
   }
   // Zero based index n
   inline void tuple_set_element(word_t n, Term t) const {
     auto p = boxed_get_ptr<word_t>();
-    G_ASSERT(p[0] > n);
-    p[n+1] = t.as_word();
+    G_ASSERT(layout::TUPLE::arity(p) > n);
+    layout::TUPLE::element(p, n) = t.as_word();
   }
 
 #if FEATURE_MAPS
@@ -667,15 +763,15 @@ public:
   inline word_t binary_get_size() const {
     G_ASSERT(is_binary()); // this is slow but debug only
     word_t *p = boxed_get_ptr<word_t>();
-    // both types of binary have size in subtag word
-    return term_tag::get_subtag_value(p[0]);
+    // both types of binary have size in first (subtag) word
+    return layout::BINARY::get_byte_size(p);
   }
   template <typename T>
   inline T *binary_get() const {
     G_ASSERT(is_binary()); // this is slow but debug only
     word_t *p = boxed_get_ptr<word_t>();
     if (term_tag::BoxedProcBin::check_subtag(p[0])) {
-      return (T *)(p + 1);
+      return (T *)layout::PROC_BIN::data(p);
     }
     G_ASSERT(term_tag::BoxedHeapBin::check_subtag(p[0]));
     // Get pointer to large binary, add 1 word offset and cast it to T *

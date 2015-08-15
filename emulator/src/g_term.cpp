@@ -21,9 +21,9 @@ word_t term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
 #endif
 
 Term Term::allocate_cons(proc::Heap *heap, Term head, Term tail) {
-  Term *d = (Term *)heap->h_alloc(2);
-  d[0] = head;
-  d[1] = tail;
+  Term *d = (Term *)heap->h_alloc(layout::CONS::BOX_SIZE);
+  layout::CONS::head(d) = head;
+  layout::CONS::tail(d) = tail;
   return make_cons(d);
 }
 
@@ -208,20 +208,17 @@ Term Term::make_binary(proc::Heap *h, word_t bytes)
   // elsewhere or losing significant bit from the size
   G_ASSERT(bytes < term_tag::BOXED_MAX_SUBTAG_VALUE);
 
-  word_t words = calculate_word_size(bytes);
   if (bytes <= bin::HEAP_BIN_LIMIT) {
-    word_t *box = h->h_alloc(words + 1);
-    box[0] = term_tag::BoxedProcBin::create_subtag(bytes);
+    word_t *box = h->h_alloc(layout::PROC_BIN::box_size(bytes));
+    layout::PROC_BIN::set_byte_size(box, bytes);
     return Term(term_tag::BoxedProcBin::create_from_ptr<word_t>(box));
   } else {
     // Large bin, with boxed refcount and pointer
-    word_t *box = h->h_alloc(2);
     vm::Heap *binheap = VM::get_heap(VM::HEAP_LARGE_BINARY);
-    word_t *memory = vm::Heap::alloc<word_t>(binheap,
-                                             words + 1);
-    memory[0] = 1; // refcount=1
-    box[0] = term_tag::BoxedHeapBin::create_subtag(bytes);
-    box[1] = (word_t)memory;
+    word_t *box = vm::Heap::alloc<word_t>(binheap,
+                                          layout::HEAP_BIN::box_size(bytes));
+    layout::HEAP_BIN::set_byte_size(box, bytes);
+    layout::HEAP_BIN::refcount(box) = 1;
     return Term(term_tag::BoxedHeapBin::create_from_ptr(box));
   }
 }
@@ -237,6 +234,14 @@ void mfarity_t::print()
   printf(":");
   fun.print();
   printf("/" FMT_UWORD, arity);
+}
+
+word_t layout::PROC_BIN::box_size(word_t bytes) {
+  return calculate_word_size(bytes) + BOX_EXTRA;
+}
+
+word_t layout::HEAP_BIN::box_size(word_t bytes) {
+  return calculate_word_size(bytes) + BOX_EXTRA;
 }
 
 #endif // DEBUG

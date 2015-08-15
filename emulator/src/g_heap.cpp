@@ -78,12 +78,13 @@ Term copy_one_term(Heap *dstheap, Term t) {
   }
   if (t.is_tuple()) {
     word_t arity   = t.tuple_get_arity();
-    Term *new_t  = (Term *)dstheap->h_alloc(arity + 1);
+    Term *new_t  = (Term *)dstheap->h_alloc(layout::TUPLE::box_size(arity));
     Term *this_t = t.boxed_get_ptr<Term>();
-    new_t[0] = this_t[0];
+    layout::TUPLE::arity(new_t) = layout::TUPLE::arity(this_t);
     // Deep clone
-    for (word_t i = 1; i <= arity; ++i) {
-      new_t[i] = copy_one_term(dstheap, this_t[i]);
+    for (word_t i = 0; i < arity; ++i) {
+      layout::TUPLE::element(new_t, i)
+                  = copy_one_term(dstheap, layout::TUPLE::element(this_t, i));
     }
     return Term::make_tuple_prepared(new_t);
   }

@@ -582,8 +582,8 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       return;
     }
 
-    Term *elements = (Term *)proc->heap_alloc(arity+1);
-    Term *p = elements+1;
+    Term *cells = (Term *)proc->heap_alloc(layout::TUPLE::box_size(arity));
+    word_t index = 0;
     do {
       // assert that ip[0] is opcode 'put' skip it and read its argument
       Term value(ctx.ip[1]);
@@ -591,11 +591,11 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       DEREF(value);
         printf("put ");
         value.println();
-      *p = value;
-      p++;
-    } while (--arity != 0);
+      layout::TUPLE::element(cells, index) = value;
+      index++;
+    } while (index < arity);
 
-    ctx.move(Term::make_tuple(elements, t_arity.small_get_unsigned()), dst);
+    ctx.move(Term::make_tuple(cells, t_arity.small_get_unsigned()), dst);
   }
 //  inline void opcode_put(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 71
 //  }
