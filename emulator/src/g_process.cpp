@@ -111,7 +111,8 @@ Term Process::msg_current()
     return NONVALUE;
   }
   if (m_mbox_ptr == m_mbox.end()) {
-    m_mbox_ptr = m_mbox.begin();
+    //m_mbox_ptr = m_mbox.begin();
+    return NONVALUE;
   }
   return *m_mbox_ptr;
 }
@@ -129,7 +130,8 @@ void Process::msg_next()
 {
   if (m_mbox_ptr == m_mbox.end()) {
     m_mbox_ptr = m_mbox.begin();
-  } else {
+  }
+  if (m_mbox_ptr != m_mbox.end()) {
     m_mbox_ptr++;
   }
 }

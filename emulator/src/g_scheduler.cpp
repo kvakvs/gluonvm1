@@ -7,6 +7,7 @@ namespace gluon {
 
 MaybeError Scheduler::add_new_runnable(Process *p)
 {
+  G_ASSERT(p->m_current_queue == proc::Q_NONE);
   G_ASSERT(p->get_pid().is_pid() == false);
 
   auto new_pid = Term::make_short_pid(m_pid_counter++);
@@ -17,9 +18,10 @@ MaybeError Scheduler::add_new_runnable(Process *p)
 }
 
 MaybeError Scheduler::queue_by_priority(Process *p) {
-  G_ASSERT(!contains(m_normal_q, p));
-  G_ASSERT(!contains(m_low_q, p));
-  G_ASSERT(!contains(m_high_q, p));
+//  G_ASSERT(!contains(m_normal_q, p));
+//  G_ASSERT(!contains(m_low_q, p));
+//  G_ASSERT(!contains(m_high_q, p));
+  G_ASSERT(p->m_current_queue == proc::Q_NONE);
 
   auto prio = p->get_priority();
   if (prio == atom::NORMAL) {
@@ -84,24 +86,38 @@ void Scheduler::on_new_message(Process *p)
 //  p->get_pid().println();
   auto current_q = p->m_current_queue;
 
-  if (current_q == proc::Q_NORMAL ||
-      current_q == proc::Q_HIGH ||
-      current_q == proc::Q_LOW) {
+  switch (current_q) {
+  case proc::Q_NORMAL:
+  case proc::Q_HIGH:
+  case proc::Q_LOW:
     return;
-  }
 
-  if (current_q == proc::Q_INF_WAIT) {
+  case proc::Q_INF_WAIT:
     m_inf_wait.erase(p);
-  } else if (current_q == proc::Q_TIMED_WAIT) {
+    break;
+
+  case proc::Q_TIMED_WAIT:
     G_TODO("timed wait new message");
-  }
+
+  case proc::Q_NONE:
+    // Message arrived to a currently running process (for example send to self)
+    return;
+
+  case proc::Q_PENDING_TIMERS:
+    G_FAIL("q_pending_timers");
+  } // switch
+
   p->m_current_queue = proc::Q_NONE;
   queue_by_priority(p);
 }
 
 Process *Scheduler::next()
 {
+
   if (m_current) {
+    // G_ASSERT(!contains(m_normal_q, m_current));
+    // G_ASSERT(!contains(m_low_q, m_current));
+    // G_ASSERT(!contains(m_high_q, m_current));
     G_ASSERT(m_current->m_current_queue == proc::Q_NONE);
 
     switch (m_current->get_slice_result()) {

@@ -16,10 +16,16 @@ test() ->
     %test_lc(),
     %test_send_receive(),
     test_ring(),
+    %test_try_catch(),
     %test_mochijson().
     done].
 
 %%-----------------------------------------------
+test_try_catch() ->
+    try erlang:error(hello)
+    catch error:E -> E = hello
+    end.
+
 test_send_receive() ->
     self() ! test,
     receive
@@ -32,7 +38,7 @@ test_lc() ->
   [ID || ID <- lists:seq(1, NumNodes)].
 
 test_ring() ->
-    ring:create(3).
+    ring:create(100).
 
 test_mochijson() ->
     mochijson:encode({struct, [ {test_neg, -10000}, {test, 10000} ]}).
