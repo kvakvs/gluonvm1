@@ -233,6 +233,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @spec remove_message
     // @doc  Unlink the current message from the message queue and store a
     //       pointer to the message in x(0). Remove any timeout.
+    ctx.regs[0] = proc->mailbox().get_current();
     proc->mailbox().remove_current();
   }
 
@@ -241,7 +242,8 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
   inline void opcode_loop_rec(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 23
     // @spec loop_rec Label Source
-    // @doc  Loop over the message queue, if it is empty jump to Label.
+    // @doc  Pick up the next message and place it in x(0). If no message,
+    //       jump to a wait or wait_timeout instruction.
     Term msg = proc->mailbox().get_current();
     if (msg.is_non_value()) {
       return ctx.jump(proc, Term(ctx.ip[0]));
@@ -256,7 +258,8 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
   inline void opcode_loop_rec_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 24
     // @spec loop_rec_end Label
-    // @doc  Advance the save pointer to the next message and jump back to Label.
+    // @doc  Advance the save pointer to the next message (the current
+    // message didn't match), then jump to the Label (loop_rec instruction).
     proc->mailbox().step_next();
     ctx.jump(proc, Term(ctx.ip[0]));
   }

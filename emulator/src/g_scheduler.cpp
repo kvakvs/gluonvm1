@@ -183,7 +183,7 @@ Process *Scheduler::next()
     } // select proc from q
 
     if (next_proc) {
-      printf("Scheduler::next() -> ");
+      printf("-----------------------------\nScheduler::next() -> ");
       printf("(Q=%d) ", (int)next_proc->m_current_queue);
       next_proc->get_pid().println();
 

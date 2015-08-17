@@ -12,6 +12,9 @@ void Mailbox::on_incoming(Term value) {
   G_ASSERT(m_messages.back() == NONVALUE);
   m_messages.insert(--m_messages.end(), value);
   G_ASSERT(m_messages.back() == NONVALUE);
+
+  // Reset save (current) position to beginning
+  m_current = m_messages.begin();
 }
 
 // Returns current message
@@ -42,8 +45,8 @@ void Mailbox::remove_current()
     m_messages.erase(m_current);
   }
 
-  // Reset current position to end (auto wrapped on next read)
-  m_current = m_messages.end();
+  // Reset current position to begin
+  m_current = m_messages.begin();
 
   // TODO: Cancel timer
   // TODO: For off-heap message queue - free the message memory

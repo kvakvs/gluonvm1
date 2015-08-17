@@ -17,12 +17,15 @@ namespace proc {
 // *  ability to go 1 step beyond the end (zero mark)
 class Mailbox {
 private:
-  List<Term> m_messages;
-  List<Term>::const_iterator m_current = m_messages.end();
+  using mailbox_t = List<Term>;
+  using c_iterator_t = mailbox_t::const_iterator;
+
+  mailbox_t     m_messages;
+  c_iterator_t  m_current = m_messages.end();
 
   // Set by recv_mark opcode and read by recv_set opcode
-  word_t                      m_saved_mark_label;
-  List<Term>::const_iterator  m_saved_mark;
+  word_t        m_saved_mark_label;
+  c_iterator_t  m_saved_mark;
 
 public:
   Mailbox();
