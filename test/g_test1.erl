@@ -38,7 +38,7 @@ test_lc() ->
   [ID || ID <- lists:seq(1, NumNodes)].
 
 test_ring() ->
-    ring:create(100).
+    ring:create(5).
 
 test_mochijson() ->
     mochijson:encode({struct, [ {test_neg, -10000}, {test, 10000} ]}).

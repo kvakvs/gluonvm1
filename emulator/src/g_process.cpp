@@ -96,57 +96,8 @@ void Process::msg_send(Term pid, Term value)
   }
   // Clone local value to value on remote heap
   Term dst_value = proc::copy_one_term(other->get_heap(), value);
-  other->incoming_send(dst_value);
+  other->mailbox().on_incoming(dst_value);
   VM::get_scheduler()->on_new_message(other); // wake up receiver
-}
-
-void Process::incoming_send(Term value)
-{
-  m_mbox.push_back(value);
-}
-
-Term Process::msg_current()
-{
-  if (m_mbox.empty()) {
-    return NONVALUE;
-  }
-  if (m_mbox_ptr == m_mbox.end()) {
-    //m_mbox_ptr = m_mbox.begin();
-    return NONVALUE;
-  }
-  return *m_mbox_ptr;
-}
-
-void Process::msg_remove()
-{
-  if (m_mbox_ptr == m_mbox.end()) {
-    m_mbox_ptr = m_mbox.begin();
-  } else {
-    m_mbox_ptr = m_mbox.erase(m_mbox_ptr);
-  }
-}
-
-void Process::msg_next()
-{
-  if (m_mbox_ptr == m_mbox.end()) {
-    m_mbox_ptr = m_mbox.begin();
-  }
-  if (m_mbox_ptr != m_mbox.end()) {
-    m_mbox_ptr++;
-  }
-}
-
-void Process::msg_mark_(word_t label)
-{
-  m_mbox_label = label;
-  m_mbox_saved = m_mbox_ptr;
-}
-
-void Process::msg_set_(word_t label)
-{
-  if (m_mbox_label == label) {
-    m_mbox_ptr = m_mbox_saved;
-  }
 }
 
 #if 0

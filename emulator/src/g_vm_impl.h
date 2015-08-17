@@ -210,7 +210,8 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.cp = nullptr;
     return KEEP_GOING;
   }
-  inline void opcode_send(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 20
+
+  inline want_schedule_t opcode_send(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 20
     // @spec send
     // @doc  Send argument in x(1) as a message to the destination process in x(0).
     //       The message in x(1) ends up as the result of the send in x(0).
@@ -225,19 +226,23 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     proc->msg_send(dest, msg);
     ctx.regs[0] = ctx.regs[1];
     ctx.regs[1] = NIL;
+    return ctx.consume_reduction(proc);
   }
+
   inline void opcode_remove_message(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 21
     // @spec remove_message
     // @doc  Unlink the current message from the message queue and store a
     //       pointer to the message in x(0). Remove any timeout.
-    proc->msg_remove();
+    proc->mailbox().remove_current();
   }
+
 //  inline void opcode_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 22
 //  }
+
   inline void opcode_loop_rec(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 23
     // @spec loop_rec Label Source
     // @doc  Loop over the message queue, if it is empty jump to Label.
-    Term msg = proc->msg_current();
+    Term msg = proc->mailbox().get_current();
     if (msg.is_non_value()) {
       return ctx.jump(proc, Term(ctx.ip[0]));
     }
@@ -248,12 +253,14 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.regs[0] = msg;
     ctx.ip += 2;
   }
+
   inline void opcode_loop_rec_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 24
     // @spec loop_rec_end Label
     // @doc  Advance the save pointer to the next message and jump back to Label.
-    proc->msg_next();
+    proc->mailbox().step_next();
     ctx.jump(proc, Term(ctx.ip[0]));
   }
+
   inline void opcode_wait(Process *p, vm_runtime_ctx_t &ctx) { // opcode: 25
     // @spec wait Label
     // @doc  Suspend the processes and set the entry point to the beginning of the
@@ -265,6 +272,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.swap_out_light(p);
     // we always yield after wait
   }
+
 //  inline void opcode_wait_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 26
 //  }
 //  inline void opcode_m_plus(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 27
@@ -907,7 +915,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc  Save the end of the message queue and the address of the label
     // Label so that a recv_set instruction can start scanning the inbox from
     // this position.
-    proc->msg_mark_(ctx.ip[0]);
+    proc->mailbox().mark_position(ctx.ip[0]);
     ctx.ip++;
   }
   inline void opcode_recv_set(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 151
@@ -915,7 +923,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc Check that the saved mark points to Label and set the save pointer
     // in the message queue to the last position of the message queue saved by
     // the recv_mark instruction.
-    proc->msg_set_(ctx.ip[0]);
+    proc->mailbox().set_to_marked(ctx.ip[0]);
     ctx.ip++;
     // ip+1 points to the next iop, supposedly loop_rec
   }

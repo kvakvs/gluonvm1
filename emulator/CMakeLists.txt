@@ -58,6 +58,7 @@ set(SRC_LIST
     src/g_beam_loader.cpp
     src/g_fun.cpp        include/g_fun.h
     src/g_heap.cpp       include/g_heap.h
+    src/g_mailbox.cpp    include/g_mailbox.h
     src/g_main.cpp
     src/g_module.cpp     include/g_module.h
     src/g_predef_atoms.cpp include/g_predef_atoms.h

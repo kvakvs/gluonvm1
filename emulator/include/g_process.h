@@ -4,6 +4,7 @@
 #include "g_term.h"
 #include "g_error.h"
 #include "g_heap.h"
+#include "g_mailbox.h"
 
 namespace gluon {
 
@@ -65,7 +66,6 @@ public:
 
 protected:
   runtime_ctx_t m_ctx;
-  //ProcessStack  m_stack; // TODO: remove merge with processheap
   proc::Heap    m_heap;
   Term          m_pid = NONVALUE;
   mfarity_t     m_init_call;
@@ -73,6 +73,7 @@ protected:
   // TODO: process dict
   Term          m_group_leader;
   Term          m_priority; // an atom: 'low', 'high' or 'normal'
+
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
   // TODO: make this union to save space
@@ -88,14 +89,7 @@ protected:
     m_pid = pid;
   }
 
-  //
-  // Mailbox
-  //
-  List<Term> m_mbox; // Stuff arrives here, TODO: make this on process heap
-  List<Term>::const_iterator m_mbox_ptr = m_mbox.end();
-  // Set by recv_mark opcode and read by recv_set opcode
-  word_t m_mbox_label;
-  List<Term>::const_iterator m_mbox_saved;
+  proc::Mailbox m_mbox;
 
 public:
   Process() = delete;
@@ -151,14 +145,8 @@ public:
   // Send/receive thingies
   //
   void msg_send(Term pid, Term value);
-  void incoming_send(Term value);
-  Term msg_current();
-  void msg_remove();
-  void msg_next();
-  // implementation of recv_mark opcode
-  void msg_mark_(word_t);
-  // implementation of recv_set opcode
-  void msg_set_(word_t);
+  proc::Mailbox &mailbox() { return m_mbox; }
+  const proc::Mailbox &mailbox() const { return m_mbox; }
 
 protected:
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args
