@@ -23,14 +23,15 @@ to mention cmake supporting host of other IDEs.
 # Features (Done)
 
 * Processes, heaps and stack (no GC yet)
-* Simple scheduler
-* Messages
-* Some BIFs (amount of them growing)
-* Some opcodes (can run sequential Erlang)
+* Reductions and scheduling
+* Message passing and infinite receiving (no timers and timed receive yet)
+* Some BIFs (ever growing amount)
+* Many opcodes, BEAM file loading and code path search
 
 # TODO
 
-* Reductions and scheduling
+* Exceptions
+* Process links, monitors
 * Simple GC
 * Binaries
 * Floats maybe?
