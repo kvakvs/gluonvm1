@@ -30,14 +30,16 @@ int main(int argc, const char *argv[]) {
   //vm::load_module("../test/g_test1.S.gleam");
   VM::get_cs()->path_append("../test");
   VM::get_cs()->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
+  VM::get_cs()->path_append("/usr/lib/erlang/lib/erts-6.4.1/ebin");
   VM::get_cs()->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
 
   // create root process and set it to some entry function
   Process *proc = new Process(NONVALUE);
 
-  mfarity_t mfa(VM::to_atom("g_test1"), VM::to_atom("test"), 0);
+  Term start_args[2] = {NIL, NIL};
+  mfarity_t mfa(VM::to_atom("otp_ring0"), VM::to_atom("start"), 2);
 
-  auto sp_result = proc->spawn(mfa, nullptr);
+  auto sp_result = proc->spawn(mfa, start_args);
   if (sp_result.is_error()) {
     G_FAIL(sp_result.get_error());
   }

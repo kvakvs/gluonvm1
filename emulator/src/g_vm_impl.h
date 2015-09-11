@@ -745,12 +745,14 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.regs[0] = FunObject::make(p);
     ctx.ip += 1;
   }
-//  inline void opcode_try(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 104
-//  }
+  inline void opcode_try(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 104
+    // @spec try Arg1 Label
+  }
 //  inline void opcode_try_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 105
 //  }
-//  inline void opcode_try_case(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 106
-//  }
+  inline void opcode_try_case(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 106
+    // @spec try_case Arg1
+  }
 //  inline void opcode_try_case_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 107
 //  }
 //  inline void opcode_raise(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 108

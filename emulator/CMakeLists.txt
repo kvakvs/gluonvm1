@@ -18,8 +18,13 @@ include_directories(
 # the code. Makes things run slow.
 add_definitions(-DG_DEBUG=1)
 
-add_definitions(-DG_TEST=0 -fno-exceptions -fno-rtti) # normal compilation no test
-#add_definitions(-DG_TEST=1) # to run tests
+set(G_TEST 1)
+
+if(G_TEST)
+  add_definitions(-DG_TEST=1) # to run tests
+else()
+  add_definitions(-DG_TEST=0 -fno-exceptions -fno-rtti) # normal compilation no test
+endif()
 
 add_definitions(-O0 -g -ggdb)
 #add_definitions(-Os)
@@ -74,15 +79,24 @@ set(SRC_LIST
     src/bif/g_bif_misc.cpp include/bif/g_bif_misc.h
     src/bif/g_bif_proc.cpp include/bif/g_bif_proc.h
 
-    # Header-only test framework
-    src/fructose/fructose.h
-    src/fructose/test_base.h
-    src/fructose/test_root.h
-    src/fructose/double_compare.h
-
     # Zlib replacement
     src/miniz/miniz.c
     )
+
+if(G_TEST)
+  set(SRC_LIST ${SRC_LIST}
+      test/test_code_index.cpp
+      test/test_process.cpp
+      test/test_term.cpp
+
+      # Header-only test framework
+      test/fructose/fructose.h
+      test/fructose/test_base.h
+      test/fructose/test_root.h
+      test/fructose/double_compare.h
+      )
+endif()
+
 set(SRC_LIBTOMMATH
 #    deps/libtommath/tommath.h
     )
