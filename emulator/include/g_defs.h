@@ -176,7 +176,7 @@ namespace gluon {
       G_ASSERT(what == nullptr) \
       }
     // Famous io:format/2 skill on Linkedin!
-#   define G_LOG ::printf
+#   define G_LOG gluon::Std::fmt
 #   define G_IF_NODEBUG(X)
 
 #else // no G_DEBUG

@@ -278,7 +278,7 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
 #endif
 
   default:
-    printf("invalid ETF value tag %d\n", t);
+    Std::fmt("invalid ETF value tag %d\n", t);
     return error<Term>("bad etf tag");
   } // switch tag
 } // parse function

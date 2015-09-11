@@ -6,15 +6,11 @@
 
 #include <stdio.h>
 
-using namespace gluon;
-
 #if G_TEST
-static void run_tests(int argc, const char *argv[]) {
-  term_test(argc, argv);
-  process_test(argc, argv);
-  code::range_test(argc, argv);
-}
+#   include "../test/test.h"
 #endif
+
+using namespace gluon;
 
 int main(int argc, const char *argv[]) {
 
@@ -22,8 +18,7 @@ int main(int argc, const char *argv[]) {
 
 #if G_TEST
   // test runner
-  run_tests(argc, argv);
-  return 0;
+  gluontest::run_tests(argc, argv);
 #else
 
   // normal start
@@ -49,7 +44,7 @@ int main(int argc, const char *argv[]) {
   VM::vm_loop(false);
 
   // Print x0 as result
-  printf("Result X[0]=");
+  Std::fmt("Result X[0]=");
   proc->get_runtime_ctx().regs[0].println();
 
   return 0;

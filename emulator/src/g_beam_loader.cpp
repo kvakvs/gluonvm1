@@ -291,7 +291,7 @@ MaybeError LoaderState::load_lambda_table(tool::Reader &r0) {
     fe.num_free = nfree;
     fe.code     = nullptr; // resolve later from uniq0
 
-    printf("read fun table: %s:%s/" FMT_UWORD " offset=" FMT_UWORD "\n",
+    Std::fmt("read fun table: %s:%s/" FMT_UWORD " offset=" FMT_UWORD "\n",
            fe.mfa.mod.atom_str().c_str(),
            fe.mfa.fun.atom_str().c_str(),
            arity, offset);
@@ -317,7 +317,7 @@ MaybeError LoaderState::load_export_table(tool::Reader &r0) {
 
     auto arity = r.read_big_u32();
     auto label = r.read_big_u32();
-//    printf("load export %s/" FMT_UWORD " @label %zu\n", f.atom_str().c_str(), arity, label);
+//    Std::fmt("load export %s/" FMT_UWORD " @label %zu\n", f.atom_str().c_str(), arity, label);
 
     m_exports[fun_arity_t(f, arity)] = label_index_t(label);
   }
@@ -340,7 +340,7 @@ MaybeError LoaderState::load_import_table(tool::Reader &r0)
     Term m = VM::to_atom(ms);
     Term f = VM::to_atom(fs);
     word_t arity = r.read_big_u32();
-//    printf("import: %s:%s/" FMT_UWORD "\n", ms.c_str(), fs.c_str(), arity);
+//    Std::fmt("import: %s:%s/" FMT_UWORD "\n", ms.c_str(), fs.c_str(), arity);
     m_imports.push_back(mfarity_t(m, f, arity));
   }
 
@@ -457,10 +457,10 @@ MaybeError LoaderState::load_line_table(tool::Reader &r0)
       word_t offs = val.small_get_unsigned();
       if (G_LIKELY(line::is_valid_loc(fname_index, offs))) {
         LN.line_refs.push_back(line::make_location(fname_index, offs));
-        printf("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
+        Std::fmt("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
       } else {
         LN.line_refs.push_back(line::INVALID_LOC);
-        printf("line info: invalid loc\n");
+        Std::fmt("line info: invalid loc\n");
       }
     } else if (val.is_atom()) {
       // reference to another file
@@ -476,7 +476,7 @@ MaybeError LoaderState::load_line_table(tool::Reader &r0)
   for (word_t i = 0; i < LN.num_filenames; ++i) {
     word_t  name_sz = r.read_big_u16();
     Str     name    = r.read_string(name_sz);
-    printf("line info: file %s\n", name.c_str());
+    Std::fmt("line info: file %s\n", name.c_str());
     LN.filenames.push_back(VM::to_atom(name));
   }
 
@@ -601,9 +601,9 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       }
 
       code.push_back(arg.as_word());
-//      printf("; ");
+//      Std::fmt("; ");
     }
-//    printf(").\n");
+//    Std::fmt(").\n");
 
 //    // If the command was call_ext to a bif - rewrite with bif call
 //    if (opcode == genop::OPCODE_CALL_EXT) {
@@ -654,10 +654,10 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
   // Move exports from m_exports to this table, resolving labels to code offsets
   Module::exports_t exports;
-//  printf("exports processing: " FMT_UWORD " items\n", m_exports.size());
+//  Std::fmt("exports processing: " FMT_UWORD " items\n", m_exports.size());
   for (auto &e: m_exports) {
     auto ptr = m_labels[e.second.value];
-//    printf("label export ptr " FMT_0xHEX "\n", (word_t)ptr);
+//    Std::fmt("label export ptr " FMT_0xHEX "\n", (word_t)ptr);
     exports[e.first] = ptr;
   }
   m->set_exports(exports);
@@ -714,7 +714,7 @@ void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
   // Finish previous function if it already started
   if (m_current_fun.first.is_value()) {
     code::Range range(CR.fun_begin, last_ptr);
-//    printf("fun map: " FMT_0xHEX ".." FMT_0xHEX " %s/" FMT_UWORD "\n", (word_t)CR.fun_begin,
+//    Std::fmt("fun map: " FMT_0xHEX ".." FMT_0xHEX " %s/" FMT_UWORD "\n", (word_t)CR.fun_begin,
 //           (word_t)last_ptr, m_current_fun.first.atom_c_str(),
 //           m_current_fun.second);
     CR.fun_map.add(range, m_current_fun);

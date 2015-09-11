@@ -64,11 +64,11 @@ void Scheduler::exit_process(Process *p, Term reason)
   // TODO: notify links
   // TODO: unregister name if registered
   // TODO: if pending timers - become zombie and sit in pending timers queue
-  printf("Scheduler::exit_process ");
+  Std::fmt("Scheduler::exit_process ");
   p->get_pid().print();
-  printf("; reason=");
+  Std::fmt("; reason=");
   reason.print();
-  printf("; result X[0]=");
+  Std::fmt("; result X[0]=");
   p->get_runtime_ctx().regs[0].println();
 
 //  m_inf_wait.erase(p);
@@ -82,7 +82,7 @@ void Scheduler::exit_process(Process *p, Term reason)
 
 void Scheduler::on_new_message(Process *p)
 {
-//  printf("sched: new message to ");
+//  Std::fmt("sched: new message to ");
 //  p->get_pid().println();
   auto current_q = p->m_current_queue;
 
@@ -183,8 +183,8 @@ Process *Scheduler::next()
     } // select proc from q
 
     if (next_proc) {
-      printf("-----------------------------\nScheduler::next() -> ");
-      printf("(Q=%d) ", (int)next_proc->m_current_queue);
+      Std::fmt("-----------------------------\nScheduler::next() -> ");
+      Std::fmt("(Q=%d) ", (int)next_proc->m_current_queue);
       next_proc->get_pid().println();
 
       next_proc->m_current_queue = proc::Q_NONE;
@@ -196,7 +196,7 @@ Process *Scheduler::next()
     // TODO: check wait lists and timeouts
 
     // Let CPU core free if we have nothing to do
-    stdlib::sleep(1);
+    Std::sleep(1);
   }
 
   G_FAIL("should not be here");

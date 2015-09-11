@@ -1,3 +1,5 @@
+#include "test.h"
+
 #include "g_process.h"
 /*
 #include "g_code_server.h"
@@ -12,7 +14,8 @@
 #include "bif/g_bif_misc.h"
 #pragma clang diagnostic ignored "-Wweak-vtables"
 
-namespace gluon {
+using namespace gluon;
+namespace gluontest {
 
 struct process_test_t: public fructose::test_base<process_test_t>
 {
@@ -31,10 +34,10 @@ struct process_test_t: public fructose::test_base<process_test_t>
 
 }; // struct
 
-void process_test(int argc, const char *argv[]) {
+void gluon_test_processes(int argc, const char *argv[]) {
   //process_test_t tests;
-  //tests.add_test("process_stack", &process_test_t::test_process_stack);
+  //tests.add_test("process.stack", &process_test_t::test_process_stack);
   //tests.run(argc, const_cast<char **>(argv));
 }
 
-} // ns gluon
+} // ns gluontest

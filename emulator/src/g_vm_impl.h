@@ -218,9 +218,9 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term dest(ctx.regs[0]);
     Term msg(ctx.regs[1]);
 
-    printf("send ");
+    Std::fmt("send ");
     msg.print();
-    printf(" -> ");
+    Std::fmt(" -> ");
     dest.println();
 
     proc->msg_send(dest, msg);
@@ -249,7 +249,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       return ctx.jump(proc, Term(ctx.ip[0]));
     }
     //ctx.move(msg, Term(ctx.ip[1]));
-    printf("loop_rec msg=");
+    Std::fmt("loop_rec msg=");
     msg.println();
 
     ctx.regs[0] = msg;
@@ -600,7 +600,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       Term value(ctx.ip[1]);
       ctx.ip += 2;
       DEREF(value);
-        printf("put ");
+        Std::fmt("put ");
         value.println();
       layout::TUPLE::element(cells, index) = value;
       index++;

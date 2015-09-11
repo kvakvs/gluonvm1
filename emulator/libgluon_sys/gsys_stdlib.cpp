@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 namespace gluon {
-namespace stdlib {
+namespace Std {
 
   void abort() {
     ::abort();
@@ -15,5 +15,8 @@ namespace stdlib {
     ::usleep(micro_sec);
   }
 
+  void exit(int x) {
+    ::exit(x);
+  }
 } // ns mem
 } // ns gluon

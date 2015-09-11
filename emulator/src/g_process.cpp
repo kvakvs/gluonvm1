@@ -29,7 +29,7 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
   G_ASSERT(ip);
 
   m_ctx.ip = ip;
-  printf("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)m_ctx.ip);
+  Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)m_ctx.ip);
   return success();
 }
 
@@ -86,7 +86,7 @@ void Process::msg_send(Term pid, Term value)
 
   Process *other = VM::get_scheduler()->find(pid);
   if (!other) {
-    printf("msg_send pid not found: ");
+    Std::fmt("msg_send pid not found: ");
     pid.println();
     return;
   }
@@ -100,20 +100,22 @@ void Process::msg_send(Term pid, Term value)
 #if G_DEBUG
 void ProcessStack::println()
 {
-  printf("STACK[" FMT_UWORD "words]: ", size());
+  Std::fmt("STACK[" FMT_UWORD "words]: ", size());
   if (size() > 0) {
-    printf("[-1]=");
+    Std::fmt("[-1]=");
     cells.back().print();
-    printf("; ");
+    Std::fmt("; ");
   }
   if (size() > 1) {
     for (word_t i = 0; i < size()-1; i++) {
-      printf("[" FMT_UWORD "]=", i);
+      Std::fmt("[" FMT_UWORD "]=", i);
       get_y(i).print();
-      printf("; ");
+      Std::fmt("; ");
     }
   }
   puts("");
 }
 #endif
 #endif //0
+
+} // ns

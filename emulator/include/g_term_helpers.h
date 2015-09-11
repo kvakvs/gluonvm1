@@ -54,7 +54,7 @@ Term build_list(proc::Heap *heap, Iter iter, Iter to) {
   }
 
   word_t len = length(iter, to);
-  printf("len=" FMT_UWORD "\n", len);
+  Std::fmt("len=" FMT_UWORD "\n", len);
   Term *h = (Term *)heap->h_alloc(layout::CONS::BOX_SIZE * len);
 
   Term result = Term::make_cons(h);

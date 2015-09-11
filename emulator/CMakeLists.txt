@@ -12,9 +12,10 @@ include_directories(
     #${CMAKE_SOURCE_DIR}/generated/
     ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/src/
+    ${CMAKE_SOURCE_DIR}/test/
     )
 
-# Enables lot of printf debugging features as well as assertions everywhere in
+# Enables lot of Std::fmt debugging features as well as assertions everywhere in
 # the code. Makes things run slow.
 add_definitions(-DG_DEBUG=1)
 
@@ -85,6 +86,7 @@ set(SRC_LIST
 
 if(G_TEST)
   set(SRC_LIST ${SRC_LIST}
+      test/test.cpp test/test.h
       test/test_code_index.cpp
       test/test_process.cpp
       test/test_term.cpp

@@ -177,9 +177,9 @@ bool is_term_smaller(Term a, Term b)
 
 bool are_terms_equal(Term a, Term b, bool exact)
 {
-  printf("are_terms_eq(exact=%d): ", (int)exact);
+  Std::fmt("are_terms_eq(exact=%d): ", (int)exact);
   a.print();
-  printf(" ? ");
+  Std::fmt(" ? ");
   b.println();
   if (a == b) {
     return true;
@@ -460,7 +460,7 @@ Term bif_length_1(Process *, Term a)
     return Term::make_small(0);
   }
 
-  printf("length: "); a.println();
+  Std::fmt("length: "); a.println();
   G_ASSERT(a.is_cons());
   sword_t counter = 0;
   while (a.is_cons()) {
@@ -526,7 +526,7 @@ static Term integer_to_list(Process *proc, Term n, sword_t base)
   }
 
   if (n.is_small()) {
-    printf("i2l n.val=" FMT_0xHEX "\n", n.as_word());
+    Std::fmt("i2l n.val=" FMT_0xHEX "\n", n.as_word());
     sword_t v = n.small_get_signed();
 
     char buf[16];

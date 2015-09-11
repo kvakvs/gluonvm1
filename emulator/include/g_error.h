@@ -5,8 +5,8 @@
 #include "g_sys_stdlib.h"
 
 #define G_DEBUG_THROW_E if(e) { \
-  gluon::stdlib::fmt("debug throw: %s\n", e); \
-  gluon::stdlib::abort(); \
+  gluon::Std::fmt("debug throw: %s\n", e); \
+  gluon::Std::abort(); \
   }
 
 namespace gluon {

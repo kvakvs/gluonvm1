@@ -100,9 +100,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
   void move(Term val, Term dst) {
 #if G_DEBUG
-    printf("ctx.move ");
+    Std::fmt("ctx.move ");
     val.print();
-    printf(" -> ");
+    Std::fmt(" -> ");
     dst.println();
 #endif
     if (dst.is_regx()) {
@@ -129,7 +129,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   void jump_ext(Process *proc, Term mfa_box) {
     G_ASSERT(mfa_box.is_boxed());
     mfarity_t *mfa = mfa_box.boxed_get_ptr<mfarity_t>();
-    printf("ctx.jump_ext -> ");
+    Std::fmt("ctx.jump_ext -> ");
     mfa->println();
 
     // check for bif, a nonvalue result with error flag set to undef means that
@@ -181,7 +181,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   void jump(Process *proc, Term t) {
     G_ASSERT(t.is_boxed() && term_tag::is_cp(t.boxed_get_ptr<word_t>()));
     word_t *t_ptr = term_tag::untag_cp(t.boxed_get_ptr<word_t>());
-    printf("ctx.jump -> " FMT_0xHEX "\n", (word_t)t_ptr);
+    Std::fmt("ctx.jump -> " FMT_0xHEX "\n", (word_t)t_ptr);
     ip = t_ptr;
     // TODO: some meaningful assertion here?
     //G_ASSERT(ip > base);
@@ -200,9 +200,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   void exception(Process *proc) {
     if (proc->m_catch_level == 0) {
       // we're not catching anything here
-      printf("EXCEPTION: ");
+      Std::fmt("EXCEPTION: ");
       regs[0].print();
-      printf(":");
+      Std::fmt(":");
       regs[1].println();
       G_FAIL("Stopping execution here");
     }
@@ -252,10 +252,10 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       value.print();
       if (value.is_regx() || value.is_regy()) {
         resolve_immed(value);
-        printf("=");
+        Std::fmt("=");
         value.print();
       }
-      printf(";");
+      Std::fmt(";");
     }
     puts("");
 #endif

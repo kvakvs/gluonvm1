@@ -52,7 +52,7 @@ MaybeError Server::load_module(Process *proc, Term name)
       f.seek(0);
       f.read(tmp_buffer, size);
 
-      printf("Loading BEAM %s\n", path.c_str());
+      Std::fmt("Loading BEAM %s\n", path.c_str());
       auto    result = load_module(proc, name, tmp_buffer, size);
       vm::Heap::free_bytes(heap, tmp_buffer);
       return result;
@@ -89,10 +89,10 @@ void Server::path_prepend(const Str &p)
 bool Server::print_mfa(word_t *ptr) const {
   auto mfa = find_mfa(ptr);
   if (mfa.mod.is_non_value()) {
-    printf(FMT_0xHEX, (word_t)ptr);
+    Std::fmt(FMT_0xHEX, (word_t)ptr);
     return false;
   }
-  printf("%s:%s/" FMT_UWORD,
+  Std::fmt("%s:%s/" FMT_UWORD,
          mfa.mod.atom_c_str(), mfa.fun.atom_c_str(), mfa.arity);
   return true;
 }

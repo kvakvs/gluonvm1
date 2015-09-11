@@ -366,29 +366,40 @@ namespace layout {
     }
   };
 
-  // Box is located on external heap
-  // Box structure
-  // word_t { size, tag_bits: 4}; word_t refcount; u8_t data[size]
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-length-array"
+    // Heapbin is stored on far heap with refcount field
+    // Box only contains size and pointer to far heap with heapbin
+    class HeapbinBox {
+    private:
+      word_t m_size; // contains both size and boxed tag
+      word_t m_refcount;
+      u8_t   m_data[0];
+
+    public:
+      inline void set_byte_size(word_t bytes) {
+        m_size = term_tag::BoxedHeapBin::create_subtag(bytes);
+      }
+
+      template <typename Cell>
+      inline Cell *data() {
+        //static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+        return (Cell *)&m_data;
+      }
+
+      word_t refcount() const {
+        return m_refcount;
+      }
+      void set_refcount(word_t r) {
+        m_refcount = r;
+      }
+    };
+#pragma clang diagnostic pop
+
   struct HEAP_BIN {
-    static const word_t BOX_EXTRA = 2;
+    static const word_t FAR_HEAP_EXTRA = sizeof(HeapbinBox) / sizeof(word_t);
 
     static inline word_t box_size(word_t bytes);
-
-    static inline void set_byte_size(word_t *box, word_t bytes) {
-      box[0] = term_tag::BoxedHeapBin::create_subtag(bytes);
-    }
-
-    template <typename Cell>
-    static inline Cell *data(Cell *box) {
-      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
-      return box + BOX_EXTRA;
-    }
-
-    template <typename Cell>
-    static inline Cell &refcount(Cell *box) {
-      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
-      return box[1];
-    }
   };
 } // ns layout
 
@@ -553,7 +564,7 @@ public:
   }
   inline sword_t small_get_signed() const {
     G_ASSERT(is_small());
-//    printf("small_get_s val=" FMT_0xHEX " val=" FMT_0xHEX "\n", m_val, term_tag::Smallint::value(m_val));
+//    Std::fmt("small_get_s val=" FMT_0xHEX " val=" FMT_0xHEX "\n", m_val, term_tag::Smallint::value(m_val));
     return term_tag::Smallint::value(m_val);
   }
   inline word_t small_get_unsigned() const {
@@ -775,8 +786,8 @@ public:
     }
     G_ASSERT(term_tag::BoxedHeapBin::check_subtag(p[0]));
     // Get pointer to large binary, add 1 word offset and cast it to T *
-    word_t *large_ptr = (word_t *)p[1];
-    return (T *)(large_ptr + 1);
+    layout::HeapbinBox *far_box = (layout::HeapbinBox *)p;
+    return far_box->data<T>();
   }
 };
 

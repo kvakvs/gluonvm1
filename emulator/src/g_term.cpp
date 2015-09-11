@@ -72,123 +72,123 @@ Str Term::atom_str() const
 void Term::print() const
 {
   if (m_val == 0) {
-    printf("NOT_A_TERM");
+    Std::fmt("NOT_A_TERM");
     return;
   }
   if (is_cons()) {
     if (is_cons_printable()) {
       // list is printable - print quotes and every character except tail
-      printf("\"");
+      Std::fmt("\"");
       word_t c = (u8_t)cons_head().small_get_unsigned();
       if (does_char_require_quoting(c)) {
-        printf("\\");
+        Std::fmt("\\");
       }
-      printf("%c", (u8_t)c);
+      Std::fmt("%c", (u8_t)c);
       Term item = cons_tail();
       while (item.is_cons()) {
         c = item.cons_head().small_get_unsigned();
         if (does_char_require_quoting(c)) {
-          printf("\\");
+          Std::fmt("\\");
         }
-        printf("%c", (u8_t)c);
+        Std::fmt("%c", (u8_t)c);
         item = item.cons_tail();
       }
-      printf("\"");
+      Std::fmt("\"");
     } else {
       // not printable - dump terms and tail
-      printf("[");
+      Std::fmt("[");
       cons_head().print();
       Term item = cons_tail();
       while (item.is_cons()) {
-        printf(",");
+        Std::fmt(",");
         item.cons_head().print();
         item = item.cons_tail();
       }
       if (!item.is_nil()) {
-        printf("|");
+        Std::fmt("|");
         item.print();
       }
-      printf("]");
+      Std::fmt("]");
     }
   }
   else if (is_tuple()) {
     auto arity = tuple_get_arity();
-    printf("{");
+    Std::fmt("{");
     for (word_t n = 0; n < arity; ++n) {
       tuple_get_element(n).print();
       if (n < arity-1) {
-        printf(",");
+        Std::fmt(",");
       }
     }
-    printf("}");
+    Std::fmt("}");
   }
   else if (is_boxed()) {
     auto p = boxed_get_ptr<word_t>();
     if (term_tag::is_cp<word_t>(p)) {
       word_t *cp = term_tag::untag_cp<word_t>(p);
-      printf("#CP<");
+      Std::fmt("#CP<");
       VM::get_cs()->print_mfa(cp);
-      printf(">");
+      Std::fmt(">");
       return;
     }
     if (is_boxed_fun()) {
-      printf("#Fun<");
+      Std::fmt("#Fun<");
       auto bf = boxed_get_ptr<boxed_fun_t>();
 //      if ((word_t)(bf->fun_entry) < 0x1000) {
-//        printf(FMT_0xHEX, (word_t)bf->fun_entry);
+//        Std::fmt(FMT_0xHEX, (word_t)bf->fun_entry);
 //      } else {
         VM::get_cs()->print_mfa(bf->fun_entry->code);
 //      }
-      printf(">");
+      Std::fmt(">");
       return;
     }
     if (is_boxed_export()) {
-      printf("#ExportedFun<");
+      Std::fmt("#ExportedFun<");
       auto ex = boxed_get_ptr<export_t>();
       ex->mfa.print();
-      printf(";");
+      Std::fmt(";");
       if (ex->is_bif()) {
-        printf("bif");
+        Std::fmt("bif");
       } else {
         VM::get_cs()->print_mfa(ex->code);
       }
-      printf(">");
+      Std::fmt(">");
       return;
-    }    printf("#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
+    }    Std::fmt("#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
     VM::get_cs()->print_mfa(boxed_get_ptr<word_t>());
-    printf(">");
+    Std::fmt(">");
   }
   else if (is_nil()) {
-    printf("[]");
+    Std::fmt("[]");
   }
   else if (is_non_value()) {
-    printf("NON_VALUE");
+    Std::fmt("NON_VALUE");
   }
   else if (is_atom()) {
-    printf("'%s'", atom_str().c_str());
+    Std::fmt("'%s'", atom_str().c_str());
   }
   else if (is_small()) {
-    printf(FMT_SWORD, small_get_signed());
+    Std::fmt(FMT_SWORD, small_get_signed());
   }
   else if (is_catch()) {
-    printf("CATCH(" FMT_0xHEX ")", catch_val());
+    Std::fmt("CATCH(" FMT_0xHEX ")", catch_val());
   }
   else if (is_short_pid()) {
-    printf("#Pid<" FMT_0xHEX ">", short_pid_get_value());
+    Std::fmt("#Pid<" FMT_0xHEX ">", short_pid_get_value());
   }
   else if (is_regx()) {
-    printf("X[" FMT_UWORD "]", regx_get_value());
+    Std::fmt("X[" FMT_UWORD "]", regx_get_value());
   }
 #if FEATURE_FLOAT
   else if (is_regfp()) {
-    printf("FP[" FMT_UWORD "]", regfp_get_value());
+    Std::fmt("FP[" FMT_UWORD "]", regfp_get_value());
   }
 #endif
   else if (is_regy()) {
-    printf("Y[" FMT_UWORD "]", regy_get_value());
+    Std::fmt("Y[" FMT_UWORD "]", regy_get_value());
   }
   else {
-    printf("UNKNOWN(" FMT_0xHEX ")", m_val);
+    Std::fmt("UNKNOWN(" FMT_0xHEX ")", m_val);
   }
 }
 
@@ -211,10 +211,10 @@ Term Term::make_binary(proc::Heap *h, word_t bytes)
   } else {
     // Large bin, with boxed refcount and pointer
     vm::Heap *binheap = VM::get_heap(VM::HEAP_LARGE_BINARY);
-    word_t *box = vm::Heap::alloc<word_t>(binheap,
-                                          layout::HEAP_BIN::box_size(bytes));
-    layout::HEAP_BIN::set_byte_size(box, bytes);
-    layout::HEAP_BIN::refcount(box) = 1;
+    layout::HeapbinBox *box = vm::Heap::alloc<layout::HeapbinBox>(
+                              binheap, layout::HEAP_BIN::box_size(bytes));
+    box->set_byte_size(bytes);
+    box->set_refcount(1);
     return Term(term_tag::BoxedHeapBin::create_from_ptr(box));
   }
 }
@@ -227,9 +227,9 @@ void mfarity_t::println() {
 void mfarity_t::print()
 {
   mod.print();
-  printf(":");
+  Std::fmt(":");
   fun.print();
-  printf("/" FMT_UWORD, arity);
+  Std::fmt("/" FMT_UWORD, arity);
 }
 
 word_t layout::PROC_BIN::box_size(word_t bytes) {
@@ -237,7 +237,7 @@ word_t layout::PROC_BIN::box_size(word_t bytes) {
 }
 
 word_t layout::HEAP_BIN::box_size(word_t bytes) {
-  return calculate_word_size(bytes) + BOX_EXTRA;
+  return calculate_word_size(bytes) + FAR_HEAP_EXTRA;
 }
 
 #endif // DEBUG
