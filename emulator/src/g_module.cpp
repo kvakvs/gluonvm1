@@ -6,24 +6,24 @@
 namespace gluon {
 
 
-word_t *Module::find_export(const fun_arity_t &fa)
+export_t *Module::find_export(const fun_arity_t &fa)
 {
   auto iter = m_exports.find(fa);
   if (iter == m_exports.end()) {
     return nullptr;
   }
-  return iter->second;
+  return &iter->second;
 }
 
 // TODO: duplicates find_export, replace with fun table search or remove?
-Result<word_t *> Module::resolve_function(Term f, word_t arity)
-{
-  auto iter = m_exports.find(fun_arity_t(f, arity));
-  if (iter == m_exports.end()) {
-    return error<word_t *>("function not found");
-  }
-  return success(iter->second);
-}
+//Result<export_t *> Module::resolve_function(Term f, word_t arity)
+//{
+//  auto iter = m_exports.find(fun_arity_t(f, arity));
+//  if (iter == m_exports.end()) {
+//    return error<word_t *>("function not found");
+//  }
+//  return success(&iter->second);
+//}
 
 Result<word_t *> Module::resolve_label(label_index_t label)
 {

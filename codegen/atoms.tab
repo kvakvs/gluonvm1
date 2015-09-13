@@ -33,6 +33,9 @@ normal
 #--- O
 ok
 
+#--- S
+system_limit
+
 #--- T
 throw
 true

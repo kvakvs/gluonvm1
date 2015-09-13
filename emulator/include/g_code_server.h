@@ -54,7 +54,8 @@ public:
   // Find module, function and arity for code location and print it.
   // Returns true if mfa was found and printed, else false
   bool print_mfa(word_t *ptr) const;
-  mfarity_t find_mfa(word_t *ptr) const;
+  mfarity_t find_mfa_from_code(word_t *ptr) const;
+  export_t *find_mfa(const mfarity_t &mfa, Module **out_mod=nullptr) const;
 
 protected:
   Result<Module *> load_module_internal(proc::Heap *heap,

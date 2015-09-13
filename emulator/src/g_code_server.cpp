@@ -87,7 +87,7 @@ void Server::path_prepend(const Str &p)
 }
 
 bool Server::print_mfa(word_t *ptr) const {
-  auto mfa = find_mfa(ptr);
+  auto mfa = find_mfa_from_code(ptr);
   if (mfa.mod.is_non_value()) {
     Std::fmt(FMT_0xHEX, (word_t)ptr);
     return false;
@@ -97,7 +97,7 @@ bool Server::print_mfa(word_t *ptr) const {
   return true;
 }
 
-mfarity_t Server::find_mfa(word_t *ptr) const
+mfarity_t Server::find_mfa_from_code(word_t *ptr) const
 {
   Module *m = m_mod_index.find(ptr);
   if (!m) {
@@ -105,6 +105,19 @@ mfarity_t Server::find_mfa(word_t *ptr) const
   }
   auto fa = m->find_fun_arity(ptr);
   return mfarity_t(m->get_name(), fa.first, fa.second);
+}
+
+export_t *Server::find_mfa(const mfarity_t &mfa, Module **out_mod) const
+{
+  auto iter = m_modules.find(mfa.mod);
+  if (iter == m_modules.end()) {
+    return nullptr;
+  }
+  Module *m = iter->second;
+  if (out_mod) {
+    *out_mod = m;
+  }
+  m->find_export(mfa.as_funarity());
 }
 
 } // ns code

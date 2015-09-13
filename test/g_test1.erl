@@ -15,14 +15,22 @@ test() ->
     %test_hof_nested(),
     %test_lc(),
     %test_send_receive(),
-    test_ring(),
-    %test_try_catch(),
+    %test_ring(),
+    test_try_catch(),
+    test_try_of_catch(),
     %test_mochijson().
     done].
 
 %%-----------------------------------------------
 test_try_catch() ->
     try erlang:error(hello)
+    catch error:E -> E = hello
+    end.
+
+test_try_of_catch() ->
+    try self() of 
+      X when is_pid(X) -> erlang:error(hello);
+      Y -> not_ok
     catch error:E -> E = hello
     end.
 

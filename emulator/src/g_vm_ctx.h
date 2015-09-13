@@ -132,11 +132,17 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     Std::fmt("ctx.jump_ext -> ");
     mfa->println();
 
+    Module *mod = nullptr;
+    export_t *exp = VM::get_cs()->find_mfa(*mfa, &mod);
+    if (!exp) {
+      return raise(proc, atom::ERROR, atom::UNDEF);
+    }
+
     // check for bif, a nonvalue result with error flag set to undef means that
     // this was not a bif
-    void *bif_fn = VM::find_bif(*mfa);
-    if (bif_fn) {
-      Term result = VM::apply_bif(proc, mfa->arity, bif_fn, regs);
+    //void *bif_fn = VM::find_bif(*mfa);
+    if (exp->is_bif()) {
+      Term result = VM::apply_bif(proc, mfa->arity, exp->bif_fn, regs);
       if (result.is_non_value()) {
         if (proc->m_bif_error_reason != atom::UNDEF) {
           // a real error happened
@@ -155,6 +161,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       }
     }
 
+    /*
     auto find_result = VM::get_cs()->find_module(proc, mfa->mod,
                                                  code::LOAD_IF_NOT_FOUND);
     if (find_result.is_error()) {
@@ -169,6 +176,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       return raise(proc, atom::ERROR, atom::UNDEF);
     }
     return jump_far(proc, mod, find_fn_result.get_result());
+    */
+    return jump_far(proc, mod, exp->code);
   }
 
   // Jumps between modules updating base and mod fields

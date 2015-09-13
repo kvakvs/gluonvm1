@@ -374,7 +374,7 @@ namespace layout {
     private:
       word_t m_size; // contains both size and boxed tag
       word_t m_refcount;
-      u8_t   m_data[0];
+      word_t m_data[0];
 
     public:
       inline void set_byte_size(word_t bytes) {
@@ -440,6 +440,7 @@ public:
   inline bool operator !=(const Term &x) const { return m_val != x.m_val; }
   inline bool operator !=(const word_t x) const { return m_val != x; }
   inline bool is_nil() const { return m_val == term::NIL; }
+  inline bool is_not_nil() const { return m_val != term::NIL; }
   inline bool is_non_value() const { return m_val == term::THE_NON_VALUE; }
   inline bool is_value() const { return m_val != term::THE_NON_VALUE; }
 
@@ -807,6 +808,9 @@ public:
   mfarity_t(): mod(NONVALUE), fun(NONVALUE), arity(0) {}
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {
     G_ASSERT(a <= vm::MAX_FUN_ARITY);
+  }
+  fun_arity_t as_funarity() const {
+    return std::make_pair(fun, arity);
   }
 #if G_DEBUG
   void print();

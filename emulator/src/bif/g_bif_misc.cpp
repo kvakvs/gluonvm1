@@ -500,7 +500,14 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
   // Box export (1 word for boxed tag and 1 word reference to export_t)
   // TODO: calculate is_bif for new object
   mfarity_t mfa(mod, f, arity);
+
+  export_t *exp = VM::get_cs()->find_mfa(mfa);
+  if (!exp) {
+    return proc->bif_error(atom::UNDEF);
+  }
+  /*
   void *biffn = VM::find_bif(mfa);
+
   export_t *box = proc->get_heap()->h_alloc_object<export_t>(biffn != nullptr);
   box->mfa = mfa;
   if (biffn == nullptr) {
@@ -515,8 +522,8 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
     box->code = code;
   } else {
     box->bif_fn = biffn;
-  }
-  return Term::make_boxed_export(box);
+  }*/
+  return Term::make_boxed_export(exp);
 }
 
 static Term integer_to_list(Process *proc, Term n, sword_t base)
@@ -655,6 +662,74 @@ Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
     return atom::TRUE;
   }
   return atom::FALSE;
+}
+
+word_t *apply(Process *proc, Term m, Term f, Term args, Term *regs)
+{
+  // Check the arguments which should be of the form apply(M,F,Args) where
+  // F is an atom and Args is an arity long list of terms
+  if (!f.is_atom()) {
+    proc->bif_badarg(f); // fail right here
+    return nullptr;
+  }
+
+  // The module argument may be either an atom or an abstract module
+  // (currently implemented using tuples, but this might change)
+  Term _this = NONVALUE;
+  if (!m.is_atom() || m.tuple_get_arity() < 1) {
+    if (!m.is_tuple()) {
+      proc->bif_badarg(m);
+      return nullptr;
+    }
+    // TODO: can optimize here by accessing tuple internals via pointer and
+    // checking arity and then taking 2nd element
+    _this = m;
+    m = m.tuple_get_element(1);
+    if (!m.is_atom()) {
+      proc->bif_badarg(m);
+      return nullptr;
+    }
+  }
+
+  // Walk down the 3rd parameter of apply (the argument list) and copy
+  // the parameters to the x registers (regs[]). If the module argument
+  // was an abstract module, add 1 to the function arity and put the
+  // module argument in the n+1st x register as a THIS reference.
+  Term   tmp = args;
+  word_t arity = 0;
+  while (tmp.is_list()) {
+    if (arity < vm::MAX_REGS - 1) {
+      tmp.cons_head_tail(regs[arity++], tmp);
+    } else {
+      proc->bif_error(atom::SYSTEM_LIMIT);
+      return nullptr;
+    }
+  }
+  if (tmp.is_not_nil()) { // Must be well-formed list
+    proc->bif_badarg();
+    return nullptr;
+  }
+  if (_this != NONVALUE) {
+    regs[arity++] = _this;
+  }
+
+  // Get the index into the export table, or failing that the export
+  // entry for the error handler.
+  // OTP Note: All BIFs have export entries; thus, no special case is needed.
+  export_t *ep = VM::get_cs()->find_mfa(mfarity_t(m, f, arity));
+  if (!ep) {
+     //if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL) goto error;
+    proc->bif_error(atom::UNDEF);
+    return nullptr;
+  }
+  if (ep->is_bif()) {
+    return VM::apply_bif(proc, ep->mfa.arity, ep->bif_fn, regs);
+  }
+//  else if (ERTS_PROC_GET_SAVED_CALLS_BUF(proc)) {
+//      save_calls(proc, ep);
+//  }
+//  DTRACE_GLOBAL_CALL_FROM_EXPORT(proc, ep);
+//  return ep->addressv[erts_active_code_ix()];
 }
 
 } // ns bif

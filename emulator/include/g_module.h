@@ -39,7 +39,7 @@ class Module {
 public:
   typedef Map<word_t, word_t *>         labels_t;
   //typedef Map<fun_arity_t, fun_entry_t> funs_t;
-  typedef Map<fun_arity_t, word_t *>    exports_t;
+  typedef Map<fun_arity_t, export_t>    exports_t;
   typedef Vector<mfarity_t>             imports_t;
   typedef Vector<fun_entry_t>           lambdas_t;
 
@@ -89,11 +89,11 @@ public:
     G_ASSERT(ptr < m_code.size());
     return m_code[ptr];
   }
-  word_t *find_export(const fun_arity_t &fa);
+  export_t *find_export(const fun_arity_t &fa);
 
   // Resolves function in current module to a code pointer
   // TODO: duplicates find_export, replace with fun table search or remove?
-  Result<word_t *> resolve_function(Term f, word_t arity);
+  //Result<word_t *> resolve_function(Term f, word_t arity);
 
   // Resolves label to a code pointer
   Result<word_t *> resolve_label(label_index_t label);

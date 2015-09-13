@@ -140,6 +140,7 @@ public:
   Term bif_error(Term reason, const char *str); // builds {ErrorTag, "text"}
   Term bif_error(Term error_tag, Term reason); // builds tuple {ErrorTag, Reason}
   Term bif_badarg(Term reason); // builds tuple {badarg, Reason}
+  Term bif_badarg();
 
   //
   // Send/receive thingies

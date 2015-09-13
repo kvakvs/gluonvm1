@@ -22,13 +22,16 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
   G_RETURN_IF_ERROR(mod_result);
   Module *mod = mod_result.get_result();
 
-  auto find_result = mod->resolve_function(mfa.fun, mfa.arity);
-  G_RETURN_IF_ERROR(find_result);
+  export_t *exp = mod->find_export(mfa.as_funarity());
+  //G_RETURN_IF_ERROR(find_result);
+  if (!exp) {
+    return "undef function";
+  }
+  if (exp->is_bif()) {
+    return "jump to a bif";
+  }
 
-  auto ip = find_result.get_result();
-  G_ASSERT(ip);
-
-  m_ctx.ip = ip;
+  m_ctx.ip = exp->code;
   Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)m_ctx.ip);
   return success();
 }
@@ -77,6 +80,11 @@ Term Process::bif_error(Term reason, const char *str)
 Term Process::bif_badarg(Term reason)
 {
   return bif_error(atom::BADARG, reason);
+}
+
+Term Process::bif_badarg()
+{
+  return bif_error(atom::BADARG);
 }
 
 void Process::msg_send(Term pid, Term value)
