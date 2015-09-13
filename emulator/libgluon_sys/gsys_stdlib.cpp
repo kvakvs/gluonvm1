@@ -18,5 +18,13 @@ namespace Std {
   void exit(int x) {
     ::exit(x);
   }
+
+  void fmt(const char *s) {
+    while (*s) std::putchar(*s++);
+  }
+
+  void puts() {
+    std::puts("");
+  }
 } // ns mem
 } // ns gluon

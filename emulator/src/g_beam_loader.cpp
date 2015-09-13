@@ -548,7 +548,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       G_ASSERT(l_id < m_code_label_count);
       m_labels[l_id] = (&code.back())+1;
 //      G_LOG("label " FMT_UWORD " (" FMT_0xHEX ") offset " FMT_0xHEX, l_id, l_id, code.size());
-//      puts("");
+//      Std::puts();
       continue;
     }
 
@@ -564,7 +564,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
       beam_op_func_info(code,
                         a.get_result(), b.get_result(), c.get_result());
 #else
-//      puts("");
+//      Std::puts();
 #endif
       // FALL THROUGH AND EMIT THE OPCODE
       //continue;

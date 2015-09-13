@@ -30,6 +30,7 @@ Term bif_integer_to_list_2(Process *, Term a, Term base);
 Term bif_plusplus_2(Process *proc, Term a, Term b);
 Term bif_hd_1(Process *, Term a);
 Term bif_tl_1(Process *, Term a);
+Term bif_function_exported_3(Process *prc, Term m, Term f, Term arity);
 
 } // ns bif
 } // ns gluon

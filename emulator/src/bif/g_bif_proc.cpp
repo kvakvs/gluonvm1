@@ -62,5 +62,10 @@ Term bif_is_process_alive_1(Process *proc, Term pid)
   return atom::TRUE;
 }
 
+Term bif_nif_error_1(Process *prc, Term what)
+{
+  return prc->bif_error(atom::ERROR, what);
+}
+
 } // ns bif
 } // ns gluonl

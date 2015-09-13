@@ -22,6 +22,9 @@ atom_to_list 1
 group_leader 0
 group_leader 2
 
+#--- F
+function_exported 3
+
 #--- H
 hd 1
 
@@ -35,6 +38,9 @@ length 1
 
 #--- M
 make_fun 3
+
+#--- N
+nif_error 1
 
 #--- S
 self 0

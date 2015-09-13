@@ -167,6 +167,13 @@ Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r) {
   return success(result);
 }
 
+Result<Term> read_binary(proc::Heap *heap, tool::Reader &r) {
+  word_t length = r.read_big_u32();
+  Term result = Term::make_binary(heap, length);
+  u8_t *data = result.binary_get<u8_t>();
+  r.read_bytes(data, length);
+  return success(result);
+}
 
 Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
   auto t = r.read_byte();
@@ -197,7 +204,7 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
       return error<Term>("FEATURE_BIGNUM");
 #endif
       } // hardware bits = 32
-    } // integer_ext
+    }  // integer_ext
 
 #if FEATURE_FLOAT
   case OLD_FLOAT_STRING_EXT: {
@@ -261,8 +268,8 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
   case STRING_EXT:  return success(read_string_ext(heap, r));
   case LIST_EXT:    return read_list_ext(heap, r);
 
-#if FEATURE_BINARIES
-  case BINARY_EXT:  G_TODO("read binary etf");
+#if FEATURE_BIN_READ
+  case BINARY_EXT:  return read_binary(heap, r);
   case BIT_BINARY_EXT:  G_TODO("read bit-binary etf");
 #else
   case BINARY_EXT:

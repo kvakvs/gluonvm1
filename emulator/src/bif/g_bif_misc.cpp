@@ -629,12 +629,32 @@ Term bif_hd_1(Process *proc, Term a)
   return a.cons_head();
 }
 
-Term bif_tl_1(Process *proc, Term a)
+Term bif_tl_1(Process *prc, Term a)
 {
   if (!a.is_cons()) {
-    return proc->bif_badarg(a);
+    return prc->bif_badarg(a);
   }
   return a.cons_tail();
+}
+
+Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
+{
+  mfarity_t mfa(m, f, arity.small_get_unsigned());
+  Std::fmt("erlang:function_exported "); mfa.println();
+  void *maybe_bif = VM::find_bif(mfa);
+  if (maybe_bif != nullptr) {
+    return atom::TRUE;
+  }
+
+  auto fm_result = VM::get_cs()->find_module(proc, m, code::LOAD_IF_NOT_FOUND);
+  if (fm_result.is_error()) {
+    return atom::FALSE;
+  }
+  Module *mod = fm_result.get_result();
+  if (mod->find_export(std::make_pair(f, arity.small_get_unsigned()))) {
+    return atom::TRUE;
+  }
+  return atom::FALSE;
 }
 
 } // ns bif

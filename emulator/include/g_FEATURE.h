@@ -18,6 +18,7 @@
 // matching features also BIFs that manipulate binaries
 // TODO: binaries have to be implemented throughout loader and vm
 #define FEATURE_BINARIES      0
+#define FEATURE_BIN_READ      1 /*support reading from ext term format*/
 
 // Distribution features such as long pids
 // TODO: distribution features have to be implemented throughout loader and vm

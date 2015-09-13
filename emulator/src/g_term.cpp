@@ -195,7 +195,7 @@ void Term::print() const
 void Term::println() const
 {
   print();
-  puts("");
+  Std::puts();
 }
 
 Term Term::make_binary(proc::Heap *h, word_t bytes)
@@ -221,7 +221,7 @@ Term Term::make_binary(proc::Heap *h, word_t bytes)
 
 void mfarity_t::println() {
   print();
-  puts("");
+  Std::puts();
 }
 
 void mfarity_t::print()

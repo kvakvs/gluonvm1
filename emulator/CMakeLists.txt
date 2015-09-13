@@ -19,7 +19,7 @@ include_directories(
 # the code. Makes things run slow.
 add_definitions(-DG_DEBUG=1)
 
-set(G_TEST 1)
+set(G_TEST 0)
 
 if(G_TEST)
   add_definitions(-DG_TEST=1) # to run tests

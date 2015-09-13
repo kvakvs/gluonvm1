@@ -113,7 +113,7 @@ void ProcessStack::println()
       Std::fmt("; ");
     }
   }
-  puts("");
+  Std::puts();
 }
 #endif
 #endif //0

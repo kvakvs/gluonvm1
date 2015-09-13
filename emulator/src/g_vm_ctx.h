@@ -257,7 +257,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       }
       Std::fmt(";");
     }
-    puts("");
+    Std::puts();
 #endif
   }
   bool check_bif_error(Process *p) {
