@@ -650,14 +650,14 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       export_t *ex = fun.boxed_get_ptr<export_t>();
       G_ASSERT(arity == ex->mfa.arity);
       if (ex->is_bif()) {
-        Term result = VM::apply_bif(proc, arity, ex->code, ctx.regs);
+        Term result = VM::apply_bif(proc, arity, ex->code(), ctx.regs);
         if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
         ctx.regs[0] = result;
         ctx.ip++;
       } else {
         ctx.live = arity;
         ctx.cp   = ctx.ip + 1;
-        ctx.ip   = ex->code;
+        ctx.ip   = ex->code();
       }
     } else {
       // TODO: make tuple {badfun, f_args} (same as above)

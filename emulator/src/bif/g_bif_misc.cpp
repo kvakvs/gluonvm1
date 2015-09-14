@@ -658,13 +658,13 @@ Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
     return atom::FALSE;
   }
   Module *mod = fm_result.get_result();
-  if (mod->find_export(std::make_pair(f, arity.small_get_unsigned()))) {
+  if (mod->find_export(fun_arity_t(f, arity.small_get_unsigned()))) {
     return atom::TRUE;
   }
   return atom::FALSE;
 }
 
-word_t *apply(Process *proc, Term m, Term f, Term args, Term *regs)
+Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args, Term *regs)
 {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
@@ -723,13 +723,14 @@ word_t *apply(Process *proc, Term m, Term f, Term args, Term *regs)
     return nullptr;
   }
   if (ep->is_bif()) {
-    return VM::apply_bif(proc, ep->mfa.arity, ep->bif_fn, regs);
+    return VM::apply_bif(proc, ep->mfa.arity, ep->bif_fn(), regs);
   }
 //  else if (ERTS_PROC_GET_SAVED_CALLS_BUF(proc)) {
 //      save_calls(proc, ep);
 //  }
 //  DTRACE_GLOBAL_CALL_FROM_EXPORT(proc, ep);
 //  return ep->addressv[erts_active_code_ix()];
+  return ep->code();
 }
 
 } // ns bif

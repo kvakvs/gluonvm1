@@ -8,6 +8,8 @@
 #include "g_heap.h"
 #include "g_binary.h"
 
+#include <cstring>
+
 namespace gluon {
 
 word_t term::g_zero_sized_tuple = 0;
@@ -150,7 +152,7 @@ void Term::print() const
       if (ex->is_bif()) {
         Std::fmt("bif");
       } else {
-        VM::get_cs()->print_mfa(ex->code);
+        VM::get_cs()->print_mfa(ex->code());
       }
       Std::fmt(">");
       return;

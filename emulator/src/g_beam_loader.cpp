@@ -30,6 +30,7 @@ public:
   Vector<Str>     m_atoms;
   const u8_t     *m_code; // not owned data
   word_t          m_code_size;
+  Term            m_mod_name; // an atom in the -module(X) header
 
   // Data coming from code chunk
   word_t          m_code_version;
@@ -74,7 +75,6 @@ public:
 #endif
 
   LoaderState(): m_code(nullptr), m_code_size(0) {
-    m_current_fun.first = NONVALUE;
   }
 
   MaybeError load_atom_table(tool::Reader &r, Term expected_name);
@@ -240,9 +240,9 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
 
   // Check first atom in table which is module name
   G_ASSERT(m_atoms.size() > 0);
-  Term modname = VM::to_atom(m_atoms[0]);
+  m_mod_name = VM::to_atom(m_atoms[0]);
   if (false == expected_name.is_nil()
-      && modname != expected_name) {
+      && m_mod_name != expected_name) {
     return "module name mismatch";
   }
 
@@ -655,10 +655,9 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
   // Move exports from m_exports to this table, resolving labels to code offsets
   Module::exports_t exports;
 //  Std::fmt("exports processing: " FMT_UWORD " items\n", m_exports.size());
-  for (auto &e: m_exports) {
-    auto ptr = m_labels[e.second.value];
-//    Std::fmt("label export ptr " FMT_0xHEX "\n", (word_t)ptr);
-    exports[e.first] = ptr;
+  for (auto iter: m_exports) {
+    exports[iter.first] = export_t(m_labels[iter.second.value],
+                                   mfarity_t(m_mod_name, iter.first));
   }
   m->set_exports(exports);
 
@@ -712,7 +711,7 @@ void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
   word_t *last_ptr = (&code.back()) + 1;
 
   // Finish previous function if it already started
-  if (m_current_fun.first.is_value()) {
+  if (m_current_fun.fun.is_value()) {
     code::Range range(CR.fun_begin, last_ptr);
 //    Std::fmt("fun map: " FMT_0xHEX ".." FMT_0xHEX " %s/" FMT_UWORD "\n", (word_t)CR.fun_begin,
 //           (word_t)last_ptr, m_current_fun.first.atom_c_str(),
@@ -729,7 +728,8 @@ void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
   //m_function_number++;
   //G_ASSERT(m_code_fun_count >= m_function_number);
 
-  m_current_fun = std::make_pair(f, a.small_get_unsigned());
+  m_current_fun.fun = f;
+  m_current_fun.arity = a.small_get_unsigned();
 
 #if FEATURE_CODE_RANGES
   CR.fun_begin = last_ptr;

@@ -31,7 +31,7 @@ MaybeError Process::jump_to_mfa(mfarity_t &mfa)
     return "jump to a bif";
   }
 
-  m_ctx.ip = exp->code;
+  m_ctx.ip = exp->code();
   Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)m_ctx.ip);
   return success();
 }

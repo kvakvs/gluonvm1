@@ -167,7 +167,7 @@ Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r) {
   return success(result);
 }
 
-Result<Term> read_binary(proc::Heap *heap, tool::Reader &r) {
+static Result<Term> read_binary(proc::Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u32();
   Term result = Term::make_binary(heap, length);
   u8_t *data = result.binary_get<u8_t>();

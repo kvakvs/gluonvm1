@@ -104,7 +104,7 @@ mfarity_t Server::find_mfa_from_code(word_t *ptr) const
     return mfarity_t();
   }
   auto fa = m->find_fun_arity(ptr);
-  return mfarity_t(m->get_name(), fa.first, fa.second);
+  return mfarity_t(m->get_name(), fa.fun, fa.arity);
 }
 
 export_t *Server::find_mfa(const mfarity_t &mfa, Module **out_mod) const
@@ -117,7 +117,7 @@ export_t *Server::find_mfa(const mfarity_t &mfa, Module **out_mod) const
   if (out_mod) {
     *out_mod = m;
   }
-  m->find_export(mfa.as_funarity());
+  return m->find_export(mfa.as_funarity());
 }
 
 } // ns code

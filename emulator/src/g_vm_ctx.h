@@ -142,7 +142,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // this was not a bif
     //void *bif_fn = VM::find_bif(*mfa);
     if (exp->is_bif()) {
-      Term result = VM::apply_bif(proc, mfa->arity, exp->bif_fn, regs);
+      Term result = VM::apply_bif(proc, mfa->arity, exp->bif_fn(), regs);
       if (result.is_non_value()) {
         if (proc->m_bif_error_reason != atom::UNDEF) {
           // a real error happened
@@ -177,7 +177,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     }
     return jump_far(proc, mod, find_fn_result.get_result());
     */
-    return jump_far(proc, mod, exp->code);
+    return jump_far(proc, mod, exp->code());
   }
 
   // Jumps between modules updating base and mod fields

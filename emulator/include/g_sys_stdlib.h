@@ -25,8 +25,9 @@ namespace Std {
 
   //
   // Time and stuff
-  //l
+  //
   void sleep(word_t micro_sec);
+
 } // ns stdlib
 
 } // ns gluon

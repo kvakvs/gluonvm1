@@ -1,2 +1,3 @@
 # debug stdout dumps
 *.txt
+.gdb_history

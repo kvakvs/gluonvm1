@@ -14,20 +14,35 @@ class Heap;
 class export_t {
   // first field stores bits used to tag boxed value and boolean bif flag
   // (shifted left by BOXED_SUBTAG_BITS)
-  word_t m_is_bif;
-public:
-  mfarity_t mfa;
+  word_t m_header;
   union {
-    word_t *code;
-    void   *bif_fn; // use VM::apply_bif
+    word_t *m_code;
+    void   *m_bif_fn; // use VM::apply_bif
   };
 
-  export_t(bool b): m_is_bif(term_tag::BoxedExport::create_subtag((word_t)b)) {
-  }
+public:
+  mfarity_t mfa;
+
+  export_t() {}
+  export_t(bool isbif)
+    : m_header(term_tag::BoxedExport::create_subtag((word_t)isbif))
+  {}
+  export_t(word_t *_code, const mfarity_t &_mfa)
+    : m_header(term_tag::BoxedExport::create_subtag((word_t)false)),
+      m_code(_code), mfa(_mfa)
+  {}
 
   static const word_t BIF_BIT = (1U << term_tag::BOXED_SUBTAG_BITS);
   inline bool is_bif() const {
-    return (m_is_bif & BIF_BIT) == BIF_BIT;
+    return (m_header & BIF_BIT) == BIF_BIT;
+  }
+  inline word_t *code() const {
+    G_ASSERT(is_bif() == false);
+    return m_code;
+  }
+  inline void *bif_fn() const {
+    G_ASSERT(is_bif() == true);
+    return m_bif_fn;
   }
 };
 
@@ -104,8 +119,8 @@ public:
   inline void set_labels(labels_t &labels) {
     m_labels = labels;
   }
-  void set_exports(exports_t e) {
-    m_exports = e;
+  void set_exports(exports_t &e) {
+    m_exports = std::move(e);
   }
   void set_lambdas(lambdas_t &la) {
     m_lambdas = std::move(la);

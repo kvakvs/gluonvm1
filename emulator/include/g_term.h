@@ -799,7 +799,19 @@ static_assert(sizeof(Term) == sizeof(word_t),
               "Term size should be same as machine word");
 
 // A pair of atom and int arity, can be used as map key
-typedef Pair<Term, word_t> fun_arity_t;
+//typedef Pair<Term, word_t> fun_arity_t;
+class fun_arity_t {
+public:
+  Term fun = NONVALUE;
+  word_t arity = 0;
+
+  fun_arity_t() {}
+  fun_arity_t(Term f, word_t a): fun(f), arity(a) {}
+  inline bool operator <(const fun_arity_t &x) const {
+    return fun < x.fun || (fun == x.fun && arity < x.arity);
+  }
+};
+
 class mfarity_t {
 public:
   Term    mod;
@@ -809,8 +821,13 @@ public:
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {
     G_ASSERT(a <= vm::MAX_FUN_ARITY);
   }
+  mfarity_t(Term m, const fun_arity_t &fa)
+    : mod(m), fun(fa.fun), arity(fa.arity)
+  {
+    G_ASSERT(arity <= vm::MAX_FUN_ARITY);
+  }
   fun_arity_t as_funarity() const {
-    return std::make_pair(fun, arity);
+    return fun_arity_t(fun, arity);
   }
 #if G_DEBUG
   void print();
