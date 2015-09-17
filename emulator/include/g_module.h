@@ -17,15 +17,16 @@ class export_t {
   word_t m_header;
   union {
     word_t *m_code;
-    void   *m_bif_fn; // use VM::apply_bif
+    void   *m_bif_fn; // use VM::apply_bif with this and mfa.arity
   };
 
 public:
   mfarity_t mfa;
 
   export_t() {}
-  export_t(bool isbif)
-    : m_header(term_tag::BoxedExport::create_subtag((word_t)isbif))
+  export_t(void *biffn)
+    : m_header(term_tag::BoxedExport::create_subtag((word_t)(biffn != nullptr)))
+    , m_bif_fn(biffn)
   {}
   export_t(word_t *_code, const mfarity_t &_mfa)
     : m_header(term_tag::BoxedExport::create_subtag((word_t)false)),
@@ -119,9 +120,7 @@ public:
   inline void set_labels(labels_t &labels) {
     m_labels = labels;
   }
-  void set_exports(exports_t &e) {
-    m_exports = std::move(e);
-  }
+  void set_exports(exports_t &e);
   void set_lambdas(lambdas_t &la) {
     m_lambdas = std::move(la);
   }

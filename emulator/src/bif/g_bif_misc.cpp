@@ -647,20 +647,23 @@ Term bif_tl_1(Process *prc, Term a)
 Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
 {
   mfarity_t mfa(m, f, arity.small_get_unsigned());
-  Std::fmt("erlang:function_exported "); mfa.println();
+  //Std::fmt("erlang:function_exported "); mfa.println();
   void *maybe_bif = VM::find_bif(mfa);
   if (maybe_bif != nullptr) {
+    Std::fmt("is a bif\n");
     return atom::TRUE;
   }
 
   auto fm_result = VM::get_cs()->find_module(proc, m, code::LOAD_IF_NOT_FOUND);
   if (fm_result.is_error()) {
+    Std::fmt("no module\n");
     return atom::FALSE;
   }
   Module *mod = fm_result.get_result();
   if (mod->find_export(fun_arity_t(f, arity.small_get_unsigned()))) {
     return atom::TRUE;
   }
+  Std::fmt("module but no export\n");
   return atom::FALSE;
 }
 

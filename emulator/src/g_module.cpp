@@ -33,6 +33,19 @@ Result<word_t *> Module::resolve_label(label_index_t label)
   return success(m_labels[label.value]);
 }
 
+void Module::set_exports(Module::exports_t &e) {
+  m_exports = std::move(e);
+
+  // Replace known BIFs in exports with their BIF pointer and flag them as such
+  for (auto exp: m_exports) {
+    const fun_arity_t &fa = exp.first;
+    void *bif_ptr = VM::find_bif(mfarity_t(m_name, fa));
+    if (bif_ptr) {
+      m_exports[fa] = export_t(bif_ptr);
+    }
+  }
+}
+
 fun_arity_t Module::find_fun_arity(word_t *ptr) const
 {
   return m_fun_index.find(ptr);

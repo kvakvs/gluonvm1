@@ -22,6 +22,7 @@ const void    **VM::g_opcode_labels;
 Str             VM::g_empty_str;
 Scheduler      *VM::g_scheduler = nullptr;
 code::Server   *VM::g_cs = nullptr;
+Process        *VM::g_root_proc = nullptr;
 
 void VM::init()
 {
@@ -31,6 +32,14 @@ void VM::init()
   vm_loop(true); // initialize labels
 
   init_predef_atoms();
+
+  g_cs->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
+  g_cs->path_append("/usr/lib/erlang/lib/erts-6.4.1/ebin");
+  g_cs->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
+
+  // create root process and set it to some entry function
+  g_root_proc = new Process(NONVALUE);
+  g_cs->load_module(g_root_proc, atom::ERLANG);
 }
 
 Term VM::to_atom(const Str &s)
@@ -101,7 +110,7 @@ find_bif_compare_fun(const bif::bif_index_t &a, const bif::bif_index_t &b) {
   return a.fun < b.fun || (a.fun == b.fun && a.arity < b.arity);
 }
 
-void *VM::find_bif(mfarity_t &mfa)
+void *VM::find_bif(const mfarity_t &mfa)
 {
   if (mfa.mod != atom::ERLANG) {
     return nullptr;

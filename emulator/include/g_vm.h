@@ -24,6 +24,7 @@ class VM {
 private:
   VM() = delete;
 
+  // TODO: Optimize atom tab for insert-only, like OTP does
   static str_atom_map_t g_atoms;
   static atom_str_map_t g_atoms_reverse;
   static word_t         g_atom_counter;
@@ -35,6 +36,8 @@ private:
   static code::Server   *g_cs;
 
 public:
+  static Process *g_root_proc;
+
   static void init();
   static code::Server *get_cs() { return g_cs; }
 
@@ -78,7 +81,7 @@ public:
   // Bif management
   //
   static Term apply_bif(Process *proc, mfarity_t &mfa, Term *args);
-  static void *find_bif(mfarity_t &mfa);
+  static void *find_bif(const mfarity_t &mfa);
   static Term apply_bif(Process *proc, word_t arity, void *fn, Term *args);
 
   static Scheduler *get_scheduler();

@@ -24,28 +24,24 @@ int main(int argc, const char *argv[]) {
   // normal start
   //vm::load_module("../test/g_test1.S.gleam");
   VM::get_cs()->path_append("../test");
-  VM::get_cs()->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
-  VM::get_cs()->path_append("/usr/lib/erlang/lib/erts-6.4.1/ebin");
-  VM::get_cs()->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
 
   // create root process and set it to some entry function
-  Process *proc = new Process(NONVALUE);
-
   Term start_args[2] = {NIL, NIL};
   mfarity_t mfa(VM::to_atom("otp_ring0"), VM::to_atom("start"), 2);
 
-  auto sp_result = proc->spawn(mfa, start_args);
+  auto rootp = VM::g_root_proc;
+  auto sp_result = rootp->spawn(mfa, start_args);
   if (sp_result.is_error()) {
     G_FAIL(sp_result.get_error());
   }
 
   // Run some code
-  proc->set_group_leader(proc->get_pid());
+  rootp->set_group_leader(rootp->get_pid());
   VM::vm_loop(false);
 
   // Print x0 as result
   Std::fmt("Result X[0]=");
-  proc->get_runtime_ctx().regs[0].println();
+  rootp->get_runtime_ctx().regs[0].println();
 
   return 0;
 #endif
