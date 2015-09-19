@@ -667,7 +667,8 @@ Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
   return atom::FALSE;
 }
 
-Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args, Term *regs)
+Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
+                             Term *regs)
 {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
@@ -679,11 +680,11 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args, Term *reg
   // The module argument may be either an atom or an abstract module
   // (currently implemented using tuples, but this might change)
   Term _this = NONVALUE;
-  if (!m.is_atom() || m.tuple_get_arity() < 1) {
-    if (!m.is_tuple()) {
+  if (!m.is_atom()) {
+    if (!m.is_tuple() || m.tuple_get_arity() < 1) {
       proc->bif_badarg(m);
       return nullptr;
-    }
+    }    
     // TODO: can optimize here by accessing tuple internals via pointer and
     // checking arity and then taking 2nd element
     _this = m;
@@ -694,26 +695,31 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args, Term *reg
     }
   }
 
-  // Walk down the 3rd parameter of apply (the argument list) and copy
-  // the parameters to the x registers (regs[]). If the module argument
-  // was an abstract module, add 1 to the function arity and put the
-  // module argument in the n+1st x register as a THIS reference.
-  Term   tmp = args;
   word_t arity = 0;
-  while (tmp.is_list()) {
-    if (arity < vm::MAX_REGS - 1) {
-      tmp.cons_head_tail(regs[arity++], tmp);
-    } else {
-      proc->bif_error(atom::SYSTEM_LIMIT);
+  if (args.is_small()) {
+    // Small unsigned in args means args already are loaded in regs
+    arity = args.small_get_unsigned();
+  } else {
+    // Walk down the 3rd parameter of apply (the argument list) and copy
+    // the parameters to the x registers (regs[]). If the module argument
+    // was an abstract module, add 1 to the function arity and put the
+    // module argument in the n+1st x register as a THIS reference.
+    Term   tmp = args;
+    while (tmp.is_list()) {
+      if (arity < vm::MAX_REGS - 1) {
+        tmp.cons_head_tail(regs[arity++], tmp);
+      } else {
+        proc->bif_error(atom::SYSTEM_LIMIT);
+        return nullptr;
+      }
+    }
+    if (tmp.is_not_nil()) { // Must be well-formed list
+      proc->bif_badarg();
       return nullptr;
     }
-  }
-  if (tmp.is_not_nil()) { // Must be well-formed list
-    proc->bif_badarg();
-    return nullptr;
-  }
-  if (_this != NONVALUE) {
-    regs[arity++] = _this;
+    if (_this != NONVALUE) {
+      regs[arity++] = _this;
+    }
   }
 
   // Get the index into the export table, or failing that the export

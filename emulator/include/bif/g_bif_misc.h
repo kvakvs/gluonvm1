@@ -2,6 +2,7 @@
 
 #include "g_defs.h"
 #include "g_term.h"
+#include "g_functional.h"
 
 namespace gluon {
 
@@ -16,8 +17,10 @@ Pair<word_t, bool> length(Term list);
 
 // Attempts to call m:f with args
 // Returns word_t * if code execution should jump there, or a Term if result is
-// known immediately
-Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args, Term *regs);
+// known immediately. Pass small integer (arity) in args if regs already
+// contained args in the first 'arity' cells.
+Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
+                             Term *regs);
 
 Term bif_make_fun_3(Process *, Term m, Term f, Term arity);
 Term bif_minus_2(Process *, Term a, Term b);

@@ -37,6 +37,8 @@ bif2
 make_fun2
 is_function2
 call_fun
+apply
+apply_last
 
 #--- list ops ---
 put_list
@@ -66,6 +68,7 @@ is_float
 is_list
 is_binary
 is_pid
+is_boolean
 
 #--- debug ---
 #line - processed on load stage and removed

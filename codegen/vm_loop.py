@@ -52,7 +52,8 @@ next_instr:
 
 OPS_WHICH_MAY_YIELD = ['return', 'call', 'call_only', 'call_last',
     'call_ext', 'call_fun', 'call_ext_only', 'call_ext_last',
-    'bif0', 'bif1', 'bif2', 'gc_bif1', 'gc_bif2', 'send']
+    'bif0', 'bif1', 'bif2', 'gc_bif1', 'gc_bif2', 'send', 
+    'apply', 'apply_last']
 OPS_WHICH_ALWAYS_YIELD = ['wait']
 
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):

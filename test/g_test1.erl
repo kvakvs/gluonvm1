@@ -16,12 +16,17 @@ test() ->
     %test_lc(),
     %test_send_receive(),
     %test_ring(),
-    test_try_catch(),
-    test_try_of_catch(),
-    %test_mochijson().
+    %test_try_catch(),
+    %test_try_of_catch(),
+    %test_mochijson(),
+    test_apply(lists, erlang),
     done].
 
 %%-----------------------------------------------
+test_apply(X, Y) ->
+    apply(X, any, [test1, test2]),
+    Y:is_boolean(derp).
+
 test_try_catch() ->
     try erlang:error(hello)
     catch error:E -> E = hello

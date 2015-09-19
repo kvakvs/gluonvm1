@@ -124,23 +124,6 @@ namespace gluon {
     explicit label_index_t(word_t x): value(x) {}
   };
 
-  template <typename L, typename R>
-  class Either {
-  private:
-    bool m_is_left;
-    union { L m_left; R m_right; };
-    Either() {}
-
-  public:
-    Either(const L &l): m_is_left(true), m_left(l)   {}
-    Either(const R &r): m_is_left(false), m_right(r) {}
-    inline bool is_left() const { return m_is_left; }
-    inline L &left() { G_ASSERT(is_left()); return m_left; }
-    inline const L &left() const { G_ASSERT(is_left()); return m_left; }
-    inline R &right() { G_ASSERT(!is_left()); return m_right; }
-    inline const R &right() const { G_ASSERT(!is_left()); return m_right; }
-  };
-
   namespace vm {
     // How many reds will a process be allowed to run before next proc wakes up
     // Adjust this for slow devices. 2000 is used for regular modern hardware.

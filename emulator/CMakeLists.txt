@@ -48,6 +48,7 @@ set(SRC_LIST
     include/g_FEATURE.h   # edit this to configure stuff
     include/g_defs.h
     include/g_error.h
+    include/g_functional.h
     include/g_reader.h
     include/g_sys_fs.h
     include/g_sys_mem.h

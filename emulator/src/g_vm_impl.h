@@ -4,6 +4,7 @@
 
 #include "g_process.h"
 #include "g_vm_ctx.h"
+#include "g_functional.h"
 
 namespace gluon {
 
@@ -763,12 +764,69 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 //  inline void opcode_bs_add(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 111
 //  }
-//  inline void opcode_apply(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 112
-//  }
-//  inline void opcode_apply_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 113
-//  }
-//  inline void opcode_is_boolean(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 114
-//  }
+
+  inline want_schedule_t opcode_apply(Process *proc,
+                                      vm_runtime_ctx_t &ctx) { // opcode: 112
+    // @spec apply Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
+    Term arity_as_term(ctx.ip[0]);
+    word_t arity = arity_as_term.small_get_unsigned();
+    Term mod = ctx.regs[arity];
+    Term fun = ctx.regs[arity+1];
+
+    Either<word_t*,Term> res = bif::apply(proc, mod, fun, arity_as_term, ctx.regs);
+    // Check error
+    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+    // What to do with apply result, is it code pointer to jump to or a bif result
+    if (res.is_left()) {
+      // Imitate a call
+      ctx.live = arity;
+      ctx.cp = ctx.ip+1;
+      ctx.ip = res.left();
+      return ctx.consume_reduction(proc);
+    }
+    // Or we already know the result, no call is happening
+    ctx.regs[0] = res.right();
+    ctx.ip++;
+    return ctx.consume_reduction(proc);
+  }
+
+  inline want_schedule_t opcode_apply_last(Process *proc,
+                                           vm_runtime_ctx_t &ctx) { // opcode: 113
+    // @spec apply_last _ Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
+    Term arity_as_term(ctx.ip[0]);
+    word_t arity = arity_as_term.small_get_unsigned();
+    Term mod = ctx.regs[arity];
+    Term fun = ctx.regs[arity+1];
+
+    Either<word_t*,Term> res = bif::apply(proc, mod, fun, arity_as_term, ctx.regs);
+    // Check error
+    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+    // What to do with apply result, is it code pointer to jump to or a bif result
+    if (res.is_left()) {
+      // Imitate a call
+      ctx.live = arity;
+      //ctx.cp = ctx.ip+1;
+      ctx.ip = res.left();
+      return ctx.consume_reduction(proc);
+    }
+    // Or we already know the result, no call is happening
+    ctx.regs[0] = res.right();
+    ctx.ip = ctx.cp;
+    ctx.cp = nullptr;
+    return ctx.consume_reduction(proc);
+  }
+
+  inline void opcode_is_boolean(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 114
+    // @spec is_boolean Lbl Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not a Boolean.
+    Term arg1(ctx.ip[1]);
+    DEREF(arg1);
+    if (arg1 != atom::TRUE && arg1 != atom::FALSE) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip++;
+  }
+
   inline void opcode_is_function2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 115
     // @spec is_function2 Lbl Arg1 Arity
     // @doc Test the type of Arg1 and jump to Lbl if it is not a function
