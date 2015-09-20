@@ -23,6 +23,7 @@ Str             VM::g_empty_str;
 Scheduler      *VM::g_scheduler = nullptr;
 code::Server   *VM::g_cs = nullptr;
 Process        *VM::g_root_proc = nullptr;
+atom_proc_map_t VM::g_registered_names;
 
 void VM::init()
 {
@@ -40,6 +41,22 @@ void VM::init()
   // create root process and set it to some entry function
   g_root_proc = new Process(NONVALUE);
   g_cs->load_module(g_root_proc, atom::ERLANG);
+}
+
+VM::RegResult VM::register_name(Term name, Term pid_port)
+{
+  auto iter = g_registered_names.find(name);
+  if (iter != g_registered_names.end()) {
+    return RegResult::EXISTS;
+  }
+
+  Process *p = get_scheduler()->find(pid_port);
+  if (!p) {
+    return RegResult::NOPROC;
+  }
+  g_registered_names[name] = p;
+  p->registered_as(name);
+  return RegResult::OK;
 }
 
 Term VM::to_atom(const Str &s)

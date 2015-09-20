@@ -19,6 +19,9 @@ namespace code {
   class Server;
 } // ns code
 
+// TODO: also ports somewhere here
+using atom_proc_map_t = Map<Term, Process *>;
+
 // Note: singleton, do not instantiate even
 class VM {
 private:
@@ -35,11 +38,20 @@ private:
   static Scheduler      *g_scheduler;
   static code::Server   *g_cs;
 
+  // Registered names
+  static atom_proc_map_t       g_registered_names;
+
 public:
   static Process *g_root_proc;
 
   static void init();
   static code::Server *get_cs() { return g_cs; }
+
+  //
+  // Pid/port registration
+  //
+  enum class RegResult { OK, EXISTS, NOPROC };
+  static RegResult register_name(Term name, Term pid_port);
 
   //
   // Atom table

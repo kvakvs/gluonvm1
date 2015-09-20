@@ -62,9 +62,24 @@ Term bif_is_process_alive_1(Process *proc, Term pid)
   return atom::TRUE;
 }
 
-Term bif_nif_error_1(Process *prc, Term what)
+Term bif_nif_error_1(Process *p, Term what)
 {
-  return prc->bif_error(atom::ERROR, what);
+  return p->bif_error(atom::ERROR, what);
+}
+
+Term bif_register_2(Process *p, Term name, Term pid_port)
+{
+  if (!name.is_atom() || name == atom::UNDEFINED) {
+    return p->bif_badarg(name);
+  }
+  if (!pid_port.is_pid() && !pid_port.is_port()) {
+    return p->bif_badarg(pid_port);
+  }
+  switch (VM::register_name(name, pid_port)) {
+    case VM::RegResult::OK: return atom::OK;
+    case VM::RegResult::EXISTS: // fall through
+    case VM::RegResult::NOPROC: return p->bif_badarg(pid_port);
+  }
 }
 
 } // ns bif

@@ -69,10 +69,13 @@ protected:
   proc::Heap    m_heap;
   Term          m_pid = NONVALUE;
   mfarity_t     m_init_call;
-  bool          m_trap_exit = false;
   // TODO: process dict
   Term          m_group_leader;
   Term          m_priority; // an atom: 'low', 'high' or 'normal'
+
+  struct {
+    bool trap_exit = false;
+  } m_plags;
 
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
@@ -90,11 +93,18 @@ protected:
   }
 
   proc::Mailbox m_mbox;
+  Term          m_registered_name = NONVALUE;
 
 public:
   Process() = delete;
   Process(Term gleader);
 
+  Term get_registered_name() const {
+    return m_registered_name;
+  }
+  void registered_as(Term n) {
+    m_registered_name = n;
+  }
   void finished() {
     m_slice_result = proc::SR_FINISHED;
   }
