@@ -1,6 +1,8 @@
 #include "g_fun.h"
 #include <string.h>
 
+#include "g_heap.h"
+
 namespace gluon {
 namespace fun {
 
@@ -23,6 +25,17 @@ boxed_fun_t *box_fun(fun_entry_t *fe, word_t *mem, Term pid, Term *frozen)
   //::memcpy(bf->frozen, frozen, fe->num_free * sizeof(Term));
 
   return bf;
+}
+
+Term box_fun(proc::Heap *heap, fun_entry_t *fe, Term pid, Term *frozen)
+{
+  word_t *p8 = heap->h_alloc(
+        calculate_word_size(sizeof(boxed_fun_t)) + fe->num_free
+        );
+
+  boxed_fun_t *p = fun::box_fun(fe, p8, pid, frozen);
+
+  return FunObject::make(p);
 }
 
 } // ns fun

@@ -1,5 +1,6 @@
 #include "g_heap.h"
 #include "g_term.h"
+#include "g_fun.h"
 
 namespace gluon {
 namespace proc {
@@ -88,8 +89,14 @@ Term copy_one_term(Heap *dstheap, Term t) {
     }
     return Term::make_tuple_prepared(new_t);
   }
+  if (t.is_boxed()) {
+    if (t.is_boxed_fun()) {
+      boxed_fun_t *bf = t.boxed_get_ptr<boxed_fun_t>();
+      return fun::box_fun(dstheap, bf->fun_entry, bf->pid, bf->frozen);
+    }
+  }
   t.println();
-  G_TODO("notimpl clone");
+  G_TODO("notimpl copy_one_term for some type of term");
 }
 
 } // ns proc

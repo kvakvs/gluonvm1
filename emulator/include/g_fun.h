@@ -79,6 +79,7 @@ namespace fun {
 // @args: fe - lambda entry from beam file, mem - will host boxed_fun_t and extra
 // captured values, pid - oh well, its a pid; frozen - memory where we copy
 // captured values from (pointer to registers basically)
+Term box_fun(proc::Heap *heap, fun_entry_t *fe, Term pid, Term *frozen);
 boxed_fun_t *box_fun(fun_entry_t *fe, word_t *mem, Term pid, Term *frozen);
 
 } // ns fun

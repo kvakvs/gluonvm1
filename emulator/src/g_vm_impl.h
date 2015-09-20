@@ -671,8 +671,17 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   }
 //  inline void opcode_make_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 76
 //  }
-//  inline void opcode_is_function(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 77
-//  }
+  inline void opcode_is_function(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 77
+    // @spec is_function Lbl Arg1
+    // @doc Test the type of Arg1; jump to Lbl if it is not a function or closure.
+    Term arg1(ctx.ip[1]);
+    DEREF(arg1);
+    // Check if its fun at all
+    if (!arg1.is_boxed_fun() && ! arg1.is_boxed_export()) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 2;
+  }
   inline want_schedule_t opcode_call_ext_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 78
     // @spec call_ext_only Arity Label
     // Do a tail recursive call to the function at Label. Do not update CP.
@@ -736,14 +745,15 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term boxed_fe(ctx.ip[0]);
     fun_entry_t *fe = boxed_fe.boxed_get_ptr<fun_entry_t>();
 
-    // TODO: mark boxed memory somehow so GC can recognize its size?
-    word_t *p8 = proc->heap_alloc(
-          calculate_word_size(sizeof(boxed_fun_t)) + fe->num_free
-          );
-    // Assuming that regs have all values ready to be frozen (copied to closure)
-    boxed_fun_t *p = fun::box_fun(fe, p8, proc->get_pid(), ctx.regs);
+//    // TODO: mark boxed memory somehow so GC can recognize its size?
+//    word_t *p8 = proc->heap_alloc(
+//          calculate_word_size(sizeof(boxed_fun_t)) + fe->num_free
+//          );
+//    // Assuming that regs have all values ready to be frozen (copied to closure)
+//    boxed_fun_t *p = fun::box_fun(fe, p8, proc->get_pid(), ctx.regs);
 
-    ctx.regs[0] = FunObject::make(p);
+//    ctx.regs[0] = FunObject::make(p);
+    ctx.regs[0] = fun::box_fun(proc->get_heap(), fe, proc->get_pid(), ctx.regs);
     ctx.ip += 1;
   }
   inline void opcode_try(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 104

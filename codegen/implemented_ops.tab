@@ -69,6 +69,7 @@ is_list
 is_binary
 is_pid
 is_boolean
+is_function
 
 #--- debug ---
 #line - processed on load stage and removed
