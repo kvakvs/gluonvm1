@@ -82,5 +82,17 @@ Term bif_register_2(Process *p, Term name, Term pid_port)
   }
 }
 
+Term bif_process_flag_2(Process *p, Term flag, Term value)
+{
+  if (flag == atom::TRAP_EXIT) {
+    if (!G_IS_BOOLEAN(value)) {
+      return p->bif_badarg(value);
+    }
+    p->set_trap_exit(value == atom::TRUE);
+    return atom::OK;
+  }
+  return p->bif_badarg(flag);
+}
+
 } // ns bif
 } // ns gluonl

@@ -7,6 +7,7 @@
 #include "g_term_helpers.h"
 #include "g_heap.h"
 #include "g_binary.h"
+#include "g_predef_atoms.h"
 
 #include <cstring>
 

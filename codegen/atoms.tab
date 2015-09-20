@@ -38,6 +38,7 @@ system_limit
 
 #--- T
 throw
+trap_exit
 true
 
 #--- U

@@ -42,6 +42,9 @@ make_fun 3
 #--- N
 nif_error 1
 
+#--- P
+process_flag 2
+
 #--- R
 register 2
 

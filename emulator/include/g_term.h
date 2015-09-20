@@ -792,6 +792,8 @@ public:
   }
 };
 
+#define G_IS_BOOLEAN(T) ((T) == atom::TRUE || (T) == atom::FALSE)
+
 const static Term NONVALUE = Term::make_non_value_();
 const static Term NIL = Term::make_nil_();
 

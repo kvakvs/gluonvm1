@@ -75,7 +75,7 @@ protected:
 
   struct {
     bool trap_exit = false;
-  } m_plags;
+  } m_flags;
 
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
@@ -98,6 +98,10 @@ protected:
 public:
   Process() = delete;
   Process(Term gleader);
+
+  void set_trap_exit(bool te) {
+    m_flags.trap_exit = te;
+  }
 
   Term get_registered_name() const {
     return m_registered_name;
