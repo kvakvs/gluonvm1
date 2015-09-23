@@ -742,5 +742,16 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
   return ep->code();
 }
 
+Term bif_apply_2(Process *proc, Term funobject, Term args)
+{
+  return NONVALUE;
+}
+
+Term bif_apply_3(Process *proc, Term m, Term f, Term args)
+{
+  auto res = apply(proc, m, f, args, proc->get_runtime_ctx().regs);
+  return NONVALUE;
+}
+
 } // ns bif
 } // ns gluon

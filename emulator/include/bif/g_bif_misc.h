@@ -22,23 +22,25 @@ Pair<word_t, bool> length(Term list);
 Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
                              Term *regs);
 
-Term bif_make_fun_3(Process *, Term m, Term f, Term arity);
-Term bif_minus_2(Process *, Term a, Term b);
-Term bif_plus_2(Process *, Term a, Term b);
-Term bif_multiply_2(Process *, Term a, Term b);
+Term bif_apply_2(Process *, Term funobject, Term args);
+Term bif_apply_3(Process *, Term m, Term f, Term args);
+Term bif_atom_to_list_1(Process *, Term a);
 Term bif_divide_2(Process *, Term a, Term b);
-Term bif_length_1(Process *, Term a);
 Term bif_equals_2(Process *, Term a, Term b);
 Term bif_equals_exact_2(Process *, Term a, Term b);
-Term bif_less_equal_2(Process *, Term a, Term b);
+Term bif_function_exported_3(Process *prc, Term m, Term f, Term arity);
 Term bif_greater_equal_2(Process *, Term a, Term b);
-Term bif_atom_to_list_1(Process *, Term a);
+Term bif_hd_1(Process *, Term a);
 Term bif_integer_to_list_1(Process *, Term a);
 Term bif_integer_to_list_2(Process *, Term a, Term base);
+Term bif_length_1(Process *, Term a);
+Term bif_less_equal_2(Process *, Term a, Term b);
+Term bif_make_fun_3(Process *, Term m, Term f, Term arity);
+Term bif_minus_2(Process *, Term a, Term b);
+Term bif_multiply_2(Process *, Term a, Term b);
+Term bif_plus_2(Process *, Term a, Term b);
 Term bif_plusplus_2(Process *proc, Term a, Term b);
-Term bif_hd_1(Process *, Term a);
 Term bif_tl_1(Process *, Term a);
-Term bif_function_exported_3(Process *prc, Term m, Term f, Term arity);
 
 } // ns bif
 } // ns gluon

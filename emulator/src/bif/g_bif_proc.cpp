@@ -13,7 +13,7 @@ Term bif_self_0(Process *proc)
   return proc->get_pid();
 }
 
-Term bif_spawn_3(Process *proc, Term m, Term f, Term args)
+static Term spawn_mfargs(Process *proc, Term m, Term f, Term args, bool link)
 {
   if (!m.is_atom()) { return proc->bif_badarg(m); }
   if (!f.is_atom()) { return proc->bif_badarg(f); }
@@ -36,7 +36,22 @@ Term bif_spawn_3(Process *proc, Term m, Term f, Term args)
     return proc->bif_error(atom::ERROR, sp_result.get_error());
   }
 
+  if (link) {
+    // TODO: Establish link in both directions
+    // TODO: on error - destroy result
+  }
+
   return new_proc->get_pid();
+}
+
+Term bif_spawn_3(Process *proc, Term m, Term f, Term args)
+{
+  return spawn_mfargs(proc, m, f, args, false);
+}
+
+Term bif_spawn_link_3(Process *proc, Term m, Term f, Term args)
+{
+  return spawn_mfargs(proc, m, f, args, true);
 }
 
 Term bif_group_leader_0(Process *proc)
@@ -93,6 +108,7 @@ Term bif_process_flag_2(Process *p, Term flag, Term value)
   }
   return p->bif_badarg(flag);
 }
+
 
 } // ns bif
 } // ns gluonl

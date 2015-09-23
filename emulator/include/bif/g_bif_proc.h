@@ -17,6 +17,7 @@ Term bif_process_flag_2(Process *p, Term flag, Term value);
 Term bif_register_2(Process *, Term name, Term pid_port);
 Term bif_self_0(Process *);
 Term bif_spawn_3(Process *, Term m, Term f, Term args);
+Term bif_spawn_link_3(Process *, Term m, Term f, Term args);
 
 } // ns bif
 } // ns gluon

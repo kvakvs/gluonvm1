@@ -16,6 +16,8 @@
 / 2 divide
 
 #--- A
+apply 2
+apply 3
 atom_to_list 1
 
 #--- G
@@ -51,6 +53,8 @@ register 2
 #--- S
 self 0
 spawn 3
+spawn_link 3
+# spawn_link 1 2 4
 
 #--- T
 tl 1
