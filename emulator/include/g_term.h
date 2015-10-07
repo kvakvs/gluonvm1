@@ -847,4 +847,11 @@ typedef Term (*bif3_fn)(Process *, Term, Term, Term);
 void term_test(int argc, const char *argv[]);
 #endif // TEST
 
+constexpr Term operator "" _usmall(unsigned long long int x) {
+    return Term::make_small_u(x);
+}
+constexpr Term operator "" _small(unsigned long long int x) {
+    return Term::make_small((signed long long int)x);
+}
+
 } // ns gluon

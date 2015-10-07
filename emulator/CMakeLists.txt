@@ -83,6 +83,8 @@ set(SRC_LIST
 
     # Zlib replacement
     src/miniz/miniz.c
+
+    include/gsl/gsl.h include/gsl/array_view.h include/gsl/fail_fast.h
     )
 
 if(G_TEST)
