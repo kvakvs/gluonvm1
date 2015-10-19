@@ -8,8 +8,8 @@
 
 namespace gluon {
 
-using str_atom_map_t = Map<Str, Term>;
-using atom_str_map_t = Map<Term, Str>;
+using str_atom_map_t = Dict<Str, Term>;
+using atom_str_map_t = Dict<Term, Str>;
 
 namespace vm {
   class Heap;
@@ -20,7 +20,7 @@ namespace code {
 } // ns code
 
 // TODO: also ports somewhere here
-using atom_proc_map_t = Map<Term, Process *>;
+using atom_proc_map_t = Dict<Term, Process *>;
 
 // Note: singleton, do not instantiate even
 class VM {
@@ -60,7 +60,9 @@ public:
   // Creates atom or returns existing
   static Term to_atom(const Str &s);
   // Returns existing or nil
-  static Term to_existing_atom(const Str &s);
+  static Term to_existing_atom(const Str &s) {
+    return g_atoms.find_ref(s, NIL);
+  }
   static const Str &find_atom(Term a);
 
   //

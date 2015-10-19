@@ -53,9 +53,9 @@ public:
 //
 class Module {
 public:
-  typedef Map<word_t, word_t *>         labels_t;
+  typedef Dict<word_t, word_t *>         labels_t;
   //typedef Map<fun_arity_t, fun_entry_t> funs_t;
-  typedef Map<fun_arity_t, export_t>    exports_t;
+  typedef Dict<fun_arity_t, export_t>    exports_t;
   typedef Vector<mfarity_t>             imports_t;
   typedef Vector<fun_entry_t>           lambdas_t;
 
@@ -65,15 +65,15 @@ public:
 #endif
 
 private:
-  Term      m_name;
-  labels_t  m_labels;
-  exports_t m_exports; // just list of {f/arity}
-  imports_t m_imports;
-  lambdas_t m_lambdas;
+  Term      name_;
+  labels_t  labels_;
+  exports_t exports_; // just list of {f/arity}
+  imports_t imports_;
+  lambdas_t lambdas_;
 
 #if FEATURE_CODE_RANGES
   // Map code range to fun/arity pair
-  code::Index<fun_arity_t> m_fun_index;
+  code::Index<fun_arity_t> fun_index_;
 #endif
 #if FEATURE_LINE_NUMBERS
   line_refs_t   m_line_refs;
@@ -86,26 +86,28 @@ public:
 
 public:
   Module(Term name, imports_t &imp)
-    : m_name(name)
+    : name_(name)
   {
-    m_imports = std::move(imp);
+    imports_ = std::move(imp);
   }
 
   Module(Module &&src) {
-    m_name = std::move(src.m_name);
+    name_ = std::move(src.name_);
     m_code = std::move(src.m_code);
   }
 
   Term get_name() const {
-    G_ASSERT(m_name.is_atom());
-    return m_name;
+    G_ASSERT(name_.is_atom());
+    return name_;
   }
 
   inline word_t read_word(word_t ptr) const {
     G_ASSERT(ptr < m_code.size());
     return m_code[ptr];
   }
-  export_t *find_export(const fun_arity_t &fa);
+  export_t *find_export(const fun_arity_t &fa) {
+    return exports_.find(fa);
+  }
 
   // Resolves function in current module to a code pointer
   // TODO: duplicates find_export, replace with fun table search or remove?
@@ -118,16 +120,16 @@ public:
     m_code = std::move(code); // take ownership
   }
   inline void set_labels(labels_t &labels) {
-    m_labels = labels;
+    labels_ = labels;
   }
   void set_exports(exports_t &e);
   void set_lambdas(lambdas_t &la) {
-    m_lambdas = std::move(la);
+    lambdas_ = std::move(la);
   }
 #if FEATURE_CODE_RANGES
   code::Range get_code_range();
   void set_fun_ranges(code::Index<fun_arity_t> &ci) {
-    m_fun_index = std::move(ci);
+    fun_index_ = std::move(ci);
   }
   fun_arity_t find_fun_arity(word_t *ptr) const;
 #endif
@@ -140,12 +142,12 @@ public:
 #endif
 
   mfarity_t *get_import_entry(word_t i) {
-    G_ASSERT(i < m_imports.size());
-    return &(m_imports[i]);
+    G_ASSERT(i < imports_.size());
+    return &(imports_[i]);
   }
   fun_entry_t *get_lambda_entry(word_t i) {
-    G_ASSERT(i < m_lambdas.size());
-    return &(m_lambdas[i]);
+    G_ASSERT(i < lambdas_.size());
+    return &(lambdas_[i]);
   }
 
 protected:

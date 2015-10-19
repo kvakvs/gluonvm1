@@ -44,9 +44,6 @@ namespace gluon {
     return (8*sizeof(void*));
   }
 
-  // An STL-compatible dictionary, keys should have compare operator <
-  template <typename K, typename V>
-  using Map = std::map<K, V>;
 
   // An STL-compatible resizable array (actually can transition to fixed arrays)
   template <typename V>
@@ -72,11 +69,6 @@ namespace gluon {
 
   template <typename A>
   using Set = std::set<A>;
-
-
-//  // Stack with single end and index operations
-//  template <typename A>
-//  using Stack = std::stack<A>;
 
   // Hardware abstractions
   namespace hw {

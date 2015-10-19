@@ -22,7 +22,7 @@ class Module;
 
 namespace code {
 
-using mod_map_t = Map<Term, Module *>;
+using mod_map_t = Dict<Term, Module *>;
 
 typedef enum {
   FIND_EXISTING,
@@ -31,12 +31,12 @@ typedef enum {
 
 class Server {
 private:
-  mod_map_t   m_modules;
-  List<Str>   m_search_path;
+  mod_map_t   modules_;
+  List<Str>   search_path_;
 
 #if FEATURE_CODE_RANGES
   // Map code range to Module*
-  code::Index<Module *> m_mod_index;
+  code::Index<Module *> mod_index_;
 #endif
 
 public:

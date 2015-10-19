@@ -1,6 +1,8 @@
 #pragma once
 
 #include "g_defs.h"
+#include "struct/g_dict.h"
+
 #include <algorithm>
 
 namespace gluon {
@@ -39,7 +41,7 @@ public:
 template <typename T>
 class Index {
 public:
-  Map<Range, T> m_ranges;
+  Dict<Range, T> m_ranges;
 
 public:
   Index() {}
@@ -55,8 +57,11 @@ public:
     // I cannot into range search, something with lower_bound/upper_bound which
     // compares ranges using operator < and that is too hard
     // TODO: fix this
-    for (auto &i: m_ranges) {
-      if (i.first.contains(x)) { return i.second; }
+    auto all_mapping = m_ranges.all();
+    while (all_mapping.have()) {
+      if (all_mapping.key().contains(x)) {
+        return all_mapping.value();
+      }
     }
     return T();
 //    auto find = std::make_pair(Range(x, nullptr), T());

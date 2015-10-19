@@ -23,13 +23,13 @@ MaybeError Server::load_module(Process *proc,
   // TODO: module versions for hot code loading
   // TODO: free if module already existed, check module usage by processes
   Module *m = lm_result.get_result();
-  m_modules[m->get_name()] = m;
+  modules_[m->get_name()] = m;
 
   // assume that mod already registered own functions in own fun index
   // code to fun/arity mapping should be updated on loading stage
 #if FEATURE_CODE_RANGES
   auto range = m->get_code_range();
-  m_mod_index.add(range, m);
+  mod_index_.add(range, m);
 #endif
 
   return success();
@@ -41,7 +41,7 @@ MaybeError Server::load_module(Process *proc, Term name)
   Str mod_filename(name.atom_str());
   mod_filename += ".beam";
 
-  for (const Str &dir: m_search_path) {
+  for (const Str &dir: search_path_) {
     Str path(dir);
     path += "/";
     path += mod_filename;
@@ -67,27 +67,27 @@ MaybeError Server::load_module(Process *proc, Term name)
 
 Result<Module *> Server::find_module(Process *proc, Term m, find_opt_t load)
 {
-  auto iter = m_modules.find(m);
-  if (iter == m_modules.end()) {
+  auto result = modules_.find_ref(m, nullptr);
+  if (!result) {
     if (load == code::FIND_EXISTING) {
       return error<Module *>("function not found");
     } else {
       auto res = load_module(proc, m);
       G_RETURN_REWRAP_IF_ERROR(res, Module *);
-      return success(m_modules[m]);
+      return success(modules_[m]);
     }
   }
-  return success(iter->second);
+  return success(result);
 }
 
 void Server::path_append(const Str &p)
 {
-  m_search_path.push_back(p);
+  search_path_.push_back(p);
 }
 
 void Server::path_prepend(const Str &p)
 {
-  m_search_path.push_front(p);
+  search_path_.push_front(p);
 }
 
 bool Server::print_mfa(word_t *ptr) const {
@@ -103,7 +103,7 @@ bool Server::print_mfa(word_t *ptr) const {
 
 mfarity_t Server::find_mfa_from_code(word_t *ptr) const
 {
-  Module *m = m_mod_index.find(ptr);
+  Module *m = mod_index_.find(ptr);
   if (!m) {
     return mfarity_t();
   }
@@ -113,15 +113,14 @@ mfarity_t Server::find_mfa_from_code(word_t *ptr) const
 
 export_t *Server::find_mfa(const mfarity_t &mfa, Module **out_mod) const
 {
-  auto iter = m_modules.find(mfa.mod);
-  if (iter == m_modules.end()) {
+  auto result = modules_.find_ref(mfa.mod, nullptr);
+  if (!result) {
     return nullptr;
   }
-  Module *m = iter->second;
   if (out_mod) {
-    *out_mod = m;
+    *out_mod = result;
   }
-  return m->find_export(mfa.as_funarity());
+  return result->find_export(mfa.as_funarity());
 }
 
 } // ns code

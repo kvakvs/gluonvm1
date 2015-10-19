@@ -45,8 +45,7 @@ void VM::init()
 
 VM::RegResult VM::register_name(Term name, Term pid_port)
 {
-  auto iter = g_registered_names.find(name);
-  if (iter != g_registered_names.end()) {
+  if (!g_registered_names.contains(name)) {
     return RegResult::EXISTS;
   }
 
@@ -63,14 +62,6 @@ Term VM::to_atom(const Str &s)
 {
   Term a = to_existing_atom(s);
   return a.is_nil() ? new_atom(s) : a;
-}
-
-Term VM::to_existing_atom(const Str &s) {
-  auto iter = g_atoms.find(s);
-  if (iter != g_atoms.end()) {
-    return iter->second;
-  }
-  return NIL;
 }
 
 Term VM::new_atom(const Str &s) {
@@ -103,11 +94,7 @@ void VM::init_predef_atoms()
 const Str &VM::find_atom(Term a)
 {
   G_ASSERT(a.is_atom());
-  auto iter = g_atoms_reverse.find(a);
-  if (iter != g_atoms_reverse.end()) {
-    return iter->second;
-  }
-  return g_empty_str;
+  return g_atoms_reverse.find_ref(a, g_empty_str);
 }
 
 Node *VM::dist_this_node() {

@@ -40,7 +40,7 @@ public:
 
   Vector<Term>    m_literals;
   Module::labels_t  m_labels;
-  Map<fun_arity_t, label_index_t> m_exports;  // list of {f/arity} sequentially
+  Dict<fun_arity_t, label_index_t> m_exports;  // list of {f/arity} sequentially
   Module::imports_t m_imports;
   Module::lambdas_t m_lambdas;
   // postponed select list with label numbers. Resolve to code pointers after
@@ -656,10 +656,11 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
   // Move exports from m_exports to this table, resolving labels to code offsets
   Module::exports_t exports;
 //  Std::fmt("exports processing: " FMT_UWORD " items\n", m_exports.size());
-  for (auto iter: m_exports) {
-    exports[iter.first] = export_t(m_labels[iter.second.value],
-                                   mfarity_t(m_mod_name, iter.first));
-  }
+  auto exps = m_exports.all();
+  for_each(exps, [this, &exports](const fun_arity_t &fa, label_index_t lindex) {
+                    exports[fa] = export_t(m_labels[lindex.value],
+                                           mfarity_t(m_mod_name, fa));
+                  });
   m->set_exports(exports);
 
   for (auto &la: m_lambdas) {

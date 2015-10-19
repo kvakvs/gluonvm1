@@ -3,6 +3,7 @@
 #include "g_defs.h"
 #include "g_error.h"
 #include "g_term.h"
+#include "struct/g_dict.h"
 
 #include <algorithm>
 
@@ -24,7 +25,7 @@ private:
   word_t           pid_counter_ = 0;
   Process         *current_     = nullptr;
 
-  Map<Term, Process *>  pid_to_proc_;
+  Dict<Term, Process *>  pid_to_proc_;
 
   //
   // Scheduling algorithm
