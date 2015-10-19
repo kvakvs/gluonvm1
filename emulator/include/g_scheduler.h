@@ -15,22 +15,25 @@ class Scheduler {
 private:
   using queue_t = List<Process *>;
   using wait_room_t = Set<Process *>;
-  queue_t m_low_q;     // lowest priority (background)
-  queue_t m_normal_q;  // normal priority (8x low)
-  queue_t m_high_q;    // highest (realtime) priority
-  wait_room_t m_inf_wait;    // on infinite receive
-  wait_room_t m_timed_wait;  // on timed receive
+  queue_t low_queue_;     // lowest priority (background)
+  queue_t normal_queue_;  // normal priority (8x low)
+  queue_t high_queue_;    // highest (realtime) priority
+  wait_room_t inf_wait_;    // on infinite receive
+  wait_room_t timed_wait_;  // on timed receive
 
-  word_t           m_pid_counter = 0;
-  Process         *m_current     = nullptr;
+  word_t           pid_counter_ = 0;
+  Process         *current_     = nullptr;
 
-  Map<Term, Process *>  m_pid_to_proc;
+  Map<Term, Process *>  pid_to_proc_;
 
   //
   // Scheduling algorithm
   //
-  const word_t NORMAL_ADVANTAGE = 8;  // how often low prio gets to run
-  word_t m_normal_count;
+
+  // how often low prio gets to run despite all the business
+  static constexpr word_t NORMAL_ADVANTAGE = 8;
+
+  word_t normal_count_;
 
 public:
   // Register process in one of queues according to its priority. New pid is set

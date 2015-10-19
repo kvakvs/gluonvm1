@@ -270,8 +270,8 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     // @doc  Suspend the processes and set the entry point to the beginning of the
     //       receive loop at Label.
 
-    // Schedule out for infinity with reason WAIT
-    p->set_slice_result(proc::SR_WAIT);
+    // Schedule out
+    p->set_slice_result(proc::SliceResult::WAIT);
     ctx.jump(p, Term(ctx.ip[0]));
     ctx.swap_out_light(p);
     // we always yield after wait

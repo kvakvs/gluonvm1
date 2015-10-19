@@ -30,26 +30,26 @@ typedef struct {
 
 
 namespace proc {
-  typedef enum {
-    SR_NONE,
-    SR_YIELD,       // process willingly gave up run queue
-    SR_WAIT,        // process entered infinite or timed wait
-    SR_FINISHED,    // process normally finished
-    SR_EXCEPTION,   // error, exit or throw
-  } slice_result_t;
+  enum SliceResult {
+    NONE,
+    YIELD,       // process willingly gave up run queue
+    WAIT,        // process entered infinite or timed wait
+    FINISHED,    // process normally finished
+    EXCEPTION,   // error, exit or throw
+  };
 
   // Scheduler sets mark which is the current queue for this process
-  typedef enum {
-    Q_NONE,
-    Q_PENDING_TIMERS,
-    Q_HIGH,
-    Q_NORMAL,
-    Q_LOW,
-    Q_TIMED_WAIT,
-    Q_INF_WAIT,
-  } sched_queue_t;
+  enum class Queue {
+    NONE,
+    PENDING_TIMERS,
+    HIGH,
+    NORMAL,
+    LOW,
+    TIMED_WAIT,
+    INF_WAIT,
+  };
 
-  const word_t WAIT_INFINITE = ~0UL;
+  constexpr word_t WAIT_INFINITE = ~0UL;
 } // ns proc
 
 //------------------------------------------------------------------------------
@@ -80,12 +80,12 @@ protected:
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
   // TODO: make this union to save space
-  proc::slice_result_t m_slice_result = proc::SR_NONE;
+  proc::SliceResult m_slice_result = proc::SliceResult::NONE;
   Term m_slice_result_reason = NONVALUE;
   word_t m_slice_result_wait = proc::WAIT_INFINITE;
 
   // Which queue we belong to
-  proc::sched_queue_t  m_current_queue = proc::Q_NONE;
+  proc::Queue m_current_queue = proc::Queue::NONE;
 
   friend class Scheduler;
   void set_pid(Term pid) {
@@ -110,12 +110,12 @@ public:
     m_registered_name = n;
   }
   void finished() {
-    m_slice_result = proc::SR_FINISHED;
+    m_slice_result = proc::SliceResult::FINISHED;
   }
-  inline proc::slice_result_t get_slice_result() const {
+  inline proc::SliceResult get_slice_result() const {
     return m_slice_result;
   }
-  inline void set_slice_result(proc::slice_result_t sr) { m_slice_result = sr; }
+  inline void set_slice_result(proc::SliceResult sr) { m_slice_result = sr; }
 
   Term get_pid() const {
     return m_pid;

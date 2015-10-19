@@ -10,8 +10,7 @@ namespace proc { class Heap; }
 
 namespace etf {
 
-
-  const u8_t ETF_MARKER = 131;
+  constexpr u8_t ETF_MARKER = 131;
   enum {
     DIST_HEADER           = 68,  // contains atom cache
     // 69
