@@ -183,9 +183,10 @@ Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
   while (1) {
     if (r.get_remaining_count() < 5) break;
     Str chunk = r.read_string(4);
-    if ((chunk[0] < 'A' || chunk[0] > 'Z')    // always uppercase
-        || (chunk[1] < 'A' || chunk[1] > 'z') // can be upper or lowercase
-        || (chunk[2] < 'a' || chunk[2] > 'z')) { // lowercase
+    if (!is_uppcase_latin(chunk[0])
+        || !is_latin(chunk[1])
+        || !is_lowcase_latin(chunk[2]))
+    {
       G_LOG("beam offset " FMT_0xHEX "\n", r.get_ptr() - bytes);
       return error<Module *>("bad beam format");
     }

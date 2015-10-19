@@ -38,10 +38,14 @@ MaybeError Server::load_module(Process *proc,
 MaybeError Server::load_module(Process *proc, Term name)
 {
   // Scan for locations where module file can be found
-  Str mod_filename = name.atom_str() + ".beam";
+  Str mod_filename(name.atom_str());
+  mod_filename += ".beam";
 
   for (const Str &dir: m_search_path) {
-    Str path = dir + "/" + mod_filename;
+    Str path(dir);
+    path += "/";
+    path += mod_filename;
+
     if (fs::exists(path)) {
       fs::File f;
       auto open_result = f.open(path);

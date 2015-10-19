@@ -1,5 +1,6 @@
 #include "g_sys_fs.h"
 #include "g_error.h"
+#include "struct/g_str.h"
 
 #include <stdio.h>
 #include <sys/stat.h>

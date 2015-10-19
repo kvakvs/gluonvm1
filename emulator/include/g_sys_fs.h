@@ -2,6 +2,7 @@
 
 #include "g_defs.h"
 #include "g_error.h"
+#include "struct/g_str.h"
 
 namespace gluon {
 

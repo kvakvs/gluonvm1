@@ -44,17 +44,9 @@ namespace gluon {
     return (8*sizeof(void*));
   }
 
-  // An STL-compatible string of char and unsigned char
-  using Str = std::basic_string<char>;
-  //using UStr = std::basic_string<u8_t>;
-
   // An STL-compatible dictionary, keys should have compare operator <
   template <typename K, typename V>
   using Map = std::map<K, V>;
-
-  // An STL-compatible double linked list
-//  template <typename V>
-//  using List = std::list<V>;
 
   // An STL-compatible resizable array (actually can transition to fixed arrays)
   template <typename V>
