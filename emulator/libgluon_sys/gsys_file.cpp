@@ -1,5 +1,5 @@
-#include "g_sys_fs.h"
-#include "g_error.h"
+#include "gsys_file.h"
+//#include "g_error.h"
 #include "struct/g_str.h"
 
 #include <stdio.h>
@@ -22,13 +22,13 @@ File::File(void *f): m_handle(f) {
 File::File(): m_handle(nullptr) {
 }
 
-MaybeError fs::File::open(const Str &name) {
+void fs::File::open(const Str &name) {
   auto handle = ::fopen(name.c_str(), "rb");
   if (!handle) {
-    return MaybeError("file open error");
+    throw err::open_file_error();
   }
   m_handle = to_internal(handle);
-  return success();
+  return;
 }
 
 File::~File() {
@@ -49,9 +49,9 @@ void File::seek(word_t offset) {
   ::fseek(to_file(m_handle), offset, SEEK_SET);
 }
 
-Result<word_t> File::read(u8_t *dst, word_t bytes) {
+word_t File::read(u8_t *dst, word_t bytes) {
   auto result = ::fread(dst, 1, bytes, to_file(m_handle));
-  return success(result);
+  return result;
 }
 
 } // ns fs

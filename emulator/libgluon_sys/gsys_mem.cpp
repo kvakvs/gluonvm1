@@ -1,15 +1,15 @@
-#include "g_sys_mem.h"
-#include "g_error.h"
+#include "gsys_mem.h"
+//#include "g_error.h"
 
 namespace gluon {
 namespace mem {
 
-  Result<u8_t *> alloc_bytes(word_t bytes) {
-    return success(new u8_t[bytes]);
+  Blk CppStdlibMemory::allocate(size_t bytes) {
+    return Blk(new unsigned char[bytes], bytes);
   }
 
-  void free_bytes(u8_t *p) {
-    delete p;
+  void CppStdlibMemory::deallocate(Blk &p) {
+    delete (unsigned char *)p.mem();
   }
 
 } // ns mem

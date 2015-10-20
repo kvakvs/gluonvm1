@@ -1,7 +1,7 @@
 #include "g_vm.h"
 #include "g_code_server.h"
-#include "g_sys_fs.h"
-#include "g_sys_mem.h"
+#include "gsys_file.h"
+#include "gsys_mem.h"
 #include "g_dist.h"
 #include "g_heap.h"
 #include "g_predef_atoms.h"
@@ -163,7 +163,8 @@ Term VM::apply_bif(Process *proc, word_t arity, void *fn, Term *args)
 
 Scheduler *VM::get_scheduler() {
   if (g_scheduler == nullptr) {
-    g_scheduler = vm::Heap::alloc_object<Scheduler>(get_heap(HEAP_VM_INTERNAL));
+    auto heap = VM::get_heap(HEAP_VM_INTERNAL);
+    g_scheduler = heap->alloc_object<Scheduler>();
   }
   return g_scheduler;
 }

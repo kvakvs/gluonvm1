@@ -214,8 +214,8 @@ Term Term::make_binary(proc::Heap *h, word_t bytes)
   } else {
     // Large bin, with boxed refcount and pointer
     vm::Heap *binheap = VM::get_heap(VM::HEAP_LARGE_BINARY);
-    layout::HeapbinBox *box = vm::Heap::alloc<layout::HeapbinBox>(
-                              binheap, layout::HEAP_BIN::box_size(bytes));
+    layout::HeapbinBox *box = binheap->allocate<layout::HeapbinBox>(
+                                            layout::HEAP_BIN::box_size(bytes));
     box->set_byte_size(bytes);
     box->set_refcount(1);
     return Term(term_tag::BoxedHeapBin::create_from_ptr(box));

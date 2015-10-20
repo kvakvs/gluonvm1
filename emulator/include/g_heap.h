@@ -2,8 +2,9 @@
 
 #include "g_defs.h"
 #include "g_error.h"
+#include "gsys_mem.h"
 
-#include <memory>
+//#include <memory>
 //#include <vector>
 
 namespace gluon {
@@ -18,39 +19,42 @@ static constexpr word_t calculate_word_size(word_t bytes) {
   return ((bytes + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
 }
 
+namespace mem {
+
+  //
+  // Takes memory blocks directly from system_memory (whatever that is) without
+  // any additional tricks, segmenting, grouping by size, free-lists and so on
+  //
+  class SystemMemoryAllocator {
+  public:
+    template <typename T>
+    T *allocate() { return (T*)system_memory::allocate(sizeof(T)); }
+
+    template <typename T>
+    T *allocate(size_t n) {
+      mem::Blk blk = system_memory::allocate(n * sizeof(T));
+      return (T*)blk.mem();
+    }
+
+    template <typename T, typename... Args>
+    inline T *alloc_object(Args&&... args) { // NOTE: calls ctor
+      word_t *bytes = allocate<word_t>(calculate_storage_size<T>());
+      return new(bytes)T(std::forward<Args>(args)...);
+    }
+
+    template <typename T>
+    void deallocate(T *mem) {
+      mem::Blk mem1(mem, 0);
+      system_memory::deallocate(mem1);
+    }
+  };
+
+} // ns mem
+
 namespace vm {
 
 // VM heap is abstract interface which gets memory from underlying system.
-// Simplification: using standard new and delete
-class Heap {
-public:
-  Heap() = delete;
-
-  static u8_t *alloc_bytes(Heap *, word_t bytes) {
-    return new u8_t[bytes];
-  }
-
-  template <typename T>
-  static inline T *alloc(Heap *h, word_t count) {
-    // NOTE: does not call constructors
-    return reinterpret_cast<T *>(alloc_bytes(h, count * sizeof(T)));
-  }
-
-  template <typename T, typename... Args>
-  static inline T *alloc_object(Heap *h, Args&&... args) { // NOTE: calls ctor
-    u8_t *bytes = alloc_bytes(h, sizeof(T));
-    return new(bytes)T(std::forward<Args>(args)...);
-  }
-
-  static void free_bytes(Heap *, u8_t *p) {
-    delete p;
-    return;
-  }
-
-  template <typename T>
-  static void free(Heap *h, T *p) { // NOTE: does not call dtor
-    return free_bytes(h, reinterpret_cast<u8_t *>(p));
-  }
+class Heap: public mem::SystemMemoryAllocator {
 };
 
 } // ns vm
@@ -184,25 +188,7 @@ public:
 }; // class SegmentedHeap
 */
 
-class MallocAllocator {
-public:
-  template <typename T>
-  T *allocate() { return new T; }
-
-  template <typename T>
-  T *allocate(size_t n) { return new T[n]; }
-
-  template <typename T, typename... Args>
-  inline T *alloc_object(Args&&... args) { // NOTE: calls ctor
-    word_t *bytes = allocate<word_t>(calculate_storage_size<T>());
-    return new(bytes)T(std::forward<Args>(args)...);
-  }
-
-  template <typename T>
-  void deallocate(T *mem) { delete mem; }
-};
-
-class Heap: public MallocAllocator {
+class Heap: public mem::SystemMemoryAllocator {
 public:
   Stack m_stack;
 };

@@ -13,6 +13,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/src/
     ${CMAKE_SOURCE_DIR}/test/
+    ${CMAKE_SOURCE_DIR}/libgluon_sys/
     )
 
 # Enables lot of Std::fmt debugging features as well as assertions everywhere in
@@ -50,9 +51,6 @@ set(SRC_LIST
     include/g_error.h
     include/g_functional.h
     include/g_reader.h
-    include/g_sys_fs.h
-    include/g_sys_mem.h
-    include/g_sys_stdlib.h
 
     include/struct/g_array.h
     include/struct/g_dict.h

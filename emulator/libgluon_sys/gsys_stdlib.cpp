@@ -1,5 +1,5 @@
-#include "g_sys_stdlib.h"
-#include "g_error.h"
+#include "gsys_stdlib.h"
+//#include "g_error.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,7 +11,7 @@ namespace Std {
     ::abort();
   }
 
-  void sleep(word_t micro_sec) {
+  void sleep(size_t micro_sec) {
     ::usleep(micro_sec);
   }
 

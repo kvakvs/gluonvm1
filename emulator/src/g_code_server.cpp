@@ -1,6 +1,6 @@
 #include "g_code_server.h"
 #include "g_module.h"
-#include "g_sys_fs.h"
+#include "gsys_file.h"
 #include "g_heap.h"
 #include "g_vm.h"
 #include "g_process.h"
@@ -48,17 +48,17 @@ MaybeError Server::load_module(Process *proc, Term name)
 
     if (fs::exists(path)) {
       fs::File f;
-      auto open_result = f.open(path);
-      G_RETURN_IF_ERROR_UNLIKELY(open_result);
+      f.open(path);
+
       word_t  size = f.size();
       vm::Heap *heap = VM::get_heap(VM::HEAP_CODE);
-      u8_t    *tmp_buffer = vm::Heap::alloc_bytes(heap, size);
+      u8_t *tmp_buffer = heap->allocate<u8_t>(size);
       f.seek(0);
       f.read(tmp_buffer, size);
 
       Std::fmt("Loading BEAM %s\n", path.c_str());
       auto    result = load_module(proc, name, tmp_buffer, size);
-      vm::Heap::free_bytes(heap, tmp_buffer);
+      heap->deallocate(tmp_buffer);
       return result;
     }
   }
