@@ -40,7 +40,7 @@ add_definitions(#-m32
     -Wno-gnu-label-as-value -Wno-unused-label
     )
 #-fno-exceptions -fno-rtti
-set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++14 ${CMAKE_CXX_FLAGS}")
 set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS}
     -std=c99
     )

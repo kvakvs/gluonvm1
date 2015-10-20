@@ -657,7 +657,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
   Module::exports_t exports;
 //  Std::fmt("exports processing: " FMT_UWORD " items\n", m_exports.size());
   auto exps = m_exports.all();
-  for_each(exps, [this, &exports](const fun_arity_t &fa, label_index_t lindex) {
+  for_each_keyvalue(exps, [this, &exports](const fun_arity_t &fa, label_index_t lindex) {
                     exports[fa] = export_t(m_labels[lindex.value],
                                            mfarity_t(m_mod_name, fa));
                   });

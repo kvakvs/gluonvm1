@@ -40,15 +40,15 @@ public:
 
 template <typename T>
 class Index {
-public:
-  Dict<Range, T> m_ranges;
+private:
+  Dict<Range, T> ranges_;
 
 public:
   Index() {}
 
   // Register new loaded code as range [start,end)
   void add(const Range &r, T value) {
-    m_ranges[r] = value;
+    ranges_[r] = value;
   }
 
   // Find code location in tree of ranges
@@ -57,7 +57,7 @@ public:
     // I cannot into range search, something with lower_bound/upper_bound which
     // compares ranges using operator < and that is too hard
     // TODO: fix this
-    auto all_mapping = m_ranges.all();
+    auto all_mapping = ranges_.all();
     while (all_mapping.have()) {
       if (all_mapping.key().contains(x)) {
         return all_mapping.value();

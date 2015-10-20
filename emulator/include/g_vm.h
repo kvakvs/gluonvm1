@@ -28,6 +28,7 @@ private:
   VM() = delete;
 
   // TODO: Optimize atom tab for insert-only, like OTP does
+  // TODO: global is bad for many reasons
   static str_atom_map_t g_atoms;
   static atom_str_map_t g_atoms_reverse;
   static word_t         g_atom_counter;

@@ -19,7 +19,7 @@ void Module::set_exports(Module::exports_t &e) {
 
   // Replace known BIFs in exports with their BIF pointer and flag them as such
   auto exps = exports_.all();
-  for_each(exps, [this](const fun_arity_t &fa, const export_t &exp) {
+  for_each_keyvalue(exps, [this](const fun_arity_t &fa, const export_t &exp) {
                     void *bif_ptr = VM::find_bif(mfarity_t(name_, fa));
                     if (bif_ptr) {
                       exports_[fa] = export_t(bif_ptr);
@@ -34,7 +34,7 @@ fun_arity_t Module::find_fun_arity(word_t *ptr) const
 
 #if FEATURE_CODE_RANGES
 code::Range Module::get_code_range() {
-  return code::Range(m_code.data(), (&m_code.back())+1);
+  return code::Range(code_.data(), (&code_.back())+1);
 }
 #endif
 

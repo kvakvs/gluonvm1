@@ -6,6 +6,7 @@
 #include "g_reader.h"
 #include "g_fun.h"
 #include "g_code_index.h"
+#include "struct/g_array.h"
 
 namespace gluon {
 
@@ -80,9 +81,8 @@ private:
   file_names_t  m_file_names;
 #endif
 
-public:
   // Instruction layout in code: { void *label; Term args[arity] }
-  Vector<word_t> m_code;
+  Vector<word_t> code_;
 
 public:
   Module(Term name, imports_t &imp)
@@ -93,7 +93,7 @@ public:
 
   Module(Module &&src) {
     name_ = std::move(src.name_);
-    m_code = std::move(src.m_code);
+    code_ = std::move(src.code_);
   }
 
   Term get_name() const {
@@ -102,11 +102,11 @@ public:
   }
 
   inline word_t read_word(word_t ptr) const {
-    G_ASSERT(ptr < m_code.size());
-    return m_code[ptr];
+    G_ASSERT(ptr < code_.size());
+    return code_[ptr];
   }
   export_t *find_export(const fun_arity_t &fa) {
-    return exports_.find(fa);
+    return exports_.find_ptr(fa);
   }
 
   // Resolves function in current module to a code pointer
@@ -117,10 +117,10 @@ public:
   Result<word_t *> resolve_label(label_index_t label);
 
   inline void set_code(Vector<word_t> &code) {
-    m_code = std::move(code); // take ownership
+    code_ = std::move(code); // take ownership
   }
   inline void set_labels(labels_t &labels) {
-    labels_ = labels;
+    labels_ = std::move(labels);
   }
   void set_exports(exports_t &e);
   void set_lambdas(lambdas_t &la) {

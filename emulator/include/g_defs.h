@@ -44,11 +44,6 @@ namespace gluon {
     return (8*sizeof(void*));
   }
 
-
-  // An STL-compatible resizable array (actually can transition to fixed arrays)
-  template <typename V>
-  using Vector = std::vector<V>;
-
   // Self-deleting RAII-style pointer holder
   template <typename V>
   using UniquePtr = std::unique_ptr<V>;
