@@ -6,12 +6,6 @@
 
 namespace gluon {
 
-namespace err {
-
-  class open_file_error: public std::exception {};
-
-} // ns err
-
 // Filesystem
 namespace fs {
 

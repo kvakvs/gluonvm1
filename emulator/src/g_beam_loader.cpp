@@ -1,6 +1,6 @@
 #include "g_code_server.h"
 #include "g_vm.h"
-#include "gsys_mem.h"
+#include "platf/gsys_mem.h"
 #include "g_reader.h"
 #include "g_ext_term.h"
 #include "g_heap.h"

@@ -1,6 +1,6 @@
 #include "g_code_server.h"
 #include "g_module.h"
-#include "gsys_file.h"
+#include "platf/gsys_file.h"
 #include "g_heap.h"
 #include "g_vm.h"
 #include "g_process.h"

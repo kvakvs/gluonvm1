@@ -8,6 +8,13 @@
 namespace gluon {
 namespace fs {
 
+namespace err {
+  class open_file_error: public std::runtime_error   {
+  public:
+    open_file_error(): std::runtime_error("open file") {}
+  };
+} // ns err
+
 bool exists(const Str &name) {
   struct stat buffer;
   return (::stat (name.c_str(), &buffer) == 0);
@@ -39,14 +46,14 @@ File::~File() {
 
 word_t File::size() {
   auto f = to_file(m_handle);
-  auto old_pos = ::ftell(f);
+  //auto old_pos = ::ftell(f);
 
   ::fseek(f, 0, SEEK_END);
   return static_cast<word_t>(::ftell(f));
 }
 
 void File::seek(word_t offset) {
-  ::fseek(to_file(m_handle), offset, SEEK_SET);
+  ::fseek(to_file(m_handle), (ssize_t)offset, SEEK_SET);
 }
 
 word_t File::read(u8_t *dst, word_t bytes) {

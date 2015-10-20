@@ -12,7 +12,7 @@ namespace Std {
   }
 
   void sleep(size_t micro_sec) {
-    ::usleep(micro_sec);
+    ::usleep((unsigned int)micro_sec);
   }
 
   void exit(int x) {

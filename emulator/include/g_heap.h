@@ -2,7 +2,7 @@
 
 #include "g_defs.h"
 #include "g_error.h"
-#include "gsys_mem.h"
+#include "platf/gsys_mem.h"
 
 //#include <memory>
 //#include <vector>

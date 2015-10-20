@@ -6,14 +6,10 @@ cmake_minimum_required(VERSION 2.8)
 #SET (CMAKE_C_COMPILER   "clang")
 #SET (CMAKE_CXX_COMPILER "clang++")
 
-add_subdirectory(libgluon_sys)
-
 include_directories(
-    #${CMAKE_SOURCE_DIR}/generated/
     ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/src/
     ${CMAKE_SOURCE_DIR}/test/
-    ${CMAKE_SOURCE_DIR}/libgluon_sys/
     )
 
 # Enables lot of Std::fmt debugging features as well as assertions everywhere in
@@ -25,7 +21,7 @@ set(G_TEST 0)
 if(G_TEST)
   add_definitions(-DG_TEST=1) # to run tests
 else()
-  add_definitions(-DG_TEST=0 -fno-exceptions -fno-rtti) # normal compilation no test
+  add_definitions(-DG_TEST=0 -fno-rtti) # normal compilation no test
 endif()
 
 add_definitions(-O0 -g -ggdb)
@@ -89,6 +85,10 @@ set(SRC_LIST
     src/miniz/miniz.c
 
     include/gsl/gsl.h include/gsl/array_view.h include/gsl/fail_fast.h
+
+    src/platf/gsys_file.cpp    src/platf/gsys_file.h
+    src/platf/gsys_stdlib.cpp  src/platf/gsys_stdlib.h
+    src/platf/gsys_mem.cpp     src/platf/gsys_mem.h
     )
 
 if(G_TEST)
@@ -117,4 +117,4 @@ add_executable(${PROJECT_NAME} ${SRC_LIST} ${SRC_LIBTOMMATH})
 set(G_LINK_LIBS m dl z)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT}
                       ${G_LINK_LIBS}
-                      gluon_sys)
+                      )

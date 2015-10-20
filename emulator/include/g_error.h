@@ -2,7 +2,7 @@
 
 #include <functional>
 #include "g_defs.h"
-#include "gsys_stdlib.h"
+#include "platf/gsys_stdlib.h"
 
 #define G_DEBUG_THROW_E if(e) { \
   gluon::Std::fmt("debug throw: %s\n", e); \
