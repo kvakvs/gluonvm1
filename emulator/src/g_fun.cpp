@@ -29,8 +29,8 @@ boxed_fun_t *box_fun(fun_entry_t *fe, word_t *mem, Term pid, Term *frozen)
 
 Term box_fun(proc::Heap *heap, fun_entry_t *fe, Term pid, Term *frozen)
 {
-  word_t *p8 = heap->h_alloc(
-        calculate_word_size(sizeof(boxed_fun_t)) + fe->num_free
+  word_t *p8 = heap->allocate<word_t>(
+        calculate_word_size(sizeof(boxed_fun_t) + fe->num_free)
         );
 
   boxed_fun_t *p = fun::box_fun(fe, p8, pid, frozen);

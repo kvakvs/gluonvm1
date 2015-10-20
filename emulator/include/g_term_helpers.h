@@ -13,7 +13,7 @@ class TupleBuilder {
   Term *m_elements;
 public:
   TupleBuilder(proc::Heap *heap, word_t arity): m_arity(arity), m_index(0) {
-    m_elements = (Term *)heap->h_alloc(layout::TUPLE::box_size(arity));
+    m_elements = (Term *)heap->allocate<word_t>(layout::TUPLE::box_size(arity));
   }
   inline void add(Term x) {
     G_ASSERT(m_index < m_arity);
@@ -55,7 +55,7 @@ Term build_list(proc::Heap *heap, Iter iter, Iter to) {
 
   word_t len = length(iter, to);
   Std::fmt("len=" FMT_UWORD "\n", len);
-  Term *h = (Term *)heap->h_alloc(layout::CONS::BOX_SIZE * len);
+  Term *h = (Term *)heap->allocate<word_t>(layout::CONS::BOX_SIZE * len);
 
   Term result = Term::make_cons(h);
   word_t i = 0;

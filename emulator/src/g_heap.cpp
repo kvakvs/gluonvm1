@@ -4,7 +4,7 @@
 
 namespace gluon {
 namespace proc {
-
+/*
 Heap::Heap() {
   m_root = m_current = Node::create(DEFAULT_PROC_HEAP_WORDS);
   m_stack.put_stack(m_current, DEFAULT_PROC_STACK_WORDS);
@@ -35,7 +35,7 @@ Node *Node::create(word_t sz_words) {
   n->limit = n->start + sz_words - sizeof(Node);
   return n;
 }
-
+*/
 void Stack::put_stack(Node *stk_node, word_t size) {
   // Assume current node in heap has memory for stack
   G_ASSERT(stk_node->get_avail() >= size);
@@ -79,7 +79,7 @@ Term copy_one_term(Heap *dstheap, Term t) {
   }
   if (t.is_tuple()) {
     word_t arity   = t.tuple_get_arity();
-    Term *new_t  = (Term *)dstheap->h_alloc(layout::TUPLE::box_size(arity));
+    Term *new_t  = (Term *)dstheap->allocate<word_t>(layout::TUPLE::box_size(arity));
     Term *this_t = t.boxed_get_ptr<Term>();
     layout::TUPLE::arity(new_t) = layout::TUPLE::arity(this_t);
     // Deep clone

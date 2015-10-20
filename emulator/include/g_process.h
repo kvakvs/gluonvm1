@@ -136,8 +136,8 @@ public:
   proc::Heap *get_heap() {
     return &m_heap;
   }
-  inline word_t *heap_alloc(word_t num_words) {
-    return m_heap.h_alloc(num_words);
+  word_t *heap_alloc(word_t num_words) {
+    return m_heap.allocate<word_t>(num_words);
   }
 
   // Not inlined, ask module for pointer to its code. Safety off!

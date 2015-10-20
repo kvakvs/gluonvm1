@@ -149,7 +149,8 @@ public:
 // and never shrinks (until process dies). Also contains stack which may migrate
 // out of its home node.
 //
-class Heap {
+/*
+class SegmentedHeap {
   //
   // Heap
   //
@@ -164,7 +165,7 @@ public:
 public:
   // Allocates DEFAULT_PROC_HEAP_WORDS and writes Node header there, uses it as
   // initial heap node
-  Heap();
+  SegmentedHeap();
 
   // Grows htop and gives requested memory
   word_t *h_alloc(word_t);
@@ -180,7 +181,31 @@ public:
     word_t *bytes = h_alloc(calculate_storage_size<T>());
     return new(bytes)T(std::forward<Args>(args)...);
   }
-}; // class Heap
+}; // class SegmentedHeap
+*/
+
+class MallocAllocator {
+public:
+  template <typename T>
+  T *allocate() { return new T; }
+
+  template <typename T>
+  T *allocate(size_t n) { return new T[n]; }
+
+  template <typename T, typename... Args>
+  inline T *alloc_object(Args&&... args) { // NOTE: calls ctor
+    word_t *bytes = allocate<word_t>(calculate_storage_size<T>());
+    return new(bytes)T(std::forward<Args>(args)...);
+  }
+
+  template <typename T>
+  void deallocate(T *mem) { delete mem; }
+};
+
+class Heap: public MallocAllocator {
+public:
+  Stack m_stack;
+};
 
 
 // Takes all terms between 'start' and 'end', and copies them to 'dstheap', new

@@ -218,7 +218,7 @@ Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
 }
 
 Result<Module *> LoaderState::finalize(Term modname) {
-  Module *newmod = m_heap->h_alloc_object<Module>(modname, m_imports);
+  Module *newmod = m_heap->alloc_object<Module>(modname, m_imports);
 
   auto result = beam_prepare_code(newmod, m_code, m_code_size);
   G_RETURN_REWRAP_IF_ERROR(result, Module*);

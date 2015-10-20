@@ -75,7 +75,7 @@ Result<Term> read_tuple(proc::Heap *heap, tool::Reader &r, word_t arity) {
     return success(Term::make_zero_tuple());
   }
 
-  Term *cells = (Term *)heap->h_alloc(layout::TUPLE::box_size(arity));
+  Term *cells = (Term *)heap->allocate<word_t>(layout::TUPLE::box_size(arity));
 
   // fill elements or die horribly if something does not decode
   for (word_t i = 0; i < arity; ++i) {
@@ -129,7 +129,7 @@ Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
   Term *ref = &result;
 
   for (word_t i = 0; i < length; ++i) {
-    Term *cons = (Term *)heap->h_alloc(layout::CONS::BOX_SIZE);
+    Term *cons = (Term *)heap->allocate<word_t>(layout::CONS::BOX_SIZE);
     layout::CONS::head(cons) = Term::make_small(r.read_byte());
     *ref = Term::make_cons(cons);
     ref = &layout::CONS::tail(cons);
@@ -146,7 +146,7 @@ Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r) {
   Term *ref = &result;
 
   for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
-    Term *cons = (Term *)heap->h_alloc(layout::CONS::BOX_SIZE);
+    Term *cons = (Term *)heap->allocate<word_t>(layout::CONS::BOX_SIZE);
 
     auto v_result = read_ext_term(heap, r);
     if (v_result.is_error()) {
