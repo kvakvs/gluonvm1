@@ -8,6 +8,7 @@
 
 namespace gluon {
 
+class VM;
 class Module;
 class Process;
 
@@ -22,7 +23,7 @@ typedef struct {
   word_t live = 0; // saved registers count
 
   // TODO: maybe cache r0 in a local variable in vm loop?
-  Term    regs[vm::MAX_REGS];
+  Term    regs[erts::MAX_REGS];
 #if FEATURE_FLOAT
   //float_t fp_regs[vm::MAX_FP_REGS];
 #endif
@@ -65,6 +66,7 @@ public:
   Term          m_bif_error_reason = NONVALUE;
 
 protected:
+  VM            &vm_;
   runtime_ctx_t m_ctx;
   proc::Heap    m_heap;
   Term          m_pid = NONVALUE;
@@ -97,7 +99,10 @@ protected:
 
 public:
   Process() = delete;
-  Process(Term gleader);
+  Process(VM &vm, Term gleader);
+
+  VM &vm() { return vm_; }
+  const VM &vm() const { return vm_; }
 
   void set_trap_exit(bool te) {
     m_flags.trap_exit = te;

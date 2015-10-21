@@ -86,7 +86,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[1]);
 
     mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
-    bif0_fn fn0 = (bif0_fn)VM::find_bif(*mfa);
+    bif0_fn fn0 = (bif0_fn)ctx.vm_.find_bif(*mfa);
     G_ASSERT(fn0);
 
     Term result = fn0(proc);
@@ -104,7 +104,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[3]);
 
     mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
-    bif1_fn fn1 = (bif1_fn)VM::find_bif(*mfa);
+    bif1_fn fn1 = (bif1_fn)ctx.vm_.find_bif(*mfa);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
@@ -124,7 +124,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[4]);
 
     mfarity_t *mfa = boxed_mfa.boxed_get_ptr<mfarity_t>();
-    bif2_fn fn2 = (bif2_fn)VM::find_bif(*mfa);
+    bif2_fn fn2 = (bif2_fn)ctx.vm_.find_bif(*mfa);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);
@@ -220,9 +220,9 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term msg(ctx.regs[1]);
 
     Std::fmt("send ");
-    msg.print();
+    msg.print(ctx.vm_);
     Std::fmt(" -> ");
-    dest.println();
+    dest.println(ctx.vm_);
 
     proc->msg_send(dest, msg);
     ctx.regs[0] = ctx.regs[1];
@@ -251,7 +251,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     }
     //ctx.move(msg, Term(ctx.ip[1]));
     Std::fmt("loop_rec msg=");
-    msg.println();
+    msg.println(ctx.vm_);
 
     ctx.regs[0] = msg;
     ctx.ip += 2;
@@ -316,7 +316,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
         return;
       }
     } else { // full term compare
-      if (!bif::is_term_smaller(arg1, arg2)) {
+      if (!bif::is_term_smaller(ctx.vm_, arg1, arg2)) {
         ctx.jump(proc, Term(ctx.ip[0]));
         return;
       }
@@ -336,7 +336,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
         return;
       }
     } else { // full term compare
-      if (bif::is_term_smaller(arg1, arg2)) {
+      if (bif::is_term_smaller(ctx.vm_, arg1, arg2)) {
         ctx.jump(proc, Term(ctx.ip[0]));
         return;
       }
@@ -351,7 +351,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term    arg2(ctx.ip[2]);
     DEREF(arg1); // in case they are reg references
     DEREF(arg2);
-    if (bif::are_terms_equal(arg1, arg2, false)) {
+    if (bif::are_terms_equal(ctx.vm_, arg1, arg2, false)) {
       ctx.ip += 3;
     } else {
       ctx.jump(proc, Term(ctx.ip[0]));
@@ -369,7 +369,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     if (arg1 != arg2) {
       // immediate values must be exactly equal or we fail comparison
       if (Term::are_both_immed(arg1, arg2)
-         || !bif::are_terms_equal(arg1, arg2, true))
+         || !bif::are_terms_equal(ctx.vm_, arg1, arg2, true))
       {
         return ctx.jump(proc, Term(ctx.ip[0]));
       }
@@ -577,7 +577,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     DEREF(h);
     DEREF(t);
     Term dst(ctx.ip[2]);
-    Term result = Term::allocate_cons(ctx.heap, h, t);
+    Term result = Term::allocate_cons(ctx.heap_, h, t);
     ctx.move(result, dst);
     ctx.ip += 3;
   }
@@ -602,7 +602,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       ctx.ip += 2;
       DEREF(value);
         Std::fmt("put ");
-        value.println();
+        value.println(ctx.vm_);
       layout::TUPLE::element(cells, index) = value;
       index++;
     } while (index < arity);
@@ -640,7 +640,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       }
       // TODO: if bf.fe is null - unloaded fun
       word_t num_free = bf->get_num_free();
-      G_ASSERT(arity + num_free < vm::MAX_REGS);
+      G_ASSERT(arity + num_free < erts::MAX_REGS);
       std::copy(bf->frozen, bf->frozen + num_free, ctx.regs + arity);
 
       ctx.live = arity;
@@ -651,7 +651,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       export_t *ex = fun.boxed_get_ptr<export_t>();
       G_ASSERT(arity == ex->mfa.arity);
       if (ex->is_bif()) {
-        Term result = VM::apply_bif(proc, arity, ex->code(), ctx.regs);
+        Term result = ctx.vm_.apply_bif(proc, arity, ex->code(), ctx.regs);
         if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
         ctx.regs[0] = result;
         ctx.ip++;
@@ -662,7 +662,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       }
     } else {
       // TODO: make tuple {badfun, f_args} (same as above)
-      term::TupleBuilder tb(ctx.heap, 2);
+      term::TupleBuilder tb(ctx.heap_, 2);
       tb.add(atom::BADFUN);
       tb.add(fun);
       ctx.raise(proc, atom::ERROR, tb.make_tuple());
@@ -892,7 +892,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[4]);
 
     mfarity_t *mfa = boxed_fun.boxed_get_ptr<mfarity_t>();
-    bif1_fn fn1 = (bif1_fn)VM::find_bif(*mfa);
+    bif1_fn fn1 = (bif1_fn)ctx.vm_.find_bif(*mfa);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
@@ -916,7 +916,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     Term result_dst(ctx.ip[5]);
 
     mfarity_t *mfa = boxed_fun.boxed_get_ptr<mfarity_t>();
-    bif2_fn fn2 = (bif2_fn)VM::find_bif(*mfa);
+    bif2_fn fn2 = (bif2_fn)ctx.vm_.find_bif(*mfa);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);

@@ -19,7 +19,7 @@ void Module::set_exports(Module::exports_t &e) {
   // Replace known BIFs in exports with their BIF pointer and flag them as such
   auto exps = exports_.all();
   for_each_keyvalue(exps, [this](const fun_arity_t &fa, const export_t &exp) {
-                    void *bif_ptr = VM::find_bif(mfarity_t(name_, fa));
+                    void *bif_ptr = vm_->find_bif(mfarity_t(name_, fa));
                     if (bif_ptr) {
                       exports_[fa] = export_t(bif_ptr);
                     }

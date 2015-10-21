@@ -16,6 +16,8 @@ class Scheduler {
 private:
   using queue_t = List<Process *>;
   using wait_room_t = Set<Process *>;
+
+  VM      &vm_;
   queue_t low_queue_;     // lowest priority (background)
   queue_t normal_queue_;  // normal priority (8x low)
   queue_t high_queue_;    // highest (realtime) priority
@@ -37,6 +39,8 @@ private:
   word_t normal_count_;
 
 public:
+  Scheduler(VM &vm): vm_(vm) {}
+
   // Register process in one of queues according to its priority. New pid is set
   void add_new_runnable(Process *p);
 

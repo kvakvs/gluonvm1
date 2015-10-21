@@ -124,7 +124,7 @@ namespace gluon {
     explicit label_index_t(word_t x): value(x) {}
   };
 
-  namespace vm {
+  namespace erts {
     // How many reds will a process be allowed to run before next proc wakes up
     // Adjust this for slow devices. 2000 is used for regular modern hardware.
     constexpr word_t SLICE_REDUCTIONS = 250;

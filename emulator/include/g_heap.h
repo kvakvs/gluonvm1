@@ -9,6 +9,7 @@
 
 namespace gluon {
 
+class VM;
 class Term;
 
 template <typename T>
@@ -51,7 +52,7 @@ namespace mem {
 
 } // ns mem
 
-namespace vm {
+namespace erts {
 
 // VM heap is abstract interface which gets memory from underlying system.
 class Heap: public mem::SystemMemoryAllocator {
@@ -196,9 +197,14 @@ public:
 
 // Takes all terms between 'start' and 'end', and copies them to 'dstheap', new
 // resulting terms are placed in array 'dst' which should be large enough.
-bool copy_terms(Heap *dstheap, const Term *start, const Term *end, Term *dst);
+bool copy_terms(VM &vm, Heap *dstheap,
+                const Term *start,
+                const Term *end,
+                Term *dst);
 // Copies one term 't' to 'dstheap' returns new clone term located in new heap
-Term copy_one_term(Heap *dstheap, Term t);
+Term copy_one_term(VM &vm,
+                   Heap *dstheap,
+                   Term t);
 
 } // ns proc
 } // ns gluon

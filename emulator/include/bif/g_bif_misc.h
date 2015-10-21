@@ -10,8 +10,8 @@ class Process;
 
 namespace bif {
 
-bool is_term_smaller(Term a, Term b);
-bool are_terms_equal(Term a, Term b, bool exact);
+bool is_term_smaller(const VM &vm, Term a, Term b);
+bool are_terms_equal(const VM &vm, Term a, Term b, bool exact);
 // Returns pair of {length, proper=true/improper=false}
 Pair<word_t, bool> length(Term list);
 

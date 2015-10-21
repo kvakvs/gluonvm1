@@ -26,6 +26,8 @@ typedef struct {
 #endif
 
 class LoaderState {
+private:
+  VM        &vm_;
 public:
   proc::Heap     *m_heap;
   Vector<Str>     m_atoms;
@@ -75,7 +77,7 @@ public:
   } CR;
 #endif
 
-  LoaderState(): m_code(nullptr), m_code_size(0) {
+  LoaderState(VM &vm): vm_(vm), m_code(nullptr), m_code_size(0) {
   }
 
   void load_atom_table(tool::Reader &r, Term expected_name);
@@ -165,7 +167,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(bytes, size);
 
-  LoaderState lstate;
+  LoaderState lstate(vm_);
   lstate.m_heap = heap;
 
   r.assert_remaining_at_least(4+4+4);
@@ -212,7 +214,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
   }
 
   // All good, deploy the module!
-  Term modname = VM::to_atom(lstate.m_atoms[0]);
+  Term modname = vm_.to_atom(lstate.m_atoms[0]);
   return lstate.finalize(modname);
 }
 
@@ -238,7 +240,7 @@ void LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
 
   // Check first atom in table which is module name
   G_ASSERT(m_atoms.size() > 0);
-  m_mod_name = VM::to_atom(m_atoms[0]);
+  m_mod_name = vm_.to_atom(m_atoms[0]);
   if (false == expected_name.is_nil()
       && m_mod_name != expected_name) {
     throw err::beam_load_error("module name mismatch");
@@ -259,7 +261,7 @@ void LoaderState::load_lambda_table(tool::Reader &r0) {
 
   G_ASSERT(m_atoms.size() > 0);
   word_t count = r.read_big_u32();
-  Term mod = VM::to_atom(m_atoms[0]);
+  Term mod = vm_.to_atom(m_atoms[0]);
 
   for (word_t i = 0; i < count; ++i)
   //while (r.get_remaining_count() > 6 * sizeof(u32_t))
@@ -277,7 +279,7 @@ void LoaderState::load_lambda_table(tool::Reader &r0) {
     const Str &f_str = atom_tab_index_to_str(fun_atom_i);
 
     fun_entry_t fe;
-    fe.mfa = mfarity_t(mod, VM::to_atom(f_str), arity);
+    fe.mfa = mfarity_t(mod, vm_.to_atom(f_str), arity);
     fe.uniq[0] = (u32_t)offset; // use as temp storage, cast down to u32
     fe.uniq[1] = fe.uniq[2] = fe.uniq[3] = 0;
     fe.old_uniq = ouniq;
@@ -286,8 +288,8 @@ void LoaderState::load_lambda_table(tool::Reader &r0) {
     fe.code     = nullptr; // resolve later from uniq0
 
     Std::fmt("read fun table: %s:%s/" FMT_UWORD " offset=" FMT_UWORD "\n",
-           fe.mfa.mod.atom_str().c_str(),
-           fe.mfa.fun.atom_str().c_str(),
+           fe.mfa.mod.atom_str(vm_).c_str(),
+           fe.mfa.fun.atom_str(vm_).c_str(),
            arity, offset);
     m_lambdas.push_back(fe);
   }
@@ -306,7 +308,7 @@ void LoaderState::load_export_table(tool::Reader &r0) {
     if (f_i > m_atoms.size()) {
       throw err::beam_load_error("expt: atom index too big");
     }
-    auto f = VM::to_atom(atom_tab_index_to_str(f_i));
+    auto f = vm_.to_atom(atom_tab_index_to_str(f_i));
 
     auto arity = r.read_big_u32();
     auto label = r.read_big_u32();
@@ -329,8 +331,8 @@ void LoaderState::load_import_table(tool::Reader &r0)
   for (word_t i = 0; i < count; ++i) {
     Str ms = atom_tab_index_to_str(r.read_big_u32());
     Str fs = atom_tab_index_to_str(r.read_big_u32());
-    Term m = VM::to_atom(ms);
-    Term f = VM::to_atom(fs);
+    Term m = vm_.to_atom(ms);
+    Term f = vm_.to_atom(fs);
     word_t arity = r.read_big_u32();
     m_imports.push_back(mfarity_t(m, f, arity));
   }
@@ -369,10 +371,10 @@ void LoaderState::load_literal_table(tool::Reader &r0)
   tool::Reader r1 = r0.clone(chunk_size);
 
   auto uncompressed_size = r1.read_big_u32();
-  Term compressed = Term::make_binary(m_heap, chunk_size);
+  Term compressed = Term::make_binary(vm_, m_heap, chunk_size);
   r1.read_bytes(compressed.binary_get<u8_t>(), chunk_size);
 
-  Term uncompressed = Term::make_binary(m_heap, uncompressed_size);
+  Term uncompressed = Term::make_binary(vm_, m_heap, uncompressed_size);
   auto result = mz_uncompress(uncompressed.binary_get<u8_t>(), &uncompressed_size,
                               compressed.binary_get<u8_t>(), chunk_size);
   if (result != MZ_OK) {
@@ -387,7 +389,7 @@ void LoaderState::load_literal_table(tool::Reader &r0)
   for (word_t i = 0; i < count; ++i) {
     /*auto lit_sz =*/ r.read_big_u32();
 
-    auto lit = etf::read_ext_term_with_marker(m_heap, r);
+    auto lit = etf::read_ext_term_with_marker(vm_, m_heap, r);
     m_literals.push_back(lit);
   }
 
@@ -439,7 +441,7 @@ void LoaderState::load_line_table(tool::Reader &r0)
       word_t offs = val.small_get_unsigned();
       if (G_LIKELY(line::is_valid_loc(fname_index, offs))) {
         LN.line_refs.push_back(line::make_location(fname_index, offs));
-        Std::fmt("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
+        //Std::fmt("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
       } else {
         LN.line_refs.push_back(line::INVALID_LOC);
         Std::fmt("line info: invalid loc\n");
@@ -459,7 +461,7 @@ void LoaderState::load_line_table(tool::Reader &r0)
     word_t  name_sz = r.read_big_u16();
     Str     name    = r.read_string(name_sz);
     Std::fmt("line info: file %s\n", name.c_str());
-    LN.filenames.push_back(VM::to_atom(name));
+    LN.filenames.push_back(vm_.to_atom(name));
   }
 
   r0.advance_align<4>(chunk_size);
@@ -534,7 +536,7 @@ void LoaderState::beam_prepare_code(Module *m,
     }
 
     // Convert opcode into jump address
-    op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
+    op_ptr = reinterpret_cast<word_t>(vm_.g_opcode_labels[opcode]);
     code.push_back(op_ptr);
 //    G_LOG("loader: op %s (opcode " FMT_0xHEX ") ptr " FMT_0xHEX "\n",
 //           genop::opcode_name_map[opcode], opcode, op_ptr);
@@ -723,7 +725,7 @@ Term LoaderState::parse_term(tool::Reader &r)
       } else if (val > m_atoms.size()) { // we will subtract 1 when indexing
         throw err::beam_load_error("bad atom index");
       }
-      return VM::to_atom(atom_tab_index_to_str(val));
+      return vm_.to_atom(atom_tab_index_to_str(val));
     }
     if (tag == Tag::Label) {
       if (val == 0) {
@@ -735,13 +737,13 @@ Term LoaderState::parse_term(tool::Reader &r)
       return Term::make_catch(val);
     }
     if (tag == Tag::XRegister) {
-      if (val >= vm::MAX_REGS) {
+      if (val >= erts::MAX_REGS) {
         throw err::beam_load_error("invalid x register");
       }
       return Term::make_regx(val);
     }
     if (tag == Tag::YRegister) {
-      if (val >= vm::MAX_STACK) {
+      if (val >= erts::MAX_STACK) {
         throw err::beam_load_error("invalid y register");
       }
       return Term::make_regy(val);

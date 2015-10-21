@@ -9,7 +9,7 @@
 
 namespace gluon {
 
-Process::Process(Term gleader): m_group_leader(gleader) {
+Process::Process(VM &vm, Term gleader): vm_(vm), m_group_leader(gleader) {
   m_priority = atom::NORMAL;
 }
 
@@ -17,7 +17,7 @@ void Process::jump_to_mfa(mfarity_t &mfa)
 {
   G_ASSERT(this);
 
-  auto mod = VM::get_cs()->find_module(this, mfa.mod,
+  auto mod = vm_.codeserver().find_module(this, mfa.mod,
                                        code::LOAD_IF_NOT_FOUND);
 
   export_t *exp = mod->find_export(mfa.as_funarity());
@@ -45,7 +45,7 @@ Term Process::spawn(mfarity_t &mfa, Term *args) {
 
   // TODO: set context cp to some special exit function or handle exit another way
 
-  VM::get_scheduler()->add_new_runnable(this);
+  vm_.scheduler().add_new_runnable(this);
   return get_pid();
 }
 
@@ -85,16 +85,16 @@ void Process::msg_send(Term pid, Term value)
   // TODO: send to tuple {dst,node}, and to registered atom, and to port
   G_ASSERT(pid.is_pid());
 
-  Process *other = VM::get_scheduler()->find(pid);
+  Process *other = vm_.scheduler().find(pid);
   if (!other) {
     Std::fmt("msg_send pid not found: ");
-    pid.println();
+    pid.println(vm_);
     return;
   }
   // Clone local value to value on remote heap
-  Term dst_value = proc::copy_one_term(other->get_heap(), value);
+  Term dst_value = proc::copy_one_term(vm_, other->get_heap(), value);
   other->mailbox().on_incoming(dst_value);
-  VM::get_scheduler()->on_new_message(other); // wake up receiver
+  vm_.scheduler().on_new_message(other); // wake up receiver
 }
 
 #if 0

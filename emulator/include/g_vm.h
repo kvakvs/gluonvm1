@@ -11,7 +11,7 @@ namespace gluon {
 using str_atom_map_t = Dict<Str, Term>;
 using atom_str_map_t = Dict<Term, Str>;
 
-namespace vm {
+namespace erts {
   class Heap;
 }
 class Process;
@@ -25,51 +25,50 @@ using atom_proc_map_t = Dict<Term, Process *>;
 // Note: singleton, do not instantiate even
 class VM {
 private:
-  VM() = delete;
-
   // TODO: Optimize atom tab for insert-only, like OTP does
   // TODO: global is bad for many reasons
-  static str_atom_map_t g_atoms;
-  static atom_str_map_t g_atoms_reverse;
-  static word_t         g_atom_counter;
+  str_atom_map_t g_atoms;
+  atom_str_map_t g_atoms_reverse;
+  word_t         g_atom_counter;
 
-  static Node           *g_this_node;
+  Node           *g_this_node = nullptr;
   // used as "" constant when atom is not found
-  static Str            g_empty_str;
-  static Scheduler      *g_scheduler;
-  static code::Server   *g_cs;
+  Str            g_empty_str;
+  Scheduler      *g_scheduler = nullptr;
+  code::Server   *g_cs = nullptr;
 
   // Registered names
-  static atom_proc_map_t       g_registered_names;
+  atom_proc_map_t  g_registered_names;
 
 public:
-  static Process *g_root_proc;
+  VM();
+  Process *g_root_proc = nullptr;
 
-  static void init();
-  static code::Server *get_cs() { return g_cs; }
+  code::Server &codeserver() { return *g_cs; }
+  const code::Server &codeserver() const { return *g_cs; }
 
   //
   // Pid/port registration
   //
   enum class RegResult { OK, EXISTS, NOPROC };
-  static RegResult register_name(Term name, Term pid_port);
+  RegResult register_name(Term name, Term pid_port);
 
   //
   // Atom table
   //
 
   // Creates atom or returns existing
-  static Term to_atom(const Str &s);
+  Term to_atom(const Str &s);
   // Returns existing or nil
-  static Term to_existing_atom(const Str &s) {
+  Term to_existing_atom(const Str &s) {
     return g_atoms.find_ref(s, NIL);
   }
-  static const Str &find_atom(Term a);
+  const Str &find_atom(Term a) const;
 
   //
   // Distribution
   //
-  static Node *dist_this_node();
+  Node *dist_this_node();
 
   //
   // Heap management
@@ -80,31 +79,31 @@ public:
     HEAP_LOADER_TMP,  // loader uses this, discard after loading
     HEAP_LARGE_BINARY
   } heap_t;
-  static vm::Heap *get_heap(heap_t);
+  erts::Heap *get_heap(heap_t);
 
   //
   // VM loop and loop labels
   //
   // this is initialized in vm_loop(nullptr) call
-  static const void **g_opcode_labels;
+  const void **g_opcode_labels;
 
   // Takes next process from scheduler and runs for a while, eventually switching
   // if the selected process yields or goes into receive/io wait.
-  static void vm_loop(bool init);
+  void vm_loop(bool init);
 
   //
   // Bif management
   //
-  static Term apply_bif(Process *proc, mfarity_t &mfa, Term *args);
-  static void *find_bif(const mfarity_t &mfa);
-  static Term apply_bif(Process *proc, word_t arity, void *fn, Term *args);
+  Term apply_bif(Process *proc, mfarity_t &mfa, Term *args);
+  void *find_bif(const mfarity_t &mfa) const;
+  Term apply_bif(Process *proc, word_t arity, void *fn, Term *args);
 
-  static Scheduler *get_scheduler();
+  Scheduler &scheduler();
 
 private:
   // Does not check if atom existed before. Will break old values on overwrite
-  static Term new_atom(const Str &s);
-  static void init_predef_atoms();
+  Term new_atom(const Str &s);
+  void init_predef_atoms();
 };
 
 } // ns gluon

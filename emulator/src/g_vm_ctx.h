@@ -26,11 +26,14 @@ typedef enum {
 // Used to run current process by vm loop, also holds some extra local variables
 //
 struct vm_runtime_ctx_t: runtime_ctx_t {
-  proc::Heap *heap;
-  sword_t reductions = 0;
+  VM          &vm_;
+  proc::Heap  *heap_;
+  sword_t     reds_ = 0;
 
-  inline proc::Stack &stack() { return heap->m_stack; }
-  inline const proc::Stack &stack() const { return heap->m_stack; }
+  vm_runtime_ctx_t(VM &vm): vm_(vm) {}
+
+  inline proc::Stack &stack() { return heap_->m_stack; }
+  inline const proc::Stack &stack() const { return heap_->m_stack; }
 
   inline void println() {
 //#if G_DEBUG
@@ -39,8 +42,8 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
   // returns false if process should yield (for call ops for example)
   want_schedule_t consume_reduction(Process *p) {
-    reductions--;
-    if (G_UNLIKELY(reductions <= 0)) {
+    reds_--;
+    if (G_UNLIKELY(reds_ <= 0)) {
       // ASSERT that we're standing on first instruction of fun after fun_info
       // ip[-4] == fun_info
       // TODO: remove live from all call opcodes and uncomment this
@@ -58,10 +61,10 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     live = proc_ctx.live;
     std::memcpy(regs, proc_ctx.regs, sizeof(Term)*live);
 
-    heap = proc->get_heap();
+    heap_ = proc->get_heap();
     // TODO: fp_regs
     // TODO: update heap top
-    reductions = vm::SLICE_REDUCTIONS;
+    reds_ = erts::SLICE_REDUCTIONS;
   }
 
   void save(Process *proc) {
@@ -72,7 +75,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     std::memcpy(proc_ctx.regs, regs, sizeof(Term)*live);
     // TODO: fp_regs
     // TODO: update heap top
-    heap = nullptr; // can't use once swapped out
+    heap_ = nullptr; // can't use once swapped out
   }
 
   // TODO: swap_out: save r0, stack top and heap top
@@ -101,9 +104,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   void move(Term val, Term dst) {
 #if G_DEBUG
     Std::fmt("ctx.move ");
-    val.print();
+    val.print(vm_);
     Std::fmt(" -> ");
-    dst.println();
+    dst.println(vm_);
 #endif
     if (dst.is_regx()) {
       word_t x = dst.regx_get_value();
@@ -130,10 +133,10 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     G_ASSERT(mfa_box.is_boxed());
     mfarity_t *mfa = mfa_box.boxed_get_ptr<mfarity_t>();
     Std::fmt("ctx.jump_ext -> ");
-    mfa->println();
+    mfa->println(vm_);
 
     Module *mod = nullptr;
-    export_t *exp = VM::get_cs()->find_mfa(*mfa, &mod);
+    export_t *exp = vm_.codeserver().find_mfa(*mfa, &mod);
     if (!exp) {
       return raise(proc, atom::ERROR, atom::UNDEF);
     }
@@ -142,7 +145,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     // this was not a bif
     //void *bif_fn = VM::find_bif(*mfa);
     if (exp->is_bif()) {
-      Term result = VM::apply_bif(proc, mfa->arity, exp->bif_fn(), regs);
+      Term result = vm_.apply_bif(proc, mfa->arity, exp->bif_fn(), regs);
       if (result.is_non_value()) {
         if (proc->m_bif_error_reason != atom::UNDEF) {
           // a real error happened
@@ -162,7 +165,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     }
 
     /*
-    auto find_result = VM::get_cs()->find_module(proc, mfa->mod,
+    auto find_result = VM::codeserver().find_module(proc, mfa->mod,
                                                  code::LOAD_IF_NOT_FOUND);
     if (find_result.is_error()) {
       G_LOG("ctx.jump_ext: %s\n", find_result.get_error());
@@ -210,9 +213,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     if (proc->m_catch_level == 0) {
       // we're not catching anything here
       Std::fmt("EXCEPTION: ");
-      regs[0].print();
+      regs[0].print(vm_);
       Std::fmt(":");
-      regs[1].println();
+      regs[1].println(vm_);
       G_FAIL("Stopping execution here");
     }
     // unwind stack
@@ -258,11 +261,11 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 #if G_DEBUG
     for (word_t i = 0; i < arity; ++i) {
       Term value(ip[i]);
-      value.print();
+      value.print(vm_);
       if (value.is_regx() || value.is_regy()) {
         resolve_immed(value);
         Std::fmt("=");
-        value.print();
+        value.print(vm_);
       }
       Std::fmt(";");
     }

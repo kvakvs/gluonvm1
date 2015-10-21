@@ -5,7 +5,8 @@
 
 namespace gluon {
 
-namespace vm { class Heap; } // g_heap.h
+class VM;
+namespace erts { class Heap; } // g_heap.h
 namespace proc { class Heap; } // in g_heap.h
 class export_t; // in g_module.h
 
@@ -538,8 +539,8 @@ public:
   constexpr word_t atom_val() const {
     return term_tag::Atom::value(m_val);
   }
-  Str atom_str() const;
-  const char *atom_c_str() const { return atom_str().c_str(); }
+  Str atom_str(const VM &vm) const;
+  const char *atom_c_str(const VM &vm) const { return atom_str(vm).c_str(); }
 
   //
   // Small Integer
@@ -696,8 +697,8 @@ public:
 #endif
 
 #if G_DEBUG
-  void print() const;
-  void println() const;
+  void print(const VM &vm) const;
+  void println(const VM &vm) const;
 #endif
 
   //
@@ -759,7 +760,7 @@ public:
   // First word of large heap bin is refcount
   // --boxedptr--> <<Size, Subtag:4>> --data-ptr--> Refcount Bytes[size]
   //
-  static Term make_binary(proc::Heap *h, word_t bytes);
+  static Term make_binary(VM &vm, proc::Heap *h, word_t bytes);
 
   inline bool is_proc_binary() const {
     return term_tag::BoxedProcBin::unbox_and_check(m_val);
@@ -822,19 +823,19 @@ public:
   word_t  arity;
   mfarity_t(): mod(NONVALUE), fun(NONVALUE), arity(0) {}
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {
-    G_ASSERT(a <= vm::MAX_FUN_ARITY);
+    G_ASSERT(a <= erts::MAX_FUN_ARITY);
   }
   mfarity_t(Term m, const fun_arity_t &fa)
     : mod(m), fun(fa.fun), arity(fa.arity)
   {
-    G_ASSERT(arity <= vm::MAX_FUN_ARITY);
+    G_ASSERT(arity <= erts::MAX_FUN_ARITY);
   }
   fun_arity_t as_funarity() const {
     return fun_arity_t(fun, arity);
   }
 #if G_DEBUG
-  void print();
-  void println();
+  void print(const VM &vm);
+  void println(const VM &vm);
 #endif
 };
 

@@ -101,7 +101,7 @@ static int term_order(Term t)
 }
 #endif // 0
 
-bool is_term_smaller(Term a, Term b)
+bool is_term_smaller(const VM &vm, Term a, Term b)
 {
   if (a == b) {
     return false;
@@ -137,8 +137,8 @@ bool is_term_smaller(Term a, Term b)
         return false;
       } else if (b.is_atom()) {
         // Compare atoms
-        const Str &print1 = VM::find_atom(a);
-        const Str &print2 = VM::find_atom(b);
+        const Str &print1 = vm.find_atom(a);
+        const Str &print2 = vm.find_atom(b);
         return print1 < print2;
       } else {
         // Atom is < everything else
@@ -175,12 +175,12 @@ bool is_term_smaller(Term a, Term b)
   G_IF_NODEBUG(return term_order(a) < term_order(b));
 }
 
-bool are_terms_equal(Term a, Term b, bool exact)
+bool are_terms_equal(const VM &vm, Term a, Term b, bool exact)
 {
   Std::fmt("are_terms_eq(exact=%d): ", (int)exact);
-  a.print();
+  a.print(vm);
   Std::fmt(" ? ");
-  b.println();
+  b.println(vm);
   if (a == b) {
     return true;
   }
@@ -220,7 +220,7 @@ bool are_terms_equal(Term a, Term b, bool exact)
         Term *cons_b = b.boxed_get_ptr<Term>();
 
         if (cons_a[0] != cons_b[0]
-            && !are_terms_equal(cons_a[0], cons_b[0], exact)) {
+            && !are_terms_equal(vm, cons_a[0], cons_b[0], exact)) {
           return false;
         }
 
@@ -228,7 +228,7 @@ bool are_terms_equal(Term a, Term b, bool exact)
         b = cons_b[1];
       } while (a.is_cons() && b.is_cons());
 
-      return (a == b) || are_terms_equal(a, b, exact);
+      return (a == b) || are_terms_equal(vm, a, b, exact);
     } else {
       return false;
     }
@@ -242,7 +242,7 @@ bool are_terms_equal(Term a, Term b, bool exact)
 
       for (word_t i = 1; i <= ((word_t *)a_ptr)[0]; i++)
         if (a_ptr[i] != b_ptr[i]
-            && !are_terms_equal(a_ptr[i], b_ptr[i], exact)) {
+            && !are_terms_equal(vm, a_ptr[i], b_ptr[i], exact)) {
           return false;
         }
 
@@ -388,33 +388,33 @@ bool are_terms_equal(Term a, Term b, bool exact)
 
 }
 
-Term bif_equals_2(Process *, Term a, Term b)
+Term bif_equals_2(Process *proc, Term a, Term b)
 {
-  if (are_terms_equal(a, b, false)) {
+  if (are_terms_equal(proc->vm(), a, b, false)) {
     return atom::TRUE;
   }
   return atom::FALSE;
 }
 
-Term bif_equals_exact_2(Process *, Term a, Term b)
+Term bif_equals_exact_2(Process *proc, Term a, Term b)
 {
-  if (are_terms_equal(a, b, true)) {
+  if (are_terms_equal(proc->vm(), a, b, true)) {
     return atom::TRUE;
   }
   return atom::FALSE;
 }
 
-Term bif_less_equal_2(Process *, Term a, Term b)
+Term bif_less_equal_2(Process *proc, Term a, Term b)
 {
-  if (!is_term_smaller(b, a)) {
+  if (!is_term_smaller(proc->vm(), b, a)) {
     return atom::TRUE;
   }
   return atom::FALSE;
 }
 
-Term bif_greater_equal_2(Process *, Term a, Term b)
+Term bif_greater_equal_2(Process *proc, Term a, Term b)
 {
-  if (!is_term_smaller(a, b)) {
+  if (!is_term_smaller(proc->vm(), a, b)) {
     return atom::TRUE;
   }
   return atom::FALSE;
@@ -426,10 +426,11 @@ Term bif_atom_to_list_1(Process *proc, Term a)
     return proc->bif_error(atom::BADARG);
   }
 
-  const Str &atom_str = VM::find_atom(a);
+  const VM &vm = proc->vm();
+  const Str &atom_str = vm.find_atom(a);
 //  return term::build_string(proc->get_heap(), atom_str);
   auto x = term::build_string(proc->get_heap(), atom_str);
-  x.println();
+  x.println(vm);
   return x;
 }
 
@@ -454,13 +455,13 @@ Term bif_plus_2(Process *proc, Term a, Term b)
 }
 
 
-Term bif_length_1(Process *, Term a)
+Term bif_length_1(Process *proc, Term a)
 {
   if (a.is_nil()) {
     return Term::make_small(0);
   }
 
-  Std::fmt("length: "); a.println();
+  Std::fmt("length: "); a.println(proc->vm());
   G_ASSERT(a.is_cons());
   sword_t counter = 0;
   while (a.is_cons()) {
@@ -501,7 +502,7 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
   // TODO: calculate is_bif for new object
   mfarity_t mfa(mod, f, arity);
 
-  export_t *exp = VM::get_cs()->find_mfa(mfa);
+  export_t *exp = proc->vm().codeserver().find_mfa(mfa);
   if (!exp) {
     return proc->bif_error(atom::UNDEF);
   }
@@ -512,7 +513,7 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
   box->mfa = mfa;
   if (biffn == nullptr) {
     // Find module
-    auto m_result = VM::get_cs()->find_module(proc, mod, code::LOAD_IF_NOT_FOUND);
+    auto m_result = VM::codeserver().find_module(proc, mod, code::LOAD_IF_NOT_FOUND);
     if (m_result.is_error()) {
       return proc->bif_error(atom::UNDEF);
     }
@@ -648,7 +649,8 @@ Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
 {
   mfarity_t mfa(m, f, arity.small_get_unsigned());
   //Std::fmt("erlang:function_exported "); mfa.println();
-  void *maybe_bif = VM::find_bif(mfa);
+  VM &vm = proc->vm();
+  void *maybe_bif = vm.find_bif(mfa);
   if (maybe_bif != nullptr) {
     Std::fmt("is a bif\n");
     return atom::TRUE;
@@ -656,7 +658,7 @@ Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
 
   Module *mod;
   try {
-    mod = VM::get_cs()->find_module(proc, m, code::LOAD_IF_NOT_FOUND);
+    mod = vm.codeserver().find_module(proc, m, code::LOAD_IF_NOT_FOUND);
   } catch (std::runtime_error &) {
     Std::fmt("no module\n");
     return atom::FALSE;
@@ -708,7 +710,7 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
     // module argument in the n+1st x register as a THIS reference.
     Term   tmp = args;
     while (tmp.is_list()) {
-      if (arity < vm::MAX_REGS - 1) {
+      if (arity < erts::MAX_REGS - 1) {
         tmp.cons_head_tail(regs[arity++], tmp);
       } else {
         proc->bif_error(atom::SYSTEM_LIMIT);
@@ -727,14 +729,15 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
   // Get the index into the export table, or failing that the export
   // entry for the error handler.
   // OTP Note: All BIFs have export entries; thus, no special case is needed.
-  export_t *ep = VM::get_cs()->find_mfa(mfarity_t(m, f, arity));
+  VM &vm = proc->vm();
+  export_t *ep = vm.codeserver().find_mfa(mfarity_t(m, f, arity));
   if (!ep) {
      //if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL) goto error;
     proc->bif_error(atom::UNDEF);
     return nullptr;
   }
   if (ep->is_bif()) {
-    return VM::apply_bif(proc, ep->mfa.arity, ep->bif_fn(), regs);
+    return vm.apply_bif(proc, ep->mfa.arity, ep->bif_fn(), regs);
   }
 //  else if (ERTS_PROC_GET_SAVED_CALLS_BUF(proc)) {
 //      save_calls(proc, ep);

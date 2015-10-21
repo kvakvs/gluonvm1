@@ -18,17 +18,17 @@ namespace gluon {
 """)
 
 print("""void VM::vm_loop(bool init) {
-  impl::vm_runtime_ctx_t ctx;
+  impl::vm_runtime_ctx_t ctx(*this);
   void *jmp_to;
   Process *proc;
-  Scheduler *sched = VM::get_scheduler();
+  Scheduler &sched = VM::scheduler();
 
   if (init) {
     goto vm_jump_table_init;
   }
 
 schedule:
-  proc = sched->next();
+  proc = sched.next();
   if (!proc) { return; } // program finished
   ctx.load(proc); // get copies of quick access data from environment
 
@@ -37,10 +37,10 @@ next_instr:
   ctx.println();
 
   printf("[");
-  proc->get_pid().print();
+  proc->get_pid().print(*this);
   printf(";");
 #if FEATURE_CODE_RANGES
-  VM::get_cs()->print_mfa(ctx.ip); // prints mfarity or pointer
+  codeserver().print_mfa(ctx.ip); // prints mfarity or pointer
   printf("]: ");
 #else
   printf("0x%zx]: ", (word_t)ctx.ip);

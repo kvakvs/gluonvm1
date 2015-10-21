@@ -55,10 +55,10 @@ void Stack::push_n_nils(word_t n) {
 
 // Takes all terms between 'start' and 'end', and copies them to 'dstheap', new
 // resulting terms are placed in array 'dst' which should be large enough.
-bool copy_terms(Heap *dstheap, const Term *start, const Term *end, Term *dst)
+bool copy_terms(VM &vm, Heap *dstheap, const Term *start, const Term *end, Term *dst)
 {
   while (start < end) {
-    *dst = copy_one_term(dstheap, *start);
+    *dst = copy_one_term(vm, dstheap, *start);
     start++;
     dst++;
   }
@@ -66,7 +66,7 @@ bool copy_terms(Heap *dstheap, const Term *start, const Term *end, Term *dst)
 }
 
 // Copies one term 't' to 'dstheap' returns new clone term located in new heap
-Term copy_one_term(Heap *dstheap, Term t) {
+Term copy_one_term(VM &vm, Heap *dstheap, Term t) {
   // Immediate values go immediately out
   if (t.is_non_value()
       || t.is_nil()
@@ -85,7 +85,7 @@ Term copy_one_term(Heap *dstheap, Term t) {
     // Deep clone
     for (word_t i = 0; i < arity; ++i) {
       layout::TUPLE::element(new_t, i)
-                  = copy_one_term(dstheap, layout::TUPLE::element(this_t, i));
+                  = copy_one_term(vm, dstheap, layout::TUPLE::element(this_t, i));
     }
     return Term::make_tuple_prepared(new_t);
   }
@@ -95,7 +95,7 @@ Term copy_one_term(Heap *dstheap, Term t) {
       return fun::box_fun(dstheap, bf->fun_entry, bf->pid, bf->frozen);
     }
   }
-  t.println();
+  t.println(vm);
   G_TODO("notimpl copy_one_term for some type of term");
 }
 

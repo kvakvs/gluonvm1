@@ -66,13 +66,13 @@ bool Term::is_cons_printable_element(Term el) {
   return (c >= ' ' && c <= 127);
 }
 
-Str Term::atom_str() const
+Str Term::atom_str(const VM &vm) const
 {
-  return VM::find_atom(*this);
+  return vm.find_atom(*this);
 }
 
 #if G_DEBUG
-void Term::print() const
+void Term::print(const VM &vm) const
 {
   if (m_val == 0) {
     Std::fmt("NOT_A_TERM");
@@ -100,16 +100,16 @@ void Term::print() const
     } else {
       // not printable - dump terms and tail
       Std::fmt("[");
-      cons_head().print();
+      cons_head().print(vm);
       Term item = cons_tail();
       while (item.is_cons()) {
         Std::fmt(",");
-        item.cons_head().print();
+        item.cons_head().print(vm);
         item = item.cons_tail();
       }
       if (!item.is_nil()) {
         Std::fmt("|");
-        item.print();
+        item.print(vm);
       }
       Std::fmt("]");
     }
@@ -118,7 +118,7 @@ void Term::print() const
     auto arity = tuple_get_arity();
     Std::fmt("{");
     for (word_t n = 0; n < arity; ++n) {
-      tuple_get_element(n).print();
+      tuple_get_element(n).print(vm);
       if (n < arity-1) {
         Std::fmt(",");
       }
@@ -130,7 +130,7 @@ void Term::print() const
     if (term_tag::is_cp<word_t>(p)) {
       word_t *cp = term_tag::untag_cp<word_t>(p);
       Std::fmt("#CP<");
-      VM::get_cs()->print_mfa(cp);
+      vm.codeserver().print_mfa(cp);
       Std::fmt(">");
       return;
     }
@@ -140,7 +140,7 @@ void Term::print() const
 //      if ((word_t)(bf->fun_entry) < 0x1000) {
 //        Std::fmt(FMT_0xHEX, (word_t)bf->fun_entry);
 //      } else {
-        VM::get_cs()->print_mfa(bf->fun_entry->code);
+        vm.codeserver().print_mfa(bf->fun_entry->code);
 //      }
       Std::fmt(">");
       return;
@@ -148,17 +148,17 @@ void Term::print() const
     if (is_boxed_export()) {
       Std::fmt("#ExportedFun<");
       auto ex = boxed_get_ptr<export_t>();
-      ex->mfa.print();
+      ex->mfa.print(vm);
       Std::fmt(";");
       if (ex->is_bif()) {
         Std::fmt("bif");
       } else {
-        VM::get_cs()->print_mfa(ex->code());
+        vm.codeserver().print_mfa(ex->code());
       }
       Std::fmt(">");
       return;
     }    Std::fmt("#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
-    VM::get_cs()->print_mfa(boxed_get_ptr<word_t>());
+    vm.codeserver().print_mfa(boxed_get_ptr<word_t>());
     Std::fmt(">");
   }
   else if (is_nil()) {
@@ -168,7 +168,7 @@ void Term::print() const
     Std::fmt("NON_VALUE");
   }
   else if (is_atom()) {
-    Std::fmt("'%s'", atom_str().c_str());
+    Std::fmt("'%s'", atom_str(vm).c_str());
   }
   else if (is_small()) {
     Std::fmt(FMT_SWORD, small_get_signed());
@@ -195,13 +195,13 @@ void Term::print() const
   }
 }
 
-void Term::println() const
+void Term::println(const VM &vm) const
 {
-  print();
+  print(vm);
   Std::puts();
 }
 
-Term Term::make_binary(proc::Heap *h, word_t bytes)
+Term Term::make_binary(VM &vm, proc::Heap *h, word_t bytes)
 {
   // This many bytes fits boxed subtag value. Going larger means storing size
   // elsewhere or losing significant bit from the size
@@ -213,7 +213,7 @@ Term Term::make_binary(proc::Heap *h, word_t bytes)
     return Term(term_tag::BoxedProcBin::create_from_ptr<word_t>(box));
   } else {
     // Large bin, with boxed refcount and pointer
-    vm::Heap *binheap = VM::get_heap(VM::HEAP_LARGE_BINARY);
+    erts::Heap *binheap = vm.get_heap(VM::HEAP_LARGE_BINARY);
     layout::HeapbinBox *box = binheap->allocate<layout::HeapbinBox>(
                                             layout::HEAP_BIN::box_size(bytes));
     box->set_byte_size(bytes);
@@ -222,16 +222,16 @@ Term Term::make_binary(proc::Heap *h, word_t bytes)
   }
 }
 
-void mfarity_t::println() {
-  print();
+void mfarity_t::println(const VM &vm) {
+  print(vm);
   Std::puts();
 }
 
-void mfarity_t::print()
+void mfarity_t::print(const VM &vm)
 {
-  mod.print();
+  mod.print(vm);
   Std::fmt(":");
-  fun.print();
+  fun.print(vm);
   Std::fmt("/" FMT_UWORD, arity);
 }
 

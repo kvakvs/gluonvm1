@@ -14,7 +14,7 @@ using namespace gluon;
 
 int main(int argc, const char *argv[]) {
 
-  VM::init();
+  VM vm;
 
 #if G_TEST
   // test runner
@@ -23,22 +23,22 @@ int main(int argc, const char *argv[]) {
 
   // normal start
   //vm::load_module("../test/g_test1.S.gleam");
-  VM::get_cs()->path_append("../test");
+  vm.codeserver().path_append("../test");
 
   // create root process and set it to some entry function
   Term start_args[2] = {NIL, NIL};
-  mfarity_t mfa(VM::to_atom("otp_ring0"), VM::to_atom("start"), 2);
+  mfarity_t mfa(vm.to_atom("otp_ring0"), vm.to_atom("start"), 2);
 
-  auto rootp = VM::g_root_proc;
+  auto rootp = vm.g_root_proc;
   rootp->spawn(mfa, start_args);
 
   // Run some code
   rootp->set_group_leader(rootp->get_pid());
-  VM::vm_loop(false);
+  vm.vm_loop(false);
 
   // Print x0 as result
   Std::fmt("Result X[0]=");
-  rootp->get_runtime_ctx().regs[0].println();
+  rootp->get_runtime_ctx().regs[0].println(vm);
 
   return 0;
 #endif

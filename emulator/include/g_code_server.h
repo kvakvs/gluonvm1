@@ -6,8 +6,6 @@
 #include "g_code.h"
 #include "g_code_index.h"
 
-//#include <stdint.h>
-
 namespace gluon {
 
 
@@ -19,6 +17,7 @@ namespace gluon {
 //} code_ptr_t;
 
 class Module;
+class VM;
 
 namespace code {
 
@@ -31,6 +30,7 @@ typedef enum {
 
 class Server {
 private:
+  VM          &vm_;
   mod_map_t   modules_;
   List<Str>   search_path_;
 
@@ -40,7 +40,7 @@ private:
 #endif
 
 public:
-  Server() {}
+  Server(VM &v): vm_(v) {}
 //  void init();
   void load_module(Process *proc, Term name_atom);
   // Pass nil as name to take name automatically from the module

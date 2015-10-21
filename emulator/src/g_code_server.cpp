@@ -15,7 +15,7 @@ namespace code {
 //}
 
 void Server::load_module(Process *proc,
-                               Term name_atom, const u8_t *bytes, word_t size)
+                        Term name_atom, const u8_t *bytes, word_t size)
 {
   // TODO: module versions for hot code loading
   // TODO: free if module already existed, check module usage by processes
@@ -33,7 +33,7 @@ void Server::load_module(Process *proc,
 void Server::load_module(Process *proc, Term name)
 {
   // Scan for locations where module file can be found
-  Str mod_filename(name.atom_str());
+  Str mod_filename(name.atom_str(vm_));
   mod_filename += ".beam";
 
   for (const Str &dir: search_path_) {
@@ -46,7 +46,7 @@ void Server::load_module(Process *proc, Term name)
       f.open(path);
 
       word_t  size = f.size();
-      vm::Heap *heap = VM::get_heap(VM::HEAP_CODE);
+      erts::Heap *heap = vm_.get_heap(VM::HEAP_CODE);
       u8_t *tmp_buffer = heap->allocate<u8_t>(size);
       f.seek(0);
       f.read(tmp_buffer, size);
@@ -91,7 +91,7 @@ bool Server::print_mfa(word_t *ptr) const {
     return false;
   }
   Std::fmt("%s:%s/" FMT_UWORD,
-         mfa.mod.atom_c_str(), mfa.fun.atom_c_str(), mfa.arity);
+         mfa.mod.atom_c_str(vm_), mfa.fun.atom_c_str(vm_), mfa.arity);
   return true;
 }
 

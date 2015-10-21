@@ -13,21 +13,24 @@ Term bif_self_0(Process *proc)
   return proc->get_pid();
 }
 
-static Term spawn_mfargs(Process *proc, Term m, Term f, Term args, bool link)
+static Term spawn_mfargs(Process *proc,
+                         Term m, Term f, Term args,
+                         bool link)
 {
   if (!m.is_atom()) { return proc->bif_badarg(m); }
   if (!f.is_atom()) { return proc->bif_badarg(f); }
   if (!args.is_list()) { return proc->bif_badarg(args); }
   // TODO: on process control blocks' heap
-  Process *new_proc = new Process(proc->get_group_leader());
+  Process *new_proc = new Process(proc->vm(), proc->get_group_leader());
   mfarity_t mfa(m, f, bif::length(args).first);
 
   // A process (proc) spawning another process, and gives args from its heap
   // We should clone args to new process' registers
-  Term old_heap_args[vm::MAX_FUN_ARITY];
-  Term new_heap_args[vm::MAX_FUN_ARITY]; // clone of array_args in new heap
+  Term old_heap_args[erts::MAX_FUN_ARITY];
+  Term new_heap_args[erts::MAX_FUN_ARITY]; // clone of array_args in new heap
   args.cons_to_array(old_heap_args, sizeof(old_heap_args));
-  proc::copy_terms(new_proc->get_heap(),
+  proc::copy_terms(proc->vm(),
+                   new_proc->get_heap(),
                    old_heap_args, old_heap_args + mfa.arity,
                    new_heap_args);
 
@@ -60,9 +63,9 @@ Term bif_group_leader_0(Process *proc)
   return proc->get_group_leader();
 }
 
-Term bif_group_leader_2(Process *, Term pid, Term gl)
+Term bif_group_leader_2(Process *proc, Term pid, Term gl)
 {
-  Process *other = VM::get_scheduler()->find(pid);
+  Process *other = proc->vm().scheduler().find(pid);
   other->set_group_leader(pid);
   return atom::OK;
 }
@@ -72,7 +75,7 @@ Term bif_is_process_alive_1(Process *proc, Term pid)
   if (!pid.is_short_pid()) {
     return proc->bif_badarg(pid);
   }
-  if (VM::get_scheduler()->find(pid) == nullptr) {
+  if (proc->vm().scheduler().find(pid) == nullptr) {
     return atom::FALSE;
   }
   return atom::TRUE;
@@ -91,7 +94,7 @@ Term bif_register_2(Process *p, Term name, Term pid_port)
   if (!pid_port.is_pid() && !pid_port.is_port()) {
     return p->bif_badarg(pid_port);
   }
-  switch (VM::register_name(name, pid_port)) {
+  switch (p->vm().register_name(name, pid_port)) {
     case VM::RegResult::OK: return atom::OK;
     case VM::RegResult::EXISTS: // fall through
     case VM::RegResult::NOPROC: return p->bif_badarg(pid_port);

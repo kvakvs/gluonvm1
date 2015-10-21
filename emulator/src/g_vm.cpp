@@ -23,21 +23,21 @@ namespace err {
   IMPL_EXCEPTION(process_error)
 } // ns err
 
-str_atom_map_t  VM::g_atoms;
-atom_str_map_t  VM::g_atoms_reverse;
-word_t          VM::g_atom_counter; // initialized in init_predef_atoms
-Node           *VM::g_this_node = nullptr;
-const void    **VM::g_opcode_labels;
-Str             VM::g_empty_str;
-Scheduler      *VM::g_scheduler = nullptr;
-code::Server   *VM::g_cs = nullptr;
-Process        *VM::g_root_proc = nullptr;
-atom_proc_map_t VM::g_registered_names;
+//str_atom_map_t  VM::g_atoms;
+//atom_str_map_t  VM::g_atoms_reverse;
+//word_t          VM::g_atom_counter; // initialized in init_predef_atoms
+//Node           *VM::g_this_node = nullptr;
+//const void    **VM::g_opcode_labels;
+//Str             VM::g_empty_str;
+//Scheduler      *VM::g_scheduler = nullptr;
+//code::Server   *VM::g_cs = nullptr;
+//Process        *VM::g_root_proc = nullptr;
+//atom_proc_map_t VM::g_registered_names;
 
-void VM::init()
+VM::VM()
 {
   g_this_node = new Node;
-  g_cs = new code::Server;
+  g_cs = new code::Server(*this);
 
   vm_loop(true); // initialize labels
 
@@ -48,7 +48,7 @@ void VM::init()
   g_cs->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
 
   // create root process and set it to some entry function
-  g_root_proc = new Process(NONVALUE);
+  g_root_proc = new Process(*this, NONVALUE);
   g_cs->load_module(g_root_proc, atom::ERLANG);
 }
 
@@ -58,7 +58,7 @@ VM::RegResult VM::register_name(Term name, Term pid_port)
     return RegResult::EXISTS;
   }
 
-  Process *p = get_scheduler()->find(pid_port);
+  Process *p = scheduler().find(pid_port);
   if (!p) {
     return RegResult::NOPROC;
   }
@@ -100,7 +100,7 @@ void VM::init_predef_atoms()
   // TODO: get rid of
 }
 
-const Str &VM::find_atom(Term a)
+const Str &VM::find_atom(Term a) const
 {
   G_ASSERT(a.is_atom());
   return g_atoms_reverse.find_ref(a, g_empty_str);
@@ -114,7 +114,7 @@ Node *VM::dist_this_node() {
 }
 
 // For now all heaps are located in normal C++ heap
-vm::Heap *VM::get_heap(VM::heap_t) {
+erts::Heap *VM::get_heap(VM::heap_t) {
   return nullptr;
 }
 
@@ -123,7 +123,7 @@ find_bif_compare_fun(const bif::bif_index_t &a, const bif::bif_index_t &b) {
   return a.fun < b.fun || (a.fun == b.fun && a.arity < b.arity);
 }
 
-void *VM::find_bif(const mfarity_t &mfa)
+void *VM::find_bif(const mfarity_t &mfa) const
 {
   if (mfa.mod != atom::ERLANG) {
     return nullptr;
@@ -170,12 +170,12 @@ Term VM::apply_bif(Process *proc, word_t arity, void *fn, Term *args)
   return proc->bif_error(atom::UNDEF);
 }
 
-Scheduler *VM::get_scheduler() {
+Scheduler &VM::scheduler() {
   if (g_scheduler == nullptr) {
     auto heap = VM::get_heap(HEAP_VM_INTERNAL);
-    g_scheduler = heap->alloc_object<Scheduler>();
+    g_scheduler = heap->alloc_object<Scheduler>(*this);
   }
-  return g_scheduler;
+  return *g_scheduler;
 }
 
 

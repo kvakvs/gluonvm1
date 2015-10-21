@@ -60,11 +60,11 @@ void Scheduler::exit_process(Process *p, Term reason)
   // TODO: unregister name if registered
   // TODO: if pending timers - become zombie and sit in pending timers queue
   Std::fmt("Scheduler::exit_process ");
-  p->get_pid().print();
+  p->get_pid().print(vm_);
   Std::fmt("; reason=");
-  reason.print();
+  reason.print(vm_);
   Std::fmt("; result X[0]=");
-  p->get_runtime_ctx().regs[0].println();
+  p->get_runtime_ctx().regs[0].println(vm_);
 
 //  m_inf_wait.erase(p);
 //  m_timed_wait.erase(p);
@@ -180,7 +180,7 @@ Process *Scheduler::next()
     if (next_proc) {
       Std::fmt("-----------------------------\nScheduler::next() -> ");
       Std::fmt("(Q=%d) ", (int)next_proc->m_current_queue);
-      next_proc->get_pid().println();
+      next_proc->get_pid().println(vm_);
 
       next_proc->m_current_queue = proc::Queue::NONE;
       return current_ = next_proc;

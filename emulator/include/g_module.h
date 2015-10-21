@@ -10,6 +10,7 @@
 
 namespace gluon {
 
+class VM;
 class Heap;
 
 class export_t {
@@ -66,6 +67,7 @@ public:
 #endif
 
 private:
+  VM        *vm_;
   Term      name_;
   labels_t  labels_;
   exports_t exports_; // just list of {f/arity}
