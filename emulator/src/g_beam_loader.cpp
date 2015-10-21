@@ -17,6 +17,7 @@
 
 namespace gluon {
 
+
 #if FEATURE_LINE_NUMBERS
 typedef struct {
   word_t pos;
@@ -77,15 +78,15 @@ public:
   LoaderState(): m_code(nullptr), m_code_size(0) {
   }
 
-  MaybeError load_atom_table(tool::Reader &r, Term expected_name);
-  MaybeError load_str_table(tool::Reader &r);
-  MaybeError load_lambda_table(tool::Reader &r);
-  MaybeError load_export_table(tool::Reader &r);
-  MaybeError load_import_table(tool::Reader &r);
-  MaybeError load_code(tool::Reader &r);
-  MaybeError load_literal_table(tool::Reader &r);
-  MaybeError load_labels(tool::Reader &r);
-  MaybeError load_line_table(tool::Reader &r);
+  void load_atom_table(tool::Reader &r, Term expected_name);
+  void load_str_table(tool::Reader &r);
+  void load_lambda_table(tool::Reader &r);
+  void load_export_table(tool::Reader &r);
+  void load_import_table(tool::Reader &r);
+  void load_code(tool::Reader &r);
+  void load_literal_table(tool::Reader &r);
+  void load_labels(tool::Reader &r);
+  void load_line_table(tool::Reader &r);
 
   inline const Str &atom_tab_index_to_str(word_t i) const {
     G_ASSERT(i <= m_atoms.size());
@@ -93,9 +94,9 @@ public:
   }
 
   // Load finished, create a Module object and inform code server
-  Result<Module *> finalize(Term modname);
+  Module *finalize(Term modname);
   // Parse raw code creating jump table with decoded args
-  MaybeError beam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
+  void beam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
 
 protected:
   struct Tag { enum {
@@ -126,8 +127,8 @@ protected:
 //    Overflow  = 14,   // overflow/bigint
     };};
 
-  MaybeError resolve_labels(const Vector<word_t> &postponed_labels,
-                            Vector<word_t> &code);
+  void resolve_labels(const Vector<word_t> &postponed_labels,
+                      Vector<word_t> &code);
 //  MaybeError get_tag_and_value(tool::Reader &r, word_t &tag, word_t &value);
 //  Result<word_t> get_tag_and_value_2(tool::Reader &r,
 //                                     word_t len_code,
@@ -141,23 +142,25 @@ protected:
 #if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
   void beam_op_func_info(Vector<word_t> &code, Term, Term, Term);
 #endif
-  Result<Term> parse_term(tool::Reader &r);
+  Term parse_term(tool::Reader &r);
 
   static u8_t parse_tag(tool::Reader &r, u8_t value, int tag=-1);
-  static Result<Term> parse_int_term(tool::Reader &r, u8_t first);
+  static Term parse_int_term(tool::Reader &r, u8_t first);
   inline static bool is_base_tag(u8_t t) { return t < Tag::Extended_Base; }
-  static Result<Term> create_int_term(tool::Reader &r, u8_t first);
-  static Result<Term> parse_bigint(tool::Reader & /*r*/, word_t /*byte_count*/);
-  static Result<Term> parse_float(tool::Reader & /*r*/);
-  static Result<Term> parse_alloclist(tool::Reader &r);
+  static Term create_int_term(tool::Reader &r, u8_t first);
+  static Term parse_bigint(tool::Reader & /*r*/, word_t /*byte_count*/);
+  static Term parse_float(tool::Reader & /*r*/);
+  static Term parse_alloclist(tool::Reader &r);
   static Pair<sword_t, bool> parse_small_int(tool::Reader &r, u8_t first);
   static Pair<sword_t, bool> parse_create_small_int(tool::Reader &r, u8_t tag);
   // Returns result + overflow flag, overflow means we want to read bigint
   static Pair<sword_t, bool> read_signed_word(tool::Reader &r, word_t count);
 };
 
-Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
-    Term expected_name, const u8_t *bytes, word_t size)
+Module *code::Server::load_module_internal(proc::Heap *heap,
+                                           Term expected_name,
+                                           const u8_t *bytes,
+                                           word_t size)
 {
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(bytes, size);
@@ -168,7 +171,7 @@ Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
   r.assert_remaining_at_least(4+4+4);
   Str for1_header = r.read_string(4);
   if (for1_header != "FOR1") {
-    return error<Module *>("not iff container");
+    throw err::beam_load_error("not iff container");
   }
 
   word_t file_length = r.read_big_u32();
@@ -176,10 +179,9 @@ Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
 
   Str beam_header = r.read_string(4);
   if (beam_header != "BEAM") {
-    return error<Module *>("not BEAM file");
+    throw err::beam_load_error("not BEAM file");
   }
 
-  MaybeError result;
   while (1) {
     if (r.get_remaining_count() < 5) break;
     Str chunk = r.read_string(4);
@@ -188,28 +190,25 @@ Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
         || !is_lowcase_latin(chunk[2]))
     {
       G_LOG("beam offset " FMT_0xHEX "\n", r.get_ptr() - bytes);
-      return error<Module *>("bad beam format");
+      throw err::beam_load_error("bad beam format");
     }
-    //G_LOG("BEAM section %s\n", chunk.c_str());
 
-    result.clear();
-    if      (chunk == "Atom") { result = lstate.load_atom_table(r, expected_name); }
-    else if (chunk == "Code") { result = lstate.load_code(r); }
-    else if (chunk == "FunT") { result = lstate.load_lambda_table(r); }
-    else if (chunk == "ExpT") { result = lstate.load_export_table(r); }
-    else if (chunk == "LitT") { result = lstate.load_literal_table(r); }
-    // else if (chunk == "LABL") { result = lstate.load_labels(r); }
-    else if (chunk == "StrT") { result = lstate.load_str_table(r); }
-    else if (chunk == "ImpT") { result = lstate.load_import_table(r); }
+    if      (chunk == "Atom") { lstate.load_atom_table(r, expected_name); }
+    else if (chunk == "Code") { lstate.load_code(r); }
+    else if (chunk == "FunT") { lstate.load_lambda_table(r); }
+    else if (chunk == "ExpT") { lstate.load_export_table(r); }
+    else if (chunk == "LitT") { lstate.load_literal_table(r); }
+    // else if (chunk == "LABL") { lstate.load_labels(r); }
+    else if (chunk == "StrT") { lstate.load_str_table(r); }
+    else if (chunk == "ImpT") { lstate.load_import_table(r); }
     // CInf block
     // Attr block
     // Abst block
-    else if (chunk == "Line") { result = lstate.load_line_table(r); }
+    else if (chunk == "Line") { lstate.load_line_table(r); }
     else {
       auto chunk_sz = r.read_big_u32();
       r.advance_align<4>(chunk_sz);
     }
-    G_RETURN_REWRAP_IF_ERROR(result, Module*)
   }
 
   // All good, deploy the module!
@@ -217,16 +216,14 @@ Result<Module *> code::Server::load_module_internal(proc::Heap *heap,
   return lstate.finalize(modname);
 }
 
-Result<Module *> LoaderState::finalize(Term modname) {
+Module * LoaderState::finalize(Term modname) {
   Module *newmod = m_heap->alloc_object<Module>(modname, m_imports);
 
-  auto result = beam_prepare_code(newmod, m_code, m_code_size);
-  G_RETURN_REWRAP_IF_ERROR(result, Module*);
-
-  return success(newmod);
+  beam_prepare_code(newmod, m_code, m_code_size);
+  return newmod;
 }
 
-MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
+void LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
 {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
@@ -244,23 +241,19 @@ MaybeError LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
   m_mod_name = VM::to_atom(m_atoms[0]);
   if (false == expected_name.is_nil()
       && m_mod_name != expected_name) {
-    return "module name mismatch";
+    throw err::beam_load_error("module name mismatch");
   }
 
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
-MaybeError LoaderState::load_str_table(tool::Reader &r0)
+void LoaderState::load_str_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
-  //tool::Reader r  = r0.clone(chunk_size);
-
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
-MaybeError LoaderState::load_lambda_table(tool::Reader &r0) {
+void LoaderState::load_lambda_table(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
 
@@ -279,7 +272,7 @@ MaybeError LoaderState::load_lambda_table(tool::Reader &r0) {
     auto ouniq      = r.read_big_u32();
 
     if (fun_atom_i > m_atoms.size()) {
-      return "funt: atom index too big";
+      throw err::beam_load_error("funt: atom index too big");
     }
     const Str &f_str = atom_tab_index_to_str(fun_atom_i);
 
@@ -300,10 +293,9 @@ MaybeError LoaderState::load_lambda_table(tool::Reader &r0) {
   }
 
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
-MaybeError LoaderState::load_export_table(tool::Reader &r0) {
+void LoaderState::load_export_table(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
 
@@ -312,7 +304,7 @@ MaybeError LoaderState::load_export_table(tool::Reader &r0) {
   for (word_t i = 0; i < count; ++i) {
     auto f_i   = r.read_big_u32();
     if (f_i > m_atoms.size()) {
-      return "expt: atom index too big";
+      throw err::beam_load_error("expt: atom index too big");
     }
     auto f = VM::to_atom(atom_tab_index_to_str(f_i));
 
@@ -324,10 +316,9 @@ MaybeError LoaderState::load_export_table(tool::Reader &r0) {
   }
 
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
-MaybeError LoaderState::load_import_table(tool::Reader &r0)
+void LoaderState::load_import_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r  = r0.clone(chunk_size);
@@ -341,15 +332,13 @@ MaybeError LoaderState::load_import_table(tool::Reader &r0)
     Term m = VM::to_atom(ms);
     Term f = VM::to_atom(fs);
     word_t arity = r.read_big_u32();
-//    Std::fmt("import: %s:%s/" FMT_UWORD "\n", ms.c_str(), fs.c_str(), arity);
     m_imports.push_back(mfarity_t(m, f, arity));
   }
 
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
-MaybeError LoaderState::load_code(tool::Reader &r0) {
+void LoaderState::load_code(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r  = r0.clone(chunk_size);
 
@@ -357,25 +346,24 @@ MaybeError LoaderState::load_code(tool::Reader &r0) {
 
   m_code_version   = r.read_big_u32();
   if (m_code_version != 0) {
-    return "opcode set version";
+    throw err::beam_load_error("opcode set version");
   }
   m_code_opcode_max  = r.read_big_u32();
   m_code_label_count = r.read_big_u32();
   m_code_fun_count   = r.read_big_u32();
 
-#if FEATURE_LINE_NUMBERS
-  LN.fun_code_map.reserve(m_code_fun_count);
-#endif
+  if (feature_line_numbers) {
+    LN.fun_code_map.reserve(m_code_fun_count);
+  }
 
   // Just read code here, parse later
   m_code = r.get_ptr();
   m_code_size = chunk_size;
 
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
-MaybeError LoaderState::load_literal_table(tool::Reader &r0)
+void LoaderState::load_literal_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r1 = r0.clone(chunk_size);
@@ -388,50 +376,46 @@ MaybeError LoaderState::load_literal_table(tool::Reader &r0)
   auto result = mz_uncompress(uncompressed.binary_get<u8_t>(), &uncompressed_size,
                               compressed.binary_get<u8_t>(), chunk_size);
   if (result != MZ_OK) {
-    return "beam LitT error";
+    throw err::beam_load_error("beam LitT error");
   }
 
   tool::Reader r(uncompressed.binary_get<u8_t>(), uncompressed_size);
   auto count = r.read_big_u32();
 
-//  G_LOG("compressed " FMT_UWORD " bytes, uncomp " FMT_UWORD " bytes, count " FMT_UWORD "\n",
-//         chunk_size, uncompressed_size, count);
   m_literals.reserve(count);
 
   for (word_t i = 0; i < count; ++i) {
     /*auto lit_sz =*/ r.read_big_u32();
 
-    auto lit_result = etf::read_ext_term_with_marker(m_heap, r);
-    G_RETURN_IF_ERROR(lit_result);
-
-    auto lit = lit_result.get_result();
+    auto lit = etf::read_ext_term_with_marker(m_heap, r);
     m_literals.push_back(lit);
   }
 
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
-MaybeError LoaderState::load_labels(tool::Reader &r0)
+void LoaderState::load_labels(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
-//  tool::Reader r = r0.clone(chunk_size);
 
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
-MaybeError LoaderState::load_line_table(tool::Reader &r0)
+void LoaderState::load_line_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
 
-#if FEATURE_LINE_NUMBERS
+  if (!feature_line_numbers) {
+    r0.advance_align<4>(chunk_size);
+    return;
+  }
+
   tool::Reader r = r0.clone(chunk_size);
 
   // u32 table_version=0
   if (r.read_big_u32() != 0) {
   // Wrong version. Silently ignore the line number chunk.
-    return "bad line info ver";
+    throw err::beam_load_error("bad line info ver");
   }
 
   r.advance(4); // flags, ignore
@@ -449,10 +433,7 @@ MaybeError LoaderState::load_line_table(tool::Reader &r0)
   // First elements of ref table contain only offsets assuming they are for
   // file #0
   for (word_t i = 0; i < LN.num_line_refs; ++i) {
-    auto pt_result = parse_term(heap, r);
-    G_RETURN_IF_ERROR_UNLIKELY(pt_result);
-
-    Term val = pt_result.get_result();
+    Term val = parse_term(r);
     if (val.is_small()) {
       // We've got an offset for current filename
       word_t offs = val.small_get_unsigned();
@@ -467,7 +448,7 @@ MaybeError LoaderState::load_line_table(tool::Reader &r0)
       // reference to another file
       word_t a_id = val.atom_val();
       if (a_id > LN.num_filenames) {
-        return "line info: bad file index";
+        throw err::beam_load_error("line info: bad file index");
       }
       fname_index = a_id;
     }
@@ -481,14 +462,11 @@ MaybeError LoaderState::load_line_table(tool::Reader &r0)
     LN.filenames.push_back(VM::to_atom(name));
   }
 
-#endif
-
   r0.advance_align<4>(chunk_size);
-  return success();
 }
 
 // Scans raw code in bytes:sz, and builds jump table with processed args
-MaybeError LoaderState::beam_prepare_code(Module *m,
+void LoaderState::beam_prepare_code(Module *m,
                                           const u8_t *bytes, word_t sz)
 {
   // TODO: use some other heap?
@@ -514,7 +492,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 //          genop::opcode_name_map[opcode]);
 
     if (opcode < 1 || opcode > genop::MAX_OPCODE) {
-      return "bad opcode";
+      throw err::beam_load_error("bad opcode");
     }
 
 
@@ -527,56 +505,33 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 
     // line/1 opcode
     if (opcode == genop::OPCODE_LINE) {
-      auto a = parse_term(r);
-      G_RETURN_IF_ERROR_UNLIKELY(a);
-#if FEATURE_LINE_NUMBERS
-      beam_op_line(code, a.get_result());
-#else
-//      a.get_result().println();
-#endif
+      if (feature_line_numbers) {
+        beam_op_line(code, parse_term(r));
+      }
       continue;
     }
 
     // label/1 opcode - save offset to labels table
     if (opcode == genop::OPCODE_LABEL) {
-      auto pv_result = parse_term(r);
-      G_RETURN_IF_ERROR_UNLIKELY(pv_result);
-      Term label = pv_result.get_result();
-//      label.println();
+      Term label = parse_term(r);
       G_ASSERT(label.is_small());
 
       word_t l_id = label.small_get_unsigned();
       G_ASSERT(l_id < m_code_label_count);
       m_labels[l_id] = (&code.back())+1;
-//      G_LOG("label " FMT_UWORD " (" FMT_0xHEX ") offset " FMT_0xHEX, l_id, l_id, code.size());
-//      Std::puts();
       continue;
     }
 
     if (opcode == genop::OPCODE_FUNC_INFO) {
       tool::Reader r1 = r.clone();
       auto a = parse_term(r1);
-      G_RETURN_IF_ERROR(a)
       auto b = parse_term(r1);
-      G_RETURN_IF_ERROR(b);
       auto c = parse_term(r1);
-      G_RETURN_IF_ERROR(c);
-#if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
-      beam_op_func_info(code,
-                        a.get_result(), b.get_result(), c.get_result());
-#else
-//      Std::puts();
-#endif
+      if (feature_line_numbers || feature_code_ranges) {
+        beam_op_func_info(code, a, b, c);
+      }
       // FALL THROUGH AND EMIT THE OPCODE
-      //continue;
     }
-
-//    if (opcode == genop::OPCODE_PUT) {
-//      // eliminate opcode and put only arg
-//      auto a = parse_term(heap, r);
-//      G_RETURN_IF_ERROR(a);
-//      code.push_back(a);
-//    }
 
     // Convert opcode into jump address
     op_ptr = reinterpret_cast<word_t>(VM::g_opcode_labels[opcode]);
@@ -590,11 +545,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
     word_t *first_arg = &code.back() + 1;
 
     for (word_t a = 0; a < arity; ++a) {
-      auto arg_result = parse_term(r);
-      G_RETURN_IF_ERROR_UNLIKELY(arg_result);
-
-      Term arg = arg_result.get_result();
-//      arg.print();
+      Term arg = parse_term(r);
 
       // Use runtime value 'Catch' to mark label references
       if (term_tag::Catch::check(arg.as_word())) {
@@ -647,8 +598,7 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 #endif
 
   // TODO: just scan code and resolve in place maybe? don't have to accum labels
-  auto stage2 = resolve_labels(postponed_labels, code);
-  G_RETURN_IF_ERROR(stage2);
+  resolve_labels(postponed_labels, code);
 
   m->set_labels(m_labels);
   m->set_code(code); // give ownership
@@ -684,7 +634,6 @@ MaybeError LoaderState::beam_prepare_code(Module *m,
 #if FEATURE_LINE_NUMBERS
   m->set_line_numbers(LN.line_refs, LN.filenames);
 #endif
-  return success();
 }
 
 void LoaderState::replace_imp_index_with_ptr(word_t *p, Module *m) {
@@ -751,7 +700,7 @@ void LoaderState::replace_lambda_index_with_ptr(word_t *p, Module *m) {
   *p = j.as_word();
 }
 
-Result<Term> LoaderState::parse_term(tool::Reader &r)
+Term LoaderState::parse_term(tool::Reader &r)
 {
   u8_t first = r.read_byte();
   u8_t tag   = parse_tag(r, first);
@@ -766,42 +715,42 @@ Result<Term> LoaderState::parse_term(tool::Reader &r)
     word_t val = (word_t)psi_result.first;
 
     if (tag == Tag::Integer || tag == Tag::Literal) {
-      return success(Term::make_small((sword_t)val));
+      return Term::make_small((sword_t)val);
     }
     if (tag == Tag::Atom) {
       if (val == 0) {
-        return success(NIL);
+        return NIL;
       } else if (val > m_atoms.size()) { // we will subtract 1 when indexing
-        return error<Term>("bad atom index");
+        throw err::beam_load_error("bad atom index");
       }
-      return success(VM::to_atom(atom_tab_index_to_str(val)));
+      return VM::to_atom(atom_tab_index_to_str(val));
     }
     if (tag == Tag::Label) {
       if (val == 0) {
-        return success(NONVALUE); //Tag::NoLabel; // empty destination
+        return NONVALUE; //Tag::NoLabel; // empty destination
       } else if (val >= m_code_label_count) {
-        return error<Term>("bad label");
+        throw err::beam_load_error("bad label");
       }
       // special value to be recognized by label resolver
-      return success(Term::make_catch(val));
+      return Term::make_catch(val);
     }
     if (tag == Tag::XRegister) {
       if (val >= vm::MAX_REGS) {
-        return error<Term>("invalid x register");
+        throw err::beam_load_error("invalid x register");
       }
-      return success(Term::make_regx(val));
+      return Term::make_regx(val);
     }
     if (tag == Tag::YRegister) {
       if (val >= vm::MAX_STACK) {
-        return error<Term>("invalid y register");
+        throw err::beam_load_error("invalid y register");
       }
-      return success(Term::make_regy(val));
+      return Term::make_regy(val);
     }
     if (tag == Tag::Character) {
       if (val > 65535) {
-        return error<Term>("invalid character range");
+        throw err::beam_load_error("invalid character range");
       }
-      return success(Term::make_small_u(val));
+      return Term::make_small_u(val);
     }
   }
   // ---- END BASE TAGS --- BEGIN EXTENDED ---
@@ -817,9 +766,7 @@ Result<Term> LoaderState::parse_term(tool::Reader &r)
     term::TupleBuilder tb(m_heap, length * 2);
 
     for (word_t i = 0; i < length; ++i) {
-      auto base_result = parse_term(r);
-      G_RETURN_REWRAP_IF_ERROR_UNLIKELY(base_result, Term);
-      Term base = base_result.get_result();
+      Term base = parse_term(r);
       tb.add(base);
 
       auto label = parse_small_int(r, r.read_byte());
@@ -829,7 +776,7 @@ Result<Term> LoaderState::parse_term(tool::Reader &r)
     Term result = tb.make_tuple();
     // replace label numbers with pointers when loading finished
     m_resolve_select_lists.push_back(result);
-    return success(result);
+    return result;
   }
   else if (tag == Tag::Extended_FloatRegister) {
 #if FEATURE_FLOAT
@@ -843,23 +790,21 @@ Result<Term> LoaderState::parse_term(tool::Reader &r)
     type = Tag::L;
     break;
 #else
-    return error<Term>("FEATURE_FLOAT");
+    throw err::feature_missing_error("FLOAT");
 #endif
   }
   else if (tag == Tag::Extended_AllocList) {
     return parse_alloclist(r);
   }
   else if (tag == Tag::Extended_Literal) {
-    auto lit_result = parse_int_term(r, r.read_byte());
-    G_RETURN_REWRAP_IF_ERROR_UNLIKELY(lit_result, Term);
-    word_t val1 = lit_result.get_result().small_get_unsigned();
+    word_t val1 = parse_int_term(r, r.read_byte()).small_get_unsigned();
 
     if (val1 >= m_literals.size()) {
-      return error<Term>("bad literal index");
+      throw err::beam_load_error("bad literal index");
     }
-    return success(m_literals[val1]);
+    return m_literals[val1];
   }
-  return error<Term>("bad extended tag");
+  throw err::beam_load_error("bad extended tag");
 }
 
 u8_t LoaderState::parse_tag(tool::Reader &r, u8_t value, int tag) {
@@ -872,13 +817,13 @@ u8_t LoaderState::parse_tag(tool::Reader &r, u8_t value, int tag) {
   return (tag & 0x7);
 }
 
-Result<Term> LoaderState::parse_int_term(tool::Reader &r, u8_t first) {
+Term LoaderState::parse_int_term(tool::Reader &r, u8_t first) {
   u8_t tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
   return create_int_term(r, first);
 }
 
-Result<Term> LoaderState::create_int_term(tool::Reader &r, u8_t tag)
+Term LoaderState::create_int_term(tool::Reader &r, u8_t tag)
 {
   if (tag & 0x08) {  // xxxx1xxx
     if (tag & 0x10) {  // xxx11xxx - extended
@@ -893,10 +838,10 @@ Result<Term> LoaderState::create_int_term(tool::Reader &r, u8_t tag)
     } else {
       auto w = r.read_byte();
       Term result = Term::make_small(((sword_t)(tag & 0xe0) << 3) | w);
-      return success(result);
+      return result;
     }
   } else {
-    return success(Term::make_small(tag >> 4));
+    return Term::make_small(tag >> 4);
   }
 }
 
@@ -952,23 +897,23 @@ LoaderState::parse_create_small_int(tool::Reader &r, u8_t tag)
   return std::make_pair(tag >> 4, false);
 }
 
-Result<Term> LoaderState::parse_bigint(tool::Reader &, word_t) {
+Term LoaderState::parse_bigint(tool::Reader &, word_t) {
 #if FEATURE_BIGNUM
 #error "todo load bignum from reader"
 #else
-  return error<Term>("FEATURE_BIGINT");
+  throw err::feature_missing_error("BIGINT");
 #endif
 }
 
-Result<Term> LoaderState::parse_float(tool::Reader &) {
+Term LoaderState::parse_float(tool::Reader &) {
 #if FEATURE_FLOAT
 #error "todo load float from reader"
 #else
-  return error<Term>("FEATURE_FLOAT");
+  throw err::feature_missing_error("FLOAT");
 #endif
 }
 
-Result<Term> LoaderState::parse_alloclist(tool::Reader &r)
+Term LoaderState::parse_alloclist(tool::Reader &r)
 {
 #if 0
   word_t n;
@@ -1017,7 +962,7 @@ Result<Term> LoaderState::parse_alloclist(tool::Reader &r)
   G_FAIL("alloc list?");
 }
 
-MaybeError LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
+void LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
                                        Vector<word_t> &code)
 {
   //  word_t *base = code.data();
@@ -1029,12 +974,9 @@ MaybeError LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
 
     // New value will be small int
     Term resolved_label = Term::make_boxed_cp(m_labels[label_index]);
-//    G_LOG("loader: resolving label " FMT_UWORD " at " FMT_0xHEX " to " FMT_0xHEX "\n",
-//           label_index, code_index,
-//           (word_t)resolved_label.boxed_get_ptr<word_t>());
     code[code_index] = resolved_label.as_word();
   }
-  return success();
+  return;
 }
 
 } // ns gluon

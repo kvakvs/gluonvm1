@@ -1,18 +1,25 @@
+#include "g_defs.h"
 #include "g_vm.h"
 #include "g_ext_term.h"
 #include "g_heap.h"
 
 namespace gluon {
+
+namespace err {
+  DECL_EXCEPTION(ext_term_error)
+  IMPL_EXCEPTION(ext_term_error)
+} // ns err
+
 namespace etf {
 
 Term read_atom_string_i16(tool::Reader &r);
 Term read_atom_string_i8(tool::Reader &r);
-Result<Term> read_tagged_atom_string(tool::Reader &r);
+Term read_tagged_atom_string(tool::Reader &r);
 Node *get_node(Term /*sysname*/, dist::creation_t /*creation*/);
-Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation);
-Result<Term> read_tuple(proc::Heap *heap, tool::Reader &r, word_t arity);
+Term make_pid(Term sysname, word_t id, word_t serial, u8_t creation);
+Term read_tuple(proc::Heap *heap, tool::Reader &r, word_t arity);
 Term read_string_ext(proc::Heap *heap, tool::Reader &r);
-Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r);
+Term read_list_ext(proc::Heap *heap, tool::Reader &r);
 
 
 // Reads long atom as string and attempts to create it in atom table.
@@ -33,13 +40,13 @@ Term read_atom_string_i8(tool::Reader &r) {
 
 // Reads tag byte, then reads long or short atom as string and attempts to
 // create it in atom table.
-Result<Term> read_tagged_atom_string(tool::Reader &r) {
+Term read_tagged_atom_string(tool::Reader &r) {
   u8_t tag = r.read_byte();
   switch (tag) {
-    case ATOM_EXT:        return success(read_atom_string_i16(r));
-    case SMALL_ATOM_EXT:  return success(read_atom_string_i8(r));
+    case ATOM_EXT:        return read_atom_string_i16(r);
+    case SMALL_ATOM_EXT:  return read_atom_string_i8(r);
   }
-  return error<Term>("etf atom expected");
+  throw err::ext_term_error("atom expected");
 }
 
 
@@ -51,46 +58,42 @@ Node *get_node(Term /*sysname*/, dist::creation_t /*creation*/) {
 }
 
 
-Result<Term> make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
+Term make_pid(Term sysname, word_t id, word_t serial, u8_t creation) {
   if ( !Term::is_valid_pid_id(id)
     || !Term::is_valid_pid_serial(serial)) {
-    return error<Term>("bad pid");
+    throw err::ext_term_error("bad pid");
   }
   // TODO: check valid creation
   word_t data = Term::make_pid_data(serial, id);
   auto node = get_node(sysname, creation);
 
   if (node == VM::dist_this_node()) {
-    return success(Term::make_short_pid(data));
+    return Term::make_short_pid(data);
   }
 #if FEATURE_ERL_DIST
   G_TODO("distribution support pid etf");
 #endif
   // distribution disabled, no want remote pids
-  return error<Term>("FEATURE_ERL_DIST");
+  throw err::feature_missing_error("ERL_DIST");
 }
 
-Result<Term> read_tuple(proc::Heap *heap, tool::Reader &r, word_t arity) {
+Term read_tuple(proc::Heap *heap, tool::Reader &r, word_t arity) {
   if (arity == 0) {
-    return success(Term::make_zero_tuple());
+    return Term::make_zero_tuple();
   }
 
   Term *cells = (Term *)heap->allocate<word_t>(layout::TUPLE::box_size(arity));
 
   // fill elements or die horribly if something does not decode
   for (word_t i = 0; i < arity; ++i) {
-    auto elem_result = read_ext_term(heap, r);
-    if (elem_result.is_error()) {
-      return elem_result;
-    }
-    layout::TUPLE::element(cells, i) = elem_result.get_result();
+    layout::TUPLE::element(cells, i) = read_ext_term(heap, r);
   }
 
-  return success(Term::make_tuple(cells, arity));
+  return Term::make_tuple(cells, arity);
 }
 
 
-Result<Term> read_ext_term_with_marker(proc::Heap *heap, tool::Reader &r) {
+Term read_ext_term_with_marker(proc::Heap *heap, tool::Reader &r) {
   r.assert_byte(ETF_MARKER);
   return read_ext_term(heap, r);
 }
@@ -139,7 +142,7 @@ Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
   return result;
 }
 
-Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r) {
+Term read_list_ext(proc::Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u32();
 
   Term result = NIL;
@@ -148,34 +151,24 @@ Result<Term> read_list_ext(proc::Heap *heap, tool::Reader &r) {
   for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
     Term *cons = (Term *)heap->allocate<word_t>(layout::CONS::BOX_SIZE);
 
-    auto v_result = read_ext_term(heap, r);
-    if (v_result.is_error()) {
-      return v_result;
-    }
-
-    layout::CONS::head(cons) = v_result.get_result();
+    layout::CONS::head(cons) = read_ext_term(heap, r);;
     *ref = Term::make_cons(cons);
     ref = &layout::CONS::tail(cons);
   }
 
-  auto tail_result = read_ext_term(heap, r);
-  if (tail_result.is_error()) {
-    return tail_result;
-  }
-  *ref = tail_result.get_result();
-
-  return success(result);
+  *ref = read_ext_term(heap, r);
+  return result;
 }
 
-static Result<Term> read_binary(proc::Heap *heap, tool::Reader &r) {
+static Term read_binary(proc::Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u32();
   Term result = Term::make_binary(heap, length);
   u8_t *data = result.binary_get<u8_t>();
   r.read_bytes(data, length);
-  return success(result);
+  return result;
 }
 
-Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
+Term read_ext_term(proc::Heap *heap, tool::Reader &r) {
   auto t = r.read_byte();
   switch (t) {
   case COMPRESSED:
@@ -184,14 +177,14 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
     G_IF_NODEBUG(break;)
 
   case SMALL_INTEGER_EXT:
-    return success(Term::make_small(r.read_byte()));
+    return Term::make_small(r.read_byte());
 
   case INTEGER_EXT: {
       // 32-bit integer
       sword_t n = r.read_big_s(4);
       if (get_hardware_bits() > 32) {
         // fits into small_int if platform is x64
-        return success(Term::make_small(n));
+        return Term::make_small(n);
       } else { // hardware bits = 32
 #if FEATURE_BIGNUM
       if (Term::is_big(n)) {
@@ -201,7 +194,7 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
       }
 #else
       // no bignum, and hardware bits not enough: much fail here
-      return error<Term>("FEATURE_BIGNUM");
+      throw err::feature_missing_error("BIGNUM");
 #endif
       } // hardware bits = 32
     }  // integer_ext
@@ -216,13 +209,13 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
 #else
   case OLD_FLOAT_STRING_EXT:
   case IEEE_FLOAT_EXT:
-    return error<Term>("FEATURE_FLOAT");
+    throw err::feature_missing_error("FLOAT");
 #endif
 
   case ATOM_UTF8_EXT:   // fall through
-  case ATOM_EXT:        return success(read_atom_string_i16(r));
+  case ATOM_EXT:        return read_atom_string_i16(r);
   case SMALL_ATOM_UTF8_EXT: // fall through
-  case SMALL_ATOM_EXT:  return success(read_atom_string_i8(r));
+  case SMALL_ATOM_EXT:  return read_atom_string_i8(r);
 
   case REFERENCE_EXT: {
       // format: N atom string, 4byte id, 1byte creation
@@ -244,10 +237,7 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
 
   case PID_EXT: {
       // format: N atom string, 4byte id, 4byte serial, 1byte cre
-      auto node_result = read_tagged_atom_string(r);
-      G_RETURN_REWRAP_IF_ERROR(node_result, Term);
-
-      Term node     = node_result.get_result();
+      Term node     = read_tagged_atom_string(r);
       word_t id     = r.read_big_u32();
       word_t serial = r.read_big_u32();
       u8_t creation = r.read_byte();
@@ -261,11 +251,11 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
 #if FEATURE_MAPS
     return read_map(heap, r);
 #else
-    return error<Term>("FEATURE_MAPS");
+    throw err::feature_missing_error("MAPS");
 #endif
 
-  case NIL_EXT:     return success(NIL);
-  case STRING_EXT:  return success(read_string_ext(heap, r));
+  case NIL_EXT:     return NIL;
+  case STRING_EXT:  return read_string_ext(heap, r);
   case LIST_EXT:    return read_list_ext(heap, r);
 
 #if FEATURE_BIN_READ
@@ -281,12 +271,12 @@ Result<Term> read_ext_term(proc::Heap *heap, tool::Reader &r) {
   case LARGE_BIG_EXT: G_TODO("read large-big etf");
 #else
   case SMALL_BIG_EXT:
-  case LARGE_BIG_EXT: return error<Term>("FEATURE_BIGNUM");
+  case LARGE_BIG_EXT: throw err::feature_missing_error("BIGNUM");
 #endif
 
   default:
     Std::fmt("invalid ETF value tag %d\n", t);
-    return error<Term>("bad etf tag");
+    throw err::ext_term_error("bad etf tag");
   } // switch tag
 } // parse function
 

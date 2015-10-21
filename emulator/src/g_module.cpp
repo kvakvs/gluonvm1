@@ -5,13 +5,12 @@
 
 namespace gluon {
 
-
-Result<word_t *> Module::resolve_label(label_index_t label)
+word_t *Module::resolve_label(label_index_t label)
 {
   if (label.value >= labels_.size()) {
-    return error<word_t *>("label index too big");
+    throw err::beam_load_error("label index too big");
   }
-  return success(labels_[label.value]);
+  return labels_[label.value];
 }
 
 void Module::set_exports(Module::exports_t &e) {

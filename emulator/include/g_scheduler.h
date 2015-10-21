@@ -38,10 +38,10 @@ private:
 
 public:
   // Register process in one of queues according to its priority. New pid is set
-  MaybeError add_new_runnable(Process *p);
+  void add_new_runnable(Process *p);
 
   Process *next();
-  MaybeError queue_by_priority(Process *p);
+  void queue_by_priority(Process *p);
   Process *find(Term pid) const;
   void exit_process(Process *p, Term reason);
   // Wake up if process was waiting or timed-waiting

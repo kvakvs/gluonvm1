@@ -42,12 +42,12 @@ private:
 public:
   Server() {}
 //  void init();
-  MaybeError load_module(Process *proc, Term name_atom);
+  void load_module(Process *proc, Term name_atom);
   // Pass nil as name to take name automatically from the module
-  MaybeError load_module(Process *proc, Term name_atom,
-                         const u8_t *bytes, word_t size);
+  void load_module(Process *proc, Term name_atom,
+                   const u8_t *bytes, word_t size);
 
-  Result<Module *> find_module(Process *proc, Term m, find_opt_t opt);
+  Module *find_module(Process *proc, Term m, find_opt_t opt);
   void path_append(const Str &p);
   void path_prepend(const Str &p);
 
@@ -58,9 +58,9 @@ public:
   export_t *find_mfa(const mfarity_t &mfa, Module **out_mod=nullptr) const;
 
 protected:
-  Result<Module *> load_module_internal(proc::Heap *heap,
-                                        Term expected_name_or_nil,
-                                        const u8_t *bytes, word_t size);
+  Module *load_module_internal(proc::Heap *heap,
+                               Term expected_name_or_nil,
+                               const u8_t *bytes, word_t size);
 };
 
 } // ns code

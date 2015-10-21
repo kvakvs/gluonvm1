@@ -40,6 +40,27 @@
 
 namespace gluon {
 
+#define DECL_EXCEPTION(NAME)                      \
+  class NAME: public std::runtime_error {         \
+  public:                                         \
+    NAME(const char *e): std::runtime_error(e) {} \
+    virtual const char *what() const noexcept;    \
+  };
+#define IMPL_EXCEPTION(NAME)            \
+  const char *NAME::what() const noexcept { \
+    return std::runtime_error::what();  \
+  }
+#define DECL_IMPL_EXCEPTION(NAME) DECL_EXCEPTION(NAME) IMPL_EXCEPTION(NAME)
+
+  namespace err {
+    DECL_EXCEPTION(feature_missing_error)
+    DECL_EXCEPTION(todo_error)
+    DECL_EXCEPTION(beam_load_error)
+    DECL_EXCEPTION(scheduler_error)
+    DECL_EXCEPTION(code_server_error)
+    DECL_EXCEPTION(process_error)
+  } // ns err
+
   constexpr unsigned int get_hardware_bits() {
     return (8*sizeof(void*));
   }
@@ -152,7 +173,7 @@ namespace gluon {
 #   define G_ASSERT_MSG(X, MSG) if (!(X)) { G_FAIL(MSG); }
 #   define G_TODO(what) { \
       ::fprintf(stderr, "TODO: %s (%s:%d)\n", what, __FILE__, __LINE__);  \
-      G_ASSERT(what == nullptr) \
+      throw gluon::err::todo_error(what); \
       }
     // Famous io:format/2 skill on Linkedin!
 #   define G_LOG gluon::Std::fmt

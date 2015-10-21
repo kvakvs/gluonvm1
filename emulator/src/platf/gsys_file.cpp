@@ -6,14 +6,12 @@
 #include <sys/stat.h>
 
 namespace gluon {
-namespace fs {
 
 namespace err {
-  class open_file_error: public std::runtime_error   {
-  public:
-    open_file_error(): std::runtime_error("open file") {}
-  };
+  DECL_IMPL_EXCEPTION(file_error)
 } // ns err
+
+namespace fs {
 
 bool exists(const Str &name) {
   struct stat buffer;
@@ -32,7 +30,7 @@ File::File(): m_handle(nullptr) {
 void fs::File::open(const Str &name) {
   auto handle = ::fopen(name.c_str(), "rb");
   if (!handle) {
-    throw err::open_file_error();
+    throw err::file_error("open error");
   }
   m_handle = to_internal(handle);
   return;

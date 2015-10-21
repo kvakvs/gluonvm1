@@ -30,10 +30,7 @@ int main(int argc, const char *argv[]) {
   mfarity_t mfa(VM::to_atom("otp_ring0"), VM::to_atom("start"), 2);
 
   auto rootp = VM::g_root_proc;
-  auto sp_result = rootp->spawn(mfa, start_args);
-  if (sp_result.is_error()) {
-    G_FAIL(sp_result.get_error());
-  }
+  rootp->spawn(mfa, start_args);
 
   // Run some code
   rootp->set_group_leader(rootp->get_pid());

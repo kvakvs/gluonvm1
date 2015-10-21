@@ -14,28 +14,23 @@ namespace code {
 //void Server::init() {
 //}
 
-MaybeError Server::load_module(Process *proc,
+void Server::load_module(Process *proc,
                                Term name_atom, const u8_t *bytes, word_t size)
 {
-  auto lm_result = load_module_internal(proc->get_heap(), name_atom, bytes, size);
-  G_RETURN_IF_ERROR(lm_result);
-
   // TODO: module versions for hot code loading
   // TODO: free if module already existed, check module usage by processes
-  Module *m = lm_result.get_result();
+  Module *m = load_module_internal(proc->get_heap(), name_atom, bytes, size);
   modules_[m->get_name()] = m;
 
   // assume that mod already registered own functions in own fun index
   // code to fun/arity mapping should be updated on loading stage
-#if FEATURE_CODE_RANGES
-  auto range = m->get_code_range();
-  mod_index_.add(range, m);
-#endif
-
-  return success();
+  if (feature_code_ranges) {
+    auto range = m->get_code_range();
+    mod_index_.add(range, m);
+  }
 }
 
-MaybeError Server::load_module(Process *proc, Term name)
+void Server::load_module(Process *proc, Term name)
 {
   // Scan for locations where module file can be found
   Str mod_filename(name.atom_str());
@@ -57,27 +52,26 @@ MaybeError Server::load_module(Process *proc, Term name)
       f.read(tmp_buffer, size);
 
       Std::fmt("Loading BEAM %s\n", path.c_str());
-      auto    result = load_module(proc, name, tmp_buffer, size);
+      load_module(proc, name, tmp_buffer, size);
       heap->deallocate(tmp_buffer);
-      return result;
+      return;
     }
   }
-  return "module not found";
+  throw err::code_server_error("module not found");
 }
 
-Result<Module *> Server::find_module(Process *proc, Term m, find_opt_t load)
+Module *Server::find_module(Process *proc, Term m, find_opt_t load)
 {
   auto result = modules_.find_ref(m, nullptr);
   if (!result) {
     if (load == code::FIND_EXISTING) {
-      return error<Module *>("function not found");
+      throw err::code_server_error("function not found");
     } else {
-      auto res = load_module(proc, m);
-      G_RETURN_REWRAP_IF_ERROR(res, Module *);
-      return success(modules_[m]);
+      load_module(proc, m);
+      return modules_[m];
     }
   }
-  return success(result);
+  return result;
 }
 
 void Server::path_append(const Str &p)

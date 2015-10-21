@@ -146,7 +146,7 @@ public:
 
   // Assumes that process already created on heap and initialized, assigns proc
   // to scheduler, assigns starting fun and args
-  Result<Term> spawn(mfarity_t &mfa, Term *args);
+  Term spawn(mfarity_t &mfa, Term *args);
 
   // Returns no_val and sets bif error flag in process. Use in bifs to signal
   // error condition: return proc->bif_error(reason);
@@ -166,7 +166,7 @@ public:
 protected:
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args
   // should be placed in registers before this process is scheduled to execute.
-  MaybeError jump_to_mfa(mfarity_t &mfa);
+  void jump_to_mfa(mfarity_t &mfa);
 };
 
 #if G_TEST

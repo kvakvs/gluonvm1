@@ -11,6 +11,7 @@
 
 namespace gluon {
 
+#if 0
 //
 // Wraps pair of error C string and result. Can either flag an error
 // (a C string) or carries result value of type T
@@ -149,5 +150,7 @@ static inline MaybeError success() { return MaybeError(); }
 // Same but error is likely to happen
 #define G_RETURN_REWRAP_IF_ERROR_LIKELY(res,T) \
   if (G_LIKELY(res.is_error())) { return res.rewrap_error<T>(); }
+
+#endif //0
 
 } // ns gluon

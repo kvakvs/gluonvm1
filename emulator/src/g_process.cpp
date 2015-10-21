@@ -13,47 +13,40 @@ Process::Process(Term gleader): m_group_leader(gleader) {
   m_priority = atom::NORMAL;
 }
 
-MaybeError Process::jump_to_mfa(mfarity_t &mfa)
+void Process::jump_to_mfa(mfarity_t &mfa)
 {
   G_ASSERT(this);
 
-  auto mod_result = VM::get_cs()->find_module(this, mfa.mod,
-                                              code::LOAD_IF_NOT_FOUND);
-  G_RETURN_IF_ERROR(mod_result);
-  Module *mod = mod_result.get_result();
+  auto mod = VM::get_cs()->find_module(this, mfa.mod,
+                                       code::LOAD_IF_NOT_FOUND);
 
   export_t *exp = mod->find_export(mfa.as_funarity());
-  //G_RETURN_IF_ERROR(find_result);
   if (!exp) {
-    return "undef function";
+    throw err::process_error("undef function");
   }
   if (exp->is_bif()) {
-    return "jump to a bif";
+    throw err::process_error("jump to a bif");
   }
 
   m_ctx.ip = exp->code();
   Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)m_ctx.ip);
-  return success();
 }
 
 
-Result<Term> Process::spawn(mfarity_t &mfa, Term *args) {
+Term Process::spawn(mfarity_t &mfa, Term *args) {
   // Check that we aren't on any scheduler yet
   G_ASSERT(false == m_pid.is_pid());
 
   m_init_call = mfa;
-  auto j_result = jump_to_mfa(mfa);
-  G_RETURN_REWRAP_IF_ERROR(j_result, Term);
+  jump_to_mfa(mfa);
 
   std::copy(args, args+mfa.arity, m_ctx.regs);
   m_ctx.live = mfa.arity;
 
   // TODO: set context cp to some special exit function or handle exit another way
 
-  auto add_result = VM::get_scheduler()->add_new_runnable(this);
-  G_RETURN_REWRAP_IF_ERROR(add_result, Term);
-
-  return success(get_pid());
+  VM::get_scheduler()->add_new_runnable(this);
+  return get_pid();
 }
 
 Term Process::bif_error(Term error_tag, Term reason)

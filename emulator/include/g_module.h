@@ -114,7 +114,7 @@ public:
   //Result<word_t *> resolve_function(Term f, word_t arity);
 
   // Resolves label to a code pointer
-  Result<word_t *> resolve_label(label_index_t label);
+  word_t *resolve_label(label_index_t label);
 
   inline void set_code(Vector<word_t> &code) {
     code_ = std::move(code); // take ownership

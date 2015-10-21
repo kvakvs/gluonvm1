@@ -5,7 +5,7 @@
 
 namespace gluon {
 
-MaybeError Scheduler::add_new_runnable(Process *p)
+void Scheduler::add_new_runnable(Process *p)
 {
   G_ASSERT(p->m_current_queue == proc::Queue::NONE);
   G_ASSERT(p->get_pid().is_pid() == false);
@@ -17,7 +17,7 @@ MaybeError Scheduler::add_new_runnable(Process *p)
   return queue_by_priority(p);
 }
 
-MaybeError Scheduler::queue_by_priority(Process *p) {
+void Scheduler::queue_by_priority(Process *p) {
 //  G_ASSERT(!contains(m_normal_q, p));
 //  G_ASSERT(!contains(m_low_q, p));
 //  G_ASSERT(!contains(m_high_q, p));
@@ -34,9 +34,8 @@ MaybeError Scheduler::queue_by_priority(Process *p) {
     high_queue_.push_back(p);
     p->m_current_queue = proc::Queue::HIGH;
   } else {
-    return "bad prio";
+    throw err::scheduler_error("bad prio");
   }
-  return success();
 }
 
 Process *Scheduler::find(Term pid) const

@@ -26,12 +26,14 @@
 
 // Loads line section from BEAM, enables 'line' opcodes in VM loop, resolves
 // line numbers for code locations. REQUIRES: FEATURE_CODE_RANGES=1 too
-#define FEATURE_LINE_NUMBERS  0
+#define FEATURE_LINE_NUMBERS  1
+constexpr bool feature_line_numbers = true;
 
 // Can be used separately without FEATURE_LINE_NUMBERS. Stores ranges of code
 // addresses to quickly identify module and function (and line number if feature
 // is enabled) by code location.
 #define FEATURE_CODE_RANGES   1
+constexpr bool feature_code_ranges = true;
 
 #if FEATURE_LINE_NUMBERS && !FEATURE_CODE_RANGES
 #   error "LINE_NUMBERS feature requires also CODE_RANGES"

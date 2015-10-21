@@ -654,12 +654,14 @@ Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
     return atom::TRUE;
   }
 
-  auto fm_result = VM::get_cs()->find_module(proc, m, code::LOAD_IF_NOT_FOUND);
-  if (fm_result.is_error()) {
+  Module *mod;
+  try {
+    mod = VM::get_cs()->find_module(proc, m, code::LOAD_IF_NOT_FOUND);
+  } catch (std::runtime_error &) {
     Std::fmt("no module\n");
     return atom::FALSE;
   }
-  Module *mod = fm_result.get_result();
+
   if (mod->find_export(fun_arity_t(f, arity.small_get_unsigned()))) {
     return atom::TRUE;
   }

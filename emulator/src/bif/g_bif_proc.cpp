@@ -31,9 +31,10 @@ static Term spawn_mfargs(Process *proc, Term m, Term f, Term args, bool link)
                    old_heap_args, old_heap_args + mfa.arity,
                    new_heap_args);
 
-  auto sp_result = new_proc->spawn(mfa, new_heap_args);
-  if (sp_result.is_error()) {
-    return proc->bif_error(atom::ERROR, sp_result.get_error());
+  try {
+    new_proc->spawn(mfa, new_heap_args);
+  } catch (std::runtime_error &e) {
+    return proc->bif_error(atom::ERROR, e.what());
   }
 
   if (link) {
