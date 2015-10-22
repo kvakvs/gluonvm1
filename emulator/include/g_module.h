@@ -126,7 +126,7 @@ public:
   inline void set_code(Vector<word_t> &code) {
     code_ = std::move(code); // take ownership
   }
-  inline void set_labels(labels_t &labels) {
+  void set_labels(labels_t &labels) {
     labels_ = std::move(labels);
   }
   void set_exports(exports_t &e);

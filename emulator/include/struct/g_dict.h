@@ -52,6 +52,7 @@ namespace containers {
     std::map<Key, Value> map_;
   public:
     stl_map() = default;
+    stl_map(const stl_map &) = delete;
     stl_map(stl_map &&) = default;
     stl_map &operator = (stl_map &&) = default;
 

@@ -615,7 +615,6 @@ void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
                                            mfarity_t(mod_name_, fa));
                   });
   m->set_exports(exports);
-  m->set_labels(labels_); // transfer data
 
   for (auto &la: lambdas_) {
     auto ptr = labels_[la.uniq[0]];
@@ -628,10 +627,12 @@ void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
     word_t t_arity = t.tuple_get_arity()/2;
     for (word_t i = 0; i < t_arity; ++i) {
       word_t l_index = t.tuple_get_element(i*2+1).small_get_unsigned();
+      G_ASSERT(labels_.contains(l_index));
       word_t *ptr = labels_[l_index];
       t.tuple_set_element(i*2+1, Term::make_boxed_cp(ptr));
     }
   }
+  m->set_labels(labels_); // transfer data
 
   // TODO: merge code and literal heap together maybe?
 
