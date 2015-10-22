@@ -7,7 +7,7 @@ namespace gluon {
 
 void Scheduler::add_new_runnable(Process *p)
 {
-  G_ASSERT(p->m_current_queue == proc::Queue::NONE);
+  G_ASSERT(p->current_queue_ == proc::Queue::NONE);
   G_ASSERT(p->get_pid().is_pid() == false);
 
   auto new_pid = Term::make_short_pid(pid_counter_++);
@@ -21,18 +21,18 @@ void Scheduler::queue_by_priority(Process *p) {
 //  G_ASSERT(!contains(m_normal_q, p));
 //  G_ASSERT(!contains(m_low_q, p));
 //  G_ASSERT(!contains(m_high_q, p));
-  G_ASSERT(p->m_current_queue == proc::Queue::NONE);
+  G_ASSERT(p->current_queue_ == proc::Queue::NONE);
 
   auto prio = p->get_priority();
   if (prio == atom::NORMAL) {
     normal_queue_.push_back(p);
-    p->m_current_queue = proc::Queue::NORMAL;
+    p->current_queue_ = proc::Queue::NORMAL;
   } else if (prio == atom::LOW) {
     low_queue_.push_back(p);
-    p->m_current_queue = proc::Queue::LOW;
+    p->current_queue_ = proc::Queue::LOW;
   } else if (prio == atom::HIGH) {
     high_queue_.push_back(p);
-    p->m_current_queue = proc::Queue::HIGH;
+    p->current_queue_ = proc::Queue::HIGH;
   } else {
     throw err::scheduler_error("bad prio");
   }
@@ -49,7 +49,7 @@ Process *Scheduler::find(Term pid) const
 void Scheduler::exit_process(Process *p, Term reason)
 {
   // assert that process is not in any queue
-  G_ASSERT(p->m_current_queue == proc::Queue::NONE);
+  G_ASSERT(p->current_queue_ == proc::Queue::NONE);
   // root process exits with halt()
   //G_ASSERT(p->get_registered_name() != atom::INIT);
 
@@ -79,7 +79,7 @@ void Scheduler::on_new_message(Process *p)
 {
 //  Std::fmt("sched: new message to ");
 //  p->get_pid().println();
-  auto current_q = p->m_current_queue;
+  auto current_q = p->current_queue_;
 
   switch (current_q) {
   case proc::Queue::NORMAL:
@@ -102,7 +102,7 @@ void Scheduler::on_new_message(Process *p)
     G_FAIL("q_pending_timers");
   } // switch
 
-  p->m_current_queue = proc::Queue::NONE;
+  p->current_queue_ = proc::Queue::NONE;
   queue_by_priority(p);
 }
 
@@ -113,7 +113,7 @@ Process *Scheduler::next()
     // G_ASSERT(!contains(m_normal_q, m_current));
     // G_ASSERT(!contains(m_low_q, m_current));
     // G_ASSERT(!contains(m_high_q, m_current));
-    G_ASSERT(current_->m_current_queue == proc::Queue::NONE);
+    G_ASSERT(current_->current_queue_ == proc::Queue::NONE);
 
     switch (current_->get_slice_result()) {
     case proc::SliceResult::YIELD:
@@ -130,14 +130,14 @@ Process *Scheduler::next()
       // TODO: WAIT put into infinite or timed wait queue
       // TODO: PURGE_PROCS running on old code
     case proc::SliceResult::EXCEPTION: {
-        exit_process(current_, current_->m_slice_result_reason);
+        exit_process(current_, current_->slice_result_reason_);
         current_ = nullptr;
       } break;
 
     case proc::SliceResult::WAIT: {
-        if (current_->m_slice_result_wait == proc::WAIT_INFINITE) {
+        if (current_->slice_result_wait_ == proc::WAIT_INFINITE) {
           inf_wait_.insert(current_);
-          current_->m_current_queue = proc::Queue::INF_WAIT;
+          current_->current_queue_ = proc::Queue::INF_WAIT;
           current_ = nullptr;
         }
       } break;
@@ -179,10 +179,10 @@ Process *Scheduler::next()
 
     if (next_proc) {
       Std::fmt("-----------------------------\nScheduler::next() -> ");
-      Std::fmt("(Q=%d) ", (int)next_proc->m_current_queue);
+      Std::fmt("(Q=%d) ", (int)next_proc->current_queue_);
       next_proc->get_pid().println(vm_);
 
-      next_proc->m_current_queue = proc::Queue::NONE;
+      next_proc->current_queue_ = proc::Queue::NONE;
       return current_ = next_proc;
     }
 

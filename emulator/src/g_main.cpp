@@ -29,7 +29,7 @@ int main(int argc, const char *argv[]) {
   Term start_args[2] = {NIL, NIL};
   mfarity_t mfa(vm.to_atom("otp_ring0"), vm.to_atom("start"), 2);
 
-  auto rootp = vm.g_root_proc;
+  auto rootp = vm.root_process();
   rootp->spawn(mfa, start_args);
 
   // Run some code

@@ -67,35 +67,35 @@ public:
 
 protected:
   VM            &vm_;
-  runtime_ctx_t m_ctx;
-  proc::Heap    m_heap;
-  Term          m_pid = NONVALUE;
-  mfarity_t     m_init_call;
+  runtime_ctx_t ctx_;
+  proc::Heap    heap_;
+  Term          pid_ = NONVALUE;
+  mfarity_t     initial_call_;
   // TODO: process dict
-  Term          m_group_leader;
-  Term          m_priority; // an atom: 'low', 'high' or 'normal'
+  Term          gleader_;
+  Term          prio_; // an atom: 'low', 'high' or 'normal'
 
   struct {
     bool trap_exit = false;
-  } m_flags;
+  } pflags_;
 
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
   // TODO: make this union to save space
-  proc::SliceResult m_slice_result = proc::SliceResult::NONE;
-  Term m_slice_result_reason = NONVALUE;
-  word_t m_slice_result_wait = proc::WAIT_INFINITE;
+  proc::SliceResult slice_result_ = proc::SliceResult::NONE;
+  Term              slice_result_reason_ = NONVALUE;
+  word_t            slice_result_wait_ = proc::WAIT_INFINITE;
 
   // Which queue we belong to
-  proc::Queue m_current_queue = proc::Queue::NONE;
+  proc::Queue       current_queue_ = proc::Queue::NONE;
 
   friend class Scheduler;
   void set_pid(Term pid) {
-    m_pid = pid;
+    pid_ = pid;
   }
 
-  proc::Mailbox m_mbox;
-  Term          m_registered_name = NONVALUE;
+  proc::Mailbox mailbox_;
+  Term          reg_name_ = NONVALUE;
 
 public:
   Process() = delete;
@@ -105,44 +105,44 @@ public:
   const VM &vm() const { return vm_; }
 
   void set_trap_exit(bool te) {
-    m_flags.trap_exit = te;
+    pflags_.trap_exit = te;
   }
 
   Term get_registered_name() const {
-    return m_registered_name;
+    return reg_name_;
   }
   void registered_as(Term n) {
-    m_registered_name = n;
+    reg_name_ = n;
   }
   void finished() {
-    m_slice_result = proc::SliceResult::FINISHED;
+    slice_result_ = proc::SliceResult::FINISHED;
   }
   inline proc::SliceResult get_slice_result() const {
-    return m_slice_result;
+    return slice_result_;
   }
-  inline void set_slice_result(proc::SliceResult sr) { m_slice_result = sr; }
+  inline void set_slice_result(proc::SliceResult sr) { slice_result_ = sr; }
 
   Term get_pid() const {
-    return m_pid;
+    return pid_;
   }
   Term get_priority() const {
-    return m_priority;
+    return prio_;
   }
   runtime_ctx_t &get_runtime_ctx() {
-    return m_ctx;
+    return ctx_;
   }
-  Term get_group_leader() const { return m_group_leader; }
-  void set_group_leader(Term pid) { m_group_leader = pid; }
+  Term get_group_leader() const { return gleader_; }
+  void set_group_leader(Term pid) { gleader_ = pid; }
 
   //
   // Process memory thingies
   //
 
   proc::Heap *get_heap() {
-    return &m_heap;
+    return &heap_;
   }
   word_t *heap_alloc(word_t num_words) {
-    return m_heap.allocate<word_t>(num_words);
+    return heap_.allocate<word_t>(num_words);
   }
 
   // Not inlined, ask module for pointer to its code. Safety off!
@@ -165,8 +165,8 @@ public:
   // Send/receive thingies
   //
   void msg_send(Term pid, Term value);
-  proc::Mailbox &mailbox() { return m_mbox; }
-  const proc::Mailbox &mailbox() const { return m_mbox; }
+  proc::Mailbox &mailbox() { return mailbox_; }
+  const proc::Mailbox &mailbox() const { return mailbox_; }
 
 protected:
   // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args

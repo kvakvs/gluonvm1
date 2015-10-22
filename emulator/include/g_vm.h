@@ -27,25 +27,29 @@ class VM {
 private:
   // TODO: Optimize atom tab for insert-only, like OTP does
   // TODO: global is bad for many reasons
-  str_atom_map_t g_atoms;
-  atom_str_map_t g_atoms_reverse;
-  word_t         g_atom_counter;
+  str_atom_map_t atoms_;
+  atom_str_map_t reverse_atoms_;
+  word_t         atom_id_counter_;
 
-  Node           *g_this_node = nullptr;
+  Node           *this_node_ = nullptr;
   // used as "" constant when atom is not found
-  Str            g_empty_str;
-  Scheduler      *g_scheduler = nullptr;
-  code::Server   *g_cs = nullptr;
+  Str            const_empty_str_;
+  Scheduler      sched_;
+  code::Server   *codeserver_ = nullptr;
 
   // Registered names
-  atom_proc_map_t  g_registered_names;
+  atom_proc_map_t  reg_names_;
+  Process *root_process_ = nullptr;
 
 public:
   VM();
-  Process *g_root_proc = nullptr;
 
-  code::Server &codeserver() { return *g_cs; }
-  const code::Server &codeserver() const { return *g_cs; }
+  code::Server &codeserver() { return *codeserver_; }
+  const code::Server &codeserver() const { return *codeserver_; }
+  Process *root_process() const { return root_process_; }
+
+  Scheduler &scheduler() { return sched_; }
+  const Scheduler &scheduler() const { return sched_; }
 
   //
   // Pid/port registration
@@ -61,7 +65,7 @@ public:
   Term to_atom(const Str &s);
   // Returns existing or nil
   Term to_existing_atom(const Str &s) {
-    return g_atoms.find_ref(s, NIL);
+    return atoms_.find_ref(s, NIL);
   }
   const Str &find_atom(Term a) const;
 
@@ -97,8 +101,6 @@ public:
   Term apply_bif(Process *proc, mfarity_t &mfa, Term *args);
   void *find_bif(const mfarity_t &mfa) const;
   Term apply_bif(Process *proc, word_t arity, void *fn, Term *args);
-
-  Scheduler &scheduler();
 
 private:
   // Does not check if atom existed before. Will break old values on overwrite

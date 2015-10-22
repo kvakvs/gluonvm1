@@ -9,8 +9,8 @@
 
 namespace gluon {
 
-Process::Process(VM &vm, Term gleader): vm_(vm), m_group_leader(gleader) {
-  m_priority = atom::NORMAL;
+Process::Process(VM &vm, Term gleader): vm_(vm), gleader_(gleader) {
+  prio_ = atom::NORMAL;
 }
 
 void Process::jump_to_mfa(mfarity_t &mfa)
@@ -28,20 +28,20 @@ void Process::jump_to_mfa(mfarity_t &mfa)
     throw err::process_error("jump to a bif");
   }
 
-  m_ctx.ip = exp->code();
-  Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)m_ctx.ip);
+  ctx_.ip = exp->code();
+  Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)ctx_.ip);
 }
 
 
 Term Process::spawn(mfarity_t &mfa, Term *args) {
   // Check that we aren't on any scheduler yet
-  G_ASSERT(false == m_pid.is_pid());
+  G_ASSERT(false == pid_.is_pid());
 
-  m_init_call = mfa;
+  initial_call_ = mfa;
   jump_to_mfa(mfa);
 
-  std::copy(args, args+mfa.arity, m_ctx.regs);
-  m_ctx.live = mfa.arity;
+  std::copy(args, args+mfa.arity, ctx_.regs);
+  ctx_.live = mfa.arity;
 
   // TODO: set context cp to some special exit function or handle exit another way
 

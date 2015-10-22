@@ -34,27 +34,27 @@ namespace err {
 //Process        *VM::g_root_proc = nullptr;
 //atom_proc_map_t VM::g_registered_names;
 
-VM::VM()
+VM::VM(): sched_(*this)
 {
-  g_this_node = new Node;
-  g_cs = new code::Server(*this);
+  this_node_ = new Node;
+  codeserver_ = new code::Server(*this);
 
   vm_loop(true); // initialize labels
 
   init_predef_atoms();
 
-  g_cs->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
-  g_cs->path_append("/usr/lib/erlang/lib/erts-6.4.1/ebin");
-  g_cs->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
+  codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
+  codeserver_->path_append("/usr/lib/erlang/lib/erts-6.4.1/ebin");
+  codeserver_->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
 
   // create root process and set it to some entry function
-  g_root_proc = new Process(*this, NONVALUE);
-  g_cs->load_module(g_root_proc, atom::ERLANG);
+  root_process_ = new Process(*this, NONVALUE);
+  codeserver_->load_module(root_process_, atom::ERLANG);
 }
 
 VM::RegResult VM::register_name(Term name, Term pid_port)
 {
-  if (!g_registered_names.contains(name)) {
+  if (!reg_names_.contains(name)) {
     return RegResult::EXISTS;
   }
 
@@ -62,7 +62,7 @@ VM::RegResult VM::register_name(Term name, Term pid_port)
   if (!p) {
     return RegResult::NOPROC;
   }
-  g_registered_names[name] = p;
+  reg_names_[name] = p;
   p->registered_as(name);
   return RegResult::OK;
 }
@@ -79,17 +79,17 @@ Term VM::new_atom(const Str &s) {
 //    G_FAIL("atom exists")
 //    G_IF_NODEBUG(return NIL);
 //  }
-  Term new_a = Term::make_atom(g_atom_counter);
-  g_atoms[s]             = new_a;
-  g_atoms_reverse[new_a] = s;
-  g_atom_counter++;
+  Term new_a = Term::make_atom(atom_id_counter_);
+  atoms_[s]             = new_a;
+  reverse_atoms_[new_a] = s;
+  atom_id_counter_++;
   return new_a;
 }
 
 void VM::init_predef_atoms()
 {
   const char *p = atom::g_predef_atoms;
-  g_atom_counter = 1;
+  atom_id_counter_ = 1;
 
   while (*p) {
     word_t len = (word_t)(p[0]);
@@ -103,14 +103,14 @@ void VM::init_predef_atoms()
 const Str &VM::find_atom(Term a) const
 {
   G_ASSERT(a.is_atom());
-  return g_atoms_reverse.find_ref(a, g_empty_str);
+  return reverse_atoms_.find_ref(a, const_empty_str_);
 }
 
 Node *VM::dist_this_node() {
 #if FEATURE_ERL_DIST
   G_TODO("implement Node and this node variable")
 #endif
-  return g_this_node;
+  return this_node_;
 }
 
 // For now all heaps are located in normal C++ heap
@@ -169,14 +169,5 @@ Term VM::apply_bif(Process *proc, word_t arity, void *fn, Term *args)
   }
   return proc->bif_error(atom::UNDEF);
 }
-
-Scheduler &VM::scheduler() {
-  if (g_scheduler == nullptr) {
-    auto heap = VM::get_heap(HEAP_VM_INTERNAL);
-    g_scheduler = heap->alloc_object<Scheduler>(*this);
-  }
-  return *g_scheduler;
-}
-
 
 } // ns gluon
