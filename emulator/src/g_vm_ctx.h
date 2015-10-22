@@ -32,10 +32,10 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
   vm_runtime_ctx_t(VM &vm): vm_(vm) {}
 
-  inline proc::Stack &stack() { return heap_->m_stack; }
-  inline const proc::Stack &stack() const { return heap_->m_stack; }
+  proc::Stack &stack() { return heap_->stack_; }
+  const proc::Stack &stack() const { return heap_->stack_; }
 
-  inline void println() {
+  void println() {
 //#if G_DEBUG
 //#endif
   }

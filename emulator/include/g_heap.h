@@ -106,46 +106,48 @@ public:
 // Stack
 //
 class Stack {
-  Node      *m_node = nullptr;  // where stack is
-  word_t    *m_end;             // stack underflow mark
-  word_t    *m_top;             // stack tip, grows down from heap end
-  word_t    *m_bottom;          // stack bottom, delimits stack growth
+  //Node      *m_node = nullptr;  // where stack is
+  word_t    *end_;             // stack underflow mark
+  word_t    *top_;             // stack tip, grows down from heap end
+  word_t    *bottom_;          // stack bottom, delimits stack growth
 
 public:
+  Stack(word_t *bottom, word_t *top): end_(top), top_(top), bottom_(bottom) {}
+
   // Lowers 'limit' by 'size' words, puts stack there
-  void put_stack(Node *h_node, word_t size);
+  //void put_stack(Node *h_node, word_t size);
 
   void set_y(word_t index, word_t value) {
     G_ASSERT(get_used() >= index + 1);
-    m_top[index+1] = value;
+    top_[index+1] = value;
   }
   word_t get_y(word_t index) const {
     G_ASSERT(get_used() >= index + 1);
-    return m_top[index+1];
+    return top_[index+1];
   }
   void push(word_t x) {
     G_ASSERT(get_avail() > 0);
-    m_top--;
-    *m_top = x;
+    top_--;
+    *top_ = x;
   }
   word_t pop() {
     G_ASSERT(get_used() > 0);
-    auto result = *m_top;
-    m_top++;
+    auto result = *top_;
+    top_++;
     return result;
   }
   void push_n_nils(word_t n);
   void drop_n(word_t n) {
     G_ASSERT(get_used() >= n);
-    m_top += n;
+    top_ += n;
   }
   word_t get_avail() const {
-    G_ASSERT(m_top >= m_bottom);
-    return (word_t)(m_top - m_bottom);
+    G_ASSERT(top_ >= bottom_);
+    return (word_t)(top_ - bottom_);
   }
   word_t get_used() const {
-    G_ASSERT(m_top <= m_end);
-    return (word_t)(m_end - m_top);
+    G_ASSERT(top_ <= end_);
+    return (word_t)(end_ - top_);
   }
 };
 
@@ -189,10 +191,19 @@ public:
 }; // class SegmentedHeap
 */
 
-class Heap: public mem::SystemMemoryAllocator {
+template <class A>
+class Heap_: public A {
+  constexpr static word_t STK_SZ = 1024;
+  word_t stack_data_[STK_SZ];
 public:
-  Stack m_stack;
+  Stack stack_;
+
+  Heap_(): A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {
+
+  }
 };
+
+class Heap: public Heap_<mem::SystemMemoryAllocator> {};
 
 
 // Takes all terms between 'start' and 'end', and copies them to 'dstheap', new

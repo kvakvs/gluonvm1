@@ -36,21 +36,24 @@ Node *Node::create(word_t sz_words) {
   return n;
 }
 */
+
+/*
 void Stack::put_stack(Node *stk_node, word_t size) {
   // Assume current node in heap has memory for stack
   G_ASSERT(stk_node->get_avail() >= size);
   m_node = stk_node;
   // Shrink node by stack size. Set 'top' to end of node's memory and 'bottom'
   // to new end (where stack will overflow).
-  m_end = m_top = stk_node->limit;
+  end_ = top_ = stk_node->limit;
   m_node->limit -= size;
-  m_bottom = m_node->limit;
+  bottom_ = m_node->limit;
 }
+*/
 
 void Stack::push_n_nils(word_t n) {
   G_ASSERT(get_avail() >= n);
-  m_top -= n;
-  std::fill_n(m_top, n, term::NIL);
+  top_ -= n;
+  std::fill_n(top_, n, term::NIL);
 }
 
 // Takes all terms between 'start' and 'end', and copies them to 'dstheap', new
