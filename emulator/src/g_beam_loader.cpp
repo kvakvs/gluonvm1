@@ -31,8 +31,9 @@ private:
 
   proc::Heap     *heap_= nullptr;
   Vector<Str>     atoms_;
-  const u8_t     *code_ = nullptr; // not owned data
-  word_t          code_sz;
+  array_view<const u8_t> code_;
+//  const u8_t     *code_ = nullptr; // not owned data
+//  word_t          code_sz;
   Term            mod_name_; // an atom in the -module(X) header
 
   // Data coming from code chunk
@@ -101,7 +102,7 @@ public:
   // Load finished, create a Module object and inform code server
   Module *finalize(Term modname);
   // Parse raw code creating jump table with decoded args
-  void beam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
+  void beam_prepare_code(Module *m, array_view<const u8_t> data);
 
 protected:
   enum class Tag {
@@ -164,11 +165,10 @@ protected:
 
 Module *code::Server::load_module_internal(proc::Heap *heap,
                                            Term expected_name,
-                                           const u8_t *bytes,
-                                           word_t size)
+                                           array_view<u8_t> data)
 {
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
-  tool::Reader r(bytes, size);
+  tool::Reader r(data);
 
   LoaderState lstate(vm_, heap);
 
@@ -193,7 +193,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
         || !is_latin(chunk[1])
         || !is_lowcase_latin(chunk[2]))
     {
-      G_LOG("beam offset " FMT_0xHEX "\n", r.get_ptr() - bytes);
+      G_LOG("beam offset " FMT_0xHEX "\n", r.get_ptr() - data.data());
       throw err::beam_load_error("bad beam format");
     }
 
@@ -223,7 +223,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
 Module * LoaderState::finalize(Term modname) {
   Module *newmod = heap_->alloc_object<Module>(modname, imports_);
 
-  beam_prepare_code(newmod, code_, code_sz);
+  beam_prepare_code(newmod, code_);
   return newmod;
 }
 
@@ -361,8 +361,7 @@ void LoaderState::load_code(tool::Reader &r0) {
   }
 
   // Just read code here, parse later
-  code_ = r.get_ptr();
-  code_sz = chunk_size;
+  code_ = gsl::as_array_view(r.get_ptr(), chunk_size);
 
   r0.advance_align<4>(chunk_size);
 }
@@ -383,7 +382,9 @@ void LoaderState::load_literal_table(tool::Reader &r0)
     throw err::beam_load_error("beam LitT error");
   }
 
-  tool::Reader r(uncompressed.binary_get<u8_t>(), uncompressed_size);
+  tool::Reader r(
+        gsl::as_array_view(uncompressed.binary_get<u8_t>(), uncompressed_size)
+        );
   auto count = r.read_big_u32();
 
   literals_.reserve(count);
@@ -470,17 +471,16 @@ void LoaderState::load_line_table(tool::Reader &r0)
 }
 
 // Scans raw code in bytes:sz, and builds jump table with processed args
-void LoaderState::beam_prepare_code(Module *m,
-                                          const u8_t *bytes, word_t sz)
+void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
 {
   // TODO: use some other heap?
   //Heap *heap = VM::get_heap(VM::HEAP_LOADER_TMP);
 
-  tool::Reader r(bytes, sz);
+  tool::Reader r(data);
 
   Vector<word_t> code;
   // rough estimate of what code size would be, vector will grow if needed
-  code.reserve(sz * 2);
+  code.reserve(data.size() * 2);
 
   G_ASSERT(sizeof(void*) == sizeof(word_t));
 

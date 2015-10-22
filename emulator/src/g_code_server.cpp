@@ -15,11 +15,11 @@ namespace code {
 //}
 
 void Server::load_module(Process *proc,
-                        Term name_atom, const u8_t *bytes, word_t size)
+                        Term name_atom, array_view<u8_t> data)
 {
   // TODO: module versions for hot code loading
   // TODO: free if module already existed, check module usage by processes
-  Module *m = load_module_internal(proc->get_heap(), name_atom, bytes, size);
+  Module *m = load_module_internal(proc->get_heap(), name_atom, data);
   modules_[m->get_name()] = m;
 
   // assume that mod already registered own functions in own fun index
@@ -52,7 +52,7 @@ void Server::load_module(Process *proc, Term name)
       f.read(tmp_buffer, size);
 
       Std::fmt("Loading BEAM %s\n", path.c_str());
-      load_module(proc, name, tmp_buffer, size);
+      load_module(proc, name, gsl::as_array_view(tmp_buffer, size));
       heap->deallocate(tmp_buffer);
       return;
     }

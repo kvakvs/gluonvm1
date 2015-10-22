@@ -43,9 +43,10 @@ public:
   Server(VM &v): vm_(v) {}
 //  void init();
   void load_module(Process *proc, Term name_atom);
+
   // Pass nil as name to take name automatically from the module
   void load_module(Process *proc, Term name_atom,
-                   const u8_t *bytes, word_t size);
+                   array_view<u8_t> data);
 
   Module *find_module(Process *proc, Term m, find_opt_t opt);
   void path_append(const Str &p);
@@ -60,7 +61,7 @@ public:
 protected:
   Module *load_module_internal(proc::Heap *heap,
                                Term expected_name_or_nil,
-                               const u8_t *bytes, word_t size);
+                               array_view<u8_t> data);
 };
 
 } // ns code

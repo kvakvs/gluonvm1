@@ -12,6 +12,9 @@ class Reader {
 public:
   Reader(const u8_t *ptr, word_t size): m_ptr(ptr), m_limit(ptr+size) {
   }
+  Reader(array_view<const u8_t> data)
+    : m_ptr(data.data()), m_limit(data.data() + data.size()) {
+  }
   // Clones reader with m_ptr value, sets new size, to read smaller limited
   // parts of input data
   Reader clone(word_t new_size) {

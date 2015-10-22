@@ -1,13 +1,10 @@
 #pragma once
 
 #include <set>
-//#include <string>
-//#include <map>
 #include <list>
-//#include <vector>
 #include <memory>
 #include <queue>
-//#include <stack>
+#include "gsl/array_view.h"
 
 // set features for use in code in this file
 #include "g_FEATURE.h"
@@ -64,6 +61,9 @@ namespace gluon {
   constexpr unsigned int get_hardware_bits() {
     return (8*sizeof(void*));
   }
+
+  template <typename T>
+  using array_view = gsl::array_view<T>;
 
   // Self-deleting RAII-style pointer holder
   template <typename V>
