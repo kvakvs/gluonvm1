@@ -28,27 +28,27 @@ typedef struct {
 class LoaderState {
 private:
   VM        &vm_;
-public:
-  proc::Heap     *m_heap;
-  Vector<Str>     m_atoms;
-  const u8_t     *m_code; // not owned data
-  word_t          m_code_size;
-  Term            m_mod_name; // an atom in the -module(X) header
+
+  proc::Heap     *heap_= nullptr;
+  Vector<Str>     atoms_;
+  const u8_t     *code_ = nullptr; // not owned data
+  word_t          code_sz;
+  Term            mod_name_; // an atom in the -module(X) header
 
   // Data coming from code chunk
-  word_t          m_code_version;
-  word_t          m_code_opcode_max;
-  word_t          m_code_label_count;
-  word_t          m_code_fun_count;
+  word_t          code_ver_;
+  word_t          code_opcode_max;
+  word_t          code_label_count_;
+  word_t          code_fun_count_;
 
-  Vector<Term>    m_literals;
-  Module::labels_t  m_labels;
-  Dict<fun_arity_t, label_index_t> m_exports;  // list of {f/arity} sequentially
-  Module::imports_t m_imports;
-  Module::lambdas_t m_lambdas;
+  Vector<Term>    literals_;
+  Module::labels_t  labels_;
+  Dict<fun_arity_t, label_index_t> exp_indexes_;  // list of {f/arity} sequentially
+  Module::imports_t imports_;
+  Module::lambdas_t lambdas_;
   // postponed select list with label numbers. Resolve to code pointers after
   // loading finished
-  Vector<Term>    m_resolve_select_lists;
+  Vector<Term>    resolve_selectlists_;
 
 #if FEATURE_LINE_NUMBERS
   // Grouped in struct by feature
@@ -63,10 +63,10 @@ public:
     Vector<word_t *>      fun_code_map;
     //word_t                m_current_li = 0;
     word_t      fun_id = 0;
-  } LN;
+  } linenums_;
 #endif
 #if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
-  fun_arity_t m_current_fun;
+  fun_arity_t current_fun_;
 #endif
 #if FEATURE_CODE_RANGES
   // Grouped in struct by feature
@@ -74,11 +74,14 @@ public:
     word_t      *fun_begin;
     // Maps f/arity to code ranges
     code::Index<fun_arity_t> fun_map;
-  } CR;
+  } coderanges_;
 #endif
 
-  LoaderState(VM &vm): vm_(vm), m_code(nullptr), m_code_size(0) {
+public:
+  LoaderState(VM &vm, proc::Heap *h): vm_(vm), heap_(h) {
   }
+
+  const Str &mod_name() const { return atoms_[0]; }
 
   void load_atom_table(tool::Reader &r, Term expected_name);
   void load_str_table(tool::Reader &r);
@@ -91,8 +94,8 @@ public:
   void load_line_table(tool::Reader &r);
 
   inline const Str &atom_tab_index_to_str(word_t i) const {
-    G_ASSERT(i <= m_atoms.size());
-    return m_atoms[i-1];
+    G_ASSERT(i <= atoms_.size());
+    return atoms_[i-1];
   }
 
   // Load finished, create a Module object and inform code server
@@ -101,7 +104,7 @@ public:
   void beam_prepare_code(Module *m, const u8_t *bytes, word_t sz);
 
 protected:
-  struct Tag { enum {
+  enum class Tag {
     // The following operand types for generic instructions
     // occur in beam files.
     Literal       = 0,    // TAG_u
@@ -127,7 +130,7 @@ protected:
 //    L         = 12,
 //    LiteralRef  = 13, // TAG_q
 //    Overflow  = 14,   // overflow/bigint
-    };};
+  };
 
   void resolve_labels(const Vector<word_t> &postponed_labels,
                       Vector<word_t> &code);
@@ -146,9 +149,9 @@ protected:
 #endif
   Term parse_term(tool::Reader &r);
 
-  static u8_t parse_tag(tool::Reader &r, u8_t value, int tag=-1);
+  static Tag parse_tag(tool::Reader &r, u8_t value, int tag=-1);
   static Term parse_int_term(tool::Reader &r, u8_t first);
-  inline static bool is_base_tag(u8_t t) { return t < Tag::Extended_Base; }
+  inline static bool is_base_tag(Tag t) { return t < Tag::Extended_Base; }
   static Term create_int_term(tool::Reader &r, u8_t first);
   static Term parse_bigint(tool::Reader & /*r*/, word_t /*byte_count*/);
   static Term parse_float(tool::Reader & /*r*/);
@@ -167,8 +170,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(bytes, size);
 
-  LoaderState lstate(vm_);
-  lstate.m_heap = heap;
+  LoaderState lstate(vm_, heap);
 
   r.assert_remaining_at_least(4+4+4);
   Str for1_header = r.read_string(4);
@@ -214,14 +216,14 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
   }
 
   // All good, deploy the module!
-  Term modname = vm_.to_atom(lstate.m_atoms[0]);
+  Term modname = vm_.to_atom(lstate.mod_name());
   return lstate.finalize(modname);
 }
 
 Module * LoaderState::finalize(Term modname) {
-  Module *newmod = m_heap->alloc_object<Module>(modname, m_imports);
+  Module *newmod = heap_->alloc_object<Module>(modname, imports_);
 
-  beam_prepare_code(newmod, m_code, m_code_size);
+  beam_prepare_code(newmod, code_, code_sz);
   return newmod;
 }
 
@@ -231,18 +233,18 @@ void LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
   tool::Reader r = r0.clone(chunk_size);
 
   auto tab_sz = r.read_big_u32();
-  m_atoms.reserve(tab_sz);
+  atoms_.reserve(tab_sz);
   for (word_t i = 0; i < tab_sz; ++i) {
     auto atom_sz = r.read_byte();
-    m_atoms.push_back(r.read_string(atom_sz));
+    atoms_.push_back(r.read_string(atom_sz));
 //    G_LOG("atom: %s index " FMT_UWORD "\n", m_atoms.back().c_str(), m_atoms.size()-1);
   }
 
   // Check first atom in table which is module name
-  G_ASSERT(m_atoms.size() > 0);
-  m_mod_name = vm_.to_atom(m_atoms[0]);
+  G_ASSERT(atoms_.size() > 0);
+  mod_name_ = vm_.to_atom(atoms_[0]);
   if (false == expected_name.is_nil()
-      && m_mod_name != expected_name) {
+      && mod_name_ != expected_name) {
     throw err::beam_load_error("module name mismatch");
   }
 
@@ -259,9 +261,9 @@ void LoaderState::load_lambda_table(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
 
-  G_ASSERT(m_atoms.size() > 0);
+  G_ASSERT(atoms_.size() > 0);
   word_t count = r.read_big_u32();
-  Term mod = vm_.to_atom(m_atoms[0]);
+  Term mod = vm_.to_atom(atoms_[0]);
 
   for (word_t i = 0; i < count; ++i)
   //while (r.get_remaining_count() > 6 * sizeof(u32_t))
@@ -273,7 +275,7 @@ void LoaderState::load_lambda_table(tool::Reader &r0) {
     auto nfree      = r.read_big_u32();
     auto ouniq      = r.read_big_u32();
 
-    if (fun_atom_i > m_atoms.size()) {
+    if (fun_atom_i > atoms_.size()) {
       throw err::beam_load_error("funt: atom index too big");
     }
     const Str &f_str = atom_tab_index_to_str(fun_atom_i);
@@ -291,7 +293,7 @@ void LoaderState::load_lambda_table(tool::Reader &r0) {
            fe.mfa.mod.atom_str(vm_).c_str(),
            fe.mfa.fun.atom_str(vm_).c_str(),
            arity, offset);
-    m_lambdas.push_back(fe);
+    lambdas_.push_back(fe);
   }
 
   r0.advance_align<4>(chunk_size);
@@ -305,7 +307,7 @@ void LoaderState::load_export_table(tool::Reader &r0) {
 
   for (word_t i = 0; i < count; ++i) {
     auto f_i   = r.read_big_u32();
-    if (f_i > m_atoms.size()) {
+    if (f_i > atoms_.size()) {
       throw err::beam_load_error("expt: atom index too big");
     }
     auto f = vm_.to_atom(atom_tab_index_to_str(f_i));
@@ -314,7 +316,7 @@ void LoaderState::load_export_table(tool::Reader &r0) {
     auto label = r.read_big_u32();
 //    Std::fmt("load export %s/" FMT_UWORD " @label %zu\n", f.atom_str().c_str(), arity, label);
 
-    m_exports[fun_arity_t(f, arity)] = label_index_t(label);
+    exp_indexes_[fun_arity_t(f, arity)] = label_index_t(label);
   }
 
   r0.advance_align<4>(chunk_size);
@@ -327,14 +329,14 @@ void LoaderState::load_import_table(tool::Reader &r0)
   auto count = r.read_big_u32();
 
   // Read triplets u32 module_atom_id; u32 method_atom_id; u32 arity
-  m_imports.reserve(count);
+  imports_.reserve(count);
   for (word_t i = 0; i < count; ++i) {
     Str ms = atom_tab_index_to_str(r.read_big_u32());
     Str fs = atom_tab_index_to_str(r.read_big_u32());
     Term m = vm_.to_atom(ms);
     Term f = vm_.to_atom(fs);
     word_t arity = r.read_big_u32();
-    m_imports.push_back(mfarity_t(m, f, arity));
+    imports_.push_back(mfarity_t(m, f, arity));
   }
 
   r0.advance_align<4>(chunk_size);
@@ -346,21 +348,21 @@ void LoaderState::load_code(tool::Reader &r0) {
 
   /*auto info_size =*/ r.read_big_u32(); //=16
 
-  m_code_version   = r.read_big_u32();
-  if (m_code_version != 0) {
+  code_ver_   = r.read_big_u32();
+  if (code_ver_ != 0) {
     throw err::beam_load_error("opcode set version");
   }
-  m_code_opcode_max  = r.read_big_u32();
-  m_code_label_count = r.read_big_u32();
-  m_code_fun_count   = r.read_big_u32();
+  code_opcode_max  = r.read_big_u32();
+  code_label_count_ = r.read_big_u32();
+  code_fun_count_   = r.read_big_u32();
 
   if (feature_line_numbers) {
-    LN.fun_code_map.reserve(m_code_fun_count);
+    linenums_.fun_code_map.reserve(code_fun_count_);
   }
 
   // Just read code here, parse later
-  m_code = r.get_ptr();
-  m_code_size = chunk_size;
+  code_ = r.get_ptr();
+  code_sz = chunk_size;
 
   r0.advance_align<4>(chunk_size);
 }
@@ -371,10 +373,10 @@ void LoaderState::load_literal_table(tool::Reader &r0)
   tool::Reader r1 = r0.clone(chunk_size);
 
   auto uncompressed_size = r1.read_big_u32();
-  Term compressed = Term::make_binary(vm_, m_heap, chunk_size);
+  Term compressed = Term::make_binary(vm_, heap_, chunk_size);
   r1.read_bytes(compressed.binary_get<u8_t>(), chunk_size);
 
-  Term uncompressed = Term::make_binary(vm_, m_heap, uncompressed_size);
+  Term uncompressed = Term::make_binary(vm_, heap_, uncompressed_size);
   auto result = mz_uncompress(uncompressed.binary_get<u8_t>(), &uncompressed_size,
                               compressed.binary_get<u8_t>(), chunk_size);
   if (result != MZ_OK) {
@@ -384,13 +386,13 @@ void LoaderState::load_literal_table(tool::Reader &r0)
   tool::Reader r(uncompressed.binary_get<u8_t>(), uncompressed_size);
   auto count = r.read_big_u32();
 
-  m_literals.reserve(count);
+  literals_.reserve(count);
 
   for (word_t i = 0; i < count; ++i) {
     /*auto lit_sz =*/ r.read_big_u32();
 
-    auto lit = etf::read_ext_term_with_marker(vm_, m_heap, r);
-    m_literals.push_back(lit);
+    auto lit = etf::read_ext_term_with_marker(vm_, heap_, r);
+    literals_.push_back(lit);
   }
 
   r0.advance_align<4>(chunk_size);
@@ -422,34 +424,34 @@ void LoaderState::load_line_table(tool::Reader &r0)
 
   r.advance(4); // flags, ignore
   word_t line_instr_count = r.read_big_u32();
-  LN.line_instr.reserve(line_instr_count);
+  linenums_.line_instr.reserve(line_instr_count);
 
-  LN.num_line_refs      = r.read_big_u32();
-  LN.num_filenames = r.read_big_u32();
+  linenums_.num_line_refs      = r.read_big_u32();
+  linenums_.num_filenames = r.read_big_u32();
 
   // line_record[] (1-base index)
   // invalid location goes as index 0
-  LN.line_refs.push_back(line::INVALID_LOC);
+  linenums_.line_refs.push_back(line::INVALID_LOC);
 
   word_t fname_index = 0;
   // First elements of ref table contain only offsets assuming they are for
   // file #0
-  for (word_t i = 0; i < LN.num_line_refs; ++i) {
+  for (word_t i = 0; i < linenums_.num_line_refs; ++i) {
     Term val = parse_term(r);
     if (val.is_small()) {
       // We've got an offset for current filename
       word_t offs = val.small_get_unsigned();
       if (G_LIKELY(line::is_valid_loc(fname_index, offs))) {
-        LN.line_refs.push_back(line::make_location(fname_index, offs));
+        linenums_.line_refs.push_back(line::make_location(fname_index, offs));
         //Std::fmt("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
       } else {
-        LN.line_refs.push_back(line::INVALID_LOC);
+        linenums_.line_refs.push_back(line::INVALID_LOC);
         Std::fmt("line info: invalid loc\n");
       }
     } else if (val.is_atom()) {
       // reference to another file
       word_t a_id = val.atom_val();
-      if (a_id > LN.num_filenames) {
+      if (a_id > linenums_.num_filenames) {
         throw err::beam_load_error("line info: bad file index");
       }
       fname_index = a_id;
@@ -457,11 +459,11 @@ void LoaderState::load_line_table(tool::Reader &r0)
   }
 
   // filenames[] = u16 length + characters
-  for (word_t i = 0; i < LN.num_filenames; ++i) {
+  for (word_t i = 0; i < linenums_.num_filenames; ++i) {
     word_t  name_sz = r.read_big_u16();
     Str     name    = r.read_string(name_sz);
     Std::fmt("line info: file %s\n", name.c_str());
-    LN.filenames.push_back(vm_.to_atom(name));
+    linenums_.filenames.push_back(vm_.to_atom(name));
   }
 
   r0.advance_align<4>(chunk_size);
@@ -519,8 +521,8 @@ void LoaderState::beam_prepare_code(Module *m,
       G_ASSERT(label.is_small());
 
       word_t l_id = label.small_get_unsigned();
-      G_ASSERT(l_id < m_code_label_count);
-      m_labels[l_id] = (&code.back())+1;
+      G_ASSERT(l_id < code_label_count_);
+      labels_[l_id] = (&code.back())+1;
       continue;
     }
 
@@ -596,37 +598,37 @@ void LoaderState::beam_prepare_code(Module *m,
 #if FEATURE_CODE_RANGES
   // mark end of code by adding last open fun to code index
   beam_op_func_info(code, NONVALUE, NONVALUE, NONVALUE);
-  m->set_fun_ranges(CR.fun_map);
+  m->set_fun_ranges(coderanges_.fun_map);
 #endif
 
   // TODO: just scan code and resolve in place maybe? don't have to accum labels
   resolve_labels(postponed_labels, code);
 
-  m->set_labels(m_labels);
+  m->set_labels(labels_);
   m->set_code(code); // give ownership
 
   // Move exports from m_exports to this table, resolving labels to code offsets
   Module::exports_t exports;
 //  Std::fmt("exports processing: " FMT_UWORD " items\n", m_exports.size());
-  auto exps = m_exports.all();
+  auto exps = exp_indexes_.all();
   for_each_keyvalue(exps, [this, &exports](const fun_arity_t &fa, label_index_t lindex) {
-                    exports[fa] = export_t(m_labels[lindex.value],
-                                           mfarity_t(m_mod_name, fa));
+                    exports[fa] = export_t(labels_[lindex.value],
+                                           mfarity_t(mod_name_, fa));
                   });
   m->set_exports(exports);
 
-  for (auto &la: m_lambdas) {
-    auto ptr = m_labels[la.uniq[0]];
+  for (auto &la: lambdas_) {
+    auto ptr = labels_[la.uniq[0]];
     la.code = ptr;
   }
-  m->set_lambdas(m_lambdas);
+  m->set_lambdas(lambdas_);
 
   // Fix select lists (replace label numbers with code pointers)
-  for (Term t: m_resolve_select_lists) {
+  for (Term t: resolve_selectlists_) {
     word_t t_arity = t.tuple_get_arity()/2;
     for (word_t i = 0; i < t_arity; ++i) {
       word_t l_index = t.tuple_get_element(i*2+1).small_get_unsigned();
-      word_t *ptr = m_labels[l_index];
+      word_t *ptr = labels_[l_index];
       t.tuple_set_element(i*2+1, Term::make_boxed_cp(ptr));
     }
   }
@@ -634,7 +636,7 @@ void LoaderState::beam_prepare_code(Module *m,
   // TODO: merge code and literal heap together maybe?
 
 #if FEATURE_LINE_NUMBERS
-  m->set_line_numbers(LN.line_refs, LN.filenames);
+  m->set_line_numbers(linenums_.line_refs, linenums_.filenames);
 #endif
 }
 
@@ -648,12 +650,12 @@ void LoaderState::replace_imp_index_with_ptr(word_t *p, Module *m) {
 void LoaderState::beam_op_line(Vector<word_t> &code, Term arg)
 {
   word_t index = arg.small_get_unsigned();
-  G_ASSERT(index < LN.line_refs.size());
+  G_ASSERT(index < linenums_.line_refs.size());
 
   line_instr_t li;
   li.code_pos = code.data();
-  li.pos = LN.line_refs[index];
-  LN.line_instr.push_back(li);
+  li.pos = linenums_.line_refs[index];
+  linenums_.line_instr.push_back(li);
 }
 #endif
 
@@ -664,12 +666,12 @@ void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
   word_t *last_ptr = (&code.back()) + 1;
 
   // Finish previous function if it already started
-  if (m_current_fun.fun.is_value()) {
-    code::Range range(CR.fun_begin, last_ptr);
+  if (current_fun_.fun.is_value()) {
+    code::Range range(coderanges_.fun_begin, last_ptr);
 //    Std::fmt("fun map: " FMT_0xHEX ".." FMT_0xHEX " %s/" FMT_UWORD "\n", (word_t)CR.fun_begin,
 //           (word_t)last_ptr, m_current_fun.first.atom_c_str(),
 //           m_current_fun.second);
-    CR.fun_map.add(range, m_current_fun);
+    coderanges_.fun_map.add(range, current_fun_);
   }
   if (f.is_non_value()) {
     // we mark end of code by calling this with a non-value
@@ -681,31 +683,31 @@ void LoaderState::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
   //m_function_number++;
   //G_ASSERT(m_code_fun_count >= m_function_number);
 
-  m_current_fun.fun = f;
-  m_current_fun.arity = a.small_get_unsigned();
+  current_fun_.fun = f;
+  current_fun_.arity = a.small_get_unsigned();
 
 #if FEATURE_CODE_RANGES
-  CR.fun_begin = last_ptr;
+  coderanges_.fun_begin = last_ptr;
 #endif
 
 #if FEATURE_LINE_NUMBERS
   // save fun start address
   //m_func_line[m_function_number] = code.data() + code.size();
-  LN.fun_code_map.push_back(code.data() + code.size());
+  linenums_.fun_code_map.push_back(code.data() + code.size());
 #endif
 }
 #endif
 
 void LoaderState::replace_lambda_index_with_ptr(word_t *p, Module *m) {
   Term i(*p);
-  Term j = Term::make_boxed(&m_lambdas[i.small_get_unsigned()]);
+  Term j = Term::make_boxed(&lambdas_[i.small_get_unsigned()]);
   *p = j.as_word();
 }
 
 Term LoaderState::parse_term(tool::Reader &r)
 {
-  u8_t first = r.read_byte();
-  u8_t tag   = parse_tag(r, first);
+  u8_t first  = r.read_byte();
+  Tag tag     = parse_tag(r, first);
 
   //
   // Base tagged values (int, literal, atom, label, register, character)
@@ -722,7 +724,7 @@ Term LoaderState::parse_term(tool::Reader &r)
     if (tag == Tag::Atom) {
       if (val == 0) {
         return NIL;
-      } else if (val > m_atoms.size()) { // we will subtract 1 when indexing
+      } else if (val > atoms_.size()) { // we will subtract 1 when indexing
         throw err::beam_load_error("bad atom index");
       }
       return vm_.to_atom(atom_tab_index_to_str(val));
@@ -730,7 +732,7 @@ Term LoaderState::parse_term(tool::Reader &r)
     if (tag == Tag::Label) {
       if (val == 0) {
         return NONVALUE; //Tag::NoLabel; // empty destination
-      } else if (val >= m_code_label_count) {
+      } else if (val >= code_label_count_) {
         throw err::beam_load_error("bad label");
       }
       // special value to be recognized by label resolver
@@ -765,7 +767,7 @@ Term LoaderState::parse_term(tool::Reader &r)
     G_ASSERT(psi.second == false); // assert no overflow
     word_t length = (word_t)psi.first;
     length /= 2;
-    term::TupleBuilder tb(m_heap, length * 2);
+    term::TupleBuilder tb(heap_, length * 2);
 
     for (word_t i = 0; i < length; ++i) {
       Term base = parse_term(r);
@@ -777,7 +779,7 @@ Term LoaderState::parse_term(tool::Reader &r)
     }
     Term result = tb.make_tuple();
     // replace label numbers with pointers when loading finished
-    m_resolve_select_lists.push_back(result);
+    resolve_selectlists_.push_back(result);
     return result;
   }
   else if (tag == Tag::Extended_FloatRegister) {
@@ -801,26 +803,26 @@ Term LoaderState::parse_term(tool::Reader &r)
   else if (tag == Tag::Extended_Literal) {
     word_t val1 = parse_int_term(r, r.read_byte()).small_get_unsigned();
 
-    if (val1 >= m_literals.size()) {
+    if (val1 >= literals_.size()) {
       throw err::beam_load_error("bad literal index");
     }
-    return m_literals[val1];
+    return literals_[val1];
   }
   throw err::beam_load_error("bad extended tag");
 }
 
-u8_t LoaderState::parse_tag(tool::Reader &r, u8_t value, int tag) {
+LoaderState::Tag LoaderState::parse_tag(tool::Reader &r, u8_t value, int tag) {
   if (tag == -1) {
     tag = value;
   }
-  if ((tag & 0x7) == Tag::Extended) {
-    return ((u8_t)tag >> 4) + Tag::Extended_Base;
+  if ((tag & 0x7) == (u8_t)Tag::Extended) {
+    return (Tag)(((u8_t)tag >> 4) + (u8_t)Tag::Extended_Base);
   }
-  return (tag & 0x7);
+  return (Tag)(tag & 0x7);
 }
 
 Term LoaderState::parse_int_term(tool::Reader &r, u8_t first) {
-  u8_t tag = parse_tag(r, first);
+  Tag tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
   return create_int_term(r, first);
 }
@@ -849,7 +851,7 @@ Term LoaderState::create_int_term(tool::Reader &r, u8_t tag)
 
 Pair<sword_t, bool>
 LoaderState::parse_small_int(tool::Reader &r, u8_t first) {
-  u8_t tag = parse_tag(r, first);
+  Tag tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
   return parse_create_small_int(r, first);
 }
@@ -975,7 +977,7 @@ void LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
     word_t label_index = term_tag::Catch::value(code[code_index]);
 
     // New value will be small int
-    Term resolved_label = Term::make_boxed_cp(m_labels[label_index]);
+    Term resolved_label = Term::make_boxed_cp(labels_[label_index]);
     code[code_index] = resolved_label.as_word();
   }
   return;
