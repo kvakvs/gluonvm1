@@ -604,18 +604,18 @@ void LoaderState::beam_prepare_code(Module *m,
   // TODO: just scan code and resolve in place maybe? don't have to accum labels
   resolve_labels(postponed_labels, code);
 
-  m->set_labels(labels_);
   m->set_code(code); // give ownership
 
   // Move exports from m_exports to this table, resolving labels to code offsets
   Module::exports_t exports;
 //  Std::fmt("exports processing: " FMT_UWORD " items\n", m_exports.size());
   auto exps = exp_indexes_.all();
-  for_each_keyvalue(exps, [this, &exports](const fun_arity_t &fa, label_index_t lindex) {
+  for_each_keyvalue(exps, [&](const fun_arity_t &fa, label_index_t lindex) {
                     exports[fa] = export_t(labels_[lindex.value],
                                            mfarity_t(mod_name_, fa));
                   });
   m->set_exports(exports);
+  m->set_labels(labels_); // transfer data
 
   for (auto &la: lambdas_) {
     auto ptr = labels_[la.uniq[0]];

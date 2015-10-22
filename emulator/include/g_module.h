@@ -16,10 +16,11 @@ class Heap;
 class export_t {
   // first field stores bits used to tag boxed value and boolean bif flag
   // (shifted left by BOXED_SUBTAG_BITS)
-  word_t m_header;
+  word_t hdr_;
+  // either biffn or code must be not-null
   union {
-    word_t *m_code;
-    void   *m_bif_fn; // use VM::apply_bif with this and mfa.arity
+    word_t *code_;
+    void   *bif_fn_; // use VM::apply_bif with this and mfa.arity
   };
 
 public:
@@ -27,25 +28,29 @@ public:
 
   export_t() {}
   export_t(void *biffn)
-    : m_header(term_tag::BoxedExport::create_subtag((word_t)(biffn != nullptr)))
-    , m_bif_fn(biffn)
-  {}
-  export_t(word_t *_code, const mfarity_t &_mfa)
-    : m_header(term_tag::BoxedExport::create_subtag((word_t)false)),
-      m_code(_code), mfa(_mfa)
-  {}
+    : hdr_(term_tag::BoxedExport::create_subtag((word_t)(biffn != nullptr)))
+    , bif_fn_(biffn)
+  {
+    G_ASSERT(biffn != nullptr); // either biffn or code must be not-null
+  }
+  export_t(word_t *co, const mfarity_t &_mfa)
+    : hdr_(term_tag::BoxedExport::create_subtag((word_t)false)),
+      code_(co), mfa(_mfa)
+  {
+    G_ASSERT(co != nullptr); // either biffn or code must be not-null
+  }
 
   static const word_t BIF_BIT = (1U << term_tag::BOXED_SUBTAG_BITS);
   inline bool is_bif() const {
-    return (m_header & BIF_BIT) == BIF_BIT;
+    return (hdr_ & BIF_BIT) == BIF_BIT;
   }
   inline word_t *code() const {
     G_ASSERT(is_bif() == false);
-    return m_code;
+    return code_;
   }
   inline void *bif_fn() const {
     G_ASSERT(is_bif() == true);
-    return m_bif_fn;
+    return bif_fn_;
   }
 };
 

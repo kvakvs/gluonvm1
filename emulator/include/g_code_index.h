@@ -57,11 +57,12 @@ public:
     // I cannot into range search, something with lower_bound/upper_bound which
     // compares ranges using operator < and that is too hard
     // TODO: fix this
-    auto all_mapping = ranges_.all();
-    while (all_mapping.have()) {
-      if (all_mapping.key().contains(x)) {
-        return all_mapping.value();
+    auto allranges = ranges_.all();
+    while (allranges.have()) {
+      if (allranges.key().contains(x)) {
+        return allranges.value();
       }
+      allranges.advance();
     }
     return T();
 //    auto find = std::make_pair(Range(x, nullptr), T());

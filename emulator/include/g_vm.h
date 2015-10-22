@@ -26,7 +26,6 @@ using atom_proc_map_t = Dict<Term, Process *>;
 class VM {
 private:
   // TODO: Optimize atom tab for insert-only, like OTP does
-  // TODO: global is bad for many reasons
   str_atom_map_t atoms_;
   atom_str_map_t reverse_atoms_;
   word_t         atom_id_counter_;

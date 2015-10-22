@@ -30,6 +30,7 @@ void Process::jump_to_mfa(mfarity_t &mfa)
 
   ctx_.ip = exp->code();
   Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)ctx_.ip);
+  G_ASSERT(ctx_.ip > 0);
 }
 
 
