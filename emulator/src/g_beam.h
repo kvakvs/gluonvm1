@@ -18,7 +18,7 @@ namespace genop {
   enum class Opcode;
 } // ns genop
 
-class LoaderState {
+class BeamLoader {
 private:
   VM        &vm_;
 
@@ -60,9 +60,11 @@ private:
     word_t      fun_id = 0;
   } linenums_;
 #endif
+
 #if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
   fun_arity_t current_fun_;
 #endif
+
 #if FEATURE_CODE_RANGES
   // Grouped in struct by feature
   struct {
@@ -73,7 +75,7 @@ private:
 #endif
 
 public:
-  LoaderState(VM &vm, proc::Heap *h): vm_(vm), heap_(h) {
+  BeamLoader(VM &vm, proc::Heap *h): vm_(vm), heap_(h) {
   }
 
   const Str &mod_name() const { return atoms_[0]; }
@@ -110,12 +112,12 @@ private:
     Label         = 5,    // TAG_f
     Character     = 6,    // TAG_h
     Extended      = 7,    // TAG_z extended (list, float etc)
-    Extended_Base          = 8,
-    Extended_Float         = 8+0,
-    Extended_List          = 8+1, // Select list for 'case X of'
-    Extended_FloatRegister = 8+2,
-    Extended_AllocList     = 8+3,
-    Extended_Literal       = 8+4,
+    Extended_Base = 8,
+    Extended_Float         = Extended_Base + 0,
+    Extended_List          = Extended_Base + 1, // Select list for 'case X of'
+    Extended_FloatRegister = Extended_Base + 2,
+    Extended_AllocList     = Extended_Base + 3,
+    Extended_Literal       = Extended_Base + 4,
 
 //    // The following operand types are only used in the loader.
 //    NIL       = 8,
@@ -127,15 +129,9 @@ private:
 //    Overflow  = 14,   // overflow/bigint
   };
 
-  bool rewrite_opcode(genop::Opcode opcode,
-                      Vector<word_t> &output,
-                      tool::Reader &r);
   void resolve_labels(const Vector<word_t> &postponed_labels,
                       Vector<word_t> &code);
-//  MaybeError get_tag_and_value(tool::Reader &r, word_t &tag, word_t &value);
-//  Result<word_t> get_tag_and_value_2(tool::Reader &r,
-//                                     word_t len_code,
-//                                     word_t &tag, word_t &result);
+
   void replace_imp_index_with_ptr(word_t *p, Module *m);
   void replace_lambda_index_with_ptr(word_t *p, Module *m);
 
@@ -147,6 +143,23 @@ private:
 
   Term parse_term(tool::Reader &r);
 
+  //
+  // Code parsing functions - run a loop for each opcode, and then output
+  // results to target module
+  //
+  Vector<word_t> read_code(Module *m, array_view<const u8_t>,
+                           Vector<word_t> &output);
+  bool rewrite_opcode(genop::Opcode opcode,
+                      Vector<word_t> &output,
+                      tool::Reader &r);
+  void post_rewrite_opcode(genop::Opcode opcode,
+                           Module *m,
+                           Vector<word_t> &output);
+  void output_exports(Module *m);
+  void output_lambdas(Module *m);
+  void output_selectlists(Module *m);
+  // end code parsing
+
   static Tag parse_tag(tool::Reader &r, u8_t value, int tag=-1);
   static Term parse_int_term(tool::Reader &r, u8_t first);
   inline static bool is_base_tag(Tag t) { return t < Tag::Extended_Base; }
@@ -156,6 +169,7 @@ private:
   static Term parse_alloclist(tool::Reader &r);
   static Pair<sword_t, bool> parse_small_int(tool::Reader &r, u8_t first);
   static Pair<sword_t, bool> parse_create_small_int(tool::Reader &r, u8_t tag);
+
   // Returns result + overflow flag, overflow means we want to read bigint
   static Pair<sword_t, bool> read_signed_word(tool::Reader &r, word_t count);
 };

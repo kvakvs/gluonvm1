@@ -23,7 +23,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(data);
 
-  LoaderState lstate(vm_, heap);
+  BeamLoader lstate(vm_, heap);
 
   r.assert_remaining_at_least(4+4+4);
   Str for1_header = r.read_string(4);
@@ -73,14 +73,14 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
   return lstate.finalize(modname);
 }
 
-Module * LoaderState::finalize(Term modname) {
+Module * BeamLoader::finalize(Term modname) {
   Module *newmod = heap_->alloc_object<Module>(modname, imports_);
 
   beam_prepare_code(newmod, code_);
   return newmod;
 }
 
-void LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
+void BeamLoader::load_atom_table(tool::Reader &r0, Term expected_name)
 {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
@@ -104,13 +104,13 @@ void LoaderState::load_atom_table(tool::Reader &r0, Term expected_name)
   r0.advance_align<4>(chunk_size);
 }
 
-void LoaderState::load_str_table(tool::Reader &r0)
+void BeamLoader::load_str_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
   r0.advance_align<4>(chunk_size);
 }
 
-void LoaderState::load_lambda_table(tool::Reader &r0) {
+void BeamLoader::load_lambda_table(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
 
@@ -152,7 +152,7 @@ void LoaderState::load_lambda_table(tool::Reader &r0) {
   r0.advance_align<4>(chunk_size);
 }
 
-void LoaderState::load_export_table(tool::Reader &r0) {
+void BeamLoader::load_export_table(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r = r0.clone(chunk_size);
 
@@ -175,7 +175,7 @@ void LoaderState::load_export_table(tool::Reader &r0) {
   r0.advance_align<4>(chunk_size);
 }
 
-void LoaderState::load_import_table(tool::Reader &r0)
+void BeamLoader::load_import_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r  = r0.clone(chunk_size);
@@ -195,7 +195,7 @@ void LoaderState::load_import_table(tool::Reader &r0)
   r0.advance_align<4>(chunk_size);
 }
 
-void LoaderState::load_code(tool::Reader &r0) {
+void BeamLoader::load_code(tool::Reader &r0) {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r  = r0.clone(chunk_size);
 
@@ -219,7 +219,7 @@ void LoaderState::load_code(tool::Reader &r0) {
   r0.advance_align<4>(chunk_size);
 }
 
-void LoaderState::load_literal_table(tool::Reader &r0)
+void BeamLoader::load_literal_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
   tool::Reader r1 = r0.clone(chunk_size);
@@ -252,14 +252,14 @@ void LoaderState::load_literal_table(tool::Reader &r0)
   r0.advance_align<4>(chunk_size);
 }
 
-void LoaderState::load_labels(tool::Reader &r0)
+void BeamLoader::load_labels(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
 
   r0.advance_align<4>(chunk_size);
 }
 
-void LoaderState::load_line_table(tool::Reader &r0)
+void BeamLoader::load_line_table(tool::Reader &r0)
 {
   auto chunk_size = r0.read_big_u32();
 
@@ -323,7 +323,7 @@ void LoaderState::load_line_table(tool::Reader &r0)
   r0.advance_align<4>(chunk_size);
 }
 
-Term LoaderState::parse_term(tool::Reader &r)
+Term BeamLoader::parse_term(tool::Reader &r)
 {
   u8_t first  = r.read_byte();
   Tag tag     = parse_tag(r, first);
@@ -430,7 +430,7 @@ Term LoaderState::parse_term(tool::Reader &r)
   throw err::beam_load_error("bad extended tag");
 }
 
-LoaderState::Tag LoaderState::parse_tag(tool::Reader &r, u8_t value, int tag) {
+BeamLoader::Tag BeamLoader::parse_tag(tool::Reader &r, u8_t value, int tag) {
   if (tag == -1) {
     tag = value;
   }
@@ -440,13 +440,13 @@ LoaderState::Tag LoaderState::parse_tag(tool::Reader &r, u8_t value, int tag) {
   return (Tag)(tag & 0x7);
 }
 
-Term LoaderState::parse_int_term(tool::Reader &r, u8_t first) {
+Term BeamLoader::parse_int_term(tool::Reader &r, u8_t first) {
   Tag tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
   return create_int_term(r, first);
 }
 
-Term LoaderState::create_int_term(tool::Reader &r, u8_t tag)
+Term BeamLoader::create_int_term(tool::Reader &r, u8_t tag)
 {
   if (tag & 0x08) {  // xxxx1xxx
     if (tag & 0x10) {  // xxx11xxx - extended
@@ -469,7 +469,7 @@ Term LoaderState::create_int_term(tool::Reader &r, u8_t tag)
 }
 
 Pair<sword_t, bool>
-LoaderState::parse_small_int(tool::Reader &r, u8_t first) {
+BeamLoader::parse_small_int(tool::Reader &r, u8_t first) {
   Tag tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
   return parse_create_small_int(r, first);
@@ -477,7 +477,7 @@ LoaderState::parse_small_int(tool::Reader &r, u8_t first) {
 
 // Returns pair<result, overflow>
 Pair<sword_t, bool>
-LoaderState::read_signed_word(tool::Reader &r, word_t count) {
+BeamLoader::read_signed_word(tool::Reader &r, word_t count) {
   if (count == sizeof(word_t) + 1) {
     // The encoded value has one more byte than an size_t. It will still fit
     // in an size_t if the most significant byte is 0.
@@ -499,7 +499,7 @@ LoaderState::read_signed_word(tool::Reader &r, word_t count) {
 }
 
 Pair<sword_t, bool>
-LoaderState::parse_create_small_int(tool::Reader &r, u8_t tag)
+BeamLoader::parse_create_small_int(tool::Reader &r, u8_t tag)
 {
   if (tag & 0x08) {  // xxxx1xxx
     if (tag & 0x10) {  // xxx11xxx - extended
@@ -520,7 +520,7 @@ LoaderState::parse_create_small_int(tool::Reader &r, u8_t tag)
   return std::make_pair(tag >> 4, false);
 }
 
-Term LoaderState::parse_bigint(tool::Reader &, word_t) {
+Term BeamLoader::parse_bigint(tool::Reader &, word_t) {
 #if FEATURE_BIGNUM
 #error "todo load bignum from reader"
 #else
@@ -528,7 +528,7 @@ Term LoaderState::parse_bigint(tool::Reader &, word_t) {
 #endif
 }
 
-Term LoaderState::parse_float(tool::Reader &) {
+Term BeamLoader::parse_float(tool::Reader &) {
 #if FEATURE_FLOAT
 #error "todo load float from reader"
 #else
@@ -536,7 +536,7 @@ Term LoaderState::parse_float(tool::Reader &) {
 #endif
 }
 
-Term LoaderState::parse_alloclist(tool::Reader &r)
+Term BeamLoader::parse_alloclist(tool::Reader &r)
 {
 #if 0
   word_t n;
@@ -585,7 +585,7 @@ Term LoaderState::parse_alloclist(tool::Reader &r)
   G_FAIL("alloc list?");
 }
 
-void LoaderState::resolve_labels(const Vector<word_t> &postponed_labels,
+void BeamLoader::resolve_labels(const Vector<word_t> &postponed_labels,
                                        Vector<word_t> &code)
 {
   //  word_t *base = code.data();
