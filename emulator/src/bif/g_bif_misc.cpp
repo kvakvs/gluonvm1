@@ -710,7 +710,7 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
     // module argument in the n+1st x register as a THIS reference.
     Term   tmp = args;
     while (tmp.is_list()) {
-      if (arity < erts::MAX_REGS - 1) {
+      if (arity < erts::max_regs - 1) {
         tmp.cons_head_tail(regs[arity++], tmp);
       } else {
         proc->bif_error(atom::SYSTEM_LIMIT);

@@ -10,41 +10,41 @@ namespace proc { class Heap; }
 
 namespace etf {
 
-  constexpr u8_t ETF_MARKER = 131;
-  enum {
-    DIST_HEADER           = 68,  // contains atom cache
+  constexpr u8_t etf_marker = 131;
+  enum class Tag {
+    DistHeader          = 68,  // contains atom cache
     // 69
-    IEEE_FLOAT_EXT        = 70,  // 8-byte double
+    IeeeFloatExt        = 70,  // 8-byte double
     // ...
-    BIT_BINARY_EXT        = 77,
+    BitBinaryExt        = 77,
     // ...
-    COMPRESSED            = 80,
+    Compressed          = 80,
     // 81
-    ATOM_CACHE_REF        = 82,  // used with dist header
+    AtomCacheRef        = 82,  // used with dist header
     // ...
-    SMALL_INTEGER_EXT     = 97,  // 8bit integer
-    INTEGER_EXT           = 98,  // 32bit big endian integer
-    OLD_FLOAT_STRING_EXT  = 99,  // superceded by ieee_float_ext
-    ATOM_EXT              = 100, // atom as string
-    REFERENCE_EXT         = 101, // encoded make_ref()
-    PORT_EXT              = 102, // port, similar to ref()
-    PID_EXT               = 103,
-    SMALL_TUPLE_EXT       = 104,
-    LARGE_TUPLE_EXT       = 105,
-    NIL_EXT               = 106, // empty list []
-    STRING_EXT            = 107, // 16bit size + bytes
-    LIST_EXT              = 108, // 32bit length, elements, tail (or nil)
-    BINARY_EXT            = 109,
-    SMALL_BIG_EXT         = 110,
-    LARGE_BIG_EXT         = 111,
+    SmallIntegerExt     = 97,  // 8bit integer
+    IntegerExt          = 98,  // 32bit big endian integer
+    OldFloatStringExt   = 99,  // superceded by ieee_float_ext
+    AtomExt             = 100, // atom as string
+    ReferenceExt        = 101, // encoded make_ref()
+    PortExt             = 102, // port, similar to ref()
+    PidExt              = 103,
+    SmallTupleExt       = 104,
+    LargeTupleExt       = 105,
+    NilExt              = 106, // empty list []
+    StringExt           = 107, // 16bit size + bytes
+    ListExt             = 108, // 32bit length, elements, tail (or nil)
+    BinaryExt           = 109,
+    SmallBigExt         = 110,
+    LargeBigExt         = 111,
     // NEW_FUN_EXT = 112,
     // EXPORT_EXT = 113,
     // NEW_REFERENCE_EXT = 114,
-    SMALL_ATOM_EXT        = 115,
-    MAP_EXT               = 116,
+    SmallAtomExt        = 115,
+    MapExt              = 116,
     // FUN_EXT = 117,
-    ATOM_UTF8_EXT         = 118,
-    SMALL_ATOM_UTF8_EXT   = 119,
+    AtomUtf8Ext         = 118,
+    SmallAtomUtf8Ext    = 119,
   };
 
   // Term will be parsed and stored on heap (reads byte=131 first as an ETF tag)

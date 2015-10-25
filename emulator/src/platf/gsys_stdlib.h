@@ -2,7 +2,7 @@
 
 //#include "g_defs.h"
 #include <functional>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdio>
 
 namespace gluon {

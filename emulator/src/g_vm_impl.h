@@ -271,7 +271,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     //       receive loop at Label.
 
     // Schedule out
-    p->set_slice_result(proc::SliceResult::WAIT);
+    p->set_slice_result(proc::SliceResult::Wait);
     ctx.jump(p, Term(ctx.ip[0]));
     ctx.swap_out_light(p);
     // we always yield after wait
@@ -640,7 +640,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       }
       // TODO: if bf.fe is null - unloaded fun
       word_t num_free = bf->get_num_free();
-      G_ASSERT(arity + num_free < erts::MAX_REGS);
+      G_ASSERT(arity + num_free < erts::max_regs);
       std::copy(bf->frozen, bf->frozen + num_free, ctx.regs + arity);
 
       ctx.live = arity;

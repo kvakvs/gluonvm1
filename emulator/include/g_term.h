@@ -823,12 +823,12 @@ public:
   word_t  arity;
   mfarity_t(): mod(NONVALUE), fun(NONVALUE), arity(0) {}
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {
-    G_ASSERT(a <= erts::MAX_FUN_ARITY);
+    G_ASSERT(a <= erts::max_fun_arity);
   }
   mfarity_t(Term m, const fun_arity_t &fa)
     : mod(m), fun(fa.fun), arity(fa.arity)
   {
-    G_ASSERT(arity <= erts::MAX_FUN_ARITY);
+    G_ASSERT(arity <= erts::max_fun_arity);
   }
   fun_arity_t as_funarity() const {
     return fun_arity_t(fun, arity);

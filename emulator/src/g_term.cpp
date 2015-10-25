@@ -207,7 +207,7 @@ Term Term::make_binary(VM &vm, proc::Heap *h, word_t bytes)
   // elsewhere or losing significant bit from the size
   G_ASSERT(bytes < term_tag::BOXED_MAX_SUBTAG_VALUE);
 
-  if (bytes <= bin::HEAP_BIN_LIMIT) {
+  if (bytes <= bin::heapbin_limit) {
     word_t *box = h->allocate<word_t>(layout::PROC_BIN::box_size(bytes));
     layout::PROC_BIN::set_byte_size(box, bytes);
     return Term(term_tag::BoxedProcBin::create_from_ptr<word_t>(box));

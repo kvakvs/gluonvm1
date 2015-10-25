@@ -432,7 +432,7 @@ void LoaderState::load_line_table(tool::Reader &r0)
 
   // line_record[] (1-base index)
   // invalid location goes as index 0
-  linenums_.line_refs.push_back(line::INVALID_LOC);
+  linenums_.line_refs.push_back(line::invalid_location);
 
   word_t fname_index = 0;
   // First elements of ref table contain only offsets assuming they are for
@@ -446,7 +446,7 @@ void LoaderState::load_line_table(tool::Reader &r0)
         linenums_.line_refs.push_back(line::make_location(fname_index, offs));
         //Std::fmt("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
       } else {
-        linenums_.line_refs.push_back(line::INVALID_LOC);
+        linenums_.line_refs.push_back(line::invalid_location);
         Std::fmt("line info: invalid loc\n");
       }
     } else if (val.is_atom()) {
@@ -740,13 +740,13 @@ Term LoaderState::parse_term(tool::Reader &r)
       return Term::make_catch(val);
     }
     if (tag == Tag::XRegister) {
-      if (val >= erts::MAX_REGS) {
+      if (val >= erts::max_regs) {
         throw err::beam_load_error("invalid x register");
       }
       return Term::make_regx(val);
     }
     if (tag == Tag::YRegister) {
-      if (val >= erts::MAX_STACK) {
+      if (val >= erts::max_stack) {
         throw err::beam_load_error("invalid y register");
       }
       return Term::make_regy(val);

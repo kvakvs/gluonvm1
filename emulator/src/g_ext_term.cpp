@@ -41,10 +41,11 @@ Term read_atom_string_i8(VM &vm, tool::Reader &r) {
 // Reads tag byte, then reads long or short atom as string and attempts to
 // create it in atom table.
 Term read_tagged_atom_string(VM &vm, tool::Reader &r) {
-  u8_t tag = r.read_byte();
+  Tag tag = (Tag)r.read_byte();
   switch (tag) {
-    case ATOM_EXT:        return read_atom_string_i16(vm, r);
-    case SMALL_ATOM_EXT:  return read_atom_string_i8(vm, r);
+  case Tag::AtomExt:        return read_atom_string_i16(vm, r);
+  case Tag::SmallAtomExt:  return read_atom_string_i8(vm, r);
+  default: ;
   }
   throw err::ext_term_error("atom expected");
 }
@@ -94,7 +95,7 @@ Term read_tuple(VM &vm, proc::Heap *heap, tool::Reader &r, word_t arity) {
 
 
 Term read_ext_term_with_marker(VM &vm, proc::Heap *heap, tool::Reader &r) {
-  r.assert_byte(ETF_MARKER);
+  r.assert_byte(etf_marker);
   return read_ext_term(vm, heap, r);
 }
 
@@ -169,17 +170,17 @@ static Term read_binary(VM &vm, proc::Heap *heap, tool::Reader &r) {
 }
 
 Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
-  auto t = r.read_byte();
+  auto t = (Tag)r.read_byte();
   switch (t) {
-  case COMPRESSED:
+  case Tag::Compressed:
     // =80; 4 bytes size; compressed data
     G_TODO("compressed etf");
     G_IF_NODEBUG(break;)
 
-  case SMALL_INTEGER_EXT:
+  case Tag::SmallIntegerExt:
     return Term::make_small(r.read_byte());
 
-  case INTEGER_EXT: {
+  case Tag::IntegerExt: {
       // 32-bit integer
       sword_t n = r.read_big_s(4);
       if (get_hardware_bits() > 32) {
@@ -207,18 +208,18 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
       G_TODO("make ieee 8byte double etf");
     } // new 8byte double float_ext
 #else
-  case OLD_FLOAT_STRING_EXT:
-  case IEEE_FLOAT_EXT:
+  case Tag::OldFloatStringExt:
+  case Tag::IeeeFloatExt:
     throw err::feature_missing_error("FLOAT");
 #endif
 
-  case ATOM_UTF8_EXT:   // fall through
-  case ATOM_EXT:        return read_atom_string_i16(vm, r);
+  case Tag::AtomUtf8Ext:    // fall through
+  case Tag::AtomExt:        return read_atom_string_i16(vm, r);
 
-  case SMALL_ATOM_UTF8_EXT: // fall through
-  case SMALL_ATOM_EXT:  return read_atom_string_i8(vm, r);
+  case Tag::SmallAtomUtf8Ext: // fall through
+  case Tag::SmallAtomExt:     return read_atom_string_i8(vm, r);
 
-  case REFERENCE_EXT: {
+  case Tag::ReferenceExt: {
       // format: N atom string, 4byte id, 1byte creation
 //      Term node = read_atom_string(r);
 //      word_t id = r.read_bigendian_i32();
@@ -227,7 +228,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
       G_IF_NODEBUG(break;)
     } // end reference_ext
 
-  case PORT_EXT: {
+  case Tag::PortExt: {
       // format: N atom string, 4byte id, 1byte creation
 //      Term node = read_atom_string(r);
 //      word_t id = r.read_bigendian_i32();
@@ -236,7 +237,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
       G_IF_NODEBUG(break;)
     } // end reference_ext
 
-  case PID_EXT: {
+  case Tag::PidExt: {
       // format: N atom string, 4byte id, 4byte serial, 1byte cre
       Term node     = read_tagged_atom_string(vm, r);
       word_t id     = r.read_big_u32();
@@ -245,35 +246,31 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
       return make_pid(vm, node, id, serial, creation);
     } // end reference_ext
 
-  case SMALL_TUPLE_EXT: return read_tuple(vm, heap, r, r.read_byte());
-  case LARGE_TUPLE_EXT: return read_tuple(vm, heap, r, r.read_big_u32());
+  case Tag::SmallTupleExt: return read_tuple(vm, heap, r, r.read_byte());
+  case Tag::LargeTupleExt: return read_tuple(vm, heap, r, r.read_big_u32());
 
-  case MAP_EXT:
-#if FEATURE_MAPS
-    return read_map(heap, r);
-#else
-    throw err::feature_missing_error("MAPS");
-#endif
+  case Tag::MapExt:
+    if (feature_maps) {
+      //return read_map(heap, r);
+      throw err::todo_error("etf MAPS");
+    } else {
+      throw err::feature_missing_error("MAPS");
+    }
 
-  case NIL_EXT:     return NIL;
-  case STRING_EXT:  return read_string_ext(heap, r);
-  case LIST_EXT:    return read_list_ext(vm, heap, r);
+  case Tag::NilExt:     return NIL;
+  case Tag::StringExt:  return read_string_ext(heap, r);
+  case Tag::ListExt:    return read_list_ext(vm, heap, r);
 
-#if FEATURE_BIN_READ
-  case BINARY_EXT:  return read_binary(vm, heap, r);
-  case BIT_BINARY_EXT:  G_TODO("read bit-binary etf");
-#else
-  case BINARY_EXT:
-  case BIT_BINARY_EXT: return error<Term>("FEATURE_BINARIES");
-#endif
+  case Tag::BinaryExt:     return read_binary(vm, heap, r);
+  case Tag::BitBinaryExt: throw err::todo_error("read bit-binary etf");
 
-#if FEATURE_BIGNUM
-  case SMALL_BIG_EXT: G_TODO("read small-big etf");
-  case LARGE_BIG_EXT: G_TODO("read large-big etf");
-#else
-  case SMALL_BIG_EXT:
-  case LARGE_BIG_EXT: throw err::feature_missing_error("BIGNUM");
-#endif
+  case Tag::SmallBigExt:
+  case Tag::LargeBigExt:
+    if (feature_bignum) {
+      throw err::feature_missing_error("BIGNUM");
+    } else {
+      throw err::todo_error("BIGNUM");
+    }
 
   default:
     Std::fmt("invalid ETF value tag %d\n", t);

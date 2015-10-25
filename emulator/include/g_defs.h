@@ -5,6 +5,7 @@
 #include <memory>
 #include <queue>
 #include "gsl/array_view.h"
+#include <cstdint>
 
 // set features for use in code in this file
 #include "g_FEATURE.h"
@@ -86,26 +87,21 @@ namespace gluon {
   template <typename A>
   using Set = std::set<A>;
 
-  // Hardware abstractions
-  namespace hw {
-    using Word = long unsigned int; // size of machine word
-    using SWord = long;
-  } // ns hw
+  using word_t = std::size_t;
+  using sword_t = std::ptrdiff_t;
 
-  using word_t = hw::Word;
-  using sword_t = hw::SWord;
   constexpr inline word_t word_size(word_t x) {
     return (x + sizeof(word_t) - 1) / sizeof(word_t);
   }
 
-  using u8_t = unsigned char;
-  using i8_t = signed char;
-  using u16_t = unsigned char;
-  using s16_t = signed char;
-  using u32_t = unsigned int;
-  using s32_t = signed int;
-  using u64_t = unsigned long long;
-  using s64_t = signed long long;
+  using u8_t = std::uint8_t;
+  using i8_t = std::int8_t;
+  using u16_t = std::uint16_t;
+  using s16_t = std::int16_t;
+  using u32_t = std::uint32_t;
+  using s32_t = std::int32_t;
+  using u64_t = std::uint64_t;
+  using s64_t = std::int64_t;
 
 #if FEATURE_FLOAT
   using float_t = float;
@@ -127,12 +123,12 @@ namespace gluon {
   namespace erts {
     // How many reds will a process be allowed to run before next proc wakes up
     // Adjust this for slow devices. 2000 is used for regular modern hardware.
-    constexpr word_t SLICE_REDUCTIONS = 250;
+    constexpr word_t reductions_per_slice = 250;
 
-    constexpr word_t MAX_FUN_ARITY = 16;
-    constexpr word_t MAX_REGS = 64; // (max arity of fun + captured terms)
-    constexpr word_t MAX_STACK = 128; // is not enforced anywhere yet
-    constexpr word_t MAX_FP_REGS = 2;
+    constexpr word_t max_fun_arity = 16;
+    constexpr word_t max_regs = 64; // (max arity of fun + captured terms)
+    constexpr word_t max_stack = 128; // is not enforced anywhere yet
+    constexpr word_t max_fp_regs = 2;
   } // vm
 
 #if FEATURE_LINE_NUMBERS
@@ -150,7 +146,7 @@ namespace gluon {
       return Loc & ((1 << 24)-1);
     }
 
-    const static word_t INVALID_LOC = make_location(0, 0);
+    const static word_t invalid_location = make_location(0, 0);
   } // ns line
 #endif
 
@@ -168,7 +164,6 @@ namespace gluon {
 
 // TODO: debug macro goes here
 #if G_DEBUG
-#   define G_HINT_INLINE
 #   define G_ASSERT(X) if (!(X)) { G_FAIL(#X); }
 #   define G_ASSERT_MSG(X, MSG) if (!(X)) { G_FAIL(MSG); }
 #   define G_TODO(what) { \
@@ -181,7 +176,6 @@ namespace gluon {
 
 #else // no G_DEBUG
 
-#   define G_HINT_INLINE inline
 #   define G_ASSERT(X)
 #   define G_ASSERT_MSG(X, MSG)
 #   define G_TODO(X)

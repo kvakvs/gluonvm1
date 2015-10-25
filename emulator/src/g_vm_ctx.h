@@ -64,7 +64,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     heap_ = proc->get_heap();
     // TODO: fp_regs
     // TODO: update heap top
-    reds_ = erts::SLICE_REDUCTIONS;
+    reds_ = erts::reductions_per_slice;
   }
 
   void save(Process *proc) {
@@ -147,10 +147,10 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     if (exp->is_bif()) {
       Term result = vm_.apply_bif(proc, mfa->arity, exp->bif_fn(), regs);
       if (result.is_non_value()) {
-        if (proc->m_bif_error_reason != atom::UNDEF) {
+        if (proc->bif_err_reason_ != atom::UNDEF) {
           // a real error happened
-          Term reason = proc->m_bif_error_reason;
-          proc->m_bif_error_reason = NONVALUE;
+          Term reason = proc->bif_err_reason_;
+          proc->bif_err_reason_ = NONVALUE;
           return raise(proc, atom::ERROR, reason);
         }
         // if it was undef - do nothing, it wasn't a bif - we just continue
@@ -205,12 +205,12 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     swap_out_light(proc);
     regs[0] = type;
     regs[1] = reason;
-    proc->m_stack_trace = NONVALUE;
+    proc->stack_trace_ = NONVALUE;
     return exception(proc);
   }
 
   void exception(Process *proc) {
-    if (proc->m_catch_level == 0) {
+    if (proc->catch_level_ == 0) {
       // we're not catching anything here
       Std::fmt("EXCEPTION: ");
       regs[0].print(vm_);
@@ -273,11 +273,11 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 #endif
   }
   bool check_bif_error(Process *p) {
-    Term reason = p->m_bif_error_reason;
+    Term reason = p->bif_err_reason_;
     if (reason.is_non_value()) {
       return false; // good no error
     }
-    p->m_bif_error_reason = NONVALUE;
+    p->bif_err_reason_ = NONVALUE;
     raise(p, atom::ERROR, reason);
     return true;
   }

@@ -26,8 +26,8 @@ static Term spawn_mfargs(Process *proc,
 
   // A process (proc) spawning another process, and gives args from its heap
   // We should clone args to new process' registers
-  Term old_heap_args[erts::MAX_FUN_ARITY];
-  Term new_heap_args[erts::MAX_FUN_ARITY]; // clone of array_args in new heap
+  Term old_heap_args[erts::max_fun_arity];
+  Term new_heap_args[erts::max_fun_arity]; // clone of array_args in new heap
   args.cons_to_array(old_heap_args, sizeof(old_heap_args));
   proc::copy_terms(proc->vm(),
                    new_proc->get_heap(),

@@ -23,7 +23,7 @@ typedef struct {
   word_t live = 0; // saved registers count
 
   // TODO: maybe cache r0 in a local variable in vm loop?
-  Term    regs[erts::MAX_REGS];
+  Term    regs[erts::max_regs];
 #if FEATURE_FLOAT
   //float_t fp_regs[vm::MAX_FP_REGS];
 #endif
@@ -32,25 +32,25 @@ typedef struct {
 
 namespace proc {
   enum SliceResult {
-    NONE,
-    YIELD,       // process willingly gave up run queue
-    WAIT,        // process entered infinite or timed wait
-    FINISHED,    // process normally finished
-    EXCEPTION,   // error, exit or throw
+    None,
+    Yield,       // process willingly gave up run queue
+    Wait,        // process entered infinite or timed wait
+    Finished,    // process normally finished
+    Exception,   // error, exit or throw
   };
 
   // Scheduler sets mark which is the current queue for this process
   enum class Queue {
-    NONE,
-    PENDING_TIMERS,
-    HIGH,
-    NORMAL,
-    LOW,
-    TIMED_WAIT,
-    INF_WAIT,
+    None,
+    PendingTimers,
+    High,
+    Normal,
+    Low,
+    TimedWait,
+    InfiniteWait,
   };
 
-  constexpr word_t WAIT_INFINITE = ~0UL;
+  constexpr word_t wait_infinite = ~0UL;
 } // ns proc
 
 //------------------------------------------------------------------------------
@@ -61,9 +61,9 @@ namespace proc {
 //------------------------------------------------------------------------------
 class Process {
 public:
-  Term          m_stack_trace = NONVALUE;
-  word_t        m_catch_level = 0;
-  Term          m_bif_error_reason = NONVALUE;
+  Term          stack_trace_ = NONVALUE;
+  word_t        catch_level_ = 0;
+  Term          bif_err_reason_ = NONVALUE;
 
 protected:
   VM            &vm_;
@@ -82,12 +82,12 @@ protected:
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
   // TODO: make this union to save space
-  proc::SliceResult slice_result_ = proc::SliceResult::NONE;
+  proc::SliceResult slice_result_ = proc::SliceResult::None;
   Term              slice_result_reason_ = NONVALUE;
-  word_t            slice_result_wait_ = proc::WAIT_INFINITE;
+  word_t            slice_result_wait_ = proc::wait_infinite;
 
   // Which queue we belong to
-  proc::Queue       current_queue_ = proc::Queue::NONE;
+  proc::Queue       current_queue_ = proc::Queue::None;
 
   friend class Scheduler;
   void set_pid(Term pid) {
@@ -115,7 +115,7 @@ public:
     reg_name_ = n;
   }
   void finished() {
-    slice_result_ = proc::SliceResult::FINISHED;
+    slice_result_ = proc::SliceResult::Finished;
   }
   inline proc::SliceResult get_slice_result() const {
     return slice_result_;

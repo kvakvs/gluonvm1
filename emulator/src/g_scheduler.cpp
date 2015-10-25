@@ -7,7 +7,7 @@ namespace gluon {
 
 void Scheduler::add_new_runnable(Process *p)
 {
-  G_ASSERT(p->current_queue_ == proc::Queue::NONE);
+  G_ASSERT(p->current_queue_ == proc::Queue::None);
   G_ASSERT(p->get_pid().is_pid() == false);
 
   auto new_pid = Term::make_short_pid(pid_counter_++);
@@ -21,18 +21,18 @@ void Scheduler::queue_by_priority(Process *p) {
 //  G_ASSERT(!contains(m_normal_q, p));
 //  G_ASSERT(!contains(m_low_q, p));
 //  G_ASSERT(!contains(m_high_q, p));
-  G_ASSERT(p->current_queue_ == proc::Queue::NONE);
+  G_ASSERT(p->current_queue_ == proc::Queue::None);
 
   auto prio = p->get_priority();
   if (prio == atom::NORMAL) {
     normal_queue_.push_back(p);
-    p->current_queue_ = proc::Queue::NORMAL;
+    p->current_queue_ = proc::Queue::Normal;
   } else if (prio == atom::LOW) {
     low_queue_.push_back(p);
-    p->current_queue_ = proc::Queue::LOW;
+    p->current_queue_ = proc::Queue::Low;
   } else if (prio == atom::HIGH) {
     high_queue_.push_back(p);
-    p->current_queue_ = proc::Queue::HIGH;
+    p->current_queue_ = proc::Queue::High;
   } else {
     throw err::scheduler_error("bad prio");
   }
@@ -49,7 +49,7 @@ Process *Scheduler::find(Term pid) const
 void Scheduler::exit_process(Process *p, Term reason)
 {
   // assert that process is not in any queue
-  G_ASSERT(p->current_queue_ == proc::Queue::NONE);
+  G_ASSERT(p->current_queue_ == proc::Queue::None);
   // root process exits with halt()
   //G_ASSERT(p->get_registered_name() != atom::INIT);
 
@@ -82,27 +82,27 @@ void Scheduler::on_new_message(Process *p)
   auto current_q = p->current_queue_;
 
   switch (current_q) {
-  case proc::Queue::NORMAL:
-  case proc::Queue::HIGH:
-  case proc::Queue::LOW:
+  case proc::Queue::Normal:
+  case proc::Queue::High:
+  case proc::Queue::Low:
     return;
 
-  case proc::Queue::INF_WAIT:
+  case proc::Queue::InfiniteWait:
     inf_wait_.erase(p);
     break;
 
-  case proc::Queue::TIMED_WAIT:
+  case proc::Queue::TimedWait:
     G_TODO("timed wait new message");
 
-  case proc::Queue::NONE:
+  case proc::Queue::None:
     // Message arrived to a currently running process (for example send to self)
     return;
 
-  case proc::Queue::PENDING_TIMERS:
+  case proc::Queue::PendingTimers:
     G_FAIL("q_pending_timers");
   } // switch
 
-  p->current_queue_ = proc::Queue::NONE;
+  p->current_queue_ = proc::Queue::None;
   queue_by_priority(p);
 }
 
@@ -113,31 +113,31 @@ Process *Scheduler::next()
     // G_ASSERT(!contains(m_normal_q, m_current));
     // G_ASSERT(!contains(m_low_q, m_current));
     // G_ASSERT(!contains(m_high_q, m_current));
-    G_ASSERT(current_->current_queue_ == proc::Queue::NONE);
+    G_ASSERT(current_->current_queue_ == proc::Queue::None);
 
     switch (current_->get_slice_result()) {
-    case proc::SliceResult::YIELD:
-    case proc::SliceResult::NONE: {
+    case proc::SliceResult::Yield:
+    case proc::SliceResult::None: {
         queue_by_priority(current_);
         current_ = nullptr;
       } break;
 
-    case proc::SliceResult::FINISHED: { // normal exit
+    case proc::SliceResult::Finished: { // normal exit
         exit_process(current_, atom::NORMAL);
         current_ = nullptr;
       } break;
 
       // TODO: WAIT put into infinite or timed wait queue
       // TODO: PURGE_PROCS running on old code
-    case proc::SliceResult::EXCEPTION: {
+    case proc::SliceResult::Exception: {
         exit_process(current_, current_->slice_result_reason_);
         current_ = nullptr;
       } break;
 
-    case proc::SliceResult::WAIT: {
-        if (current_->slice_result_wait_ == proc::WAIT_INFINITE) {
+    case proc::SliceResult::Wait: {
+        if (current_->slice_result_wait_ == proc::wait_infinite) {
           inf_wait_.insert(current_);
-          current_->current_queue_ = proc::Queue::INF_WAIT;
+          current_->current_queue_ = proc::Queue::InfiniteWait;
           current_ = nullptr;
         }
       } break;
@@ -182,7 +182,7 @@ Process *Scheduler::next()
       Std::fmt("(Q=%d) ", (int)next_proc->current_queue_);
       next_proc->get_pid().println(vm_);
 
-      next_proc->current_queue_ = proc::Queue::NONE;
+      next_proc->current_queue_ = proc::Queue::None;
       return current_ = next_proc;
     }
 

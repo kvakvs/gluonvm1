@@ -55,13 +55,13 @@ Term Process::bif_error(Term error_tag, Term reason)
   term::TupleBuilder tb(get_heap(), 2);
   tb.add(error_tag);
   tb.add(reason);
-  m_bif_error_reason = tb.make_tuple();
+  bif_err_reason_ = tb.make_tuple();
   return NONVALUE;
 }
 
 Term Process::bif_error(Term reason)
 {
-  m_bif_error_reason = reason;
+  bif_err_reason_ = reason;
   return NONVALUE;
 }
 
