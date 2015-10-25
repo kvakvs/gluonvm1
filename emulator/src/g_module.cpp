@@ -1,7 +1,7 @@
 #include "g_module.h"
 #include "g_reader.h"
 #include "g_vm.h"
-//#include "g_heap.h"
+#include "g_functional.h"
 
 namespace gluon {
 
@@ -18,10 +18,10 @@ void Module::set_exports(Module::exports_t &e) {
 
   // Replace known BIFs in exports with their BIF pointer and flag them as such
   auto exps = exports_.all();
-  for_each_keyvalue(exps, [this](const fun_arity_t &fa, const export_t &exp) {
-                    void *bif_ptr = vm_->find_bif(mfarity_t(name_, fa));
+  for_each(exps, [this](auto fa_exp) {
+                    void *bif_ptr = vm_->find_bif(mfarity_t(name_, fa_exp->first));
                     if (bif_ptr) {
-                      exports_[fa] = export_t(bif_ptr);
+                      exports_[fa_exp->first] = export_t(bif_ptr);
                     }
                   });
 }

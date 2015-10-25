@@ -7,38 +7,36 @@ namespace gluon {
 
 namespace containers {
 
-  template <typename K, typename V>
+  template <typename Key, typename Value>
   class dict_range_mapping {
   public:
-    using iter_t = typename std::map<K, V>::iterator;
+    using storage_t = std::map<Key, Value>;
+    using iter_t = typename storage_t::iterator;
+
     iter_t pos;
     iter_t end;
+
     dict_range_mapping(const iter_t &b, const iter_t &e): pos(b), end(e) {}
 
     bool have() const { return pos != end; }
-
-    K key() { return pos->first; }
-    const K &key() const { return pos->first; }
-    V &value() { return pos->second; }
-    const V &value() const { return pos->second; }
-
+    iter_t current() { return pos; }
     void advance() { pos++; }
   };
 
 
   // TODO: std::enable_if magic with const/nonconst members?
-  template <typename K, typename V>
+  template <typename Key, typename Value>
   class c_dict_range_mapping {
   public:
-    using iter_t = typename std::map<K, V>::const_iterator;
+    using storage_t = std::map<Key, Value>;
+    using iter_t = typename storage_t::const_iterator;
+
     iter_t pos;
     iter_t end;
     c_dict_range_mapping(const iter_t &b, const iter_t &e): pos(b), end(e) {}
 
     bool have() const { return pos != end; }
-
-    const K &key() const { return pos->first; }
-    const V &value() const { return pos->second; }
+    iter_t current() { return pos; }
     void advance() { pos++; }
   };
 
@@ -48,9 +46,12 @@ namespace containers {
   template <typename Key, typename Value>
   class stl_map {
   private:
-    using Self = stl_map<Key, Value>;
-    std::map<Key, Value> map_;
+    using self_t = stl_map<Key, Value>;
+    using storage_t = std::map<Key, Value>;
+    storage_t map_;
   public:
+    using iterator = typename storage_t::iterator;
+
     stl_map() = default;
     stl_map(const stl_map &) = delete;
     stl_map(stl_map &&) = default;
@@ -64,22 +65,26 @@ namespace containers {
       return i != map_.end();
     }
 
+    // Returns pointer to result or nullptr
     Value *find_ptr(const Key &k) {
       auto i = map_.find(k);
       if (i == map_.end()) { return nullptr; }
       return &i->second;
     }
+    // Returns const pointer to result or nullptr
     const Value *find_ptr(const Key &k) const {
       auto i = map_.find(k);
       if (i == map_.end()) { return nullptr; }
       return &i->second;
     }
 
+    // Returns reference to result or a default value you provide
     Value &find_ref(const Key &k, Value &defa) {
       auto i = map_.find(k);
       if (i == map_.end()) { return defa; }
       return i->second;
     }
+    // Returns const reference to result or a default value you provide
     const Value &find_ref(const Key &k, const Value &defa) const {
       auto i = map_.find(k);
       if (i == map_.end()) { return defa; }
@@ -107,12 +112,5 @@ namespace containers {
 template <typename K, typename V>
 using Dict = containers::stl_map<K, V>;
 
-template <class Mapping, typename Callable>
-void for_each_keyvalue(Mapping &m, Callable fn) {
-  while (m.have()) {
-    fn(m.key(), m.value());
-    m.advance();
-  }
-}
 
 } // ns gluon

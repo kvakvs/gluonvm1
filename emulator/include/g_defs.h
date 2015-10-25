@@ -4,7 +4,7 @@
 #include <list>
 #include <memory>
 #include <queue>
-#include "gsl/array_view.h"
+//#include "gsl/array_view.h"
 #include <cstdint>
 
 // set features for use in code in this file
@@ -63,8 +63,8 @@ namespace gluon {
     return (8*sizeof(void*));
   }
 
-  template <typename T>
-  using array_view = gsl::array_view<T>;
+  //template <typename T>
+  //using array_view = gsl::array_view<T>;
 
   // Self-deleting RAII-style pointer holder
   template <typename V>

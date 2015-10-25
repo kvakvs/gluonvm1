@@ -19,4 +19,11 @@ public:
   inline const R &right() const { G_ASSERT(!is_left()); return m_right; }
 };
 
+template <class Mapping, typename Callable>
+void for_each(Mapping &m, Callable fn) {
+  while (m.have()) {
+    fn(m.current());
+    m.advance();
+  }
+}
 } // ns gluon

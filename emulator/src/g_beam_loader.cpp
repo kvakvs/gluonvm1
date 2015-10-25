@@ -8,6 +8,7 @@
 #include "g_predef_atoms.h"
 #include "g_term_helpers.h"
 #include "g_binary.h"
+#include "g_functional.h"
 
 // Generated opcode arity table
 #include "g_genop.h"
@@ -44,7 +45,8 @@ private:
 
   Vector<Term>    literals_;
   Module::labels_t  labels_;
-  Dict<fun_arity_t, label_index_t> exp_indexes_;  // list of {f/arity} sequentially
+  using fa_lindex_map_t = Dict<fun_arity_t, label_index_t>;
+  fa_lindex_map_t exp_indexes_;  // list of {f/arity} sequentially
   Module::imports_t imports_;
   Module::lambdas_t lambdas_;
   // postponed select list with label numbers. Resolve to code pointers after
@@ -165,7 +167,7 @@ protected:
 
 Module *code::Server::load_module_internal(proc::Heap *heap,
                                            Term expected_name,
-                                           array_view<u8_t> data)
+                                           array_view<const u8_t> data)
 {
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(data);
@@ -361,7 +363,7 @@ void LoaderState::load_code(tool::Reader &r0) {
   }
 
   // Just read code here, parse later
-  code_ = gsl::as_array_view(r.get_ptr(), chunk_size);
+  code_ = array_view<const u8_t>(r.get_ptr(), chunk_size);
 
   r0.advance_align<4>(chunk_size);
 }
@@ -383,7 +385,7 @@ void LoaderState::load_literal_table(tool::Reader &r0)
   }
 
   tool::Reader r(
-        gsl::as_array_view(uncompressed.binary_get<u8_t>(), uncompressed_size)
+        array_view<const u8_t>(uncompressed.binary_get<u8_t>(), uncompressed_size)
         );
   auto count = r.read_big_u32();
 
@@ -608,11 +610,15 @@ void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
 
   // Move exports from m_exports to this table, resolving labels to code offsets
   Module::exports_t exports;
-//  Std::fmt("exports processing: " FMT_UWORD " items\n", m_exports.size());
   auto exps = exp_indexes_.all();
-  for_each_keyvalue(exps, [&](const fun_arity_t &fa, label_index_t lindex) {
-                    exports[fa] = export_t(labels_[lindex.value],
-                                           mfarity_t(mod_name_, fa));
+  // we iterate over map_view which is pairs of <fun_arity_t key, word_t value>
+  for_each(exps, [&](fa_lindex_map_t::iterator fa_lindex) {
+                    // find out what is label value
+                    auto lresult = labels_.find_ptr(fa_lindex->second.value);
+                    G_ASSERT(lresult); // assume it must exist
+                    exports[fa_lindex->first] = export_t(
+                          *lresult, mfarity_t(mod_name_, fa_lindex->first)
+                          );
                   });
   m->set_exports(exports);
 

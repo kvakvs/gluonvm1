@@ -56,12 +56,23 @@ using Array = containers::stl_array<std::array<Val, Sz>>;
 template <typename Val>
 using Vector = containers::stl_array<std::vector<Val>>;
 
-template <class Mapping, typename Callable>
-void for_each(Mapping &m, Callable fn) {
-  while (m.have()) {
-    fn(m.value());
-    m.advance();
+// Non-owning pointer to a window of memory
+template <class T>
+class array_view
+{
+private:
+  T *start_ = nullptr;
+  T *end_ = nullptr;
+public:
+  array_view() {}
+  array_view(T *start, size_t sz): start_(start), end_(start+sz) {}
+
+  T *data() const { return start_; }
+  T *limit() const { return end_; }
+  size_t size() const {
+    G_ASSERT(end_ >= start_);
+    return (size_t)(end_ - start_);
   }
-}
+};
 
 } // ns gluon

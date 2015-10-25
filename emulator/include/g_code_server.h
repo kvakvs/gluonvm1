@@ -5,6 +5,7 @@
 #include "g_error.h"
 #include "g_code.h"
 #include "g_code_index.h"
+#include "struct/g_array.h"
 
 namespace gluon {
 
@@ -46,7 +47,7 @@ public:
 
   // Pass nil as name to take name automatically from the module
   void load_module(Process *proc, Term name_atom,
-                   array_view<u8_t> data);
+                   array_view<const u8_t> data);
 
   Module *find_module(Process *proc, Term m, find_opt_t opt);
   void path_append(const Str &p);
@@ -61,7 +62,7 @@ public:
 protected:
   Module *load_module_internal(proc::Heap *heap,
                                Term expected_name_or_nil,
-                               array_view<u8_t> data);
+                               array_view<const u8_t> data);
 };
 
 } // ns code

@@ -57,12 +57,13 @@ public:
     // I cannot into range search, something with lower_bound/upper_bound which
     // compares ranges using operator < and that is too hard
     // TODO: fix this
-    auto allranges = ranges_.all();
-    while (allranges.have()) {
-      if (allranges.key().contains(x)) {
-        return allranges.value();
+    auto rng = ranges_.all();
+    while (rng.have()) {
+      auto kv = rng.current();
+      if (kv->first.contains(x)) {
+        return kv->second;
       }
-      allranges.advance();
+      rng.advance();
     }
     return T();
 //    auto find = std::make_pair(Range(x, nullptr), T());
