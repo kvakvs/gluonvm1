@@ -26,7 +26,7 @@ int main(int argc, const char *argv[]) {
   vm.codeserver().path_append("../test");
 
   // create root process and set it to some entry function
-  Term start_args[2] = {NIL, NIL};
+  Term start_args[2] = {the_nil, the_nil};
   mfarity_t mfa(vm.to_atom("otp_ring0"), vm.to_atom("start"), 2);
 
   auto rootp = vm.root_process();

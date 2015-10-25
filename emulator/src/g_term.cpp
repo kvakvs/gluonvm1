@@ -74,7 +74,7 @@ Str Term::atom_str(const VM &vm) const
 #if G_DEBUG
 void Term::print(const VM &vm) const
 {
-  if (m_val == 0) {
+  if (value_ == 0) {
     Std::fmt("NOT_A_TERM");
     return;
   }
@@ -191,7 +191,7 @@ void Term::print(const VM &vm) const
     Std::fmt("Y[" FMT_UWORD "]", regy_get_value());
   }
   else {
-    Std::fmt("UNKNOWN(" FMT_0xHEX ")", m_val);
+    Std::fmt("UNKNOWN(" FMT_0xHEX ")", value_);
   }
 }
 

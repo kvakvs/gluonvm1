@@ -11,8 +11,8 @@ namespace gluon {
 namespace impl {
 
 #define DEREF(var) if ((var).is_immed()) { ctx.resolve_immed(var); }
-want_schedule_t opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx);
-want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
+WantSchedule opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx);
+WantSchedule opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
 //  inline void opcode_label(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 1
 //  }
@@ -21,7 +21,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   }
 //  inline void opcode_int_code_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 3
 //  }
-  inline want_schedule_t opcode_call(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 4
+  inline WantSchedule opcode_call(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 4
     // @spec call Arity Label
     // @doc Call the function at Label.
     //      Save the next instruction as the return address in the CP register.
@@ -31,7 +31,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.jump(proc, Term(ctx.ip[1]));
     return ctx.consume_reduction(proc);
   }
-  inline want_schedule_t opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
+  inline WantSchedule opcode_call_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 5
     // @spec call_last Arity Label Deallocate
     // @doc Deallocate and do a tail recursive call to the function at Label.
     // Do not update the CP register. Before the call deallocate Deallocate
@@ -44,7 +44,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.jump(proc, Term(ctx.ip[1]));
     return ctx.consume_reduction(proc);
   }
-  inline want_schedule_t opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
+  inline WantSchedule opcode_call_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 6
     // @spec call_only Arity Label
     // @doc Do a tail recursive call to the function at Label.
     //      Do not update the CP register.
@@ -53,7 +53,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.jump(proc, Term(ctx.ip[1]));
     return ctx.consume_reduction(proc);
   }
-  inline want_schedule_t opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
+  inline WantSchedule opcode_call_ext(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 7
     // @spec call_ext Arity Destination
     // @doc Call the function of arity Arity pointed to by Destination.
     //      Save the next instruction as the return address in the CP register.
@@ -66,7 +66,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.jump_ext(proc, boxed_mfa);
     return ctx.consume_reduction(proc);
   }
-  inline want_schedule_t opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
+  inline WantSchedule opcode_call_ext_last(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 8
     // @spec call_ext_last Arity Destination Deallocate
     // @doc Deallocate and do a tail call to function of arity Arity pointed
     // to by Destination. Do not update the CP register. Deallocate Deallocate
@@ -80,7 +80,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     return ctx.consume_reduction(proc);
   }
 
-  inline want_schedule_t opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
+  inline WantSchedule opcode_bif0(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 9
     // bif0 import_index Dst - cannot fail
     Term boxed_mfa(ctx.ip[0]);
     Term result_dst(ctx.ip[1]);
@@ -96,7 +96,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     return ctx.consume_reduction(proc);
   }
 
-  inline want_schedule_t opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
+  inline WantSchedule opcode_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 10
     // bif1 Fail import_index Arg1 Dst
     Term boxed_mfa(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
@@ -108,13 +108,13 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
-    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+    if (ctx.check_bif_error(proc)) { return WantSchedule::NextProcess; }
     ctx.move(result, result_dst);
     ctx.ip += 4;
     return ctx.consume_reduction(proc);
   }
 
-  inline want_schedule_t opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
+  inline WantSchedule opcode_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 11
     // bif1 Fail import_index Arg1 Arg2 Dst
     Term boxed_mfa(ctx.ip[1]);
     Term arg1(ctx.ip[2]);
@@ -128,7 +128,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);
-    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+    if (ctx.check_bif_error(proc)) { return WantSchedule::NextProcess; }
     ctx.move(result, result_dst);
     ctx.ip += 5;
     return ctx.consume_reduction(proc);
@@ -198,21 +198,21 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     ctx.stack_deallocate(n.small_get_unsigned());
     ctx.ip++;
   }
-  inline want_schedule_t opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
+  inline WantSchedule opcode_return(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 19
     // @spec return
     // @doc  Return to the address in the continuation pointer (CP).
     if (!ctx.cp) {
       // nowhere to return: end process
       proc->finished();
       ctx.save(proc);
-      return SCHEDULE_NEXT;
+      return WantSchedule::NextProcess;
     }
     ctx.ip = ctx.cp;
     ctx.cp = nullptr;
-    return KEEP_GOING;
+    return WantSchedule::KeepGoing;
   }
 
-  inline want_schedule_t opcode_send(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 20
+  inline WantSchedule opcode_send(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 20
     // @spec send
     // @doc  Send argument in x(1) as a message to the destination process in x(0).
     //       The message in x(1) ends up as the result of the send in x(0).
@@ -226,7 +226,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
     proc->msg_send(dest, msg);
     ctx.regs[0] = ctx.regs[1];
-    ctx.regs[1] = NIL;
+    ctx.regs[1] = the_nil;
     return ctx.consume_reduction(proc);
   }
 
@@ -620,7 +620,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   inline void opcode_case_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 74
     return ctx.raise(proc, atom::ERROR, atom::CASE_CLAUSE);
   }
-  inline want_schedule_t opcode_call_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 75
+  inline WantSchedule opcode_call_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 75
     // @spec call_fun Arity
     // @doc Call a fun of arity Arity. Assume arguments in registers x(0) to
     // x(Arity-1) and that the fun is in x(Arity). Save the next instruction as
@@ -636,7 +636,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       if (bf->get_arity() != arity + bf->get_num_free()) {
         // TODO: make tuple {badarity, f_args}
         ctx.raise(proc, atom::ERROR, atom::BADARITY);
-        return SCHEDULE_NEXT;
+        return WantSchedule::NextProcess;
       }
       // TODO: if bf.fe is null - unloaded fun
       word_t num_free = bf->get_num_free();
@@ -652,7 +652,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
       G_ASSERT(arity == ex->mfa.arity);
       if (ex->is_bif()) {
         Term result = ctx.vm_.apply_bif(proc, arity, ex->code(), ctx.regs);
-        if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+        if (ctx.check_bif_error(proc)) { return WantSchedule::NextProcess; }
         ctx.regs[0] = result;
         ctx.ip++;
       } else {
@@ -682,7 +682,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     }
     ctx.ip += 2;
   }
-  inline want_schedule_t opcode_call_ext_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 78
+  inline WantSchedule opcode_call_ext_only(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 78
     // @spec call_ext_only Arity Label
     // Do a tail recursive call to the function at Label. Do not update CP.
     Term boxed_mfa(ctx.ip[1]);
@@ -775,7 +775,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  inline void opcode_bs_add(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 111
 //  }
 
-  inline want_schedule_t opcode_apply(Process *proc,
+  inline WantSchedule opcode_apply(Process *proc,
                                       vm_runtime_ctx_t &ctx) { // opcode: 112
     // @spec apply Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
     Term arity_as_term(ctx.ip[0]);
@@ -785,7 +785,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
     Either<word_t*,Term> res = bif::apply(proc, mod, fun, arity_as_term, ctx.regs);
     // Check error
-    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+    if (ctx.check_bif_error(proc)) { return WantSchedule::NextProcess; }
     // What to do with apply result, is it code pointer to jump to or a bif result
     if (res.is_left()) {
       // Imitate a call
@@ -800,7 +800,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     return ctx.consume_reduction(proc);
   }
 
-  inline want_schedule_t opcode_apply_last(Process *proc,
+  inline WantSchedule opcode_apply_last(Process *proc,
                                            vm_runtime_ctx_t &ctx) { // opcode: 113
     // @spec apply_last _ Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
     Term arity_as_term(ctx.ip[0]);
@@ -810,7 +810,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 
     Either<word_t*,Term> res = bif::apply(proc, mod, fun, arity_as_term, ctx.regs);
     // Check error
-    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+    if (ctx.check_bif_error(proc)) { return WantSchedule::NextProcess; }
     // What to do with apply result, is it code pointer to jump to or a bif result
     if (res.is_left()) {
       // Imitate a call
@@ -881,7 +881,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  inline void opcode_bs_restore2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 123
 //  }
 
-  inline want_schedule_t opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 124
+  inline WantSchedule opcode_gc_bif1(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 124
     // @spec gc_bif1 Lbl Live Bif Arg Reg
     // @doc Call the bif Bif with the argument Arg, and store the result in Reg.
     // On failure jump to Lbl. Do a garbage collection if necessary to allocate
@@ -896,13 +896,13 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn1);
 
     Term result = fn1(proc, arg1);
-    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+    if (ctx.check_bif_error(proc)) { return WantSchedule::NextProcess; }
     ctx.move(result, result_dst);
     ctx.ip += 5;
     return ctx.consume_reduction(proc);
   }
 
-  inline want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 125
+  inline WantSchedule opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 125
     // @spec gc_bif2 Lbl Live Bif Arg1 Arg2 Reg
     // @doc Call the bif Bif with the arguments Arg1 and Arg2, and store the
     // result in Reg. On failure jump to Lbl. Do a garbage collection if
@@ -920,7 +920,7 @@ want_schedule_t opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     G_ASSERT(fn2);
 
     Term result = fn2(proc, arg1, arg2);
-    if (ctx.check_bif_error(proc)) { return SCHEDULE_NEXT; }
+    if (ctx.check_bif_error(proc)) { return WantSchedule::NextProcess; }
     ctx.move(result, result_dst);
     ctx.ip += 6;
     return ctx.consume_reduction(proc);

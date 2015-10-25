@@ -4,14 +4,14 @@ namespace gluon {
 namespace proc {
 
 Mailbox::Mailbox() {
-  m_messages.push_back(NONVALUE);
+  m_messages.push_back(the_non_value);
 }
 
 void Mailbox::on_incoming(Term value) {
   // Ensure there is always trailing nonvalue in msg list
-  G_ASSERT(m_messages.back() == NONVALUE);
+  G_ASSERT(m_messages.back() == the_non_value);
   m_messages.insert(--m_messages.end(), value);
-  G_ASSERT(m_messages.back() == NONVALUE);
+  G_ASSERT(m_messages.back() == the_non_value);
 
   // Reset save (current) position to beginning
   m_current = m_messages.begin();
@@ -21,24 +21,24 @@ void Mailbox::on_incoming(Term value) {
 // Returns NONVALUE if current points at NONVALUE terminator (after last)
 // Position of pointer at mailbox end means we start over
 Term Mailbox::get_current() {
-  G_ASSERT(m_messages.back() == NONVALUE);
+  G_ASSERT(m_messages.back() == the_non_value);
 
   if (m_current == m_messages.end()) {
     m_current = m_messages.begin();
   }
-  if (*m_current != NONVALUE) {
+  if (*m_current != the_non_value) {
     return *m_current;
   } else {
-    return NONVALUE;
+    return the_non_value;
   }
 }
 
 // Removes current message at pointer
 void Mailbox::remove_current()
 {
-  G_ASSERT(*m_current != NONVALUE);
+  G_ASSERT(*m_current != the_non_value);
 
-  if (m_current == m_messages.end() || *m_current == NONVALUE) {
+  if (m_current == m_messages.end() || *m_current == the_non_value) {
     G_FAIL("removing from empty msgbox cell");
     //m_mbox_ptr = m_mbox.begin();
   } else {
@@ -55,7 +55,7 @@ void Mailbox::remove_current()
 // If pointer is not at terminator, step forward. Else set at mailbox end
 void Mailbox::step_next()
 {
-  if (*m_current != NONVALUE) {
+  if (*m_current != the_non_value) {
     m_current++;
   } else {
     m_current = m_messages.end();

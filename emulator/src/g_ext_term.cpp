@@ -126,10 +126,10 @@ Term read_map(Heap *heap, tool::Reader &r) {
 Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u16();
   if (length == 0) {
-    return NIL;
+    return the_nil;
   }
 
-  Term result = NIL;
+  Term result = the_nil;
   Term *ref = &result;
 
   for (word_t i = 0; i < length; ++i) {
@@ -139,14 +139,14 @@ Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
     ref = &layout::CONS::tail(cons);
   }
 
-  *ref = NIL;
+  *ref = the_nil;
   return result;
 }
 
 Term read_list_ext(VM &vm, proc::Heap *heap, tool::Reader &r) {
   word_t length = r.read_big_u32();
 
-  Term result = NIL;
+  Term result = the_nil;
   Term *ref = &result;
 
   for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
@@ -257,7 +257,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
       throw err::feature_missing_error("MAPS");
     }
 
-  case Tag::NilExt:     return NIL;
+  case Tag::NilExt:     return the_nil;
   case Tag::StringExt:  return read_string_ext(heap, r);
   case Tag::ListExt:    return read_list_ext(vm, heap, r);
 

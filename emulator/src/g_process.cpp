@@ -25,6 +25,9 @@ void Process::jump_to_mfa(mfarity_t &mfa)
     throw err::process_error("undef function");
   }
   if (exp->is_bif()) {
+    // Run the bif, hope it returns control soon
+    vm_.apply_bif(this, exp->mfa.arity, exp->bif_fn(), ctx_.regs);
+    mfa.println(vm_);
     throw err::process_error("jump to a bif");
   }
 
@@ -56,13 +59,13 @@ Term Process::bif_error(Term error_tag, Term reason)
   tb.add(error_tag);
   tb.add(reason);
   bif_err_reason_ = tb.make_tuple();
-  return NONVALUE;
+  return the_non_value;
 }
 
 Term Process::bif_error(Term reason)
 {
   bif_err_reason_ = reason;
-  return NONVALUE;
+  return the_non_value;
 }
 
 Term Process::bif_error(Term reason, const char *str)

@@ -61,15 +61,15 @@ namespace proc {
 //------------------------------------------------------------------------------
 class Process {
 public:
-  Term          stack_trace_ = NONVALUE;
+  Term          stack_trace_ = the_non_value;
   word_t        catch_level_ = 0;
-  Term          bif_err_reason_ = NONVALUE;
+  Term          bif_err_reason_ = the_non_value;
 
 protected:
   VM            &vm_;
   runtime_ctx_t ctx_;
   proc::Heap    heap_;
-  Term          pid_ = NONVALUE;
+  Term          pid_ = the_non_value;
   mfarity_t     initial_call_;
   // TODO: process dict
   Term          gleader_;
@@ -83,7 +83,7 @@ protected:
   // (is exiting, reason, put back in sched queue for reason)
   // TODO: make this union to save space
   proc::SliceResult slice_result_ = proc::SliceResult::None;
-  Term              slice_result_reason_ = NONVALUE;
+  Term              slice_result_reason_ = the_non_value;
   word_t            slice_result_wait_ = proc::wait_infinite;
 
   // Which queue we belong to
@@ -95,7 +95,7 @@ protected:
   }
 
   proc::Mailbox mailbox_;
-  Term          reg_name_ = NONVALUE;
+  Term          reg_name_ = the_non_value;
 
 public:
   Process() = delete;

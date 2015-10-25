@@ -22,6 +22,8 @@ namespace code {
 // TODO: also ports somewhere here
 using atom_proc_map_t = Dict<Term, Process *>;
 
+enum class RegisterResult { Ok, RegistrationExists, ProcessNotFound };
+
 // Note: singleton, do not instantiate even
 class VM {
 private:
@@ -53,8 +55,7 @@ public:
   //
   // Pid/port registration
   //
-  enum class RegResult { OK, EXISTS, NOPROC };
-  RegResult register_name(Term name, Term pid_port);
+  RegisterResult register_name(Term name, Term pid_port);
 
   //
   // Atom table
@@ -64,7 +65,7 @@ public:
   Term to_atom(const Str &s);
   // Returns existing or nil
   Term to_existing_atom(const Str &s) {
-    return atoms_.find_ref(s, NIL);
+    return atoms_.find_ref(s, the_nil);
   }
   const Str &find_atom(Term a) const;
 

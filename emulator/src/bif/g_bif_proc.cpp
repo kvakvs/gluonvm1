@@ -95,9 +95,11 @@ Term bif_register_2(Process *p, Term name, Term pid_port)
     return p->bif_badarg(pid_port);
   }
   switch (p->vm().register_name(name, pid_port)) {
-    case VM::RegResult::OK: return atom::OK;
-    case VM::RegResult::EXISTS: // fall through
-    case VM::RegResult::NOPROC: return p->bif_badarg(pid_port);
+  case RegisterResult::Ok:
+    return atom::OK;
+  case RegisterResult::RegistrationExists: // fall through
+  case RegisterResult::ProcessNotFound:
+    return p->bif_badarg(pid_port);
   }
 }
 

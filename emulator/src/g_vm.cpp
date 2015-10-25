@@ -48,23 +48,23 @@ VM::VM(): sched_(*this)
   codeserver_->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
 
   // create root process and set it to some entry function
-  root_process_ = new Process(*this, NONVALUE);
+  root_process_ = new Process(*this, the_non_value);
   codeserver_->load_module(root_process_, atom::ERLANG);
 }
 
-VM::RegResult VM::register_name(Term name, Term pid_port)
+RegisterResult VM::register_name(Term name, Term pid_port)
 {
-  if (!reg_names_.contains(name)) {
-    return RegResult::EXISTS;
+  if (reg_names_.contains(name)) {
+    return RegisterResult::RegistrationExists;
   }
 
   Process *p = scheduler().find(pid_port);
   if (!p) {
-    return RegResult::NOPROC;
+    return RegisterResult::ProcessNotFound;
   }
   reg_names_[name] = p;
   p->registered_as(name);
-  return RegResult::OK;
+  return RegisterResult::Ok;
 }
 
 Term VM::to_atom(const Str &s)
@@ -74,13 +74,8 @@ Term VM::to_atom(const Str &s)
 }
 
 Term VM::new_atom(const Str &s) {
-//  auto iter = g_atoms.find(s);
-//  if (iter != g_atoms.end()) {
-//    G_FAIL("atom exists")
-//    G_IF_NODEBUG(return NIL);
-//  }
   Term new_a = Term::make_atom(atom_id_counter_);
-  atoms_[s]             = new_a;
+  atoms_[s] = new_a;
   reverse_atoms_[new_a] = s;
   atom_id_counter_++;
   return new_a;
@@ -96,7 +91,6 @@ void VM::init_predef_atoms()
     new_atom(Str(p+1, len));
     p += len + 1;
   }
-
   // TODO: get rid of
 }
 

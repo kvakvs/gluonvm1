@@ -50,7 +50,7 @@ template <> inline word_t length<const char *>(const char *iter, const char *to)
 template <typename Iter>
 Term build_list(proc::Heap *heap, Iter iter, Iter to) {
   if (iter == to) {
-    return ::gluon::NIL;
+    return ::gluon::the_nil;
   }
 
   word_t len = length(iter, to);
@@ -62,7 +62,7 @@ Term build_list(proc::Heap *heap, Iter iter, Iter to) {
   for(; iter != to; iter++) {
     layout::CONS::head(h) = make_term(*iter);
     layout::CONS::tail(h) = (i == len - 1)
-                            ? ::gluon::NIL
+                            ? ::gluon::the_nil
                             : Term::make_cons(h + layout::CONS::BOX_SIZE);
     h += layout::CONS::BOX_SIZE;
     i++;

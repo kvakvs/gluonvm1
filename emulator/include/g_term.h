@@ -412,11 +412,11 @@ namespace layout {
 // and optimizations are on.
 class Term {
 private:
-  word_t m_val;
+  word_t value_;
 
 public:
-  explicit constexpr Term(word_t v): m_val(v) {}
-  constexpr Term(): m_val(0) {}
+  explicit constexpr Term(word_t v): value_(v) {}
+  constexpr Term(): value_(0) {}
   //constexpr Term(const Term &other): m_val(other.m_val) {}
 
   // Do not call this; for better looking code use gluon::NIL const instead
@@ -431,23 +431,23 @@ public:
   //
   // Bit/arithmetic/comparisons
   //const
-  inline void set(word_t x) { m_val = x; }
-  inline void set(const Term &t) { m_val = t.m_val; }
+  inline void set(word_t x) { value_ = x; }
+  inline void set(const Term &t) { value_ = t.value_; }
 
   //inline Term operator <<(word_t bits) const { return Term(m_val << bits); }
-  inline constexpr word_t as_word() const { return m_val; }
-  inline bool operator <(const Term &x) const { return m_val < x.m_val; }
-  inline bool operator ==(const Term &x) const { return m_val == x.m_val; }
-  inline bool operator ==(const word_t x) const { return m_val == x; }
-  inline bool operator !=(const Term &x) const { return m_val != x.m_val; }
-  inline bool operator !=(const word_t x) const { return m_val != x; }
-  inline bool is_nil() const { return m_val == term::NIL; }
-  inline bool is_not_nil() const { return m_val != term::NIL; }
-  inline bool is_non_value() const { return m_val == term::THE_NON_VALUE; }
-  inline bool is_value() const { return m_val != term::THE_NON_VALUE; }
+  inline constexpr word_t as_word() const { return value_; }
+  inline bool operator <(const Term &x) const { return value_ < x.value_; }
+  inline bool operator ==(const Term &x) const { return value_ == x.value_; }
+  inline bool operator ==(const word_t x) const { return value_ == x; }
+  inline bool operator !=(const Term &x) const { return value_ != x.value_; }
+  inline bool operator !=(const word_t x) const { return value_ != x; }
+  inline bool is_nil() const { return value_ == term::NIL; }
+  inline bool is_not_nil() const { return value_ != term::NIL; }
+  inline bool is_non_value() const { return value_ == term::THE_NON_VALUE; }
+  inline bool is_value() const { return value_ != term::THE_NON_VALUE; }
 
   inline bool is_immed() const {
-    return term_tag::Immed::check(m_val);
+    return term_tag::Immed::check(value_);
   }
   inline static bool are_both_immed(Term a, Term b) {
     return term_tag::Immed::check(a.as_word() & b.as_word());
@@ -458,7 +458,7 @@ public:
   //
   template <typename T> inline T *boxed_get_ptr() const {
     G_ASSERT(is_boxed() || is_tuple() || is_cons());
-    return term_tag::Boxed::expand_ptr<T>(m_val);
+    return term_tag::Boxed::expand_ptr<T>(value_);
   }
   template <typename T> inline static Term make_boxed(T *x) {
     return Term(term_tag::Boxed::create_from_ptr<T>(x));
@@ -467,7 +467,7 @@ public:
     return Term(term_tag::Boxed::create_from_ptr<T>(term_tag::make_cp(x)));
   }
   inline bool is_boxed() const {
-    return term_tag::Boxed::check(m_val);
+    return term_tag::Boxed::check(value_);
   }
   inline word_t boxed_get_subtag() const {
     G_ASSERT(is_boxed());
@@ -480,13 +480,13 @@ public:
   // Throw/catch exception magic
   //
   inline constexpr bool is_catch() const {
-    return term_tag::Catch::check(m_val);
+    return term_tag::Catch::check(value_);
   }
   constexpr static Term make_catch(word_t x) {
     return Term(term_tag::Catch::create(x));
   }
   constexpr word_t catch_val() const {
-    return term_tag::Catch::value(m_val);
+    return term_tag::Catch::value(value_);
   }
 
   //
@@ -499,7 +499,7 @@ public:
     return Term(term_tag::Cons::create_from_ptr<Term>(box));
   }
   inline bool is_cons() const {
-    return term_tag::Cons::check(m_val);
+    return term_tag::Cons::check(value_);
   }
   inline bool is_list() const {
     return is_nil() || is_cons();
@@ -534,10 +534,10 @@ public:
     return Term(term_tag::Atom::create(x));
   }
   constexpr bool is_atom() const {
-    return term_tag::Atom::check(m_val);
+    return term_tag::Atom::check(value_);
   }
   constexpr word_t atom_val() const {
-    return term_tag::Atom::value(m_val);
+    return term_tag::Atom::value(value_);
   }
   Str atom_str(const VM &vm) const;
   const char *atom_c_str(const VM &vm) const { return atom_str(vm).c_str(); }
@@ -555,7 +555,7 @@ public:
     return term::LOWER_BOUND <= n && n <= term::UPPER_BOUND;
   }
   constexpr bool is_small() const {
-    return term_tag::Smallint::check(m_val);
+    return term_tag::Smallint::check(value_);
   }
   constexpr bool is_integer() const {
     // Match either small int or big int if feature is enabled
@@ -568,11 +568,11 @@ public:
   inline sword_t small_get_signed() const {
     G_ASSERT(is_small());
 //    Std::fmt("small_get_s val=" FMT_0xHEX " val=" FMT_0xHEX "\n", m_val, term_tag::Smallint::value(m_val));
-    return term_tag::Smallint::value(m_val);
+    return term_tag::Smallint::value(value_);
   }
   inline word_t small_get_unsigned() const {
     G_ASSERT(is_small());
-    word_t v = term_tag::Smallint::value_u(m_val);
+    word_t v = term_tag::Smallint::value_u(value_);
     return (word_t)v;
   }
   inline static bool are_both_small(Term a, Term b) {
@@ -621,7 +621,7 @@ public:
     return Term(term_tag::ShortPid::create(data));
   }
   constexpr bool is_short_pid() const {
-    return term_tag::ShortPid::check(m_val);
+    return term_tag::ShortPid::check(value_);
   }
   constexpr bool is_pid() const {
 #if FEATURE_ERL_DIST
@@ -631,19 +631,19 @@ public:
 #endif
   }
   constexpr word_t short_pid_get_value() const {
-    return term_tag::ShortPid::value(m_val);
+    return term_tag::ShortPid::value(value_);
   }
   //
   // Port id (Outled id, Oid)
   //
   constexpr bool is_short_port() const {
-    return term_tag::ShortPort::check(m_val);
+    return term_tag::ShortPort::check(value_);
   }
   constexpr bool is_port() const {
-    return is_short_port() || term_tag::BoxedPort::unbox_and_check(m_val);
+    return is_short_port() || term_tag::BoxedPort::unbox_and_check(value_);
   }
   constexpr word_t short_port_get_value() const {
-    return term_tag::ShortPort::value(m_val);
+    return term_tag::ShortPort::value(value_);
   }
 
   //
@@ -662,7 +662,7 @@ public:
     return Term(term_tag::Tuple::create_from_ptr(elements));
   }
   constexpr bool is_tuple() const {
-    return term_tag::Tuple::check(m_val);
+    return term_tag::Tuple::check(value_);
   }
   inline word_t tuple_get_arity() const {
     G_ASSERT(is_tuple());
@@ -705,41 +705,49 @@ public:
   // Special values
   //
   constexpr bool is_regx() const {
-    return term_tag::RegReference::check(m_val);
+    return term_tag::RegReference::check(value_);
   }
   static constexpr Term make_regx(word_t x) {
     return Term(term_tag::RegReference::create(x));
   }
   constexpr word_t regx_get_value() const {
-    return term_tag::RegReference::value(m_val);
+    return term_tag::RegReference::value(value_);
   }
-#if FEATURE_FLOAT
   constexpr bool is_regfp() const {
-    return term_tag::FloatRegReference::check(m_val);
+    if (feature_float) {
+      return term_tag::FloatRegReference::check(value_);
+    }
+    return false;
   }
   static constexpr Term make_regfp(word_t x) {
-    return Term(term_tag::FloatRegReference::create(x));
+    if (feature_float) {
+      return Term(term_tag::FloatRegReference::create(x));
+    }
+    return make_non_value_();
   }
   constexpr word_t regfp_get_value() const {
-    return term_tag::FloatRegReference::value(m_val);
+    if (feature_float) {
+      return term_tag::FloatRegReference::value(value_);
+    }
+    return 0;
   }
-#endif
+
   constexpr bool is_regy() const {
-    return term_tag::StackReference::check(m_val);
+    return term_tag::StackReference::check(value_);
   }
   static constexpr Term make_regy(word_t x) {
     return Term(term_tag::StackReference::create(x));
   }
   constexpr word_t regy_get_value() const {
-    return term_tag::StackReference::value(m_val);
+    return term_tag::StackReference::value(value_);
   }
 
-  inline bool is_boxed_fun() const {
-    return term_tag::BoxedFun::unbox_and_check(m_val);
+  bool is_boxed_fun() const {
+    return term_tag::BoxedFun::unbox_and_check(value_);
   }
 
-  inline bool is_boxed_export() const {
-    return term_tag::BoxedExport::unbox_and_check(m_val);
+  bool is_boxed_export() const {
+    return term_tag::BoxedExport::unbox_and_check(value_);
   }
   static inline Term make_boxed_export(export_t *ex) {
     // Assuming that pointer has subtag in first word of memory already
@@ -762,26 +770,26 @@ public:
   //
   static Term make_binary(VM &vm, proc::Heap *h, word_t bytes);
 
-  inline bool is_proc_binary() const {
-    return term_tag::BoxedProcBin::unbox_and_check(m_val);
+  bool is_proc_binary() const {
+    return term_tag::BoxedProcBin::unbox_and_check(value_);
   }
-  inline bool is_heap_binary() const {
-    return term_tag::BoxedHeapBin::unbox_and_check(m_val);
+  bool is_heap_binary() const {
+    return term_tag::BoxedHeapBin::unbox_and_check(value_);
   }
-  inline bool is_binary() const {
+  bool is_binary() const {
     //return is_heap_binary() || is_proc_binary();
     word_t *p = boxed_get_ptr<word_t>();
     return term_tag::BoxedProcBin::check_subtag(p[0])
         || term_tag::BoxedHeapBin::check_subtag(p[0]);
   }
-  inline word_t binary_get_size() const {
+  word_t binary_get_size() const {
     G_ASSERT(is_binary()); // this is slow but debug only
     word_t *p = boxed_get_ptr<word_t>();
     // both types of binary have size in first (subtag) word
     return layout::BINARY::get_byte_size(p);
   }
   template <typename T>
-  inline T *binary_get() const {
+  T *binary_get() const {
     G_ASSERT(is_binary()); // this is slow but debug only
     word_t *p = boxed_get_ptr<word_t>();
     if (term_tag::BoxedProcBin::check_subtag(p[0])) {
@@ -796,8 +804,8 @@ public:
 
 #define G_IS_BOOLEAN(T) ((T) == atom::TRUE || (T) == atom::FALSE)
 
-const static Term NONVALUE = Term::make_non_value_();
-const static Term NIL = Term::make_nil_();
+const static Term the_non_value = Term::make_non_value_();
+const static Term the_nil = Term::make_nil_();
 
 static_assert(sizeof(Term) == sizeof(word_t),
               "Term size should be same as machine word");
@@ -806,7 +814,7 @@ static_assert(sizeof(Term) == sizeof(word_t),
 //typedef Pair<Term, word_t> fun_arity_t;
 class fun_arity_t {
 public:
-  Term fun = NONVALUE;
+  Term fun = the_non_value;
   word_t arity = 0;
 
   fun_arity_t() {}
@@ -821,7 +829,7 @@ public:
   Term    mod;
   Term    fun;
   word_t  arity;
-  mfarity_t(): mod(NONVALUE), fun(NONVALUE), arity(0) {}
+  mfarity_t(): mod(the_non_value), fun(the_non_value), arity(0) {}
   mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {
     G_ASSERT(a <= erts::max_fun_arity);
   }
@@ -849,6 +857,8 @@ typedef Term (*bif3_fn)(Process *, Term, Term, Term);
 void term_test(int argc, const char *argv[]);
 #endif // TEST
 
+// From now on you can define literal unsigned and signed small terms
+// Do 1_usmall to define unsigned and 1_small to interpret it as signed
 constexpr Term operator "" _usmall(unsigned long long int x) {
     return Term::make_small_u(x);
 }

@@ -683,7 +683,7 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
 
   // The module argument may be either an atom or an abstract module
   // (currently implemented using tuples, but this might change)
-  Term _this = NONVALUE;
+  Term _this = the_non_value;
   if (!m.is_atom()) {
     if (!m.is_tuple() || m.tuple_get_arity() < 1) {
       proc->bif_badarg(m);
@@ -721,7 +721,7 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
       proc->bif_badarg();
       return nullptr;
     }
-    if (_this != NONVALUE) {
+    if (_this != the_non_value) {
       regs[arity++] = _this;
     }
   }
@@ -749,13 +749,13 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
 
 Term bif_apply_2(Process *proc, Term funobject, Term args)
 {
-  return NONVALUE;
+  return the_non_value;
 }
 
 Term bif_apply_3(Process *proc, Term m, Term f, Term args)
 {
   auto res = apply(proc, m, f, args, proc->get_runtime_ctx().regs);
-  return NONVALUE;
+  return the_non_value;
 }
 
 } // ns bif

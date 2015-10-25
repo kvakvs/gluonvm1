@@ -599,7 +599,7 @@ void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
 
 #if FEATURE_CODE_RANGES
   // mark end of code by adding last open fun to code index
-  beam_op_func_info(code, NONVALUE, NONVALUE, NONVALUE);
+  beam_op_func_info(code, the_non_value, the_non_value, the_non_value);
   m->set_fun_ranges(coderanges_.fun_map);
 #endif
 
@@ -730,7 +730,7 @@ Term LoaderState::parse_term(tool::Reader &r)
     }
     if (tag == Tag::Atom) {
       if (val == 0) {
-        return NIL;
+        return the_nil;
       } else if (val > atoms_.size()) { // we will subtract 1 when indexing
         throw err::beam_load_error("bad atom index");
       }
@@ -738,7 +738,7 @@ Term LoaderState::parse_term(tool::Reader &r)
     }
     if (tag == Tag::Label) {
       if (val == 0) {
-        return NONVALUE; //Tag::NoLabel; // empty destination
+        return the_non_value; //Tag::NoLabel; // empty destination
       } else if (val >= code_label_count_) {
         throw err::beam_load_error("bad label");
       }

@@ -16,10 +16,10 @@
 namespace gluon {
 namespace impl {
 
-typedef enum {
-  SCHEDULE_NEXT,
-  KEEP_GOING
-} want_schedule_t;
+enum class WantSchedule {
+  NextProcess,  // we want scheduler to enqueue current process and take next
+  KeepGoing     // decided to continue current process
+};
 
 //
 // VM execution context, inherited from process context
@@ -41,7 +41,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 
   // returns false if process should yield (for call ops for example)
-  want_schedule_t consume_reduction(Process *p) {
+  WantSchedule consume_reduction(Process *p) {
     reds_--;
     if (G_UNLIKELY(reds_ <= 0)) {
       // ASSERT that we're standing on first instruction of fun after fun_info
@@ -49,9 +49,9 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       // TODO: remove live from all call opcodes and uncomment this
       // live = ip[-1];
       swap_out_light(p);
-      return SCHEDULE_NEXT;
+      return WantSchedule::NextProcess;
     }
-    return KEEP_GOING;
+    return WantSchedule::KeepGoing;
   }
 
   void load(Process *proc) {
@@ -79,9 +79,18 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 
   // TODO: swap_out: save r0, stack top and heap top
-  inline void swap_out_light(Process *proc) {
-    // Make this little lighter
-    return save(proc);
+  void swap_out_light(Process *proc) {
+    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+    proc_ctx.ip = ip;
+    proc_ctx.cp = cp;
+    // TODO: Make this little lighter
+    //return save(proc);
+  }
+
+  void swap_in_light(Process *proc) {
+    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+    ip = proc_ctx.ip;
+    cp = proc_ctx.cp;
   }
 
   // For special immed1 types (register and stack ref) convert them to their
@@ -115,14 +124,14 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     } else
     if (dst.is_regy()) {
       stack().set_y(dst.regy_get_value(), val.as_word());
-    } else
-#if FEATURE_FLOAT
-    if (dst.is_regfp()) {
-      regs[dst.regx_get_value()] = val;
-    } else
-#endif
-    {
-      G_FAIL("bad move dst")
+    }
+    else
+    if (feature_float) {
+      if (dst.is_regfp()) {
+        regs[dst.regx_get_value()] = val;
+      }
+    } else {
+      throw err::process_error("bad move dst");
     }
   }
 
@@ -143,14 +152,17 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
     // check for bif, a nonvalue result with error flag set to undef means that
     // this was not a bif
-    //void *bif_fn = VM::find_bif(*mfa);
     if (exp->is_bif()) {
+      // Swap out because BIF may decide to modify ip/cp
+      swap_out_light(proc);
       Term result = vm_.apply_bif(proc, mfa->arity, exp->bif_fn(), regs);
+      swap_in_light(proc);
+
       if (result.is_non_value()) {
         if (proc->bif_err_reason_ != atom::UNDEF) {
           // a real error happened
           Term reason = proc->bif_err_reason_;
-          proc->bif_err_reason_ = NONVALUE;
+          proc->bif_err_reason_ = the_non_value;
           return raise(proc, atom::ERROR, reason);
         }
         // if it was undef - do nothing, it wasn't a bif - we just continue
@@ -164,22 +176,6 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       }
     }
 
-    /*
-    auto find_result = VM::codeserver().find_module(proc, mfa->mod,
-                                                 code::LOAD_IF_NOT_FOUND);
-    if (find_result.is_error()) {
-      G_LOG("ctx.jump_ext: %s\n", find_result.get_error());
-      return raise(proc, atom::ERROR, atom::UNDEF);
-    }
-
-    Module *mod = find_result.get_result();
-    auto find_fn_result = mod->resolve_function(mfa->fun, mfa->arity);
-    if (find_fn_result.is_error()) {
-      G_LOG("ctx.jump_ext: %s\n", find_fn_result.get_error());
-      return raise(proc, atom::ERROR, atom::UNDEF);
-    }
-    return jump_far(proc, mod, find_fn_result.get_result());
-    */
     return jump_far(proc, mod, exp->code());
   }
 
@@ -205,7 +201,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     swap_out_light(proc);
     regs[0] = type;
     regs[1] = reason;
-    proc->stack_trace_ = NONVALUE;
+    proc->stack_trace_ = the_non_value;
     return exception(proc);
   }
 
@@ -219,39 +215,23 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
       G_FAIL("Stopping execution here");
     }
     // unwind stack
-/*
-    for (word_t i = stack->size()-1; i > 0; --i)
-    {
-      if (stack[i].is_catch()) {
-        //word_t jump_to = (*stack)[i].catch_val();
-        do {
-          i++;
-        } while (!(*stack)[i].is_boxed()
-                 || !term_tag::is_cp((*stack)[i].boxed_get_ptr<word_t>()));
-        // TODO: trim stack to iter
-
-
-        //ip = catch_jump(index);
-        cp = nullptr;
-      }
-      // TODO: set process exit reason
-      procmo->get_runtime_ctx().live = 0;
-      // TODO: schedule next process in queue
-    }
-*/
   }
+
   void push_cp() {
     stack().push(Term::make_boxed_cp(cp).as_word());
     cp = nullptr;
   }
+
   void pop_cp() {
     Term p(stack().pop());
     cp = term_tag::untag_cp<word_t>(p.boxed_get_ptr<word_t>());
   }
+
   inline void stack_allocate(word_t n) {
     stack().push_n_nils(n);
     push_cp();
   }
+
   inline void stack_deallocate(word_t n) {
     pop_cp();
     stack().drop_n(n);
@@ -272,12 +252,13 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     Std::puts();
 #endif
   }
+
   bool check_bif_error(Process *p) {
     Term reason = p->bif_err_reason_;
     if (reason.is_non_value()) {
       return false; // good no error
     }
-    p->bif_err_reason_ = NONVALUE;
+    p->bif_err_reason_ = the_non_value;
     raise(p, atom::ERROR, reason);
     return true;
   }
