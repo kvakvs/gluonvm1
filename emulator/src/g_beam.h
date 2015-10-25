@@ -14,6 +14,10 @@ typedef struct {
 } line_instr_t;
 #endif
 
+namespace genop {
+  enum class Opcode;
+} // ns genop
+
 class LoaderState {
 private:
   VM        &vm_;
@@ -123,7 +127,9 @@ private:
 //    Overflow  = 14,   // overflow/bigint
   };
 
-  bool rewrite_opcode(word_t opcode, Vector<word_t> &output, tool::Reader &r);
+  bool rewrite_opcode(genop::Opcode opcode,
+                      Vector<word_t> &output,
+                      tool::Reader &r);
   void resolve_labels(const Vector<word_t> &postponed_labels,
                       Vector<word_t> &code);
 //  MaybeError get_tag_and_value(tool::Reader &r, word_t &tag, word_t &value);

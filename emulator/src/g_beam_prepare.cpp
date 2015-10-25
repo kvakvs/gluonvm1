@@ -25,18 +25,20 @@ void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
 
   word_t arity;
   word_t op_ptr;
+
+  using genop::Opcode;
+
   while (!r.is_end()) {
     // Get opcode info
-    word_t opcode = (word_t)r.read_byte();
+    Opcode opcode = (Opcode)r.read_byte();
 //    G_LOG("[" FMT_0xHEX "]: opcode=" FMT_0xHEX " %s; ", code.size(), opcode,
 //          genop::opcode_name_map[opcode]);
 
-    if (opcode < 1 || opcode > genop::MAX_OPCODE) {
+    if (opcode < (Opcode)1 || opcode > (Opcode)genop::max_opcode) {
       throw err::beam_load_error("bad opcode");
     }
 
-
-    if (G_UNLIKELY(opcode == genop::OPCODE_INT_CODE_END)) {
+    if (G_UNLIKELY(opcode == Opcode::Int_code_end)) {
       break;
     }
 
@@ -47,10 +49,10 @@ void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
     }
 
     // Convert opcode into jump address
-    op_ptr = reinterpret_cast<word_t>(vm_.g_opcode_labels[opcode]);
+    op_ptr = reinterpret_cast<word_t>(vm_.g_opcode_labels[(word_t)opcode]);
     output.push_back(op_ptr);
 
-    arity = genop::arity_map[opcode];
+    arity = genop::arity_map[(word_t)opcode];
 
     word_t *first_arg = &output.back() + 1;
 
@@ -75,25 +77,25 @@ void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
 //    }
 
     // Things to resolve from imports:
-    if (opcode == genop::OPCODE_BIF0)
+    if (opcode == Opcode::Bif0)
     {
       // bif0 import_index Dst - cannot fail, no fail label
       replace_imp_index_with_ptr(first_arg, m);
-    } else if (opcode == genop::OPCODE_BIF1
-               || opcode == genop::OPCODE_BIF2
-               || opcode == genop::OPCODE_CALL_EXT
-               || opcode == genop::OPCODE_CALL_EXT_LAST
-               || opcode == genop::OPCODE_CALL_EXT_ONLY)
+    } else if (   opcode == Opcode::Bif1
+               || opcode == Opcode::Bif2
+               || opcode == Opcode::Call_ext
+               || opcode == Opcode::Call_ext_last
+               || opcode == Opcode::Call_ext_only)
     {
       // bif1|2 Fail import_index ...Args Dst
       replace_imp_index_with_ptr(first_arg+1, m);
-    } else if (opcode == genop::OPCODE_GC_BIF1
-               || opcode == genop::OPCODE_GC_BIF2
-               || opcode == genop::OPCODE_GC_BIF3)
+    } else if (   opcode == Opcode::Gc_bif1
+               || opcode == Opcode::Gc_bif2
+               || opcode == Opcode::Gc_bif3)
     {
       // gc_bif1|2|3 Fail Live import_index ...Args Dst
       replace_imp_index_with_ptr(first_arg+2, m);
-    } else if (opcode == genop::OPCODE_MAKE_FUN2) {
+    } else if (opcode == Opcode::Make_fun2) {
       // make_fun2 LambdaTableIndex
       replace_lambda_index_with_ptr(first_arg, m);
     }
@@ -149,11 +151,13 @@ void LoaderState::beam_prepare_code(Module *m, array_view<const u8_t> data)
   }
 }
 
-bool LoaderState::rewrite_opcode(word_t opcode,
+bool LoaderState::rewrite_opcode(genop::Opcode opcode,
                                  Vector<word_t> &output,
                                  tool::Reader &r) {
+  using genop::Opcode;
+
   // line/1 opcode
-  if (opcode == genop::OPCODE_LINE) {
+  if (opcode == Opcode::Line) {
     if (feature_line_numbers) {
       beam_op_line(output, parse_term(r));
     }
@@ -161,7 +165,7 @@ bool LoaderState::rewrite_opcode(word_t opcode,
   }
 
   // label/1 opcode - save offset to labels table
-  if (opcode == genop::OPCODE_LABEL) {
+  if (opcode == Opcode::Label) {
     Term label = parse_term(r);
     G_ASSERT(label.is_small());
 
@@ -172,7 +176,7 @@ bool LoaderState::rewrite_opcode(word_t opcode,
     return true; // rewritten
   }
 
-  if (opcode == genop::OPCODE_FUNC_INFO) {
+  if (opcode == Opcode::Func_info) {
     tool::Reader r1 = r.clone();
     auto a = parse_term(r1);
     auto b = parse_term(r1);

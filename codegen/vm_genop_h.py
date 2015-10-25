@@ -13,14 +13,17 @@ print("namespace genop {")
 
 print
 
-print("const unsigned int MIN_OPCODE = %d;" % libgenop.MIN_OPCODE)
-print("const unsigned int MAX_OPCODE = %d;" % libgenop.MAX_OPCODE)
+print("const unsigned int min_opcode = %d;" % libgenop.MIN_OPCODE)
+print("const unsigned int max_opcode = %d;" % libgenop.MAX_OPCODE)
 print
 
 # print constants
+print("enum class Opcode {")
 for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
     op = libgenop.ops_by_code[opcode]
-    print("const u8_t OPCODE_%s = %d; // 0x%x" % (op['name'].upper(), opcode, opcode));
+    print("  %s = %d, // 0x%x" % (op['name'].capitalize(), opcode, opcode));
+
+print("};")
 print
 
 # print arity map
