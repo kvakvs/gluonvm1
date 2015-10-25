@@ -16,8 +16,8 @@
 / 2 divide
 
 #--- A
-apply 2
-apply 3
+# apply 2 # apply is implemented as opcode and erlang code in erlang module, no bif
+# apply 3
 atom_to_list 1
 
 #--- G

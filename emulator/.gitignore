@@ -1,3 +1,6 @@
 # debug stdout dumps
 *.txt
 .gdb_history
+
+# erl asm files
+*.S

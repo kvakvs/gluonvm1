@@ -20,6 +20,7 @@ static Term spawn_mfargs(Process *proc,
   if (!m.is_atom()) { return proc->bif_badarg(m); }
   if (!f.is_atom()) { return proc->bif_badarg(f); }
   if (!args.is_list()) { return proc->bif_badarg(args); }
+
   // TODO: on process control blocks' heap
   Process *new_proc = new Process(proc->vm(), proc->get_group_leader());
   mfarity_t mfa(m, f, bif::length(args).first);
@@ -28,7 +29,9 @@ static Term spawn_mfargs(Process *proc,
   // We should clone args to new process' registers
   Term old_heap_args[erts::max_fun_arity];
   Term new_heap_args[erts::max_fun_arity]; // clone of array_args in new heap
+
   args.cons_to_array(old_heap_args, sizeof(old_heap_args));
+
   proc::copy_terms(proc->vm(),
                    new_proc->get_heap(),
                    old_heap_args, old_heap_args + mfa.arity,

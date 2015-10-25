@@ -749,13 +749,16 @@ Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
 
 Term bif_apply_2(Process *proc, Term funobject, Term args)
 {
-  return the_non_value;
+  return proc->bif_badarg();
 }
 
+// apply/3 is implemented as an instruction and as erlang code in the
+// erlang module.
+// This function will never be called.  (It could be if init did something
+// like this:  apply(erlang, apply, [M, F, A]). Not recommended.)
 Term bif_apply_3(Process *proc, Term m, Term f, Term args)
 {
-  auto res = apply(proc, m, f, args, proc->get_runtime_ctx().regs);
-  return the_non_value;
+  return proc->bif_badarg();
 }
 
 } // ns bif

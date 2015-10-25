@@ -54,6 +54,9 @@ set(SRC_LIST
     include/struct/g_str.h
     include/struct/g_set.h
 
+    src/g_beam_loader.cpp src/g_beam.h
+    src/g_beam_prepare.cpp
+
     src/g_binary.cpp     include/g_binary.h
     src/g_code.cpp       include/g_code.h
     src/g_code_index.cpp include/g_code_index.h
@@ -61,8 +64,6 @@ set(SRC_LIST
     src/g_dist.cpp       include/g_dist.h
     src/g_ext_term.cpp   include/g_ext_term.h
     src/g_genop.cpp      include/g_genop.h        # generated via codegen/ script
-    #src/g_gleam_loader.cpp
-    src/g_beam_loader.cpp
     src/g_fun.cpp        include/g_fun.h
     src/g_heap.cpp       include/g_heap.h
     src/g_mailbox.cpp    include/g_mailbox.h

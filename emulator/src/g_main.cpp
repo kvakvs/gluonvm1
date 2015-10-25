@@ -3,6 +3,7 @@
 #include "g_code_server.h"
 #include "g_code_index.h"
 #include "g_error.h"
+#include "g_predef_atoms.h"
 
 #include <stdio.h>
 
@@ -30,6 +31,9 @@ int main(int argc, const char *argv[]) {
   mfarity_t mfa(vm.to_atom("otp_ring0"), vm.to_atom("start"), 2);
 
   auto rootp = vm.root_process();
+
+  vm.codeserver().load_module(rootp, atom::ERLANG);
+
   rootp->spawn(mfa, start_args);
 
   // Run some code

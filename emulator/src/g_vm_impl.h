@@ -776,7 +776,7 @@ WantSchedule opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
 //  }
 
   inline WantSchedule opcode_apply(Process *proc,
-                                      vm_runtime_ctx_t &ctx) { // opcode: 112
+                                   vm_runtime_ctx_t &ctx) { // opcode: 112
     // @spec apply Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
     Term arity_as_term(ctx.ip[0]);
     word_t arity = arity_as_term.small_get_unsigned();
@@ -801,7 +801,7 @@ WantSchedule opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
   }
 
   inline WantSchedule opcode_apply_last(Process *proc,
-                                           vm_runtime_ctx_t &ctx) { // opcode: 113
+                                        vm_runtime_ctx_t &ctx) { // opcode: 113
     // @spec apply_last _ Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
     Term arity_as_term(ctx.ip[0]);
     word_t arity = arity_as_term.small_get_unsigned();
@@ -826,7 +826,8 @@ WantSchedule opcode_gc_bif2(Process *proc, vm_runtime_ctx_t &ctx);
     return ctx.consume_reduction(proc);
   }
 
-  inline void opcode_is_boolean(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 114
+  inline void opcode_is_boolean(Process *proc,
+                                vm_runtime_ctx_t &ctx) { // opcode: 114
     // @spec is_boolean Lbl Arg1
     // @doc Test the type of Arg1 and jump to Lbl if it is not a Boolean.
     Term arg1(ctx.ip[1]);
