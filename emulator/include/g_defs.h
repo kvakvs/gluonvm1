@@ -51,12 +51,12 @@ namespace gluon {
 #define DECL_IMPL_EXCEPTION(NAME) DECL_EXCEPTION(NAME) IMPL_EXCEPTION(NAME)
 
   namespace err {
-    DECL_EXCEPTION(feature_missing_error)
-    DECL_EXCEPTION(todo_error)
-    DECL_EXCEPTION(beam_load_error)
-    DECL_EXCEPTION(scheduler_error)
-    DECL_EXCEPTION(code_server_error)
-    DECL_EXCEPTION(process_error)
+    DECL_EXCEPTION(FeatureMissing)
+    DECL_EXCEPTION(TODO)
+    DECL_EXCEPTION(BeamLoad)
+    DECL_EXCEPTION(Scheduler)
+    DECL_EXCEPTION(CodeServer)
+    DECL_EXCEPTION(Process)
   } // ns err
 
   constexpr unsigned int get_hardware_bits() {
@@ -172,7 +172,7 @@ namespace gluon {
 #   define G_ASSERT_MSG(X, MSG) if (!(X)) { G_FAIL(MSG); }
 #   define G_TODO(what) { \
       ::fprintf(stderr, "TODO: %s (%s:%d)\n", what, __FILE__, __LINE__);  \
-      throw gluon::err::todo_error(what); \
+      throw gluon::err::TODO(what); \
       }
     // Famous io:format/2 skill on Linkedin!
 #   define G_LOG gluon::Std::fmt

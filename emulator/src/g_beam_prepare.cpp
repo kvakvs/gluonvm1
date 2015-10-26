@@ -66,7 +66,7 @@ Vector<Word> BeamLoader::read_code(Module *m,
     Opcode opcode = (Opcode)r.read_byte();
 
     if (opcode < (Opcode)1 || opcode > (Opcode)genop::max_opcode) {
-      throw err::beam_load_error("bad opcode");
+      throw err::BeamLoad("bad opcode");
     }
     if (G_UNLIKELY(opcode == Opcode::Int_code_end)) {
       break;

@@ -57,7 +57,7 @@ void Server::load_module(Process *proc, Term name)
       return;
     }
   }
-  throw err::code_server_error("module not found");
+  throw err::CodeServer("module not found");
 }
 
 Module *Server::find_module(Process *proc, Term m, FindModule load)
@@ -65,7 +65,7 @@ Module *Server::find_module(Process *proc, Term m, FindModule load)
   auto result = modules_.find_ref(m, nullptr);
   if (!result) {
     if (load == code::FindModule::FindExisting) {
-      throw err::code_server_error("function not found");
+      throw err::CodeServer("function not found");
     } else {
       load_module(proc, m);
       return modules_[m];

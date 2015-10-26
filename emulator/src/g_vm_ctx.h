@@ -131,7 +131,7 @@ struct VMRuntimeContext: RuntimeContext {
         regs[dst.regx_get_value()] = val;
       }
     } else {
-      throw err::process_error("bad move dst");
+      throw err::Process("bad move dst");
     }
   }
 

@@ -18,7 +18,7 @@ namespace gluon {
 """)
 
 print("""void VM::vm_loop(bool init) {
-  impl::vm_runtime_ctx_t ctx(*this);
+  impl::VMRuntimeContext ctx(*this);
   void *jmp_to;
   Process *proc;
   Scheduler &sched = VM::scheduler();

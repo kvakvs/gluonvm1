@@ -28,7 +28,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
   r.assert_remaining_at_least(4+4+4);
   Str for1_header = r.read_string(4);
   if (for1_header != "FOR1") {
-    throw err::beam_load_error("not iff container");
+    throw err::BeamLoad("not iff container");
   }
 
   Word file_length = r.read_big_u32();
@@ -36,7 +36,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
 
   Str beam_header = r.read_string(4);
   if (beam_header != "BEAM") {
-    throw err::beam_load_error("not BEAM file");
+    throw err::BeamLoad("not BEAM file");
   }
 
   while (1) {
@@ -47,7 +47,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
         || !is_lowcase_latin(chunk[2]))
     {
       G_LOG("beam offset " FMT_0xHEX "\n", r.get_ptr() - data.data());
-      throw err::beam_load_error("bad beam format");
+      throw err::BeamLoad("bad beam format");
     }
 
     if      (chunk == "Atom") { lstate.load_atom_table(r, expected_name); }
@@ -98,7 +98,7 @@ void BeamLoader::load_atom_table(tool::Reader &r0, Term expected_name)
   mod_name_ = vm_.to_atom(atoms_[0]);
   if (false == expected_name.is_nil()
       && mod_name_ != expected_name) {
-    throw err::beam_load_error("module name mismatch");
+    throw err::BeamLoad("module name mismatch");
   }
 
   r0.advance_align<4>(chunk_size);
@@ -129,7 +129,7 @@ void BeamLoader::load_lambda_table(tool::Reader &r0) {
     auto ouniq      = r.read_big_u32();
 
     if (fun_atom_i > atoms_.size()) {
-      throw err::beam_load_error("funt: atom index too big");
+      throw err::BeamLoad("funt: atom index too big");
     }
     const Str &f_str = atom_tab_index_to_str(fun_atom_i);
 
@@ -161,7 +161,7 @@ void BeamLoader::load_export_table(tool::Reader &r0) {
   for (Word i = 0; i < count; ++i) {
     auto f_i   = r.read_big_u32();
     if (f_i > atoms_.size()) {
-      throw err::beam_load_error("expt: atom index too big");
+      throw err::BeamLoad("expt: atom index too big");
     }
     auto f = vm_.to_atom(atom_tab_index_to_str(f_i));
 
@@ -203,7 +203,7 @@ void BeamLoader::load_code(tool::Reader &r0) {
 
   code_ver_   = r.read_big_u32();
   if (code_ver_ != 0) {
-    throw err::beam_load_error("opcode set version");
+    throw err::BeamLoad("opcode set version");
   }
   code_opcode_max  = r.read_big_u32();
   code_label_count_ = r.read_big_u32();
@@ -232,7 +232,7 @@ void BeamLoader::load_literal_table(tool::Reader &r0)
   auto result = mz_uncompress(uncompressed.binary_get<Uint8>(), &uncompressed_size,
                               compressed.binary_get<Uint8>(), chunk_size);
   if (result != MZ_OK) {
-    throw err::beam_load_error("beam LitT error");
+    throw err::BeamLoad("beam LitT error");
   }
 
   tool::Reader r(
@@ -273,7 +273,7 @@ void BeamLoader::load_line_table(tool::Reader &r0)
   // u32 table_version=0
   if (r.read_big_u32() != 0) {
   // Wrong version. Silently ignore the line number chunk.
-    throw err::beam_load_error("bad line info ver");
+    throw err::BeamLoad("bad line info ver");
   }
 
   r.advance(4); // flags, ignore
@@ -306,7 +306,7 @@ void BeamLoader::load_line_table(tool::Reader &r0)
       // reference to another file
       Word a_id = val.atom_val();
       if (a_id > linenums_.num_filenames) {
-        throw err::beam_load_error("line info: bad file index");
+        throw err::BeamLoad("line info: bad file index");
       }
       fname_index = a_id;
     }
@@ -344,7 +344,7 @@ Term BeamLoader::parse_term(tool::Reader &r)
       if (val == 0) {
         return the_nil;
       } else if (val > atoms_.size()) { // we will subtract 1 when indexing
-        throw err::beam_load_error("bad atom index");
+        throw err::BeamLoad("bad atom index");
       }
       return vm_.to_atom(atom_tab_index_to_str(val));
     }
@@ -352,26 +352,26 @@ Term BeamLoader::parse_term(tool::Reader &r)
       if (val == 0) {
         return the_non_value; //Tag::NoLabel; // empty destination
       } else if (val >= code_label_count_) {
-        throw err::beam_load_error("bad label");
+        throw err::BeamLoad("bad label");
       }
       // special value to be recognized by label resolver
       return Term::make_catch(val);
     }
     if (tag == Tag::XRegister) {
       if (val >= erts::max_regs) {
-        throw err::beam_load_error("invalid x register");
+        throw err::BeamLoad("invalid x register");
       }
       return Term::make_regx(val);
     }
     if (tag == Tag::YRegister) {
       if (val >= erts::max_stack) {
-        throw err::beam_load_error("invalid y register");
+        throw err::BeamLoad("invalid y register");
       }
       return Term::make_regy(val);
     }
     if (tag == Tag::Character) {
       if (val > 65535) {
-        throw err::beam_load_error("invalid character range");
+        throw err::BeamLoad("invalid character range");
       }
       return Term::make_small_u(val);
     }
@@ -413,7 +413,7 @@ Term BeamLoader::parse_term(tool::Reader &r)
     type = Tag::L;
     break;
 #else
-    throw err::feature_missing_error("FLOAT");
+    throw err::FeatureMissing("FLOAT");
 #endif
   }
   else if (tag == Tag::Extended_AllocList) {
@@ -423,11 +423,11 @@ Term BeamLoader::parse_term(tool::Reader &r)
     Word val1 = parse_int_term(r, r.read_byte()).small_get_unsigned();
 
     if (val1 >= literals_.size()) {
-      throw err::beam_load_error("bad literal index");
+      throw err::BeamLoad("bad literal index");
     }
     return literals_[val1];
   }
-  throw err::beam_load_error("bad extended tag");
+  throw err::BeamLoad("bad extended tag");
 }
 
 BeamLoader::Tag BeamLoader::parse_tag(tool::Reader &r, Uint8 value, int tag) {
@@ -524,7 +524,7 @@ Term BeamLoader::parse_bigint(tool::Reader &, Word) {
 #if FEATURE_BIGNUM
 #error "todo load bignum from reader"
 #else
-  throw err::feature_missing_error("BIGINT");
+  throw err::FeatureMissing("BIGINT");
 #endif
 }
 
@@ -532,7 +532,7 @@ Term BeamLoader::parse_float(tool::Reader &) {
 #if FEATURE_FLOAT
 #error "todo load float from reader"
 #else
-  throw err::feature_missing_error("FLOAT");
+  throw err::FeatureMissing("FLOAT");
 #endif
 }
 

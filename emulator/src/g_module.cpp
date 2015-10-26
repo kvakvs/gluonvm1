@@ -8,7 +8,7 @@ namespace gluon {
 Word *Module::resolve_label(LabelIndex label)
 {
   if (label.value() >= labels_.size()) {
-    throw err::beam_load_error("label index too big");
+    throw err::BeamLoad("label index too big");
   }
   return labels_[label.value()];
 }

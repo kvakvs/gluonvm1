@@ -34,7 +34,7 @@ void Scheduler::queue_by_priority(Process *p) {
     high_queue_.push_back(p);
     p->current_queue_ = proc::Queue::High;
   } else {
-    throw err::scheduler_error("bad prio");
+    throw err::Scheduler("bad prio");
   }
 }
 

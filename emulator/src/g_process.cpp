@@ -22,13 +22,13 @@ void Process::jump_to_mfa(MFArity &mfa)
 
   Export *exp = mod->find_export(mfa.as_funarity());
   if (!exp) {
-    throw err::process_error("undef function");
+    throw err::Process("undef function");
   }
   if (exp->is_bif()) {
     // Run the bif, hope it returns control soon
     vm_.apply_bif(this, exp->mfa.arity, exp->bif_fn(), ctx_.regs);
     mfa.println(vm_);
-    throw err::process_error("jump to a bif");
+    throw err::Process("jump to a bif");
   }
 
   ctx_.ip = exp->code();

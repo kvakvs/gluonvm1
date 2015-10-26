@@ -75,7 +75,7 @@ Term make_pid(VM &vm, Term sysname, Word id, Word serial, Uint8 creation) {
   G_TODO("distribution support pid etf");
 #endif
   // distribution disabled, no want remote pids
-  throw err::feature_missing_error("ERL_DIST");
+  throw err::FeatureMissing("ERL_DIST");
 }
 
 Term read_tuple(VM &vm, proc::Heap *heap, tool::Reader &r, Word arity) {
@@ -195,7 +195,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
       }
 #else
       // no bignum, and hardware bits not enough: much fail here
-      throw err::feature_missing_error("BIGNUM");
+      throw err::FeatureMissing("BIGNUM");
 #endif
       } // hardware bits = 32
     }  // integer_ext
@@ -210,7 +210,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
 #else
   case Tag::OldFloatStringExt:
   case Tag::IeeeFloatExt:
-    throw err::feature_missing_error("FLOAT");
+    throw err::FeatureMissing("FLOAT");
 #endif
 
   case Tag::AtomUtf8Ext:    // fall through
@@ -252,9 +252,9 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
   case Tag::MapExt:
     if (feature_maps) {
       //return read_map(heap, r);
-      throw err::todo_error("etf MAPS");
+      throw err::TODO("etf MAPS");
     } else {
-      throw err::feature_missing_error("MAPS");
+      throw err::FeatureMissing("MAPS");
     }
 
   case Tag::NilExt:     return the_nil;
@@ -262,14 +262,14 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
   case Tag::ListExt:    return read_list_ext(vm, heap, r);
 
   case Tag::BinaryExt:     return read_binary(vm, heap, r);
-  case Tag::BitBinaryExt: throw err::todo_error("read bit-binary etf");
+  case Tag::BitBinaryExt: throw err::TODO("read bit-binary etf");
 
   case Tag::SmallBigExt:
   case Tag::LargeBigExt:
     if (feature_bignum) {
-      throw err::feature_missing_error("BIGNUM");
+      throw err::FeatureMissing("BIGNUM");
     } else {
-      throw err::todo_error("BIGNUM");
+      throw err::TODO("BIGNUM");
     }
 
   default:

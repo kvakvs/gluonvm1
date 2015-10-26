@@ -15,12 +15,12 @@
 namespace gluon {
 
 namespace err {
-  IMPL_EXCEPTION(feature_missing_error)
-  IMPL_EXCEPTION(todo_error)
-  IMPL_EXCEPTION(beam_load_error)
-  IMPL_EXCEPTION(scheduler_error)
-  IMPL_EXCEPTION(code_server_error)
-  IMPL_EXCEPTION(process_error)
+  IMPL_EXCEPTION(FeatureMissing)
+  IMPL_EXCEPTION(TODO)
+  IMPL_EXCEPTION(BeamLoad)
+  IMPL_EXCEPTION(Scheduler)
+  IMPL_EXCEPTION(CodeServer)
+  IMPL_EXCEPTION(Process)
 } // ns err
 
 //str_atom_map_t  VM::g_atoms;
