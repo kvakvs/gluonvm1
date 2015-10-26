@@ -112,13 +112,19 @@ namespace gluon {
   // Used to shun debug printfs in release
   inline void dummy_printf(const char *, ...) {}
 
-  // Index in label table, wrapped to create a distinct compile-time type
-  class label_index_t {
+  // Wraps a type into a class to make it separate type
+  template <typename T>
+  class Wrap {
+  private:
+    T value_;
   public:
-    word_t value;
-    label_index_t(): value(0) {}
-    explicit label_index_t(word_t x): value(x) {}
+    Wrap(): value_() {}
+    explicit Wrap(T x): value_(x) {}
+    T value() const { return value_; }
+    void value(T newvalue) { value_ = newvalue; }
   };
+  // Index in label table, wrapped to create a distinct compile-time type
+  using LabelIndex = Wrap<word_t>;
 
   namespace erts {
     // How many reds will a process be allowed to run before next proc wakes up

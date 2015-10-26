@@ -5,12 +5,12 @@
 
 namespace gluon {
 
-word_t *Module::resolve_label(label_index_t label)
+word_t *Module::resolve_label(LabelIndex label)
 {
-  if (label.value >= labels_.size()) {
+  if (label.value() >= labels_.size()) {
     throw err::beam_load_error("label index too big");
   }
-  return labels_[label.value];
+  return labels_[label.value()];
 }
 
 void Module::set_exports(Module::exports_t &e) {
@@ -26,10 +26,12 @@ void Module::set_exports(Module::exports_t &e) {
                   });
 }
 
+#if FEATURE_CODE_RANGES
 fun_arity_t Module::find_fun_arity(word_t *ptr) const
 {
   return fun_index_.find(ptr);
 }
+#endif
 
 #if FEATURE_CODE_RANGES
 code::Range Module::get_code_range() {

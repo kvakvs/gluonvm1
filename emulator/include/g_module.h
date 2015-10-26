@@ -84,8 +84,8 @@ private:
   code::Index<fun_arity_t> fun_index_;
 #endif
 #if FEATURE_LINE_NUMBERS
-  line_refs_t   m_line_refs;
-  file_names_t  m_file_names;
+  line_refs_t   line_refs_;
+  file_names_t  filenames_;
 #endif
 
   // Instruction layout in code: { void *label; Term args[arity] }
@@ -98,10 +98,8 @@ public:
     imports_ = std::move(imp);
   }
 
-  Module(Module &&src) {
-    name_ = std::move(src.name_);
-    code_ = std::move(src.code_);
-  }
+  Module(const Module &src) = delete;
+  Module(Module &&src) = default;
 
   Term get_name() const {
     G_ASSERT(name_.is_atom());
@@ -121,9 +119,9 @@ public:
   //Result<word_t *> resolve_function(Term f, word_t arity);
 
   // Resolves label to a code pointer
-  word_t *resolve_label(label_index_t label);
+  word_t *resolve_label(LabelIndex label);
 
-  inline void set_code(Vector<word_t> &code) {
+  void set_code(Vector<word_t> &code) {
     code_ = std::move(code); // take ownership
   }
   void set_labels(labels_t &labels) {
@@ -141,12 +139,12 @@ public:
   fun_arity_t find_fun_arity(word_t *ptr) const;
 #endif
 
-#if FEATURE_LINE_NUMBERS
   void set_line_numbers(line_refs_t &lr, file_names_t &fn) {
-    m_line_refs = std::move(lr);
-    m_file_names = std::move(fn);
+    if (feature_line_numbers) {
+      line_refs_ = std::move(lr);
+      filenames_ = std::move(fn);
+    }
   }
-#endif
 
   mfarity_t *get_import_entry(word_t i) {
     G_ASSERT(i < imports_.size());
@@ -156,8 +154,6 @@ public:
     G_ASSERT(i < lambdas_.size());
     return &(lambdas_[i]);
   }
-
-protected:
 };
 
 } // ns gluon

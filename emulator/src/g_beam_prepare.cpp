@@ -202,7 +202,7 @@ void BeamLoader::output_exports(Module *m)
   // we iterate over map_view which is pairs of <fun_arity_t key, word_t value>
   for_each(exps, [&](fa_lindex_map_t::iterator fa_lindex) {
                     // find out what is label value
-                    auto lresult = labels_.find_ptr(fa_lindex->second.value);
+                    auto lresult = labels_.find_ptr(fa_lindex->second.value());
                     G_ASSERT(lresult); // assume it must exist
                     exports[fa_lindex->first] = export_t(
                           *lresult, mfarity_t(mod_name_, fa_lindex->first)

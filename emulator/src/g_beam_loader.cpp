@@ -169,7 +169,7 @@ void BeamLoader::load_export_table(tool::Reader &r0) {
     auto label = r.read_big_u32();
 //    Std::fmt("load export %s/" FMT_UWORD " @label %zu\n", f.atom_str().c_str(), arity, label);
 
-    exp_indexes_[fun_arity_t(f, arity)] = label_index_t(label);
+    exp_indexes_[fun_arity_t(f, arity)] = LabelIndex(label);
   }
 
   r0.advance_align<4>(chunk_size);

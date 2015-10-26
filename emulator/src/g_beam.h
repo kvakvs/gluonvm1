@@ -37,7 +37,7 @@ private:
 
   Vector<Term>    literals_;
   Module::labels_t  labels_;
-  using fa_lindex_map_t = Dict<fun_arity_t, label_index_t>;
+  using fa_lindex_map_t = Dict<fun_arity_t, LabelIndex>;
   fa_lindex_map_t exp_indexes_;  // list of {f/arity} sequentially
   Module::imports_t imports_;
   Module::lambdas_t lambdas_;
