@@ -562,12 +562,12 @@ public:
     return is_small();
 #endif
   }
-  inline SWord small_get_signed() const {
+  inline SWord small_sword() const {
     G_ASSERT(is_small());
 //    Std::fmt("small_get_s val=" FMT_0xHEX " val=" FMT_0xHEX "\n", m_val, term_tag::Smallint::value(m_val));
     return term_tag::Smallint::value(value_);
   }
-  inline Word small_get_unsigned() const {
+  inline Word small_word() const {
     G_ASSERT(is_small());
     Word v = term_tag::Smallint::value_u(value_);
     return (Word)v;

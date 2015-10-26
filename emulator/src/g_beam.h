@@ -30,15 +30,21 @@ private:
   Term            mod_name_; // an atom in the -module(X) header
 
   // Data coming from code chunk
-  Word          code_ver_;
-  Word          code_opcode_max;
-  Word          code_label_count_;
-  Word          code_fun_count_;
+  Word  code_ver_;
+  Word  code_opcode_max;
+  Word  code_label_count_;
+  Word  code_fun_count_;
 
   Vector<Term>    literals_;
   Module::Labels  labels_;
-  using fa_lindex_map_t = Dict<FunArity, LabelIndex>;
-  fa_lindex_map_t exp_indexes_;  // list of {f/arity} sequentially
+  Term            current_label_ = the_non_value; // last encountered label
+
+  using FaLabelindexMap = Dict<FunArity, LabelIndex>;
+  FaLabelindexMap exp_indexes_;  // list of exported {f/arity} sequentially
+
+  using LabelindexFaMap = Dict<Term, FunArity>;
+  LabelindexFaMap label_to_fun_;  // maps label(as term) to funarity
+
   Module::Imports imports_;
   Module::Lambdas lambdas_;
   // postponed select list with label numbers. Resolve to code pointers after
@@ -153,11 +159,29 @@ private:
                       Vector<Word> &output,
                       tool::Reader &r);
   void post_rewrite_opcode(genop::Opcode opcode,
+                           Word *first_arg,
                            Module *m,
                            Vector<Word> &output);
   void output_exports(Module *m);
   void output_lambdas(Module *m);
   void output_selectlists(Module *m);
+
+  void emit_opcode(Vector<Word> &output, genop::Opcode op) {
+    output.push_back((Word)op);
+  }
+
+  void emit_opcode(Vector<Word> &output, genop::Opcode op, Term arg1) {
+    output.push_back((Word)op);
+    output.push_back(arg1.as_word());
+  }
+
+  void emit_opcode(Vector<Word> &output, genop::Opcode op, Term arg1, Term arg2) {
+    output.push_back((Word)op);
+    output.push_back(arg1.as_word());
+    output.push_back(arg2.as_word());
+  }
+
+  //void emit_opcode(Vector<Word> &output, genop::Opcode op, Term arg1, Term arg2, Term arg3);
   // end code parsing
 
   static Tag parse_tag(tool::Reader &r, Uint8 value, int tag=-1);

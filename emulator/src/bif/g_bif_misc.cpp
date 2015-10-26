@@ -110,7 +110,7 @@ bool is_term_smaller(const VM &vm, Term a, Term b)
   // number < atom < reference < fun < oid < pid < tuple < empty_list < list < binary
   if (Term::are_both_immed(a, b)) {
     if (Term::are_both_small(a, b)) {
-      return a.small_get_signed() < b.small_get_signed();
+      return a.small_sword() < b.small_sword();
     }
 #if FEATURE_BIGNUM
     // TODO: case when one small and one big? Compare both +-- as big
@@ -439,8 +439,8 @@ Term bif_minus_2(Process *proc, Term a, Term b)
   if (!a.is_small() || !b.is_small()) {
     return proc->bif_error(atom::BADARITH);
   }
-  SWord a_s = a.small_get_signed();
-  SWord b_s = b.small_get_signed();
+  SWord a_s = a.small_sword();
+  SWord b_s = b.small_sword();
   return Term::make_small(a_s - b_s);
 }
 
@@ -449,8 +449,8 @@ Term bif_plus_2(Process *proc, Term a, Term b)
   if (!a.is_small() || !b.is_small()) {
     return proc->bif_error(atom::BADARITH);
   }
-  SWord a_s = a.small_get_signed();
-  SWord b_s = b.small_get_signed();
+  SWord a_s = a.small_sword();
+  SWord b_s = b.small_sword();
   return Term::make_small(a_s + b_s);
 }
 
@@ -478,8 +478,8 @@ Term bif_multiply_2(Process *proc, Term a, Term b)
   if (!a.is_small() || !b.is_small()) {
     return proc->bif_error(atom::BADARITH);
   }
-  SWord a_s = a.small_get_signed();
-  SWord b_s = b.small_get_signed();
+  SWord a_s = a.small_sword();
+  SWord b_s = b.small_sword();
   return Term::make_small(a_s * b_s);
 }
 
@@ -488,15 +488,15 @@ Term bif_divide_2(Process *proc, Term a, Term b)
   if (!a.is_small() || !b.is_small()) {
     return proc->bif_error(atom::BADARITH);
   }
-  SWord a_s = a.small_get_signed();
-  SWord b_s = b.small_get_signed();
+  SWord a_s = a.small_sword();
+  SWord b_s = b.small_sword();
   return Term::make_small(a_s / b_s);
 }
 
 // Create an export value
 Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
 {
-  Word arity = arity_t.small_get_unsigned();
+  Word arity = arity_t.small_word();
 
   // Box export (1 word for boxed tag and 1 word reference to Export)
   // TODO: calculate is_bif for new object
@@ -535,7 +535,7 @@ static Term integer_to_list(Process *proc, Term n, SWord base)
 
   if (n.is_small()) {
     Std::fmt("i2l n.val=" FMT_0xHEX "\n", n.as_word());
-    SWord v = n.small_get_signed();
+    SWord v = n.small_sword();
 
     char buf[16];
     char *ptr = buf + sizeof(buf) - 1;
@@ -584,7 +584,7 @@ Term bif_integer_to_list_1(Process *proc, Term n)
 
 Term bif_integer_to_list_2(Process *proc, Term n, Term base)
 {
-  return integer_to_list(proc, n, base.small_get_signed());
+  return integer_to_list(proc, n, base.small_sword());
 }
 
 Term bif_plusplus_2(Process *proc, Term a, Term b)
@@ -647,7 +647,7 @@ Term bif_tl_1(Process *prc, Term a)
 
 Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
 {
-  MFArity mfa(m, f, arity.small_get_unsigned());
+  MFArity mfa(m, f, arity.small_word());
   //Std::fmt("erlang:function_exported "); mfa.println();
   VM &vm = proc->vm();
   void *maybe_bif = vm.find_bif(mfa);
@@ -664,7 +664,7 @@ Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
     return atom::FALSE;
   }
 
-  if (mod->find_export(FunArity(f, arity.small_get_unsigned()))) {
+  if (mod->find_export(FunArity(f, arity.small_word()))) {
     return atom::TRUE;
   }
   Std::fmt("module but no export\n");
@@ -702,7 +702,7 @@ Either<Word *, Term> apply(Process *proc, Term m, Term f, Term args,
   Word arity = 0;
   if (args.is_small()) {
     // Small unsigned in args means args already are loaded in regs
-    arity = args.small_get_unsigned();
+    arity = args.small_word();
   } else {
     // Walk down the 3rd parameter of apply (the argument list) and copy
     // the parameters to the x registers (regs[]). If the module argument

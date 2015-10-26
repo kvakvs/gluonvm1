@@ -294,7 +294,7 @@ void BeamLoader::load_line_table(tool::Reader &r0)
     Term val = parse_term(r);
     if (val.is_small()) {
       // We've got an offset for current filename
-      Word offs = val.small_get_unsigned();
+      Word offs = val.small_word();
       if (G_LIKELY(line::is_valid_loc(fname_index, offs))) {
         linenums_.line_refs.push_back(line::make_location(fname_index, offs));
         //Std::fmt("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
@@ -420,7 +420,7 @@ Term BeamLoader::parse_term(tool::Reader &r)
     return parse_alloclist(r);
   }
   else if (tag == Tag::Extended_Literal) {
-    Word val1 = parse_int_term(r, r.read_byte()).small_get_unsigned();
+    Word val1 = parse_int_term(r, r.read_byte()).small_word();
 
     if (val1 >= literals_.size()) {
       throw err::BeamLoad("bad literal index");

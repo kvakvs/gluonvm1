@@ -41,6 +41,7 @@ namespace containers {
     Iterator begin() { return data_.begin(); }
     Iterator end() { return data_.end(); }
 
+    void resize(size_t sz) { data_.resize(sz); }
     void reserve(size_t sz) { data_.reserve(sz); }
 
     void push_back(const Value &x) { data_.push_back(x); }

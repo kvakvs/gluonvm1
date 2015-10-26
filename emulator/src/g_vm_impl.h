@@ -26,7 +26,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // @doc Call the function at Label.
     //      Save the next instruction as the return address in the CP register.
     Term arity(ctx.ip[0]);
-    ctx.live = arity.small_get_unsigned();
+    ctx.live = arity.small_word();
     ctx.cp = ctx.ip + 2;
     ctx.jump(proc, Term(ctx.ip[1]));
     return ctx.consume_reduction(proc);
@@ -37,10 +37,10 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // Do not update the CP register. Before the call deallocate Deallocate
     // words of stack.
     Term arity(ctx.ip[0]);
-    ctx.live = arity.small_get_unsigned();
+    ctx.live = arity.small_word();
 
     Term n(ctx.ip[2]);
-    ctx.stack_deallocate(n.small_get_unsigned());
+    ctx.stack_deallocate(n.small_word());
     ctx.jump(proc, Term(ctx.ip[1]));
     return ctx.consume_reduction(proc);
   }
@@ -49,7 +49,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // @doc Do a tail recursive call to the function at Label.
     //      Do not update the CP register.
     Term arity(ctx.ip[0]);
-    ctx.live = arity.small_get_unsigned();
+    ctx.live = arity.small_word();
     ctx.jump(proc, Term(ctx.ip[1]));
     return ctx.consume_reduction(proc);
   }
@@ -62,7 +62,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     ctx.cp = ctx.ip + 2;
 
     Term a(ctx.ip[0]);
-    ctx.live = a.small_get_unsigned();
+    ctx.live = a.small_word();
     ctx.jump_ext(proc, boxed_mfa);
     return ctx.consume_reduction(proc);
   }
@@ -71,11 +71,11 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // @doc Deallocate and do a tail call to function of arity Arity pointed
     // to by Destination. Do not update the CP register. Deallocate Deallocate
     // words from the stack before the call.
-    Term boxed_mfa(ctx.ip[1]);
     Term a(ctx.ip[0]);
+    Term boxed_mfa(ctx.ip[1]);
     Term dealloc(ctx.ip[2]);
-    ctx.live = a.small_get_unsigned();
-    ctx.stack_deallocate(dealloc.small_get_unsigned());
+    ctx.live = a.small_word();
+    ctx.stack_deallocate(dealloc.small_word());
     ctx.jump_ext(proc, boxed_mfa);
     return ctx.consume_reduction(proc);
   }
@@ -141,7 +141,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     //      Also save the continuation pointer (CP) on the stack.
     Term stack_need(ctx.ip[0]);
     // TODO: ignore stack contents for speedup (note allocate_zero must fill NILs)
-    ctx.stack_allocate(stack_need.small_get_unsigned());
+    ctx.stack_allocate(stack_need.small_word());
     ctx.ip += 2;
   }
 
@@ -152,7 +152,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     //      save Live number of X registers.
     //      Also save the continuation pointer (CP) on the stack.
     Term stack_need(ctx.ip[0]);
-    ctx.stack_allocate(stack_need.small_get_unsigned());
+    ctx.stack_allocate(stack_need.small_word());
     ctx.ip += 3;
   }
 
@@ -172,7 +172,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // of live X registers. Clear the new stack words. (By writing NIL.) Also
     // save the continuation pointer (CP) on the stack.
     Term stack_need(ctx.ip[0]);
-    ctx.stack_allocate(stack_need.small_get_unsigned());
+    ctx.stack_allocate(stack_need.small_word());
     ctx.ip += 3;
   }
 
@@ -195,7 +195,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // @doc  Restore the continuation pointer (CP) from the stack and deallocate
     //       N+1 words from the stack (the + 1 is for the CP).
     Term n(ctx.ip[0]);
-    ctx.stack_deallocate(n.small_get_unsigned());
+    ctx.stack_deallocate(n.small_word());
     ctx.ip++;
   }
   inline WantSchedule opcode_return(Process *proc, VMRuntimeContext &ctx) { // opcode: 19
@@ -480,7 +480,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     DEREF(t);
     Term t_arity(ctx.ip[2]);
     DEREF(t_arity);
-    if (!t.is_tuple() || t.tuple_get_arity() != t_arity.small_get_unsigned()) {
+    if (!t.is_tuple() || t.tuple_get_arity() != t_arity.small_word()) {
       return ctx.jump(proc, Term(ctx.ip[0]));
     }
     ctx.ip += 3;
@@ -561,7 +561,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     DEREF(src);
     Term t_el(ctx.ip[1]);
     DEREF(t_el);
-    Word el = t_el.small_get_unsigned();
+    Word el = t_el.small_word();
     G_ASSERT(el >= 0 && el < src.tuple_get_arity());
     ctx.move(src.tuple_get_element(el), Term(ctx.ip[2]));
     ctx.ip += 3;
@@ -588,7 +588,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     Term dst(ctx.ip[1]);
     ctx.ip += 2;
 
-    Word arity = t_arity.small_get_unsigned();
+    Word arity = t_arity.small_word();
     if (G_UNLIKELY(arity == 0)) {
       ctx.move(Term::make_zero_tuple(), dst);
       return;
@@ -607,7 +607,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
       index++;
     } while (index < arity);
 
-    ctx.move(Term::make_tuple(cells, t_arity.small_get_unsigned()), dst);
+    ctx.move(Term::make_tuple(cells, t_arity.small_word()), dst);
   }
 //  inline void opcode_put(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 71
 //  }
@@ -628,7 +628,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     Term t_arity(ctx.ip[0]);
     G_ASSERT(t_arity.is_small());
 
-    Word arity = t_arity.small_get_unsigned();
+    Word arity = t_arity.small_word();
 
     Term fun(ctx.regs[arity]);
     if (fun.is_boxed_fun()) {
@@ -687,7 +687,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // Do a tail recursive call to the function at Label. Do not update CP.
     Term boxed_mfa(ctx.ip[1]);
     Term a(ctx.ip[0]);
-    ctx.live = a.small_get_unsigned();
+    ctx.live = a.small_word();
     ctx.jump_ext(proc, boxed_mfa);
     return ctx.consume_reduction(proc);
   }
@@ -779,7 +779,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
                                    VMRuntimeContext &ctx) { // opcode: 112
     // @spec apply Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
     Term arity_as_term(ctx.ip[0]);
-    Word arity = arity_as_term.small_get_unsigned();
+    Word arity = arity_as_term.small_word();
     Term mod = ctx.regs[arity];
     Term fun = ctx.regs[arity+1];
 
@@ -804,7 +804,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
                                         VMRuntimeContext &ctx) { // opcode: 113
     // @spec apply_last _ Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
     Term arity_as_term(ctx.ip[0]);
-    Word arity = arity_as_term.small_get_unsigned();
+    Word arity = arity_as_term.small_word();
     Term mod = ctx.regs[arity];
     Term fun = ctx.regs[arity+1];
 
@@ -850,13 +850,13 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     if (arg1.is_boxed_fun()) {
       // check arity
       BoxedFun *bf = arg1.boxed_get_ptr<BoxedFun>();
-      if (arity.small_get_unsigned() + bf->get_num_free() != bf->get_arity()) {
+      if (arity.small_word() + bf->get_num_free() != bf->get_arity()) {
         return ctx.jump(proc, Term(ctx.ip[0]));
       }
     } else if (arg1.is_boxed_export()) {
       // check arity
       Export *ex = arg1.boxed_get_ptr<Export>();
-      if (arity.small_get_unsigned() != ex->mfa.arity) {
+      if (arity.small_word() != ex->mfa.arity) {
         return ctx.jump(proc, Term(ctx.ip[0]));
       }
     } else {
@@ -951,7 +951,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // @doc Reduce the stack usage by N words, keeping the CP on the top.
     Term n(ctx.ip[0]);
     auto masq_cp = ctx.stack().pop();
-    ctx.stack().drop_n(n.small_get_unsigned());
+    ctx.stack().drop_n(n.small_word());
     ctx.stack().push(masq_cp);
     ctx.ip += 2;
   }

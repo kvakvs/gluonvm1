@@ -62,7 +62,7 @@ Word Term::cons_to_array(Term *arr, Word limit)
 
 bool Term::is_cons_printable_element(Term el) {
   if (!el.is_small()) return false;
-  Word c = el.small_get_unsigned();
+  Word c = el.small_word();
   return (c >= ' ' && c <= 127);
 }
 
@@ -82,14 +82,14 @@ void Term::print(const VM &vm) const
     if (is_cons_printable()) {
       // list is printable - print quotes and every character except tail
       Std::fmt("\"");
-      Word c = (Uint8)cons_head().small_get_unsigned();
+      Word c = (Uint8)cons_head().small_word();
       if (does_char_require_quoting(c)) {
         Std::fmt("\\");
       }
       Std::fmt("%c", (Uint8)c);
       Term item = cons_tail();
       while (item.is_cons()) {
-        c = item.cons_head().small_get_unsigned();
+        c = item.cons_head().small_word();
         if (does_char_require_quoting(c)) {
           Std::fmt("\\");
         }
@@ -171,7 +171,7 @@ void Term::print(const VM &vm) const
     Std::fmt("'%s'", atom_str(vm).c_str());
   }
   else if (is_small()) {
-    Std::fmt(FMT_SWORD, small_get_signed());
+    Std::fmt(FMT_SWORD, small_sword());
   }
   else if (is_catch()) {
     Std::fmt("CATCH(" FMT_0xHEX ")", catch_val());
