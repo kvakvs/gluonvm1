@@ -25,7 +25,7 @@ namespace mem {
     static Blk allocate(size_t bytes);
 
 //    template <typename T>
-//    static T *alloc(word_t count) {
+//    static T *alloc(Word count) {
 //      // NOTE: this won't call no constructor
 //      return reinterpret_cast<T*>(alloc_bytes(count * sizeof(T)));
 //    }

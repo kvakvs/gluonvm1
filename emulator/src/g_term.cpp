@@ -3,7 +3,7 @@
 #include "g_heap.h"
 #include "g_code_server.h"
 #include "g_fun.h"
-#include "g_module.h" // for export_t class
+#include "g_module.h" // for Export class
 #include "g_term_helpers.h"
 #include "g_heap.h"
 #include "g_binary.h"
@@ -13,14 +13,14 @@
 
 namespace gluon {
 
-word_t term::g_zero_sized_tuple = 0;
+Word term::g_zero_sized_tuple = 0;
 
 #if FEATURE_MAPS
-word_t term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
+Word term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
 #endif
 
 Term Term::allocate_cons(proc::Heap *heap, Term head, Term tail) {
-  Term *d = (Term *)heap->allocate<word_t>(layout::CONS::BOX_SIZE);
+  Term *d = (Term *)heap->allocate<Word>(layout::CONS::BOX_SIZE);
   layout::CONS::head(d) = head;
   layout::CONS::tail(d) = tail;
   return make_cons(d);
@@ -39,7 +39,7 @@ bool Term::is_cons_printable() const
   return item.is_nil();
 }
 
-word_t Term::cons_to_array(Term *arr, word_t limit)
+Word Term::cons_to_array(Term *arr, Word limit)
 {
   if (is_nil()) {
     return 0;
@@ -49,7 +49,7 @@ word_t Term::cons_to_array(Term *arr, word_t limit)
   arr++;
 
   Term i = cons_tail();
-  word_t n = 1;
+  Word n = 1;
 
   while (n < limit && i.is_cons()) {
     // splits i into head and tail, tail is assigned to i again
@@ -62,7 +62,7 @@ word_t Term::cons_to_array(Term *arr, word_t limit)
 
 bool Term::is_cons_printable_element(Term el) {
   if (!el.is_small()) return false;
-  word_t c = el.small_get_unsigned();
+  Word c = el.small_get_unsigned();
   return (c >= ' ' && c <= 127);
 }
 
@@ -82,18 +82,18 @@ void Term::print(const VM &vm) const
     if (is_cons_printable()) {
       // list is printable - print quotes and every character except tail
       Std::fmt("\"");
-      word_t c = (u8_t)cons_head().small_get_unsigned();
+      Word c = (Uint8)cons_head().small_get_unsigned();
       if (does_char_require_quoting(c)) {
         Std::fmt("\\");
       }
-      Std::fmt("%c", (u8_t)c);
+      Std::fmt("%c", (Uint8)c);
       Term item = cons_tail();
       while (item.is_cons()) {
         c = item.cons_head().small_get_unsigned();
         if (does_char_require_quoting(c)) {
           Std::fmt("\\");
         }
-        Std::fmt("%c", (u8_t)c);
+        Std::fmt("%c", (Uint8)c);
         item = item.cons_tail();
       }
       Std::fmt("\"");
@@ -117,7 +117,7 @@ void Term::print(const VM &vm) const
   else if (is_tuple()) {
     auto arity = tuple_get_arity();
     Std::fmt("{");
-    for (word_t n = 0; n < arity; ++n) {
+    for (Word n = 0; n < arity; ++n) {
       tuple_get_element(n).print(vm);
       if (n < arity-1) {
         Std::fmt(",");
@@ -126,9 +126,9 @@ void Term::print(const VM &vm) const
     Std::fmt("}");
   }
   else if (is_boxed()) {
-    auto p = boxed_get_ptr<word_t>();
-    if (term_tag::is_cp<word_t>(p)) {
-      word_t *cp = term_tag::untag_cp<word_t>(p);
+    auto p = boxed_get_ptr<Word>();
+    if (term_tag::is_cp<Word>(p)) {
+      Word *cp = term_tag::untag_cp<Word>(p);
       Std::fmt("#CP<");
       vm.codeserver().print_mfa(cp);
       Std::fmt(">");
@@ -136,9 +136,9 @@ void Term::print(const VM &vm) const
     }
     if (is_boxed_fun()) {
       Std::fmt("#Fun<");
-      auto bf = boxed_get_ptr<boxed_fun_t>();
-//      if ((word_t)(bf->fun_entry) < 0x1000) {
-//        Std::fmt(FMT_0xHEX, (word_t)bf->fun_entry);
+      auto bf = boxed_get_ptr<BoxedFun>();
+//      if ((Word)(bf->fun_entry) < 0x1000) {
+//        Std::fmt(FMT_0xHEX, (Word)bf->fun_entry);
 //      } else {
         vm.codeserver().print_mfa(bf->fun_entry->code);
 //      }
@@ -147,7 +147,7 @@ void Term::print(const VM &vm) const
     }
     if (is_boxed_export()) {
       Std::fmt("#ExportedFun<");
-      auto ex = boxed_get_ptr<export_t>();
+      auto ex = boxed_get_ptr<Export>();
       ex->mfa.print(vm);
       Std::fmt(";");
       if (ex->is_bif()) {
@@ -158,7 +158,7 @@ void Term::print(const VM &vm) const
       Std::fmt(">");
       return;
     }    Std::fmt("#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
-    vm.codeserver().print_mfa(boxed_get_ptr<word_t>());
+    vm.codeserver().print_mfa(boxed_get_ptr<Word>());
     Std::fmt(">");
   }
   else if (is_nil()) {
@@ -201,16 +201,16 @@ void Term::println(const VM &vm) const
   Std::puts();
 }
 
-Term Term::make_binary(VM &vm, proc::Heap *h, word_t bytes)
+Term Term::make_binary(VM &vm, proc::Heap *h, Word bytes)
 {
   // This many bytes fits boxed subtag value. Going larger means storing size
   // elsewhere or losing significant bit from the size
   G_ASSERT(bytes < term_tag::BOXED_MAX_SUBTAG_VALUE);
 
   if (bytes <= bin::heapbin_limit) {
-    word_t *box = h->allocate<word_t>(layout::PROC_BIN::box_size(bytes));
+    Word *box = h->allocate<Word>(layout::PROC_BIN::box_size(bytes));
     layout::PROC_BIN::set_byte_size(box, bytes);
-    return Term(term_tag::BoxedProcBin::create_from_ptr<word_t>(box));
+    return Term(term_tag::BoxedProcBin::create_from_ptr<Word>(box));
   } else {
     // Large bin, with boxed refcount and pointer
     erts::Heap *binheap = vm.get_heap(VM::HEAP_LARGE_BINARY);
@@ -222,12 +222,12 @@ Term Term::make_binary(VM &vm, proc::Heap *h, word_t bytes)
   }
 }
 
-void mfarity_t::println(const VM &vm) {
+void MFArity::println(const VM &vm) {
   print(vm);
   Std::puts();
 }
 
-void mfarity_t::print(const VM &vm)
+void MFArity::print(const VM &vm)
 {
   mod.print(vm);
   Std::fmt(":");
@@ -235,11 +235,11 @@ void mfarity_t::print(const VM &vm)
   Std::fmt("/" FMT_UWORD, arity);
 }
 
-word_t layout::PROC_BIN::box_size(word_t bytes) {
+Word layout::PROC_BIN::box_size(Word bytes) {
   return calculate_word_size(bytes) + BOX_EXTRA;
 }
 
-word_t layout::HEAP_BIN::box_size(word_t bytes) {
+Word layout::HEAP_BIN::box_size(Word bytes) {
   return calculate_word_size(bytes) + FAR_HEAP_EXTRA;
 }
 

@@ -13,13 +13,13 @@ namespace bif {
 bool is_term_smaller(const VM &vm, Term a, Term b);
 bool are_terms_equal(const VM &vm, Term a, Term b, bool exact);
 // Returns pair of {length, proper=true/improper=false}
-Pair<word_t, bool> length(Term list);
+Pair<Word, bool> length(Term list);
 
 // Attempts to call m:f with args
-// Returns word_t * if code execution should jump there, or a Term if result is
+// Returns Word * if code execution should jump there, or a Term if result is
 // known immediately. Pass small integer (arity) in args if regs already
 // contained args in the first 'arity' cells.
-Either<word_t *, Term> apply(Process *proc, Term m, Term f, Term args,
+Either<Word *, Term> apply(Process *proc, Term m, Term f, Term args,
                              Term *regs);
 
 Term bif_apply_2(Process *, Term funobject, Term args);

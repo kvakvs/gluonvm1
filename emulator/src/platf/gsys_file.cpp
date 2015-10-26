@@ -42,19 +42,19 @@ File::~File() {
   }
 }
 
-word_t File::size() {
+Word File::size() {
   auto f = to_file(m_handle);
   //auto old_pos = ::ftell(f);
 
   ::fseek(f, 0, SEEK_END);
-  return static_cast<word_t>(::ftell(f));
+  return static_cast<Word>(::ftell(f));
 }
 
-void File::seek(word_t offset) {
+void File::seek(Word offset) {
   ::fseek(to_file(m_handle), (ssize_t)offset, SEEK_SET);
 }
 
-word_t File::read(u8_t *dst, word_t bytes) {
+Word File::read(Uint8 *dst, Word bytes) {
   auto result = ::fread(dst, 1, bytes, to_file(m_handle));
   return result;
 }

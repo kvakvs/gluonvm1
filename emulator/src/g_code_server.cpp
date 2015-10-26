@@ -15,7 +15,7 @@ namespace code {
 //}
 
 void Server::load_module(Process *proc,
-                        Term name_atom, array_view<const u8_t> data)
+                        Term name_atom, ArrayView<const Uint8> data)
 {
   // TODO: module versions for hot code loading
   // TODO: free if module already existed, check module usage by processes
@@ -45,14 +45,14 @@ void Server::load_module(Process *proc, Term name)
       fs::File f;
       f.open(path);
 
-      word_t  size = f.size();
+      Word  size = f.size();
       erts::Heap *heap = vm_.get_heap(VM::HEAP_CODE);
-      u8_t *tmp_buffer = heap->allocate<u8_t>(size);
+      Uint8 *tmp_buffer = heap->allocate<Uint8>(size);
       f.seek(0);
       f.read(tmp_buffer, size);
 
       Std::fmt("Loading BEAM %s\n", path.c_str());
-      load_module(proc, name, array_view<const u8_t>(tmp_buffer, size));
+      load_module(proc, name, ArrayView<const Uint8>(tmp_buffer, size));
       heap->deallocate(tmp_buffer);
       return;
     }
@@ -60,11 +60,11 @@ void Server::load_module(Process *proc, Term name)
   throw err::code_server_error("module not found");
 }
 
-Module *Server::find_module(Process *proc, Term m, find_opt_t load)
+Module *Server::find_module(Process *proc, Term m, FindModule load)
 {
   auto result = modules_.find_ref(m, nullptr);
   if (!result) {
-    if (load == code::FIND_EXISTING) {
+    if (load == code::FindModule::FindExisting) {
       throw err::code_server_error("function not found");
     } else {
       load_module(proc, m);
@@ -84,10 +84,10 @@ void Server::path_prepend(const Str &p)
   search_path_.push_front(p);
 }
 
-bool Server::print_mfa(word_t *ptr) const {
+bool Server::print_mfa(Word *ptr) const {
   auto mfa = find_mfa_from_code(ptr);
   if (mfa.mod.is_non_value()) {
-    Std::fmt(FMT_0xHEX, (word_t)ptr);
+    Std::fmt(FMT_0xHEX, (Word)ptr);
     return false;
   }
   Std::fmt("%s:%s/" FMT_UWORD,
@@ -95,17 +95,17 @@ bool Server::print_mfa(word_t *ptr) const {
   return true;
 }
 
-mfarity_t Server::find_mfa_from_code(word_t *ptr) const
+MFArity Server::find_mfa_from_code(Word *ptr) const
 {
   Module *m = mod_index_.find(ptr);
   if (!m) {
-    return mfarity_t();
+    return MFArity();
   }
   auto fa = m->find_fun_arity(ptr);
-  return mfarity_t(m->get_name(), fa.fun, fa.arity);
+  return MFArity(m->get_name(), fa.fun, fa.arity);
 }
 
-export_t *Server::find_mfa(const mfarity_t &mfa, Module **out_mod) const
+Export *Server::find_mfa(const MFArity &mfa, Module **out_mod) const
 {
   auto result = modules_.find_ref(mfa.mod, nullptr);
   if (!result) {

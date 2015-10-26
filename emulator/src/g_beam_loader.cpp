@@ -18,7 +18,7 @@ namespace gluon {
 
 Module *code::Server::load_module_internal(proc::Heap *heap,
                                            Term expected_name,
-                                           array_view<const u8_t> data)
+                                           ArrayView<const Uint8> data)
 {
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(data);
@@ -31,7 +31,7 @@ Module *code::Server::load_module_internal(proc::Heap *heap,
     throw err::beam_load_error("not iff container");
   }
 
-  word_t file_length = r.read_big_u32();
+  Word file_length = r.read_big_u32();
   r.assert_remaining_at_least(file_length);
 
   Str beam_header = r.read_string(4);
@@ -87,7 +87,7 @@ void BeamLoader::load_atom_table(tool::Reader &r0, Term expected_name)
 
   auto tab_sz = r.read_big_u32();
   atoms_.reserve(tab_sz);
-  for (word_t i = 0; i < tab_sz; ++i) {
+  for (Word i = 0; i < tab_sz; ++i) {
     auto atom_sz = r.read_byte();
     atoms_.push_back(r.read_string(atom_sz));
 //    G_LOG("atom: %s index " FMT_UWORD "\n", m_atoms.back().c_str(), m_atoms.size()-1);
@@ -115,10 +115,10 @@ void BeamLoader::load_lambda_table(tool::Reader &r0) {
   tool::Reader r = r0.clone(chunk_size);
 
   G_ASSERT(atoms_.size() > 0);
-  word_t count = r.read_big_u32();
+  Word count = r.read_big_u32();
   Term mod = vm_.to_atom(atoms_[0]);
 
-  for (word_t i = 0; i < count; ++i)
+  for (Word i = 0; i < count; ++i)
   //while (r.get_remaining_count() > 6 * sizeof(u32_t))
   {
     auto fun_atom_i = r.read_big_u32();
@@ -133,9 +133,9 @@ void BeamLoader::load_lambda_table(tool::Reader &r0) {
     }
     const Str &f_str = atom_tab_index_to_str(fun_atom_i);
 
-    fun_entry_t fe;
-    fe.mfa = mfarity_t(mod, vm_.to_atom(f_str), arity);
-    fe.uniq[0] = (u32_t)offset; // use as temp storage, cast down to u32
+    FunEntry fe;
+    fe.mfa = MFArity(mod, vm_.to_atom(f_str), arity);
+    fe.uniq[0] = (Uint32)offset; // use as temp storage, cast down to u32
     fe.uniq[1] = fe.uniq[2] = fe.uniq[3] = 0;
     fe.old_uniq = ouniq;
     fe.old_index = fe.index = index;
@@ -158,7 +158,7 @@ void BeamLoader::load_export_table(tool::Reader &r0) {
 
   auto count = r.read_big_u32();
 
-  for (word_t i = 0; i < count; ++i) {
+  for (Word i = 0; i < count; ++i) {
     auto f_i   = r.read_big_u32();
     if (f_i > atoms_.size()) {
       throw err::beam_load_error("expt: atom index too big");
@@ -169,7 +169,7 @@ void BeamLoader::load_export_table(tool::Reader &r0) {
     auto label = r.read_big_u32();
 //    Std::fmt("load export %s/" FMT_UWORD " @label %zu\n", f.atom_str().c_str(), arity, label);
 
-    exp_indexes_[fun_arity_t(f, arity)] = LabelIndex(label);
+    exp_indexes_[FunArity(f, arity)] = LabelIndex(label);
   }
 
   r0.advance_align<4>(chunk_size);
@@ -183,13 +183,13 @@ void BeamLoader::load_import_table(tool::Reader &r0)
 
   // Read triplets u32 module_atom_id; u32 method_atom_id; u32 arity
   imports_.reserve(count);
-  for (word_t i = 0; i < count; ++i) {
+  for (Word i = 0; i < count; ++i) {
     Str ms = atom_tab_index_to_str(r.read_big_u32());
     Str fs = atom_tab_index_to_str(r.read_big_u32());
     Term m = vm_.to_atom(ms);
     Term f = vm_.to_atom(fs);
-    word_t arity = r.read_big_u32();
-    imports_.push_back(mfarity_t(m, f, arity));
+    Word arity = r.read_big_u32();
+    imports_.push_back(MFArity(m, f, arity));
   }
 
   r0.advance_align<4>(chunk_size);
@@ -214,7 +214,7 @@ void BeamLoader::load_code(tool::Reader &r0) {
   }
 
   // Just read code here, parse later
-  code_ = array_view<const u8_t>(r.get_ptr(), chunk_size);
+  code_ = ArrayView<const Uint8>(r.get_ptr(), chunk_size);
 
   r0.advance_align<4>(chunk_size);
 }
@@ -226,23 +226,23 @@ void BeamLoader::load_literal_table(tool::Reader &r0)
 
   auto uncompressed_size = r1.read_big_u32();
   Term compressed = Term::make_binary(vm_, heap_, chunk_size);
-  r1.read_bytes(compressed.binary_get<u8_t>(), chunk_size);
+  r1.read_bytes(compressed.binary_get<Uint8>(), chunk_size);
 
   Term uncompressed = Term::make_binary(vm_, heap_, uncompressed_size);
-  auto result = mz_uncompress(uncompressed.binary_get<u8_t>(), &uncompressed_size,
-                              compressed.binary_get<u8_t>(), chunk_size);
+  auto result = mz_uncompress(uncompressed.binary_get<Uint8>(), &uncompressed_size,
+                              compressed.binary_get<Uint8>(), chunk_size);
   if (result != MZ_OK) {
     throw err::beam_load_error("beam LitT error");
   }
 
   tool::Reader r(
-        array_view<const u8_t>(uncompressed.binary_get<u8_t>(), uncompressed_size)
+        ArrayView<const Uint8>(uncompressed.binary_get<Uint8>(), uncompressed_size)
         );
   auto count = r.read_big_u32();
 
   literals_.reserve(count);
 
-  for (word_t i = 0; i < count; ++i) {
+  for (Word i = 0; i < count; ++i) {
     /*auto lit_sz =*/ r.read_big_u32();
 
     auto lit = etf::read_ext_term_with_marker(vm_, heap_, r);
@@ -277,7 +277,7 @@ void BeamLoader::load_line_table(tool::Reader &r0)
   }
 
   r.advance(4); // flags, ignore
-  word_t line_instr_count = r.read_big_u32();
+  Word line_instr_count = r.read_big_u32();
   linenums_.line_instr.reserve(line_instr_count);
 
   linenums_.num_line_refs      = r.read_big_u32();
@@ -287,14 +287,14 @@ void BeamLoader::load_line_table(tool::Reader &r0)
   // invalid location goes as index 0
   linenums_.line_refs.push_back(line::invalid_location);
 
-  word_t fname_index = 0;
+  Word fname_index = 0;
   // First elements of ref table contain only offsets assuming they are for
   // file #0
-  for (word_t i = 0; i < linenums_.num_line_refs; ++i) {
+  for (Word i = 0; i < linenums_.num_line_refs; ++i) {
     Term val = parse_term(r);
     if (val.is_small()) {
       // We've got an offset for current filename
-      word_t offs = val.small_get_unsigned();
+      Word offs = val.small_get_unsigned();
       if (G_LIKELY(line::is_valid_loc(fname_index, offs))) {
         linenums_.line_refs.push_back(line::make_location(fname_index, offs));
         //Std::fmt("line info: offs=" FMT_UWORD " f=" FMT_UWORD "\n", offs, fname_index);
@@ -304,7 +304,7 @@ void BeamLoader::load_line_table(tool::Reader &r0)
       }
     } else if (val.is_atom()) {
       // reference to another file
-      word_t a_id = val.atom_val();
+      Word a_id = val.atom_val();
       if (a_id > linenums_.num_filenames) {
         throw err::beam_load_error("line info: bad file index");
       }
@@ -313,8 +313,8 @@ void BeamLoader::load_line_table(tool::Reader &r0)
   }
 
   // filenames[] = u16 length + characters
-  for (word_t i = 0; i < linenums_.num_filenames; ++i) {
-    word_t  name_sz = r.read_big_u16();
+  for (Word i = 0; i < linenums_.num_filenames; ++i) {
+    Word  name_sz = r.read_big_u16();
     Str     name    = r.read_string(name_sz);
     Std::fmt("line info: file %s\n", name.c_str());
     linenums_.filenames.push_back(vm_.to_atom(name));
@@ -325,7 +325,7 @@ void BeamLoader::load_line_table(tool::Reader &r0)
 
 Term BeamLoader::parse_term(tool::Reader &r)
 {
-  u8_t first  = r.read_byte();
+  Uint8 first  = r.read_byte();
   Tag tag     = parse_tag(r, first);
 
   //
@@ -335,10 +335,10 @@ Term BeamLoader::parse_term(tool::Reader &r)
     auto psi_result = parse_small_int(r, first);
     G_ASSERT(psi_result.second == false); // assert there's no overflow
     // TODO: on overflow read bigint or something
-    word_t val = (word_t)psi_result.first;
+    Word val = (Word)psi_result.first;
 
     if (tag == Tag::Integer || tag == Tag::Literal) {
-      return Term::make_small((sword_t)val);
+      return Term::make_small((SWord)val);
     }
     if (tag == Tag::Atom) {
       if (val == 0) {
@@ -384,11 +384,11 @@ Term BeamLoader::parse_term(tool::Reader &r)
   else if (tag == Tag::Extended_List) {
     auto psi = parse_small_int(r, r.read_byte());
     G_ASSERT(psi.second == false); // assert no overflow
-    word_t length = (word_t)psi.first;
+    Word length = (Word)psi.first;
     length /= 2;
     term::TupleBuilder tb(heap_, length * 2);
 
-    for (word_t i = 0; i < length; ++i) {
+    for (Word i = 0; i < length; ++i) {
       Term base = parse_term(r);
       tb.add(base);
 
@@ -420,7 +420,7 @@ Term BeamLoader::parse_term(tool::Reader &r)
     return parse_alloclist(r);
   }
   else if (tag == Tag::Extended_Literal) {
-    word_t val1 = parse_int_term(r, r.read_byte()).small_get_unsigned();
+    Word val1 = parse_int_term(r, r.read_byte()).small_get_unsigned();
 
     if (val1 >= literals_.size()) {
       throw err::beam_load_error("bad literal index");
@@ -430,23 +430,23 @@ Term BeamLoader::parse_term(tool::Reader &r)
   throw err::beam_load_error("bad extended tag");
 }
 
-BeamLoader::Tag BeamLoader::parse_tag(tool::Reader &r, u8_t value, int tag) {
+BeamLoader::Tag BeamLoader::parse_tag(tool::Reader &r, Uint8 value, int tag) {
   if (tag == -1) {
     tag = value;
   }
-  if ((tag & 0x7) == (u8_t)Tag::Extended) {
-    return (Tag)(((u8_t)tag >> 4) + (u8_t)Tag::Extended_Base);
+  if ((tag & 0x7) == (Uint8)Tag::Extended) {
+    return (Tag)(((Uint8)tag >> 4) + (Uint8)Tag::Extended_Base);
   }
   return (Tag)(tag & 0x7);
 }
 
-Term BeamLoader::parse_int_term(tool::Reader &r, u8_t first) {
+Term BeamLoader::parse_int_term(tool::Reader &r, Uint8 first) {
   Tag tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
   return create_int_term(r, first);
 }
 
-Term BeamLoader::create_int_term(tool::Reader &r, u8_t tag)
+Term BeamLoader::create_int_term(tool::Reader &r, Uint8 tag)
 {
   if (tag & 0x08) {  // xxxx1xxx
     if (tag & 0x10) {  // xxx11xxx - extended
@@ -460,7 +460,7 @@ Term BeamLoader::create_int_term(tool::Reader &r, u8_t tag)
       }
     } else {
       auto w = r.read_byte();
-      Term result = Term::make_small(((sword_t)(tag & 0xe0) << 3) | w);
+      Term result = Term::make_small(((SWord)(tag & 0xe0) << 3) | w);
       return result;
     }
   } else {
@@ -468,29 +468,29 @@ Term BeamLoader::create_int_term(tool::Reader &r, u8_t tag)
   }
 }
 
-Pair<sword_t, bool>
-BeamLoader::parse_small_int(tool::Reader &r, u8_t first) {
+Pair<SWord, bool>
+BeamLoader::parse_small_int(tool::Reader &r, Uint8 first) {
   Tag tag = parse_tag(r, first);
   G_ASSERT(tag < Tag::Extended_Base);
   return parse_create_small_int(r, first);
 }
 
 // Returns pair<result, overflow>
-Pair<sword_t, bool>
-BeamLoader::read_signed_word(tool::Reader &r, word_t count) {
-  if (count == sizeof(word_t) + 1) {
+Pair<SWord, bool>
+BeamLoader::read_signed_word(tool::Reader &r, Word count) {
+  if (count == sizeof(Word) + 1) {
     // The encoded value has one more byte than an size_t. It will still fit
     // in an size_t if the most significant byte is 0.
-    u8_t msb = r.read_byte();
-    sword_t result = r.read_big_s(4);
+    Uint8 msb = r.read_byte();
+    SWord result = r.read_big_s(4);
     return std::make_pair(result, msb == 0); // caller decides if overflow is ok
   }
-  if (count == sizeof(word_t)) {
+  if (count == sizeof(Word)) {
     // The value must be positive (or the encoded value would have been
     // one byte longer)
     return std::make_pair(r.read_big_s(4), false);
   }
-  if (count < sizeof(word_t)) {
+  if (count < sizeof(Word)) {
     // If the sign bit is set, the value is negative (not allowed).
     bool overflow = (r.peek_byte() & ((size_t)1 << (count * 8 - 1)));
     return std::make_pair(r.read_big_s(count), overflow);
@@ -498,15 +498,15 @@ BeamLoader::read_signed_word(tool::Reader &r, word_t count) {
   G_FAIL("oops");
 }
 
-Pair<sword_t, bool>
-BeamLoader::parse_create_small_int(tool::Reader &r, u8_t tag)
+Pair<SWord, bool>
+BeamLoader::parse_create_small_int(tool::Reader &r, Uint8 tag)
 {
   if (tag & 0x08) {  // xxxx1xxx
     if (tag & 0x10) {  // xxx11xxx - extended
-      word_t len_code = tag >> 5;
+      Word len_code = tag >> 5;
       if (len_code < 7) {
-        word_t count = len_code + 2;
-        G_ASSERT(count <= sizeof(word_t));
+        Word count = len_code + 2;
+        G_ASSERT(count <= sizeof(Word));
         return read_signed_word(r, count);
       }
       // Read int which will encode length - we skip it here, it is too big
@@ -514,13 +514,13 @@ BeamLoader::parse_create_small_int(tool::Reader &r, u8_t tag)
       return std::make_pair(0L, true);
     } else {
       auto w = r.read_byte();
-      return std::make_pair(((sword_t)(tag & 0xe0) << 3) | w, false);
+      return std::make_pair(((SWord)(tag & 0xe0) << 3) | w, false);
     }
   }
   return std::make_pair(tag >> 4, false);
 }
 
-Term BeamLoader::parse_bigint(tool::Reader &, word_t) {
+Term BeamLoader::parse_bigint(tool::Reader &, Word) {
 #if FEATURE_BIGNUM
 #error "todo load bignum from reader"
 #else
@@ -539,10 +539,10 @@ Term BeamLoader::parse_float(tool::Reader &) {
 Term BeamLoader::parse_alloclist(tool::Reader &r)
 {
 #if 0
-  word_t n;
-  word_t type1;
-  word_t val1;
-  word_t words = 0;
+  Word n;
+  Word type1;
+  Word val1;
+  Word words = 0;
 
   gt_result = get_tag_and_value(r, tag, n);
   G_RETURN_REWRAP_IF_ERROR_UNLIKELY(gt_result, Term);
@@ -585,15 +585,15 @@ Term BeamLoader::parse_alloclist(tool::Reader &r)
   G_FAIL("alloc list?");
 }
 
-void BeamLoader::resolve_labels(const Vector<word_t> &postponed_labels,
-                                       Vector<word_t> &code)
+void BeamLoader::resolve_labels(const Vector<Word> &postponed_labels,
+                                       Vector<Word> &code)
 {
-  //  word_t *base = code.data();
-  for (word_t i = 0; i < postponed_labels.size(); ++i) {
-    word_t code_index = postponed_labels[i];
+  //  Word *base = code.data();
+  for (Word i = 0; i < postponed_labels.size(); ++i) {
+    Word code_index = postponed_labels[i];
 
     // Unwrap catch-marked value
-    word_t label_index = term_tag::Catch::value(code[code_index]);
+    Word label_index = term_tag::Catch::value(code[code_index]);
 
     // New value will be small int
     Term resolved_label = Term::make_boxed_cp(labels_[label_index]);

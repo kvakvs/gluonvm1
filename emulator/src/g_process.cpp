@@ -13,14 +13,14 @@ Process::Process(VM &vm, Term gleader): vm_(vm), gleader_(gleader) {
   prio_ = atom::NORMAL;
 }
 
-void Process::jump_to_mfa(mfarity_t &mfa)
+void Process::jump_to_mfa(MFArity &mfa)
 {
   G_ASSERT(this);
 
   auto mod = vm_.codeserver().find_module(this, mfa.mod,
-                                       code::LOAD_IF_NOT_FOUND);
+                                       code::FindModule::LoadIfNotFound);
 
-  export_t *exp = mod->find_export(mfa.as_funarity());
+  Export *exp = mod->find_export(mfa.as_funarity());
   if (!exp) {
     throw err::process_error("undef function");
   }
@@ -32,12 +32,12 @@ void Process::jump_to_mfa(mfarity_t &mfa)
   }
 
   ctx_.ip = exp->code();
-  Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (word_t)ctx_.ip);
+  Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (Word)ctx_.ip);
   G_ASSERT(ctx_.ip > 0);
 }
 
 
-Term Process::spawn(mfarity_t &mfa, Term *args) {
+Term Process::spawn(MFArity &mfa, Term *args) {
   // Check that we aren't on any scheduler yet
   G_ASSERT(false == pid_.is_pid());
 
@@ -112,7 +112,7 @@ void ProcessStack::println()
     Std::fmt("; ");
   }
   if (size() > 1) {
-    for (word_t i = 0; i < size()-1; i++) {
+    for (Word i = 0; i < size()-1; i++) {
       Std::fmt("[" FMT_UWORD "]=", i);
       get_y(i).print();
       Std::fmt("; ");

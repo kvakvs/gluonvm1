@@ -9,63 +9,63 @@ namespace gluon {
 namespace containers {
 
   template <class ContainerType>
-  class stl_array {
+  class STLArray {
   private:
-    using Self = stl_array<ContainerType>;
+    using Self = STLArray<ContainerType>;
     ContainerType data_;
   public:
-    using iterator = typename ContainerType::iterator;
-    using value_type = typename ContainerType::value_type;
+    using Iterator = typename ContainerType::iterator;
+    using Value = typename ContainerType::value_type;
 
     size_t size() const { return data_.size(); }
 
-    value_type &operator [] (size_t i) {
+    Value &operator [] (size_t i) {
       G_ASSERT(i < size());
       return data_[i];
     }
-    const value_type &operator [] (size_t i) const {
+    const Value &operator [] (size_t i) const {
       G_ASSERT(i < size());
       return data_[i];
     }
 
     // Storage access
-    value_type *data() { return data_.data(); }
-    const value_type *data() const { return data_.data(); }
+    Value *data() { return data_.data(); }
+    const Value *data() const { return data_.data(); }
 
-    value_type &front() { return data_.front(); }
-    const value_type &front() const { return data_.front(); }
+    Value &front() { return data_.front(); }
+    const Value &front() const { return data_.front(); }
 
-    value_type &back() { return data_.back(); }
-    const value_type &back() const { return data_.back(); }
+    Value &back() { return data_.back(); }
+    const Value &back() const { return data_.back(); }
 
-    iterator begin() { return data_.begin(); }
-    iterator end() { return data_.end(); }
+    Iterator begin() { return data_.begin(); }
+    Iterator end() { return data_.end(); }
 
     void reserve(size_t sz) { data_.reserve(sz); }
 
-    void push_back(const value_type &x) { data_.push_back(x); }
+    void push_back(const Value &x) { data_.push_back(x); }
   };
 
 } // ns containers
 
 // A fixed array
 template <typename Val, size_t Sz>
-using Array = containers::stl_array<std::array<Val, Sz>>;
+using Array = containers::STLArray<std::array<Val, Sz>>;
 
 // A growable vector
 template <typename Val>
-using Vector = containers::stl_array<std::vector<Val>>;
+using Vector = containers::STLArray<std::vector<Val>>;
 
 // Non-owning pointer to a window of memory
 template <class T>
-class array_view
+class ArrayView
 {
 private:
   T *start_ = nullptr;
   T *end_ = nullptr;
 public:
-  array_view() {}
-  array_view(T *start, size_t sz): start_(start), end_(start+sz) {}
+  ArrayView() {}
+  ArrayView(T *start, size_t sz): start_(start), end_(start+sz) {}
 
   T *data() const { return start_; }
   T *limit() const { return end_; }

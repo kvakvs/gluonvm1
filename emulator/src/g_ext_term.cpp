@@ -16,15 +16,15 @@ Term read_atom_string_i16(VM &vm, tool::Reader &r);
 Term read_atom_string_i8(VM &vm, tool::Reader &r);
 Term read_tagged_atom_string(VM &vm, tool::Reader &r);
 Node *get_node(VM &vm, Term /*sysname*/, dist::creation_t /*creation*/);
-Term make_pid(VM &vm, Term sysname, word_t id, word_t serial, u8_t creation);
-Term read_tuple(VM &vm, proc::Heap *heap, tool::Reader &r, word_t arity);
+Term make_pid(VM &vm, Term sysname, Word id, Word serial, Uint8 creation);
+Term read_tuple(VM &vm, proc::Heap *heap, tool::Reader &r, Word arity);
 Term read_string_ext(proc::Heap *heap, tool::Reader &r);
 Term read_list_ext(VM &vm, proc::Heap *heap, tool::Reader &r);
 
 
 // Reads long atom as string and attempts to create it in atom table.
 Term read_atom_string_i16(VM &vm, tool::Reader &r) {
-  word_t sz = r.read_big_u16();
+  Word sz = r.read_big_u16();
   Str atom_str = r.read_string(sz);
   return vm.to_atom(atom_str);
 }
@@ -32,7 +32,7 @@ Term read_atom_string_i16(VM &vm, tool::Reader &r) {
 
 // Reads short atom as string and attempts to create it in atom table.
 Term read_atom_string_i8(VM &vm, tool::Reader &r) {
-  word_t sz = r.read_byte();
+  Word sz = r.read_byte();
   Str atom_str = r.read_string(sz);
   return vm.to_atom(atom_str);
 }
@@ -59,13 +59,13 @@ Node *get_node(VM &vm, Term /*sysname*/, dist::creation_t /*creation*/) {
 }
 
 
-Term make_pid(VM &vm, Term sysname, word_t id, word_t serial, u8_t creation) {
+Term make_pid(VM &vm, Term sysname, Word id, Word serial, Uint8 creation) {
   if ( !Term::is_valid_pid_id(id)
     || !Term::is_valid_pid_serial(serial)) {
     throw err::ext_term_error("bad pid");
   }
   // TODO: check valid creation
-  word_t data = Term::make_pid_data(serial, id);
+  Word data = Term::make_pid_data(serial, id);
   auto node = get_node(vm, sysname, creation);
 
   if (node == vm.dist_this_node()) {
@@ -78,15 +78,15 @@ Term make_pid(VM &vm, Term sysname, word_t id, word_t serial, u8_t creation) {
   throw err::feature_missing_error("ERL_DIST");
 }
 
-Term read_tuple(VM &vm, proc::Heap *heap, tool::Reader &r, word_t arity) {
+Term read_tuple(VM &vm, proc::Heap *heap, tool::Reader &r, Word arity) {
   if (arity == 0) {
     return Term::make_zero_tuple();
   }
 
-  Term *cells = (Term *)heap->allocate<word_t>(layout::TUPLE::box_size(arity));
+  Term *cells = (Term *)heap->allocate<Word>(layout::TUPLE::box_size(arity));
 
   // fill elements or die horribly if something does not decode
-  for (word_t i = 0; i < arity; ++i) {
+  for (Word i = 0; i < arity; ++i) {
     layout::TUPLE::element(cells, i) = read_ext_term(vm, heap, r);
   }
 
@@ -102,7 +102,7 @@ Term read_ext_term_with_marker(VM &vm, proc::Heap *heap, tool::Reader &r) {
 
 #if FEATURE_MAPS
 Term read_map(Heap *heap, tool::Reader &r) {
-  word_t arity = r.read_bigendian_i32();
+  Word arity = r.read_bigendian_i32();
 
   if (arity == 0) {
     return Term::make_zero_map();
@@ -124,7 +124,7 @@ Term read_map(Heap *heap, tool::Reader &r) {
 
 
 Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
-  word_t length = r.read_big_u16();
+  Word length = r.read_big_u16();
   if (length == 0) {
     return the_nil;
   }
@@ -132,8 +132,8 @@ Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
   Term result = the_nil;
   Term *ref = &result;
 
-  for (word_t i = 0; i < length; ++i) {
-    Term *cons = (Term *)heap->allocate<word_t>(layout::CONS::BOX_SIZE);
+  for (Word i = 0; i < length; ++i) {
+    Term *cons = (Term *)heap->allocate<Word>(layout::CONS::BOX_SIZE);
     layout::CONS::head(cons) = Term::make_small(r.read_byte());
     *ref = Term::make_cons(cons);
     ref = &layout::CONS::tail(cons);
@@ -144,13 +144,13 @@ Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
 }
 
 Term read_list_ext(VM &vm, proc::Heap *heap, tool::Reader &r) {
-  word_t length = r.read_big_u32();
+  Word length = r.read_big_u32();
 
   Term result = the_nil;
   Term *ref = &result;
 
-  for (sword_t i = (sword_t)length - 1; i >= 0; i--) {
-    Term *cons = (Term *)heap->allocate<word_t>(layout::CONS::BOX_SIZE);
+  for (SWord i = (SWord)length - 1; i >= 0; i--) {
+    Term *cons = (Term *)heap->allocate<Word>(layout::CONS::BOX_SIZE);
 
     layout::CONS::head(cons) = read_ext_term(vm, heap, r);
     *ref = Term::make_cons(cons);
@@ -162,9 +162,9 @@ Term read_list_ext(VM &vm, proc::Heap *heap, tool::Reader &r) {
 }
 
 static Term read_binary(VM &vm, proc::Heap *heap, tool::Reader &r) {
-  word_t length = r.read_big_u32();
+  Word length = r.read_big_u32();
   Term result = Term::make_binary(vm, heap, length);
-  u8_t *data = result.binary_get<u8_t>();
+  Uint8 *data = result.binary_get<Uint8>();
   r.read_bytes(data, length);
   return result;
 }
@@ -182,7 +182,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
 
   case Tag::IntegerExt: {
       // 32-bit integer
-      sword_t n = r.read_big_s(4);
+      SWord n = r.read_big_s(4);
       if (get_hardware_bits() > 32) {
         // fits into small_int if platform is x64
         return Term::make_small(n);
@@ -222,7 +222,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
   case Tag::ReferenceExt: {
       // format: N atom string, 4byte id, 1byte creation
 //      Term node = read_atom_string(r);
-//      word_t id = r.read_bigendian_i32();
+//      Word id = r.read_bigendian_i32();
 //      u8_t creation = r.read_byte();
       G_TODO("ref etf");
       G_IF_NODEBUG(break;)
@@ -231,7 +231,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
   case Tag::PortExt: {
       // format: N atom string, 4byte id, 1byte creation
 //      Term node = read_atom_string(r);
-//      word_t id = r.read_bigendian_i32();
+//      Word id = r.read_bigendian_i32();
 //      u8_t creation = r.read_byte();
       G_TODO("port etf");
       G_IF_NODEBUG(break;)
@@ -240,9 +240,9 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
   case Tag::PidExt: {
       // format: N atom string, 4byte id, 4byte serial, 1byte cre
       Term node     = read_tagged_atom_string(vm, r);
-      word_t id     = r.read_big_u32();
-      word_t serial = r.read_big_u32();
-      u8_t creation = r.read_byte();
+      Word id     = r.read_big_u32();
+      Word serial = r.read_big_u32();
+      Uint8 creation = r.read_byte();
       return make_pid(vm, node, id, serial, creation);
     } // end reference_ext
 

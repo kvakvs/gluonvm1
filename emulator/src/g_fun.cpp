@@ -6,9 +6,9 @@
 namespace gluon {
 namespace fun {
 
-boxed_fun_t *box_fun(fun_entry_t *fe, word_t *mem, Term pid, Term *frozen)
+BoxedFun *box_fun(FunEntry *fe, Word *mem, Term pid, Term *frozen)
 {
-  boxed_fun_t *bf = (boxed_fun_t *)mem;
+  BoxedFun *bf = (BoxedFun *)mem;
   // pack nfree and arity, then create_subtag() will shift it and tag as boxedfun
   bf->hdr = term_tag::BoxedFun::create_subtag((fe->num_free << 8)|fe->mfa.arity);
 
@@ -27,13 +27,13 @@ boxed_fun_t *box_fun(fun_entry_t *fe, word_t *mem, Term pid, Term *frozen)
   return bf;
 }
 
-Term box_fun(proc::Heap *heap, fun_entry_t *fe, Term pid, Term *frozen)
+Term box_fun(proc::Heap *heap, FunEntry *fe, Term pid, Term *frozen)
 {
-  word_t *p8 = heap->allocate<word_t>(
-        calculate_word_size(sizeof(boxed_fun_t) + fe->num_free)
+  Word *p8 = heap->allocate<Word>(
+        calculate_word_size(sizeof(BoxedFun) + fe->num_free)
         );
 
-  boxed_fun_t *p = fun::box_fun(fe, p8, pid, frozen);
+  BoxedFun *p = fun::box_fun(fe, p8, pid, frozen);
 
   return FunObject::make(p);
 }

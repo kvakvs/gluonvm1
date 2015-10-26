@@ -14,15 +14,15 @@ namespace code {
 #if FEATURE_CODE_RANGES
 class Range {
 public:
-  word_t  *start;
-  word_t  *end;   // one word after code end
+  Word  *start;
+  Word  *end;   // one word after code end
 
   Range(): start(nullptr), end(nullptr) {
   }
-  Range(word_t *s, word_t *e): start(s), end(e) {
+  Range(Word *s, Word *e): start(s), end(e) {
   }
 
-  inline bool contains(word_t *p) const {
+  inline bool contains(Word *p) const {
     // we only compare single pointer and store it in start, 'end' should be null
     return p >= start && p < end;
   }
@@ -32,11 +32,6 @@ public:
   }
 };
 
-//template <typename T>
-//inline bool custom_compare(const std::pair<Range, T> &a,
-//                           const std::pair<Range, T> &b) {
-//  return a.first < b.first;
-//}
 
 template <typename T>
 class Index {
@@ -52,7 +47,7 @@ public:
   }
 
   // Find code location in tree of ranges
-  T find(word_t *x) const
+  T find(Word *x) const
   {
     // I cannot into range search, something with lower_bound/upper_bound which
     // compares ranges using operator < and that is too hard
@@ -69,7 +64,7 @@ public:
 //    auto find = std::make_pair(Range(x, nullptr), T());
 //    auto i = std::lower_bound(m_ranges.begin(), m_ranges.end(), find,
 //                              custom_compare<T>);
-//    if (i->first.contains(x)) {
+//    if (i->first.contains(x)) {inline
 //      return i->second;
 //    }
 //    return T();

@@ -10,7 +10,7 @@ Heap::Heap() {
   m_stack.put_stack(m_current, DEFAULT_PROC_STACK_WORDS);
 }
 
-word_t *Heap::h_alloc(word_t n)
+Word *Heap::h_alloc(Word n)
 {
   if (m_current->get_avail() <= n) {
     auto node_size_power = std::min(m_node_count, HEAP_SEGMENT_GROWTH_MAX);
@@ -28,8 +28,8 @@ word_t *Heap::h_alloc(word_t n)
   return m_current->allocate_words(n);
 }
 
-Node *Node::create(word_t sz_words) {
-  word_t *mem = new word_t[sz_words];
+Node *Node::create(Word sz_words) {
+  Word *mem = new Word[sz_words];
   auto n = new (mem) Node;
   n->start = n->heap_start;
   n->limit = n->start + sz_words - sizeof(Node);
@@ -38,7 +38,7 @@ Node *Node::create(word_t sz_words) {
 */
 
 /*
-void Stack::put_stack(Node *stk_node, word_t size) {
+void Stack::put_stack(Node *stk_node, Word size) {
   // Assume current node in heap has memory for stack
   G_ASSERT(stk_node->get_avail() >= size);
   m_node = stk_node;
@@ -50,7 +50,7 @@ void Stack::put_stack(Node *stk_node, word_t size) {
 }
 */
 
-void Stack::push_n_nils(word_t n) {
+void Stack::push_n_nils(Word n) {
   G_ASSERT(get_avail() >= n);
   top_ -= n;
   std::fill_n(top_, n, term::NIL);
@@ -81,12 +81,12 @@ Term copy_one_term(VM &vm, Heap *dstheap, Term t) {
     return t;
   }
   if (t.is_tuple()) {
-    word_t arity   = t.tuple_get_arity();
-    Term *new_t  = (Term *)dstheap->allocate<word_t>(layout::TUPLE::box_size(arity));
+    Word arity   = t.tuple_get_arity();
+    Term *new_t  = (Term *)dstheap->allocate<Word>(layout::TUPLE::box_size(arity));
     Term *this_t = t.boxed_get_ptr<Term>();
     layout::TUPLE::arity(new_t) = layout::TUPLE::arity(this_t);
     // Deep clone
-    for (word_t i = 0; i < arity; ++i) {
+    for (Word i = 0; i < arity; ++i) {
       layout::TUPLE::element(new_t, i)
                   = copy_one_term(vm, dstheap, layout::TUPLE::element(this_t, i));
     }
@@ -94,7 +94,7 @@ Term copy_one_term(VM &vm, Heap *dstheap, Term t) {
   }
   if (t.is_boxed()) {
     if (t.is_boxed_fun()) {
-      boxed_fun_t *bf = t.boxed_get_ptr<boxed_fun_t>();
+      BoxedFun *bf = t.boxed_get_ptr<BoxedFun>();
       return fun::box_fun(dstheap, bf->fun_entry, bf->pid, bf->frozen);
     }
   }

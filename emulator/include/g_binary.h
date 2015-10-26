@@ -7,7 +7,7 @@
 namespace gluon {
 namespace bin {
 
-static constexpr word_t heapbin_limit = 64;
+static constexpr Word heapbin_limit = 64;
 
 } // ns bin
 } // ns gluon

@@ -4,30 +4,30 @@ namespace gluon {
 namespace proc {
 
 Mailbox::Mailbox() {
-  m_messages.push_back(the_non_value);
+  messages_.push_back(the_non_value);
 }
 
 void Mailbox::on_incoming(Term value) {
   // Ensure there is always trailing nonvalue in msg list
-  G_ASSERT(m_messages.back() == the_non_value);
-  m_messages.insert(--m_messages.end(), value);
-  G_ASSERT(m_messages.back() == the_non_value);
+  G_ASSERT(messages_.back() == the_non_value);
+  messages_.insert(--messages_.end(), value);
+  G_ASSERT(messages_.back() == the_non_value);
 
   // Reset save (current) position to beginning
-  m_current = m_messages.begin();
+  current_ = messages_.begin();
 }
 
 // Returns current message
 // Returns NONVALUE if current points at NONVALUE terminator (after last)
 // Position of pointer at mailbox end means we start over
 Term Mailbox::get_current() {
-  G_ASSERT(m_messages.back() == the_non_value);
+  G_ASSERT(messages_.back() == the_non_value);
 
-  if (m_current == m_messages.end()) {
-    m_current = m_messages.begin();
+  if (current_ == messages_.end()) {
+    current_ = messages_.begin();
   }
-  if (*m_current != the_non_value) {
-    return *m_current;
+  if (*current_ != the_non_value) {
+    return *current_;
   } else {
     return the_non_value;
   }
@@ -36,17 +36,17 @@ Term Mailbox::get_current() {
 // Removes current message at pointer
 void Mailbox::remove_current()
 {
-  G_ASSERT(*m_current != the_non_value);
+  G_ASSERT(*current_ != the_non_value);
 
-  if (m_current == m_messages.end() || *m_current == the_non_value) {
+  if (current_ == messages_.end() || *current_ == the_non_value) {
     G_FAIL("removing from empty msgbox cell");
     //m_mbox_ptr = m_mbox.begin();
   } else {
-    m_messages.erase(m_current);
+    messages_.erase(current_);
   }
 
   // Reset current position to begin
-  m_current = m_messages.begin();
+  current_ = messages_.begin();
 
   // TODO: Cancel timer
   // TODO: For off-heap message queue - free the message memory
@@ -55,23 +55,23 @@ void Mailbox::remove_current()
 // If pointer is not at terminator, step forward. Else set at mailbox end
 void Mailbox::step_next()
 {
-  if (*m_current != the_non_value) {
-    m_current++;
+  if (*current_ != the_non_value) {
+    current_++;
   } else {
-    m_current = m_messages.end();
+    current_ = messages_.end();
   }
 }
 
-void Mailbox::mark_position(word_t label)
+void Mailbox::mark_position(Word label)
 {
-  m_saved_mark_label = label;
-  m_saved_mark = --m_messages.end();
+  saved_mark_label_ = label;
+  saved_mark_ = --messages_.end();
 }
 
-void Mailbox::set_to_marked(word_t label)
+void Mailbox::set_to_marked(Word label)
 {
-  if (m_saved_mark_label == label) {
-    m_current = m_saved_mark;
+  if (saved_mark_label_ == label) {
+    current_ = saved_mark_;
   }
 }
 

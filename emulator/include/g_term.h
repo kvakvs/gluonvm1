@@ -8,19 +8,16 @@ namespace gluon {
 class VM;
 namespace erts { class Heap; } // g_heap.h
 namespace proc { class Heap; } // in g_heap.h
-class export_t; // in g_module.h
+class Export; // in g_module.h
 
 namespace term_tag {
 
-//  const word_t IMMED1_SIZE   = 6;
-//  const word_t IMMED1_MASK   = 0x3F;
-
   template <typename T>
-  inline static word_t compress_pointer(T *p) {
-    return reinterpret_cast<word_t>(p);
+  inline static Word compress_pointer(T *p) {
+    return reinterpret_cast<Word>(p);
   }
   template <typename T>
-  inline static T *expand_pointer(word_t p) {
+  inline static T *expand_pointer(Word p) {
     return reinterpret_cast<T *>(p);
   }
 
@@ -49,25 +46,25 @@ namespace term_tag {
   //
   // Group of operations on level 0 tag (stores tag in bits 0,1)
   //
-  const word_t PRIMARY_SIZE = 2;
+  const Word PRIMARY_SIZE = 2;
 
-  template <word_t TAG> struct LEVEL0_TAG {
-    const static word_t MASK = 0x3;
-    constexpr static bool check(word_t x) {
+  template <Word TAG> struct LEVEL0_TAG {
+    const static Word MASK = 0x3;
+    constexpr static bool check(Word x) {
       return (x & MASK) == TAG;
     }
     template <typename T>
-    inline static word_t create_from_ptr(T *p) {
+    inline static Word create_from_ptr(T *p) {
       return compress_pointer(p) | TAG;
     }
     template <typename T>
-    inline static T *expand_ptr(word_t x) {
+    inline static T *expand_ptr(Word x) {
       return expand_pointer<T>(x & ~MASK);
     }
-    constexpr static word_t create(word_t v) {
+    constexpr static Word create(Word v) {
       return (v << PRIMARY_SIZE) | TAG;
     }
-    constexpr static word_t value(word_t t) {
+    constexpr static Word value(Word t) {
       return (t >> PRIMARY_SIZE);
     }
   };
@@ -97,19 +94,19 @@ namespace term_tag {
   // Group of operations on level 1 tag (stores tag in bits 2,3,4,5 while bits
   // 0,1 contain 0x03)
   //
-  template <word_t TAG> struct LEVEL1_TAG {
-    const static word_t MASK = 0x3F;
+  template <Word TAG> struct LEVEL1_TAG {
+    const static Word MASK = 0x3F;
     // level 1 bits shifted left with IMMED1 level 0 tag together
-    const static word_t TAG_L0_L1 = (TAG << PRIMARY_SIZE) | IMMED1;
-    const static word_t L1_TAG_BITS = 6;
+    const static Word TAG_L0_L1 = (TAG << PRIMARY_SIZE) | IMMED1;
+    const static Word L1_TAG_BITS = 6;
 
-    constexpr static bool check(word_t x) {
+    constexpr static bool check(Word x) {
       return (x & MASK) == TAG_L0_L1;
     }
-    constexpr static word_t create(word_t v) {
+    constexpr static Word create(Word v) {
       return (v << L1_TAG_BITS) | TAG_L0_L1;
     }
-    constexpr static word_t value(word_t t) {
+    constexpr static Word value(Word t) {
       return t >> L1_TAG_BITS;
     }
   };
@@ -124,26 +121,26 @@ namespace term_tag {
   typedef LEVEL1_TAG<SPECIAL> Special; // includes nil,noval,rip
 
   struct Smallint {
-    const static word_t TAG           = 0x1;
-    const static word_t MASK          = 0x7;
+    const static Word TAG           = 0x1;
+    const static Word MASK          = 0x7;
 
     // level 1 bits shifted left with IMMED1 level 0 tag together
-    const static word_t TAG_L0_L1 = (TAG << PRIMARY_SIZE) | IMMED1;
-    const static word_t L1_TAG_BITS = 3;
+    const static Word TAG_L0_L1 = (TAG << PRIMARY_SIZE) | IMMED1;
+    const static Word L1_TAG_BITS = 3;
 
-    constexpr static bool check(word_t x) {
+    constexpr static bool check(Word x) {
       return (x & MASK) == TAG_L0_L1;
     }
-    constexpr static word_t create(sword_t v) {
-      return (word_t)(v << L1_TAG_BITS) | TAG_L0_L1;
+    constexpr static Word create(SWord v) {
+      return (Word)(v << L1_TAG_BITS) | TAG_L0_L1;
     }
-    constexpr static word_t create_u(word_t v) {
-      return (word_t)(v << L1_TAG_BITS) | TAG_L0_L1;
+    constexpr static Word create_u(Word v) {
+      return (Word)(v << L1_TAG_BITS) | TAG_L0_L1;
     }
-    constexpr static sword_t value(word_t t) {
-      return ((sword_t)t) >> L1_TAG_BITS;
+    constexpr static SWord value(Word t) {
+      return ((SWord)t) >> L1_TAG_BITS;
     }
-    constexpr static word_t value_u(word_t t) {
+    constexpr static Word value_u(Word t) {
       return t >> L1_TAG_BITS;
     }
   };
@@ -151,12 +148,12 @@ namespace term_tag {
   //
   // Boxed subtags
   //
-  const word_t BOXED_SUBTAG_BITS = 4;
-  const word_t BOXED_SUBTAG_MASK = 0x0F;
-  const word_t BOXED_MAX_SUBTAG_VALUE
+  const Word BOXED_SUBTAG_BITS = 4;
+  const Word BOXED_SUBTAG_MASK = 0x0F;
+  const Word BOXED_MAX_SUBTAG_VALUE
     = (1UL << (get_hardware_bits() - BOXED_SUBTAG_BITS)) - 1;
 
-  inline word_t boxed_subtag(word_t *p) {
+  inline Word boxed_subtag(Word *p) {
     return p[0] & BOXED_SUBTAG_MASK;
   }
 
@@ -180,36 +177,36 @@ namespace term_tag {
   };
 
   // Takes least 4 bits of subtag
-  static constexpr word_t get_subtag(word_t x) {
+  static constexpr Word get_subtag(Word x) {
     return x & BOXED_SUBTAG_MASK;
   }
   // Removes least 4 bits of subtag returning what's left
-  static constexpr word_t get_subtag_value(word_t x) {
+  static constexpr Word get_subtag_value(Word x) {
     return x >> BOXED_SUBTAG_BITS;
   }
   // Takes m_val from Term, converts to pointer and reads subtag (least 4 bits)
-  static inline word_t unbox_and_get_subtag(word_t x) {
-    return Boxed::expand_ptr<word_t>(x)[0] & BOXED_SUBTAG_MASK;
+  static inline Word unbox_and_get_subtag(Word x) {
+    return Boxed::expand_ptr<Word>(x)[0] & BOXED_SUBTAG_MASK;
   }
 
-  template <word_t SUBTAG> struct BOXED_SUBTAG {
+  template <Word SUBTAG> struct BOXED_SUBTAG {
     // Takes a term value, converts to pointer, checks if it was boxed, then
     // follows the pointer and checks that first word is tagged with SUBTAG
-    static inline bool unbox_and_check(word_t x) {
+    static inline bool unbox_and_check(Word x) {
       return Boxed::check(x) && unbox_and_get_subtag(x) == SUBTAG;
     }
-    static constexpr bool check_subtag(word_t x) {
+    static constexpr bool check_subtag(Word x) {
       return get_subtag(x) == SUBTAG;
     }
     template <typename T>
-    inline static word_t create_from_ptr(T *p) {
+    inline static Word create_from_ptr(T *p) {
       return Boxed::create_from_ptr<T>(p);
     }
     template <typename T>
-    inline static T *expand_ptr(word_t x) {
+    inline static T *expand_ptr(Word x) {
       return Boxed::expand_ptr<T>(x);
     }
-    static constexpr word_t create_subtag(word_t x) {
+    static constexpr Word create_subtag(Word x) {
       return (x << BOXED_SUBTAG_BITS) | SUBTAG;
     }
   };
@@ -231,44 +228,44 @@ namespace term_tag {
   typedef BOXED_SUBTAG<BOXED_MATCH_CTX> BoxedMatchCtx;
   typedef BOXED_SUBTAG<BOXED_SUB_BIN> BoxedSubBin;
 
-  const word_t CP_TAG = 1UL << (G_HARDWARE_BITS-1);
+  const Word CP_TAG = 1UL << (G_HARDWARE_BITS-1);
   // Check highest bit if it was CP pushed on stack
   template <typename T>
   inline constexpr bool is_cp(T *x) {
-    return 0 != (((word_t)x) & CP_TAG);
+    return 0 != (((Word)x) & CP_TAG);
   }
   // Set highest bit to mark CP pushed on stack
   template <typename T>
   inline T *make_cp(T *x) {
     G_ASSERT(!is_cp(x));
-    return (T *)(((word_t)x) | CP_TAG);
+    return (T *)(((Word)x) | CP_TAG);
   }
   // Check and clear highest bit to mark CP pushed on stack
   template <typename T>
   inline T *untag_cp(T *x) {
     G_ASSERT(is_cp(x));
-    return (T *)(((word_t)x) & (~CP_TAG));
+    return (T *)(((Word)x) & (~CP_TAG));
   }
 } // ns term_tag
 
 namespace temporary {
 
 #if FEATURE_FLOAT
-  const word_t DOUBLE_DATA_WORDS = sizeof(float_t)/sizeof(word_t);
-  const word_t FLOAT_SIZE_OBJECT = DOUBLE_DATA_WORDS+1;
+  const Word DOUBLE_DATA_WORDS = sizeof(Float)/sizeof(Word);
+  const Word FLOAT_SIZE_OBJECT = DOUBLE_DATA_WORDS+1;
 #endif
 
-  const word_t PORT_DATA_SIZE   = 28;
-  const word_t PORT_NUM_SIZE    = PORT_DATA_SIZE;
+  const Word PORT_DATA_SIZE   = 28;
+  const Word PORT_NUM_SIZE    = PORT_DATA_SIZE;
 } // ns temporary
 
 namespace dist {
   //
   // Creation in node specific data (pids, ports, refs)
   //
-  const word_t CRE_SIZE = 2;
+  const Word CRE_SIZE = 2;
 
-  typedef u8_t creation_t;
+  typedef Uint8 creation_t;
 
   // MAX value for the creation field in pid, port and reference
   const creation_t MAX_CREATION  = (1 << CRE_SIZE);
@@ -277,23 +274,23 @@ namespace dist {
 } // ns dist
 
 namespace term {
-  const word_t NIL = term_tag::Special::create(~0UL);
-  const word_t THE_NON_VALUE = term_tag::Special::create(0);
+  const Word NIL = term_tag::Special::create(~0UL);
+  const Word THE_NON_VALUE = term_tag::Special::create(0);
 
-  const word_t PID_ID_SIZE = 15;
-  const word_t PID_DATA_SIZE = 28;
-  const word_t PID_SER_SIZE = (PID_DATA_SIZE - PID_ID_SIZE);
+  const Word pid_id_size = 15;
+  const Word pid_data_size = 28;
+  const Word pid_serial_size = (pid_data_size - pid_id_size);
 
-  const word_t SMALL_BITS = sizeof(word_t) * 8
+  const Word small_bits = sizeof(Word) * 8
                             - term_tag::Smallint::L1_TAG_BITS;
-  const sword_t UPPER_BOUND = (1L << (SMALL_BITS-1))-1;
-  const sword_t LOWER_BOUND = -(1L << (SMALL_BITS-1));
+  const SWord small_upper_bound = (1L << (small_bits-1))-1;
+  const SWord small_lower_bound = -(1L << (small_bits-1));
 
-  extern word_t g_zero_sized_tuple;
-  extern word_t g_zero_sized_map;
+  extern Word g_zero_sized_tuple;
+  extern Word g_zero_sized_map;
 } // ns term
 
-class boxed_fun_t;
+class BoxedFun;
 
 //
 // Define layouts of boxes for boxed terms, tuple and cons
@@ -301,23 +298,23 @@ class boxed_fun_t;
 namespace layout {
   // Cons layout has no place for bit tag
   struct CONS {
-    static const word_t BOX_SIZE = 2;
+    static const Word BOX_SIZE = 2;
 
     template <typename Cell>
     static inline Cell &head(Cell *box) {
-      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      static_assert(sizeof(Cell) == sizeof(Word), "bad cell size");
       return box[0];
     }
 
     template <typename Cell>
     static inline Cell &tail(Cell *box) {
-      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      static_assert(sizeof(Cell) == sizeof(Word), "bad cell size");
       return box[1];
     }
 
     template <typename Cell>
-    static inline Cell &element(Cell *box, word_t i) {
-      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+    static inline Cell &element(Cell *box, Word i) {
+      static_assert(sizeof(Cell) == sizeof(Word), "bad cell size");
       return box[i];
     }
   };
@@ -325,19 +322,19 @@ namespace layout {
   // Tuple layout has no place for bit tag.
   // First goes arity, then elements
   struct TUPLE {
-    static const word_t BOX_EXTRA = 1;
+    static const Word BOX_EXTRA = 1;
 
-    static inline word_t box_size(word_t Arity) { return Arity + BOX_EXTRA; }
+    static inline Word box_size(Word Arity) { return Arity + BOX_EXTRA; }
 
     template <typename Cell>
     static inline Cell &arity(Cell *box) {
-      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      static_assert(sizeof(Cell) == sizeof(Word), "bad cell size");
       return box[0];
     }
 
     template <typename Cell>
-    static inline Cell &element(Cell *box, word_t i) {
-      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+    static inline Cell &element(Cell *box, Word i) {
+      static_assert(sizeof(Cell) == sizeof(Word), "bad cell size");
       return box[i+BOX_EXTRA];
     }
   };
@@ -345,25 +342,25 @@ namespace layout {
   // Process-heap (small) and heap (large) binary layout
   struct BINARY {
     // both types of binary have size in first (subtag) word
-    static inline word_t get_byte_size(word_t *p) {
+    static inline Word get_byte_size(Word *p) {
       return term_tag::get_subtag_value(p[0]);
     }
   };
 
   // Box structure
-  // word_t { size, tag_bits: 4 }; u8_t data[size]
+  // Word { size, tag_bits: 4 }; u8_t data[size]
   struct PROC_BIN {
-    static const word_t BOX_EXTRA = 1;
+    static const Word BOX_EXTRA = 1;
 
-    static inline word_t box_size(word_t bytes);
+    static inline Word box_size(Word bytes);
 
-    static inline void set_byte_size(word_t *box, word_t bytes) {
+    static inline void set_byte_size(Word *box, Word bytes) {
       box[0] = term_tag::BoxedProcBin::create_subtag(bytes);
     }
 
     template <typename Cell>
     static inline Cell *data(Cell *box) {
-      static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+      static_assert(sizeof(Cell) == sizeof(Word), "bad cell size");
       return box+1;
     }
   };
@@ -374,34 +371,34 @@ namespace layout {
     // Box only contains size and pointer to far heap with heapbin
     class HeapbinBox {
     private:
-      word_t m_size; // contains both size and boxed tag
-      word_t m_refcount;
-      word_t m_data[0];
+      Word m_size; // contains both size and boxed tag
+      Word m_refcount;
+      Word m_data[0];
 
     public:
-      inline void set_byte_size(word_t bytes) {
+      inline void set_byte_size(Word bytes) {
         m_size = term_tag::BoxedHeapBin::create_subtag(bytes);
       }
 
       template <typename Cell>
       inline Cell *data() {
-        //static_assert(sizeof(Cell) == sizeof(word_t), "bad cell size");
+        //static_assert(sizeof(Cell) == sizeof(Word), "bad cell size");
         return (Cell *)&m_data;
       }
 
-      word_t refcount() const {
+      Word refcount() const {
         return m_refcount;
       }
-      void set_refcount(word_t r) {
+      void set_refcount(Word r) {
         m_refcount = r;
       }
     };
 #pragma clang diagnostic pop
 
   struct HEAP_BIN {
-    static const word_t FAR_HEAP_EXTRA = sizeof(HeapbinBox) / sizeof(word_t);
+    static const Word FAR_HEAP_EXTRA = sizeof(HeapbinBox) / sizeof(Word);
 
-    static inline word_t box_size(word_t bytes);
+    static inline Word box_size(Word bytes);
   };
 } // ns layout
 
@@ -412,10 +409,10 @@ namespace layout {
 // and optimizations are on.
 class Term {
 private:
-  word_t value_;
+  Word value_;
 
 public:
-  explicit constexpr Term(word_t v): value_(v) {}
+  explicit constexpr Term(Word v): value_(v) {}
   constexpr Term(): value_(0) {}
   //constexpr Term(const Term &other): m_val(other.m_val) {}
 
@@ -431,16 +428,16 @@ public:
   //
   // Bit/arithmetic/comparisons
   //const
-  inline void set(word_t x) { value_ = x; }
+  inline void set(Word x) { value_ = x; }
   inline void set(const Term &t) { value_ = t.value_; }
 
-  //inline Term operator <<(word_t bits) const { return Term(m_val << bits); }
-  inline constexpr word_t as_word() const { return value_; }
+  //inline Term operator <<(Word bits) const { return Term(m_val << bits); }
+  inline constexpr Word as_word() const { return value_; }
   inline bool operator <(const Term &x) const { return value_ < x.value_; }
   inline bool operator ==(const Term &x) const { return value_ == x.value_; }
-  inline bool operator ==(const word_t x) const { return value_ == x; }
+  inline bool operator ==(const Word x) const { return value_ == x; }
   inline bool operator !=(const Term &x) const { return value_ != x.value_; }
-  inline bool operator !=(const word_t x) const { return value_ != x; }
+  inline bool operator !=(const Word x) const { return value_ != x; }
   inline bool is_nil() const { return value_ == term::NIL; }
   inline bool is_not_nil() const { return value_ != term::NIL; }
   inline bool is_non_value() const { return value_ == term::THE_NON_VALUE; }
@@ -469,10 +466,10 @@ public:
   inline bool is_boxed() const {
     return term_tag::Boxed::check(value_);
   }
-  inline word_t boxed_get_subtag() const {
+  inline Word boxed_get_subtag() const {
     G_ASSERT(is_boxed());
-    word_t *p = boxed_get_ptr<word_t>();
-    if (!p) { return (word_t)-1; }
+    Word *p = boxed_get_ptr<Word>();
+    if (!p) { return (Word)-1; }
     return term_tag::boxed_subtag(p);
   }
 
@@ -482,10 +479,10 @@ public:
   inline constexpr bool is_catch() const {
     return term_tag::Catch::check(value_);
   }
-  constexpr static Term make_catch(word_t x) {
+  constexpr static Term make_catch(Word x) {
     return Term(term_tag::Catch::create(x));
   }
-  constexpr word_t catch_val() const {
+  constexpr Word catch_val() const {
     return term_tag::Catch::value(value_);
   }
 
@@ -508,21 +505,21 @@ public:
   inline Term cons_tail() const { return cons_get_element(1); }
   // Takes head and tail at once
   inline void cons_head_tail(Term &h, Term &t) const {
-    auto p = boxed_get_ptr<word_t>();
+    auto p = boxed_get_ptr<Word>();
     h = Term(layout::CONS::head(p));
     t = Term(layout::CONS::tail(p));
   }
   bool is_cons_printable() const;
   // Unfolds list into linear array using limit as array max size
-  word_t cons_to_array(Term *arr, word_t limit);
+  Word cons_to_array(Term *arr, Word limit);
 protected:
   static bool is_cons_printable_element(Term el);
-  static bool does_char_require_quoting(word_t c) {
+  static bool does_char_require_quoting(Word c) {
     return c == '\\' || c == '\"';
   }
-  inline Term cons_get_element(word_t n) const {
+  inline Term cons_get_element(Word n) const {
     G_ASSERT(n == 0 || n == 1);
-    auto p = boxed_get_ptr<word_t>();
+    auto p = boxed_get_ptr<Word>();
     return Term(layout::CONS::element(p, n));
   }
 
@@ -530,13 +527,13 @@ public:
   //
   // Atoms
   //
-  constexpr static Term make_atom(word_t x) {
+  constexpr static Term make_atom(Word x) {
     return Term(term_tag::Atom::create(x));
   }
   constexpr bool is_atom() const {
     return term_tag::Atom::check(value_);
   }
-  constexpr word_t atom_val() const {
+  constexpr Word atom_val() const {
     return term_tag::Atom::value(value_);
   }
   Str atom_str(const VM &vm) const;
@@ -545,14 +542,14 @@ public:
   //
   // Small Integer
   //
-  static constexpr Term make_small(sword_t x) {
+  static constexpr Term make_small(SWord x) {
     return Term(term_tag::Smallint::create(x));
   }
-  static constexpr Term make_small_u(word_t x) {
+  static constexpr Term make_small_u(Word x) {
     return Term(term_tag::Smallint::create_u(x));
   }
-  static constexpr bool does_fit_into_small(sword_t n) {
-    return term::LOWER_BOUND <= n && n <= term::UPPER_BOUND;
+  static constexpr bool does_fit_into_small(SWord n) {
+    return term::small_lower_bound <= n && n <= term::small_upper_bound;
   }
   constexpr bool is_small() const {
     return term_tag::Smallint::check(value_);
@@ -565,15 +562,15 @@ public:
     return is_small();
 #endif
   }
-  inline sword_t small_get_signed() const {
+  inline SWord small_get_signed() const {
     G_ASSERT(is_small());
 //    Std::fmt("small_get_s val=" FMT_0xHEX " val=" FMT_0xHEX "\n", m_val, term_tag::Smallint::value(m_val));
     return term_tag::Smallint::value(value_);
   }
-  inline word_t small_get_unsigned() const {
+  inline Word small_get_unsigned() const {
     G_ASSERT(is_small());
-    word_t v = term_tag::Smallint::value_u(value_);
-    return (word_t)v;
+    Word v = term_tag::Smallint::value_u(value_);
+    return (Word)v;
   }
   inline static bool are_both_small(Term a, Term b) {
     return term_tag::Smallint::check(a.as_word() & b.as_word());
@@ -593,10 +590,10 @@ public:
     return (m_val & (term_tag::HEADER_MASK - term_tag::BIG_SIGN_BIT))
             == term_tag::HEADER_POS_BIG;
   }
-  inline word_t bignum_header_arity() const {
+  inline Word bignum_header_arity() const {
     return (m_val >> term_tag::HEADER_ARITY_OFFS);
   }
-  inline word_t big_arity() const {
+  inline Word big_arity() const {
     return boxed_val()->bignum_header_arity();
   }
   inline bignum::digit_t big_v() const {
@@ -607,17 +604,17 @@ public:
   //
   // Pid
   //
-  static constexpr bool is_valid_pid_id(word_t x) {
-    return x < (1 << term::PID_ID_SIZE) - 1;
+  static constexpr bool is_valid_pid_id(Word x) {
+    return x < (1 << term::pid_id_size) - 1;
   }
-  static constexpr bool is_valid_pid_serial(word_t x) {
-    return x < (1 << term::PID_SER_SIZE) - 1;
+  static constexpr bool is_valid_pid_serial(Word x) {
+    return x < (1 << term::pid_serial_size) - 1;
   }
-  static constexpr word_t make_pid_data(word_t ser, word_t num) {
-      return (word_t)(ser << term::PID_ID_SIZE | num);
+  static constexpr Word make_pid_data(Word ser, Word num) {
+      return (Word)(ser << term::pid_id_size | num);
   }
   // Data arg is created using Term::make_pid_data
-  static Term make_short_pid(word_t data) {
+  static Term make_short_pid(Word data) {
     return Term(term_tag::ShortPid::create(data));
   }
   constexpr bool is_short_pid() const {
@@ -630,7 +627,7 @@ public:
     return is_short_pid();
 #endif
   }
-  constexpr word_t short_pid_get_value() const {
+  constexpr Word short_pid_get_value() const {
     return term_tag::ShortPid::value(value_);
   }
   //
@@ -642,7 +639,7 @@ public:
   constexpr bool is_port() const {
     return is_short_port() || term_tag::BoxedPort::unbox_and_check(value_);
   }
-  constexpr word_t short_port_get_value() const {
+  constexpr Word short_port_get_value() const {
     return term_tag::ShortPort::value(value_);
   }
 
@@ -653,8 +650,8 @@ public:
     return Term(term_tag::Tuple::create_from_ptr(&term::g_zero_sized_tuple));
   }
   // NOTE: Elements should contain 1 extra slot for arity!
-  static inline Term make_tuple(Term *elements, word_t arity) {
-    layout::TUPLE::arity((word_t *)elements) = arity;
+  static inline Term make_tuple(Term *elements, Word arity) {
+    layout::TUPLE::arity((Word *)elements) = arity;
     return Term(term_tag::Tuple::create_from_ptr(elements));
   }
   // Does not set arity field, assuming that element values are already all set
@@ -664,20 +661,20 @@ public:
   constexpr bool is_tuple() const {
     return term_tag::Tuple::check(value_);
   }
-  inline word_t tuple_get_arity() const {
+  inline Word tuple_get_arity() const {
     G_ASSERT(is_tuple());
-    auto p = boxed_get_ptr<word_t>();
+    auto p = boxed_get_ptr<Word>();
     return layout::TUPLE::arity(p);
   }
   // Zero based index n
-  inline Term tuple_get_element(word_t n) const {
-    auto p = boxed_get_ptr<word_t>();
+  inline Term tuple_get_element(Word n) const {
+    auto p = boxed_get_ptr<Word>();
     G_ASSERT(layout::TUPLE::arity(p) > n);
     return Term(layout::TUPLE::element(p, n));
   }
   // Zero based index n
-  inline void tuple_set_element(word_t n, Term t) const {
-    auto p = boxed_get_ptr<word_t>();
+  inline void tuple_set_element(Word n, Term t) const {
+    auto p = boxed_get_ptr<Word>();
     G_ASSERT(layout::TUPLE::arity(p) > n);
     layout::TUPLE::element(p, n) = t.as_word();
   }
@@ -690,7 +687,7 @@ public:
     return Term(term_tag::Boxed::create_from_ptr(&term::g_zero_sized_map));
   }
   // NOTE: Elements should contain 1 extra slot for arity!
-  static inline Term make_map(Term *kv_pairs, word_t arity) {
+  static inline Term make_map(Term *kv_pairs, Word arity) {
     kv_pairs[0] = arity;
     return Term(term_tag::Tuple::create_from_ptr(kv_pairs+1));
   }
@@ -707,10 +704,10 @@ public:
   constexpr bool is_regx() const {
     return term_tag::RegReference::check(value_);
   }
-  static constexpr Term make_regx(word_t x) {
+  static constexpr Term make_regx(Word x) {
     return Term(term_tag::RegReference::create(x));
   }
-  constexpr word_t regx_get_value() const {
+  constexpr Word regx_get_value() const {
     return term_tag::RegReference::value(value_);
   }
   constexpr bool is_regfp() const {
@@ -719,13 +716,13 @@ public:
     }
     return false;
   }
-  static constexpr Term make_regfp(word_t x) {
+  static constexpr Term make_regfp(Word x) {
     if (feature_float) {
       return Term(term_tag::FloatRegReference::create(x));
     }
     return make_non_value_();
   }
-  constexpr word_t regfp_get_value() const {
+  constexpr Word regfp_get_value() const {
     if (feature_float) {
       return term_tag::FloatRegReference::value(value_);
     }
@@ -735,10 +732,10 @@ public:
   constexpr bool is_regy() const {
     return term_tag::StackReference::check(value_);
   }
-  static constexpr Term make_regy(word_t x) {
+  static constexpr Term make_regy(Word x) {
     return Term(term_tag::StackReference::create(x));
   }
-  constexpr word_t regy_get_value() const {
+  constexpr Word regy_get_value() const {
     return term_tag::StackReference::value(value_);
   }
 
@@ -749,9 +746,9 @@ public:
   bool is_boxed_export() const {
     return term_tag::BoxedExport::unbox_and_check(value_);
   }
-  static inline Term make_boxed_export(export_t *ex) {
+  static inline Term make_boxed_export(Export *ex) {
     // Assuming that pointer has subtag in first word of memory already
-    word_t val = term_tag::BoxedExport::create_from_ptr(ex);
+    Word val = term_tag::BoxedExport::create_from_ptr(ex);
     G_ASSERT(term_tag::BoxedExport::unbox_and_check(val));
     return Term(val);
   }
@@ -768,7 +765,7 @@ public:
   // First word of large heap bin is refcount
   // --boxedptr--> <<Size, Subtag:4>> --data-ptr--> Refcount Bytes[size]
   //
-  static Term make_binary(VM &vm, proc::Heap *h, word_t bytes);
+  static Term make_binary(VM &vm, proc::Heap *h, Word bytes);
 
   bool is_proc_binary() const {
     return term_tag::BoxedProcBin::unbox_and_check(value_);
@@ -778,20 +775,20 @@ public:
   }
   bool is_binary() const {
     //return is_heap_binary() || is_proc_binary();
-    word_t *p = boxed_get_ptr<word_t>();
+    Word *p = boxed_get_ptr<Word>();
     return term_tag::BoxedProcBin::check_subtag(p[0])
         || term_tag::BoxedHeapBin::check_subtag(p[0]);
   }
-  word_t binary_get_size() const {
+  Word binary_get_size() const {
     G_ASSERT(is_binary()); // this is slow but debug only
-    word_t *p = boxed_get_ptr<word_t>();
+    Word *p = boxed_get_ptr<Word>();
     // both types of binary have size in first (subtag) word
     return layout::BINARY::get_byte_size(p);
   }
   template <typename T>
   T *binary_get() const {
     G_ASSERT(is_binary()); // this is slow but debug only
-    word_t *p = boxed_get_ptr<word_t>();
+    Word *p = boxed_get_ptr<Word>();
     if (term_tag::BoxedProcBin::check_subtag(p[0])) {
       return (T *)layout::PROC_BIN::data(p);
     }
@@ -807,39 +804,39 @@ public:
 const static Term the_non_value = Term::make_non_value_();
 const static Term the_nil = Term::make_nil_();
 
-static_assert(sizeof(Term) == sizeof(word_t),
+static_assert(sizeof(Term) == sizeof(Word),
               "Term size should be same as machine word");
 
 // A pair of atom and int arity, can be used as map key
-//typedef Pair<Term, word_t> fun_arity_t;
-class fun_arity_t {
+//typedef Pair<Term, Word> fun_arity_t;
+class FunArity {
 public:
   Term fun = the_non_value;
-  word_t arity = 0;
+  Word arity = 0;
 
-  fun_arity_t() {}
-  fun_arity_t(Term f, word_t a): fun(f), arity(a) {}
-  inline bool operator <(const fun_arity_t &x) const {
+  FunArity() {}
+  FunArity(Term f, Word a): fun(f), arity(a) {}
+  inline bool operator <(const FunArity &x) const {
     return fun < x.fun || (fun == x.fun && arity < x.arity);
   }
 };
 
-class mfarity_t {
+class MFArity {
 public:
   Term    mod;
   Term    fun;
-  word_t  arity;
-  mfarity_t(): mod(the_non_value), fun(the_non_value), arity(0) {}
-  mfarity_t(Term m, Term f, word_t a): mod(m), fun(f), arity(a) {
+  Word  arity;
+  MFArity(): mod(the_non_value), fun(the_non_value), arity(0) {}
+  MFArity(Term m, Term f, Word a): mod(m), fun(f), arity(a) {
     G_ASSERT(a <= erts::max_fun_arity);
   }
-  mfarity_t(Term m, const fun_arity_t &fa)
+  MFArity(Term m, const FunArity &fa)
     : mod(m), fun(fa.fun), arity(fa.arity)
   {
     G_ASSERT(arity <= erts::max_fun_arity);
   }
-  fun_arity_t as_funarity() const {
-    return fun_arity_t(fun, arity);
+  FunArity as_funarity() const {
+    return FunArity(fun, arity);
   }
 #if G_DEBUG
   void print(const VM &vm);

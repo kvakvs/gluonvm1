@@ -10,7 +10,7 @@ namespace proc { class Heap; }
 
 namespace etf {
 
-  constexpr u8_t etf_marker = 131;
+  constexpr Uint8 etf_marker = 131;
   enum class Tag {
     DistHeader          = 68,  // contains atom cache
     // 69

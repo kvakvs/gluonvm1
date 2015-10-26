@@ -7,10 +7,10 @@
 namespace gluon {
 
 // Scans raw code in bytes:sz, and builds jump table with processed args
-void BeamLoader::beam_prepare_code(Module *m, array_view<const u8_t> data)
+void BeamLoader::beam_prepare_code(Module *m, ArrayView<const Uint8> data)
 {
 
-  Vector<word_t> output;
+  Vector<Word> output;
   // rough estimate of what code size would be, vector will grow if needed
   output.reserve(data.size() * 2);
 
@@ -18,7 +18,7 @@ void BeamLoader::beam_prepare_code(Module *m, array_view<const u8_t> data)
   // First pass here
   //
   // save references to labels in code and resolve them in second pass
-  Vector<word_t> postponed_labels = read_code(m, data, output);
+  Vector<Word> postponed_labels = read_code(m, data, output);
 
   //
   // Second pass
@@ -47,17 +47,17 @@ void BeamLoader::beam_prepare_code(Module *m, array_view<const u8_t> data)
   }
 }
 
-Vector<word_t> BeamLoader::read_code(Module *m,
-                            array_view<const u8_t> data,
-                            Vector<word_t> &output)
+Vector<Word> BeamLoader::read_code(Module *m,
+                            ArrayView<const Uint8> data,
+                            Vector<Word> &output)
 {
   tool::Reader r(data);
-  static_assert(sizeof(void*) == sizeof(word_t),
+  static_assert(sizeof(void*) == sizeof(Word),
                 "oops word size must be same as void*");
 
-  word_t arity;
-  word_t op_ptr;
-  Vector<word_t> postponed_labels;
+  Word arity;
+  Word op_ptr;
+  Vector<Word> postponed_labels;
 
   using genop::Opcode;
 
@@ -79,12 +79,12 @@ Vector<word_t> BeamLoader::read_code(Module *m,
     }
 
     // Convert opcode into jump address
-    op_ptr = reinterpret_cast<word_t>(vm_.g_opcode_labels[(word_t)opcode]);
+    op_ptr = reinterpret_cast<Word>(vm_.g_opcode_labels[(Word)opcode]);
     output.push_back(op_ptr);
 
-    arity = genop::arity_map[(word_t)opcode];
+    arity = genop::arity_map[(Word)opcode];
 
-    for (word_t a = 0; a < arity; ++a) {
+    for (Word a = 0; a < arity; ++a) {
       Term arg = parse_term(r);
 
       // Use runtime value 'Catch' to mark label references
@@ -102,7 +102,7 @@ Vector<word_t> BeamLoader::read_code(Module *m,
 }
 
 bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
-                                 Vector<word_t> &output,
+                                 Vector<Word> &output,
                                  tool::Reader &r) {
   using genop::Opcode;
 
@@ -119,7 +119,7 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
     Term label = parse_term(r);
     G_ASSERT(label.is_small());
 
-    word_t l_id = label.small_get_unsigned();
+    Word l_id = label.small_get_unsigned();
     G_ASSERT(l_id < code_label_count_);
     labels_[l_id] = (&output.back())+1;
 
@@ -142,10 +142,10 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
 
 void BeamLoader::post_rewrite_opcode(genop::Opcode opcode,
                                       Module *m,
-                                      Vector<word_t> &output)
+                                      Vector<Word> &output)
 {
   using genop::Opcode;
-  word_t *first_arg = &output.back() + 1;
+  Word *first_arg = &output.back() + 1;
 
   // If the command was call_ext to a bif - rewrite with bif call
 //  if (opcode == genop::Opcode::Call_ext) {
@@ -181,10 +181,10 @@ void BeamLoader::post_rewrite_opcode(genop::Opcode opcode,
   }
 }
 
-void BeamLoader::beam_op_line(Vector<word_t> &code, Term arg)
+void BeamLoader::beam_op_line(Vector<Word> &code, Term arg)
 {
   if (feature_line_numbers) {
-    word_t index = arg.small_get_unsigned();
+    Word index = arg.small_get_unsigned();
     G_ASSERT(index < linenums_.line_refs.size());
 
     line_instr_t li;
@@ -197,15 +197,15 @@ void BeamLoader::beam_op_line(Vector<word_t> &code, Term arg)
 void BeamLoader::output_exports(Module *m)
 {
   // Move exports from m_exports to this table, resolving labels to code offsets
-  Module::exports_t exports;
+  Module::Exports exports;
   auto exps = exp_indexes_.all();
-  // we iterate over map_view which is pairs of <fun_arity_t key, word_t value>
-  for_each(exps, [&](fa_lindex_map_t::iterator fa_lindex) {
+  // we iterate over map_view which is pairs of <fun_arity_t key, Word value>
+  for_each(exps, [&](fa_lindex_map_t::Iterator fa_lindex) {
                     // find out what is label value
                     auto lresult = labels_.find_ptr(fa_lindex->second.value());
                     G_ASSERT(lresult); // assume it must exist
-                    exports[fa_lindex->first] = export_t(
-                          *lresult, mfarity_t(mod_name_, fa_lindex->first)
+                    exports[fa_lindex->first] = Export(
+                          *lresult, MFArity(mod_name_, fa_lindex->first)
                           );
                   });
   m->set_exports(exports);
@@ -224,19 +224,19 @@ void BeamLoader::output_selectlists(Module *m)
 {
   // Fix select lists (replace label numbers with code pointers)
   for (Term t: resolve_selectlists_) {
-    word_t t_arity = t.tuple_get_arity()/2;
-    for (word_t i = 0; i < t_arity; ++i) {
-      word_t l_index = t.tuple_get_element(i*2+1).small_get_unsigned();
+    Word t_arity = t.tuple_get_arity()/2;
+    for (Word i = 0; i < t_arity; ++i) {
+      Word l_index = t.tuple_get_element(i*2+1).small_get_unsigned();
       G_ASSERT(labels_.contains(l_index));
-      word_t *ptr = labels_[l_index];
+      Word *ptr = labels_[l_index];
       t.tuple_set_element(i*2+1, Term::make_boxed_cp(ptr));
     }
   }
 }
 
-void BeamLoader::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
+void BeamLoader::beam_op_func_info(Vector<Word> &code, Term, Term f, Term a)
 {
-  word_t *last_ptr = nullptr;
+  Word *last_ptr = nullptr;
 
   if (feature_code_ranges) {
   last_ptr = (&code.back()) + 1;
@@ -265,13 +265,13 @@ void BeamLoader::beam_op_func_info(Vector<word_t> &code, Term, Term f, Term a)
   }
 }
 
-void BeamLoader::replace_imp_index_with_ptr(word_t *p, Module *m) {
+void BeamLoader::replace_imp_index_with_ptr(Word *p, Module *m) {
   Term i(*p);
   Term j = Term::make_boxed(m->get_import_entry(i.small_get_unsigned()));
   *p = j.as_word();
 }
 
-void BeamLoader::replace_lambda_index_with_ptr(word_t *p, Module *m) {
+void BeamLoader::replace_lambda_index_with_ptr(Word *p, Module *m) {
   Term i(*p);
   Term j = Term::make_boxed(&lambdas_[i.small_get_unsigned()]);
   *p = j.as_word();

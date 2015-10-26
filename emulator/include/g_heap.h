@@ -13,11 +13,11 @@ class VM;
 class Term;
 
 template <typename T>
-static constexpr word_t calculate_storage_size() {
-  return ((sizeof(T) + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
+static constexpr Word calculate_storage_size() {
+  return ((sizeof(T) + sizeof(Word) - 1) / sizeof(Word)) * sizeof(Word);
 }
-static constexpr word_t calculate_word_size(word_t bytes) {
-  return ((bytes + sizeof(word_t) - 1) / sizeof(word_t)) * sizeof(word_t);
+static constexpr Word calculate_word_size(Word bytes) {
+  return ((bytes + sizeof(Word) - 1) / sizeof(Word)) * sizeof(Word);
 }
 
 namespace mem {
@@ -39,7 +39,7 @@ namespace mem {
 
     template <typename T, typename... Args>
     inline T *alloc_object(Args&&... args) { // NOTE: calls ctor
-      word_t *bytes = allocate<word_t>(calculate_storage_size<T>());
+      Word *bytes = allocate<Word>(calculate_storage_size<T>());
       return new(bytes)T(std::forward<Args>(args)...);
     }
 
@@ -62,12 +62,12 @@ class Heap: public mem::SystemMemoryAllocator {
 
 namespace proc {
 
-static constexpr word_t DEFAULT_PROC_HEAP_WORDS = 100000;
-static constexpr word_t DEFAULT_PROC_STACK_WORDS = 5000;
+static constexpr Word DEFAULT_PROC_HEAP_WORDS = 100000;
+static constexpr Word DEFAULT_PROC_STACK_WORDS = 5000;
 // Allocated heap segments sequentially grow from DEFAULT_PROC_HEAP_WORDS (100)
 // up to 2^HEAP_SEGMENT_GROWTH_MAX (100*2^8=100kb on 32bit or 200kb on 64bit)
 // All new blocks after 8th will be capped at this size.
-static constexpr word_t HEAP_SEGMENT_GROWTH_MAX = 8;
+static constexpr Word HEAP_SEGMENT_GROWTH_MAX = 8;
 
 class Heap;
 
@@ -78,23 +78,23 @@ class Heap;
 #pragma clang diagnostic ignored "-Wzero-length-array"
 class Node {
 public:
-  static constexpr word_t FIELDS_WORD_SIZE = 3; // how many words this class takes
+  static constexpr Word FIELDS_WORD_SIZE = 3; // how many words this class takes
   static_assert(DEFAULT_PROC_STACK_WORDS < DEFAULT_PROC_HEAP_WORDS - FIELDS_WORD_SIZE,
                 "default stack does not fit default heap size");
 
   Node *next = nullptr;
-  word_t *start;  // this points at first free space and grows
-  word_t *limit;  // marks end of node
-  word_t heap_start[0]; // marks end of headers and beginning of heap
+  Word *start;  // this points at first free space and grows
+  Word *limit;  // marks end of node
+  Word heap_start[0]; // marks end of headers and beginning of heap
 
-  static Node *create(word_t sz_words);
+  static Node *create(Word sz_words);
 
-  word_t get_avail() const {
+  Word get_avail() const {
     G_ASSERT(limit >= start);
-    return (word_t)(limit - start);
+    return (Word)(limit - start);
   }
   // Allocated memory is not tagged in any way except regular term bitfields
-  word_t *allocate_words(word_t n) {
+  Word *allocate_words(Word n) {
     auto result = start;
     start += n;
     return result;
@@ -107,47 +107,47 @@ public:
 //
 class Stack {
   //Node      *m_node = nullptr;  // where stack is
-  word_t    *end_;             // stack underflow mark
-  word_t    *top_;             // stack tip, grows down from heap end
-  word_t    *bottom_;          // stack bottom, delimits stack growth
+  Word    *end_;             // stack underflow mark
+  Word    *top_;             // stack tip, grows down from heap end
+  Word    *bottom_;          // stack bottom, delimits stack growth
 
 public:
-  Stack(word_t *bottom, word_t *top): end_(top), top_(top), bottom_(bottom) {}
+  Stack(Word *bottom, Word *top): end_(top), top_(top), bottom_(bottom) {}
 
   // Lowers 'limit' by 'size' words, puts stack there
-  //void put_stack(Node *h_node, word_t size);
+  //void put_stack(Node *h_node, Word size);
 
-  void set_y(word_t index, word_t value) {
+  void set_y(Word index, Word value) {
     G_ASSERT(get_used() >= index + 1);
     top_[index+1] = value;
   }
-  word_t get_y(word_t index) const {
+  Word get_y(Word index) const {
     G_ASSERT(get_used() >= index + 1);
     return top_[index+1];
   }
-  void push(word_t x) {
+  void push(Word x) {
     G_ASSERT(get_avail() > 0);
     top_--;
     *top_ = x;
   }
-  word_t pop() {
+  Word pop() {
     G_ASSERT(get_used() > 0);
     auto result = *top_;
     top_++;
     return result;
   }
-  void push_n_nils(word_t n);
-  void drop_n(word_t n) {
+  void push_n_nils(Word n);
+  void drop_n(Word n) {
     G_ASSERT(get_used() >= n);
     top_ += n;
   }
-  word_t get_avail() const {
+  Word get_avail() const {
     G_ASSERT(top_ >= bottom_);
-    return (word_t)(top_ - bottom_);
+    return (Word)(top_ - bottom_);
   }
-  word_t get_used() const {
+  Word get_used() const {
     G_ASSERT(top_ <= end_);
-    return (word_t)(end_ - top_);
+    return (Word)(end_ - top_);
   }
 };
 
@@ -162,7 +162,7 @@ class SegmentedHeap {
   // Heap
   //
   // track count of nodes allocated, each new is double of previous
-  word_t m_node_count = 1;
+  Word m_node_count = 1;
   Node  *m_current;
   Node  *m_root;
 
@@ -175,17 +175,17 @@ public:
   SegmentedHeap();
 
   // Grows htop and gives requested memory
-  word_t *h_alloc(word_t);
+  Word *h_alloc(Word);
 
   // TODO: Mark memory so that GC will know its size
-  inline word_t *h_alloc_bytes(word_t bytes) {
+  inline Word *h_alloc_bytes(Word bytes) {
     return h_alloc(calculate_word_size(bytes));
   }
 
   // TODO: Mark memory so that GC will know its size
   template <typename T, typename... Args>
   inline T *h_alloc_object(Args&&... args) { // NOTE: calls ctor
-    word_t *bytes = h_alloc(calculate_storage_size<T>());
+    Word *bytes = h_alloc(calculate_storage_size<T>());
     return new(bytes)T(std::forward<Args>(args)...);
   }
 }; // class SegmentedHeap
@@ -193,8 +193,8 @@ public:
 
 template <class A>
 class Heap_: public A {
-  constexpr static word_t STK_SZ = 1024;
-  word_t stack_data_[STK_SZ];
+  constexpr static Word STK_SZ = 1024;
+  Word stack_data_[STK_SZ];
 public:
   Stack stack_;
 

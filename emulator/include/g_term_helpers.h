@@ -8,12 +8,12 @@ namespace gluon {
 namespace term {
 
 class TupleBuilder {
-  word_t m_arity;
-  word_t m_index;
+  Word m_arity;
+  Word m_index;
   Term *m_elements;
 public:
-  TupleBuilder(proc::Heap *heap, word_t arity): m_arity(arity), m_index(0) {
-    m_elements = (Term *)heap->allocate<word_t>(layout::TUPLE::box_size(arity));
+  TupleBuilder(proc::Heap *heap, Word arity): m_arity(arity), m_index(0) {
+    m_elements = (Term *)heap->allocate<Word>(layout::TUPLE::box_size(arity));
   }
   inline void add(Term x) {
     G_ASSERT(m_index < m_arity);
@@ -28,23 +28,23 @@ public:
 
 template <typename T> inline Term make_term(const T&);
 template <> inline Term make_term(const char &x) {
-  return Term::make_small_u((word_t)x);
+  return Term::make_small_u((Word)x);
 }
-template <> inline Term make_term(const word_t &x) {
+template <> inline Term make_term(const Word &x) {
   return Term::make_small_u(x);
 }
-template <> inline Term make_term(const sword_t &x) {
+template <> inline Term make_term(const SWord &x) {
   return Term::make_small(x);
 }
 
-template <typename Iter> inline word_t length(Iter iter, Iter to) {
-  word_t result = 0;
+template <typename Iter> inline Word length(Iter iter, Iter to) {
+  Word result = 0;
   for(; iter != to; iter++, result++) {
   }
   return result;
 }
-template <> inline word_t length<const char *>(const char *iter, const char *to) {
-  return (word_t)(to - iter);
+template <> inline Word length<const char *>(const char *iter, const char *to) {
+  return (Word)(to - iter);
 }
 
 template <typename Iter>
@@ -53,12 +53,12 @@ Term build_list(proc::Heap *heap, Iter iter, Iter to) {
     return ::gluon::the_nil;
   }
 
-  word_t len = length(iter, to);
+  Word len = length(iter, to);
   Std::fmt("len=" FMT_UWORD "\n", len);
-  Term *h = (Term *)heap->allocate<word_t>(layout::CONS::BOX_SIZE * len);
+  Term *h = (Term *)heap->allocate<Word>(layout::CONS::BOX_SIZE * len);
 
   Term result = Term::make_cons(h);
-  word_t i = 0;
+  Word i = 0;
   for(; iter != to; iter++) {
     layout::CONS::head(h) = make_term(*iter);
     layout::CONS::tail(h) = (i == len - 1)

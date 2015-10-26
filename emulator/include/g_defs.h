@@ -87,27 +87,25 @@ namespace gluon {
   template <typename A>
   using Set = std::set<A>;
 
-  using word_t = std::size_t;
-  using sword_t = std::ptrdiff_t;
+  using Word = std::size_t;
+  using SWord = std::ptrdiff_t;
 
-  constexpr inline word_t word_size(word_t x) {
-    return (x + sizeof(word_t) - 1) / sizeof(word_t);
+  constexpr inline Word word_size(Word x) {
+    return (x + sizeof(Word) - 1) / sizeof(Word);
   }
 
-  using u8_t = std::uint8_t;
-  using i8_t = std::int8_t;
-  using u16_t = std::uint16_t;
-  using s16_t = std::int16_t;
-  using u32_t = std::uint32_t;
-  using s32_t = std::int32_t;
-  using u64_t = std::uint64_t;
-  using s64_t = std::int64_t;
+  using Uint8 = std::uint8_t;
+  using Int8 = std::int8_t;
+  using Uint16 = std::uint16_t;
+  using Int16 = std::int16_t;
+  using Uint32 = std::uint32_t;
+  using Int32 = std::int32_t;
+  using Uint64 = std::uint64_t;
+  using Int64 = std::int64_t;
 
-#if FEATURE_FLOAT
-  using float_t = float;
-  using f32_t = float;
-  using f64_t = double;
-#endif
+  using Float32 = float;
+  using Float64 = double;
+  using Float = Float32;
 
   // Used to shun debug printfs in release
   inline void dummy_printf(const char *, ...) {}
@@ -124,35 +122,35 @@ namespace gluon {
     void value(T newvalue) { value_ = newvalue; }
   };
   // Index in label table, wrapped to create a distinct compile-time type
-  using LabelIndex = Wrap<word_t>;
+  using LabelIndex = Wrap<Word>;
 
   namespace erts {
     // How many reds will a process be allowed to run before next proc wakes up
     // Adjust this for slow devices. 2000 is used for regular modern hardware.
-    constexpr word_t reductions_per_slice = 250;
+    constexpr Word reductions_per_slice = 250;
 
-    constexpr word_t max_fun_arity = 16;
-    constexpr word_t max_regs = 64; // (max arity of fun + captured terms)
-    constexpr word_t max_stack = 128; // is not enforced anywhere yet
-    constexpr word_t max_fp_regs = 2;
+    constexpr Word max_fun_arity = 16;
+    constexpr Word max_regs = 64; // (max arity of fun + captured terms)
+    constexpr Word max_stack = 128; // is not enforced anywhere yet
+    constexpr Word max_fp_regs = 2;
   } // vm
 
 #if FEATURE_LINE_NUMBERS
   namespace line {
-    constexpr bool is_valid_loc(word_t File, word_t Line) {
+    constexpr bool is_valid_loc(Word File, Word Line) {
         return (File < 255 && Line < ((1 << 24) - 1));
     }
-    constexpr word_t make_location(word_t File, word_t Line) {
+    constexpr Word make_location(Word File, Word Line) {
       return (File << 24) | Line;
     }
-    constexpr word_t get_loc_file(word_t Loc) {
+    constexpr Word get_loc_file(Word Loc) {
       return Loc >> 24;
     }
-    constexpr word_t get_loc_line(word_t Loc) {
+    constexpr Word get_loc_line(Word Loc) {
       return Loc & ((1 << 24)-1);
     }
 
-    const static word_t invalid_location = make_location(0, 0);
+    const static Word invalid_location = make_location(0, 0);
   } // ns line
 #endif
 

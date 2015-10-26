@@ -2,6 +2,7 @@
 
 namespace gluon {
 
+// Strongly typed pair of 2 any types. Only one can be active at any time
 template <typename L, typename R>
 class Either {
 private:

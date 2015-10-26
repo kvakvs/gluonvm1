@@ -13,16 +13,16 @@ namespace gluon {
 namespace bif {
 
 typedef struct {
-  Term   fun;
-  word_t arity;
-  void   *bif_fn;
-} bif_index_t;
+  Term fun;
+  Word arity;
+  void *bif_fn;
+} BIFIndex;
 
 """)
 
-print("const word_t BIF_TABLE_SIZE = %d;" % len(libgenop.bif_tab));
+print("const Word bif_table_size = %d;" % len(libgenop.bif_tab));
 
-print("""extern const bif_index_t g_bif_table[BIF_TABLE_SIZE];
+print("""extern const BIFIndex g_bif_table[bif_table_size];
 
 } // ns bif
 } // ns gluon

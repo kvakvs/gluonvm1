@@ -7,7 +7,7 @@
 constexpr bool feature_bignum = false;
 
 // Allows loading float values from BEAM and enables float BIFs and arithmetics
-// 32-bit floats will be used as default (see float_t in g_defs.h)
+// 32-bit floats will be used as default (see Float in g_defs.h)
 // TODO: floats have to be implemented throughout loader and vm
 #define FEATURE_FLOAT         0
 constexpr bool feature_float = false;

@@ -25,7 +25,7 @@ namespace err {
 
 //str_atom_map_t  VM::g_atoms;
 //atom_str_map_t  VM::g_atoms_reverse;
-//word_t          VM::g_atom_counter; // initialized in init_predef_atoms
+//Word          VM::g_atom_counter; // initialized in init_predef_atoms
 //Node           *VM::g_this_node = nullptr;
 //const void    **VM::g_opcode_labels;
 //Str             VM::g_empty_str;
@@ -87,7 +87,7 @@ void VM::init_predef_atoms()
   atom_id_counter_ = 1;
 
   while (*p) {
-    word_t len = (word_t)(p[0]);
+    Word len = (Word)(p[0]);
     new_atom(Str(p+1, len));
     p += len + 1;
   }
@@ -113,21 +113,21 @@ erts::Heap *VM::get_heap(VM::heap_t) {
 }
 
 static bool
-find_bif_compare_fun(const bif::bif_index_t &a, const bif::bif_index_t &b) {
+find_bif_compare_fun(const bif::BIFIndex &a, const bif::BIFIndex &b) {
   return a.fun < b.fun || (a.fun == b.fun && a.arity < b.arity);
 }
 
-void *VM::find_bif(const mfarity_t &mfa) const
+void *VM::find_bif(const MFArity &mfa) const
 {
   if (mfa.mod != atom::ERLANG) {
     return nullptr;
   }
 
-  bif::bif_index_t sample;
+  bif::BIFIndex sample;
   sample.fun = mfa.fun;
   sample.arity = mfa.arity;
   auto i = std::lower_bound(&bif::g_bif_table[0],
-                           &bif::g_bif_table[bif::BIF_TABLE_SIZE],
+                           &bif::g_bif_table[bif::bif_table_size],
                            sample,
                            find_bif_compare_fun);
   if (i->fun == mfa.fun && i->arity == mfa.arity) {
@@ -136,7 +136,7 @@ void *VM::find_bif(const mfarity_t &mfa) const
   return nullptr;
 }
 
-Term VM::apply_bif(Process *proc, mfarity_t &mfa, Term *args)
+Term VM::apply_bif(Process *proc, MFArity &mfa, Term *args)
 {
   void *b = find_bif(mfa);
   if (b) {
@@ -150,7 +150,7 @@ Term VM::apply_bif(Process *proc, mfarity_t &mfa, Term *args)
   return proc->bif_error(atom::UNDEF);
 }
 
-Term VM::apply_bif(Process *proc, word_t arity, void *fn, Term *args)
+Term VM::apply_bif(Process *proc, Word arity, void *fn, Term *args)
 {
   if (!fn) {
     return proc->bif_error(atom::BADFUN);

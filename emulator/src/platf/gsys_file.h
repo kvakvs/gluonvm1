@@ -17,9 +17,9 @@ namespace fs {
 
     void open(const Str &name);
     // May leave read position at file end, re-seek after you used size
-    word_t size();
-    void seek(word_t offset);
-    word_t read(u8_t *dst, word_t bytes);
+    Word size();
+    void seek(Word offset);
+    Word read(Uint8 *dst, Word bytes);
     inline bool is_good() { return !(is_error() || is_eof()); }
     bool is_error();
     bool is_eof();

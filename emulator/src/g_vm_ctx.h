@@ -25,12 +25,12 @@ enum class WantSchedule {
 // VM execution context, inherited from process context
 // Used to run current process by vm loop, also holds some extra local variables
 //
-struct vm_runtime_ctx_t: runtime_ctx_t {
+struct VMRuntimeContext: RuntimeContext {
   VM          &vm_;
   proc::Heap  *heap_;
-  sword_t     reds_ = 0;
+  SWord     reds_ = 0;
 
-  vm_runtime_ctx_t(VM &vm): vm_(vm) {}
+  VMRuntimeContext(VM &vm): vm_(vm) {}
 
   proc::Stack &stack() { return heap_->stack_; }
   const proc::Stack &stack() const { return heap_->stack_; }
@@ -55,7 +55,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 
   void load(Process *proc) {
-    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+    RuntimeContext &proc_ctx = proc->get_runtime_ctx();
     ip   = proc_ctx.ip;
     cp   = proc_ctx.cp;
     live = proc_ctx.live;
@@ -68,7 +68,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 
   void save(Process *proc) {
-    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+    RuntimeContext &proc_ctx = proc->get_runtime_ctx();
     proc_ctx.ip   = ip;
     proc_ctx.cp   = cp;
     proc_ctx.live = live;
@@ -80,7 +80,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
   // TODO: swap_out: save r0, stack top and heap top
   void swap_out_light(Process *proc) {
-    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+    RuntimeContext &proc_ctx = proc->get_runtime_ctx();
     proc_ctx.ip = ip;
     proc_ctx.cp = cp;
     // TODO: Make this little lighter
@@ -88,7 +88,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 
   void swap_in_light(Process *proc) {
-    runtime_ctx_t &proc_ctx = proc->get_runtime_ctx();
+    RuntimeContext &proc_ctx = proc->get_runtime_ctx();
     ip = proc_ctx.ip;
     cp = proc_ctx.cp;
   }
@@ -118,7 +118,7 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
     dst.println(vm_);
 #endif
     if (dst.is_regx()) {
-      word_t x = dst.regx_get_value();
+      Word x = dst.regx_get_value();
       G_ASSERT(x < sizeof(regs));
       regs[x] = val;
     } else
@@ -140,12 +140,12 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   // literals table - so fetch MFA elements, resolve address and jump
   void jump_ext(Process *proc, Term mfa_box) {
     G_ASSERT(mfa_box.is_boxed());
-    mfarity_t *mfa = mfa_box.boxed_get_ptr<mfarity_t>();
+    MFArity *mfa = mfa_box.boxed_get_ptr<MFArity>();
     Std::fmt("ctx.jump_ext -> ");
     mfa->println(vm_);
 
     Module *mod = nullptr;
-    export_t *exp = vm_.codeserver().find_mfa(*mfa, &mod);
+    Export *exp = vm_.codeserver().find_mfa(*mfa, &mod);
     if (!exp) {
       return raise(proc, atom::ERROR, atom::UNDEF);
     }
@@ -180,16 +180,16 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
   }
 
   // Jumps between modules updating base and mod fields
-  void jump_far(Process *proc, Module *m, word_t *new_ip) {
+  void jump_far(Process *proc, Module *m, Word *new_ip) {
 //    mod = m;
     //base = proc->get_code_base();
     ip = new_ip;
   }
 
   void jump(Process *proc, Term t) {
-    G_ASSERT(t.is_boxed() && term_tag::is_cp(t.boxed_get_ptr<word_t>()));
-    word_t *t_ptr = term_tag::untag_cp(t.boxed_get_ptr<word_t>());
-    Std::fmt("ctx.jump -> " FMT_0xHEX "\n", (word_t)t_ptr);
+    G_ASSERT(t.is_boxed() && term_tag::is_cp(t.boxed_get_ptr<Word>()));
+    Word *t_ptr = term_tag::untag_cp(t.boxed_get_ptr<Word>());
+    Std::fmt("ctx.jump -> " FMT_0xHEX "\n", (Word)t_ptr);
     ip = t_ptr;
     // TODO: some meaningful assertion here?
     //G_ASSERT(ip > base);
@@ -224,22 +224,22 @@ struct vm_runtime_ctx_t: runtime_ctx_t {
 
   void pop_cp() {
     Term p(stack().pop());
-    cp = term_tag::untag_cp<word_t>(p.boxed_get_ptr<word_t>());
+    cp = term_tag::untag_cp<Word>(p.boxed_get_ptr<Word>());
   }
 
-  inline void stack_allocate(word_t n) {
+  inline void stack_allocate(Word n) {
     stack().push_n_nils(n);
     push_cp();
   }
 
-  inline void stack_deallocate(word_t n) {
+  inline void stack_deallocate(Word n) {
     pop_cp();
     stack().drop_n(n);
   }
 
-  void print_args(word_t arity) {
+  void print_args(Word arity) {
 #if G_DEBUG
-    for (word_t i = 0; i < arity; ++i) {
+    for (Word i = 0; i < arity; ++i) {
       Term value(ip[i]);
       value.print(vm_);
       if (value.is_regx() || value.is_regy()) {

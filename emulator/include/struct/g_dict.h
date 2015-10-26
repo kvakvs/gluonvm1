@@ -8,35 +8,35 @@ namespace gluon {
 namespace containers {
 
   template <typename Key, typename Value>
-  class dict_range_mapping {
+  class DictRangeMapping {
   public:
-    using storage_t = std::map<Key, Value>;
-    using iter_t = typename storage_t::iterator;
+    using Storage = std::map<Key, Value>;
+    using Iterator = typename Storage::iterator;
 
-    iter_t pos;
-    iter_t end;
+    Iterator pos;
+    Iterator end;
 
-    dict_range_mapping(const iter_t &b, const iter_t &e): pos(b), end(e) {}
+    DictRangeMapping(const Iterator &b, const Iterator &e): pos(b), end(e) {}
 
     bool have() const { return pos != end; }
-    iter_t current() { return pos; }
+    Iterator current() { return pos; }
     void advance() { pos++; }
   };
 
 
   // TODO: std::enable_if magic with const/nonconst members?
   template <typename Key, typename Value>
-  class c_dict_range_mapping {
+  class ConstDictRangeMapping {
   public:
-    using storage_t = std::map<Key, Value>;
-    using iter_t = typename storage_t::const_iterator;
+    using Storage = std::map<Key, Value>;
+    using Iterator = typename Storage::const_iterator;
 
-    iter_t pos;
-    iter_t end;
-    c_dict_range_mapping(const iter_t &b, const iter_t &e): pos(b), end(e) {}
+    Iterator pos;
+    Iterator end;
+    ConstDictRangeMapping(const Iterator &b, const Iterator &e): pos(b), end(e) {}
 
     bool have() const { return pos != end; }
-    iter_t current() { return pos; }
+    Iterator current() { return pos; }
     void advance() { pos++; }
   };
 
@@ -44,18 +44,18 @@ namespace containers {
   // A map wrapper with mapping helper classes (to iterate)
   // TODO: Replace this with self-made structure
   template <typename Key, typename Value>
-  class stl_map {
+  class STLDict {
   private:
-    using self_t = stl_map<Key, Value>;
-    using storage_t = std::map<Key, Value>;
-    storage_t map_;
+    using Self = STLDict<Key, Value>;
+    using Storage = std::map<Key, Value>;
+    Storage map_;
   public:
-    using iterator = typename storage_t::iterator;
+    using Iterator = typename Storage::iterator;
 
-    stl_map() = default;
-    stl_map(const stl_map &) = delete;
-    stl_map(stl_map &&) = default;
-    stl_map &operator = (stl_map &&) = default;
+    STLDict() = default;
+    STLDict(const STLDict &) = delete;
+    STLDict(STLDict &&) = default;
+    STLDict &operator = (STLDict &&) = default;
 
     const Value &operator[] (const Key &k) const { return map_[k]; }
     Value &operator[] (const Key &k) { return map_[k]; }
@@ -94,8 +94,8 @@ namespace containers {
     void erase(const Key &k) { map_.erase(k); }
     size_t size() const { return map_.size(); }
 
-    using Mapping = dict_range_mapping<Key, Value>;
-    using ConstMapping = c_dict_range_mapping<Key, Value>;
+    using Mapping = DictRangeMapping<Key, Value>;
+    using ConstMapping = ConstDictRangeMapping<Key, Value>;
 
     Mapping all() {
       return Mapping(map_.begin(), map_.end());
@@ -110,7 +110,7 @@ namespace containers {
 // A dictionary
 // Keys should have 'operator <'
 template <typename K, typename V>
-using Dict = containers::stl_map<K, V>;
+using Dict = containers::STLDict<K, V>;
 
 
 } // ns gluon

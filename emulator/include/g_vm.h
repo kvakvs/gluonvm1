@@ -30,7 +30,7 @@ private:
   // TODO: Optimize atom tab for insert-only, like OTP does
   str_atom_map_t atoms_;
   atom_str_map_t reverse_atoms_;
-  word_t         atom_id_counter_;
+  Word         atom_id_counter_;
 
   Node           *this_node_ = nullptr;
   // used as "" constant when atom is not found
@@ -98,9 +98,9 @@ public:
   //
   // Bif management
   //
-  Term apply_bif(Process *proc, mfarity_t &mfa, Term *args);
-  void *find_bif(const mfarity_t &mfa) const;
-  Term apply_bif(Process *proc, word_t arity, void *fn, Term *args);
+  Term apply_bif(Process *proc, MFArity &mfa, Term *args);
+  void *find_bif(const MFArity &mfa) const;
+  Term apply_bif(Process *proc, Word arity, void *fn, Term *args);
 
 private:
   // Does not check if atom existed before. Will break old values on overwrite

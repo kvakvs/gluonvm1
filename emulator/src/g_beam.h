@@ -9,8 +9,8 @@ namespace gluon {
 
 #if FEATURE_LINE_NUMBERS
 typedef struct {
-  word_t pos;
-  word_t *code_pos;
+  Word pos;
+  Word *code_pos;
 } line_instr_t;
 #endif
 
@@ -24,23 +24,23 @@ private:
 
   proc::Heap     *heap_= nullptr;
   Vector<Str>     atoms_;
-  array_view<const u8_t> code_;
+  ArrayView<const Uint8> code_;
 //  const u8_t     *code_ = nullptr; // not owned data
 //  word_t          code_sz;
   Term            mod_name_; // an atom in the -module(X) header
 
   // Data coming from code chunk
-  word_t          code_ver_;
-  word_t          code_opcode_max;
-  word_t          code_label_count_;
-  word_t          code_fun_count_;
+  Word          code_ver_;
+  Word          code_opcode_max;
+  Word          code_label_count_;
+  Word          code_fun_count_;
 
   Vector<Term>    literals_;
-  Module::labels_t  labels_;
-  using fa_lindex_map_t = Dict<fun_arity_t, LabelIndex>;
+  Module::Labels  labels_;
+  using fa_lindex_map_t = Dict<FunArity, LabelIndex>;
   fa_lindex_map_t exp_indexes_;  // list of {f/arity} sequentially
-  Module::imports_t imports_;
-  Module::lambdas_t lambdas_;
+  Module::Imports imports_;
+  Module::Lambdas lambdas_;
   // postponed select list with label numbers. Resolve to code pointers after
   // loading finished
   Vector<Term>    resolve_selectlists_;
@@ -48,29 +48,29 @@ private:
 #if FEATURE_LINE_NUMBERS
   // Grouped in struct by feature
   struct {
-    word_t        num_line_refs;
-    word_t        num_filenames;
-    Module::line_refs_t   line_refs;
-    Module::file_names_t  filenames;
+    Word        num_line_refs;
+    Word        num_filenames;
+    Module::LineRefs   line_refs;
+    Module::FileNames  filenames;
 
     Vector<line_instr_t>  line_instr;
     // Mapping fun# to code start for it
-    Vector<word_t *>      fun_code_map;
+    Vector<Word *>      fun_code_map;
     //word_t                m_current_li = 0;
-    word_t      fun_id = 0;
+    Word      fun_id = 0;
   } linenums_;
 #endif
 
 #if FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
-  fun_arity_t current_fun_;
+  FunArity current_fun_;
 #endif
 
 #if FEATURE_CODE_RANGES
   // Grouped in struct by feature
   struct {
-    word_t      *fun_begin;
+    Word      *fun_begin;
     // Maps f/arity to code ranges
-    code::Index<fun_arity_t> fun_map;
+    code::Index<FunArity> fun_map;
   } coderanges_;
 #endif
 
@@ -90,7 +90,7 @@ public:
   void load_labels(tool::Reader &r);
   void load_line_table(tool::Reader &r);
 
-  inline const Str &atom_tab_index_to_str(word_t i) const {
+  inline const Str &atom_tab_index_to_str(Word i) const {
     G_ASSERT(i <= atoms_.size());
     return atoms_[i-1];
   }
@@ -98,7 +98,7 @@ public:
   // Load finished, create a Module object and inform code server
   Module *finalize(Term modname);
   // Parse raw code creating jump table with decoded args
-  void beam_prepare_code(Module *m, array_view<const u8_t> data);
+  void beam_prepare_code(Module *m, ArrayView<const Uint8> data);
 
 private:
   enum class Tag {
@@ -129,17 +129,17 @@ private:
 //    Overflow  = 14,   // overflow/bigint
   };
 
-  void resolve_labels(const Vector<word_t> &postponed_labels,
-                      Vector<word_t> &code);
+  void resolve_labels(const Vector<Word> &postponed_labels,
+                      Vector<Word> &code);
 
-  void replace_imp_index_with_ptr(word_t *p, Module *m);
-  void replace_lambda_index_with_ptr(word_t *p, Module *m);
+  void replace_imp_index_with_ptr(Word *p, Module *m);
+  void replace_lambda_index_with_ptr(Word *p, Module *m);
 
   // on FEATURE_LINE_NUMBERS
-  void beam_op_line(Vector<word_t> &code, Term arg);
+  void beam_op_line(Vector<Word> &code, Term arg);
 
   // on FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
-  void beam_op_func_info(Vector<word_t> &code, Term, Term, Term);
+  void beam_op_func_info(Vector<Word> &code, Term, Term, Term);
 
   Term parse_term(tool::Reader &r);
 
@@ -147,31 +147,31 @@ private:
   // Code parsing functions - run a loop for each opcode, and then output
   // results to target module
   //
-  Vector<word_t> read_code(Module *m, array_view<const u8_t>,
-                           Vector<word_t> &output);
+  Vector<Word> read_code(Module *m, ArrayView<const Uint8>,
+                           Vector<Word> &output);
   bool rewrite_opcode(genop::Opcode opcode,
-                      Vector<word_t> &output,
+                      Vector<Word> &output,
                       tool::Reader &r);
   void post_rewrite_opcode(genop::Opcode opcode,
                            Module *m,
-                           Vector<word_t> &output);
+                           Vector<Word> &output);
   void output_exports(Module *m);
   void output_lambdas(Module *m);
   void output_selectlists(Module *m);
   // end code parsing
 
-  static Tag parse_tag(tool::Reader &r, u8_t value, int tag=-1);
-  static Term parse_int_term(tool::Reader &r, u8_t first);
+  static Tag parse_tag(tool::Reader &r, Uint8 value, int tag=-1);
+  static Term parse_int_term(tool::Reader &r, Uint8 first);
   inline static bool is_base_tag(Tag t) { return t < Tag::Extended_Base; }
-  static Term create_int_term(tool::Reader &r, u8_t first);
-  static Term parse_bigint(tool::Reader & /*r*/, word_t /*byte_count*/);
+  static Term create_int_term(tool::Reader &r, Uint8 first);
+  static Term parse_bigint(tool::Reader & /*r*/, Word /*byte_count*/);
   static Term parse_float(tool::Reader & /*r*/);
   static Term parse_alloclist(tool::Reader &r);
-  static Pair<sword_t, bool> parse_small_int(tool::Reader &r, u8_t first);
-  static Pair<sword_t, bool> parse_create_small_int(tool::Reader &r, u8_t tag);
+  static Pair<SWord, bool> parse_small_int(tool::Reader &r, Uint8 first);
+  static Pair<SWord, bool> parse_create_small_int(tool::Reader &r, Uint8 tag);
 
   // Returns result + overflow flag, overflow means we want to read bigint
-  static Pair<sword_t, bool> read_signed_word(tool::Reader &r, word_t count);
+  static Pair<SWord, bool> read_signed_word(tool::Reader &r, Word count);
 };
 
 } // ns gluon
