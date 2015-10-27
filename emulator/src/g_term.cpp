@@ -174,7 +174,7 @@ void Term::print(const VM &vm) const
     Std::fmt(FMT_SWORD, small_sword());
   }
   else if (is_catch()) {
-    Std::fmt("CATCH(" FMT_0xHEX ")", catch_val());
+    Std::fmt("#Catch(" FMT_0xHEX ")", catch_val());
   }
   else if (is_short_pid()) {
     Std::fmt("#Pid<" FMT_0xHEX ">", short_pid_get_value());

@@ -184,7 +184,7 @@ private:
   //void emit_opcode(Vector<Word> &output, genop::Opcode op, Term arg1, Term arg2, Term arg3);
   // end code parsing
 
-  static Tag parse_tag(tool::Reader &r, Uint8 value, int tag=-1);
+  static Tag parse_tag(tool::Reader &r, Uint8 value, int tag /*=-1*/);
   static Term parse_int_term(tool::Reader &r, Uint8 first);
   inline static bool is_base_tag(Tag t) { return t < Tag::Extended_Base; }
   static Term create_int_term(tool::Reader &r, Uint8 first);
@@ -196,6 +196,7 @@ private:
 
   // Returns result + overflow flag, overflow means we want to read bigint
   static Pair<SWord, bool> read_signed_word(tool::Reader &r, Word count);
+  void debug_print_opcode(genop::Opcode opcode, Word arity, tool::Reader &r);
 };
 
 } // ns gluon

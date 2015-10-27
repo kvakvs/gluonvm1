@@ -476,7 +476,7 @@ public:
   //
   // Throw/catch exception magic
   //
-  inline constexpr bool is_catch() const {
+  constexpr bool is_catch() const {
     return term_tag::Catch::check(value_);
   }
   constexpr static Term make_catch(Word x) {
@@ -492,19 +492,19 @@ public:
   //
   // TODO: make a cool variadic helper to build lists
   static Term allocate_cons(proc::Heap *heap, Term head, Term tail);
-  inline static Term make_cons(Term *box) {
+  static Term make_cons(Term *box) {
     return Term(term_tag::Cons::create_from_ptr<Term>(box));
   }
-  inline bool is_cons() const {
+  bool is_cons() const {
     return term_tag::Cons::check(value_);
   }
-  inline bool is_list() const {
+  bool is_list() const {
     return is_nil() || is_cons();
   }
-  inline Term cons_head() const { return cons_get_element(0); }
-  inline Term cons_tail() const { return cons_get_element(1); }
+  Term cons_head() const { return cons_get_element(0); }
+  Term cons_tail() const { return cons_get_element(1); }
   // Takes head and tail at once
-  inline void cons_head_tail(Term &h, Term &t) const {
+  void cons_head_tail(Term &h, Term &t) const {
     auto p = boxed_get_ptr<Word>();
     h = Term(layout::CONS::head(p));
     t = Term(layout::CONS::tail(p));
@@ -517,7 +517,7 @@ protected:
   static bool does_char_require_quoting(Word c) {
     return c == '\\' || c == '\"';
   }
-  inline Term cons_get_element(Word n) const {
+  Term cons_get_element(Word n) const {
     G_ASSERT(n == 0 || n == 1);
     auto p = boxed_get_ptr<Word>();
     return Term(layout::CONS::element(p, n));
@@ -562,17 +562,17 @@ public:
     return is_small();
 #endif
   }
-  inline SWord small_sword() const {
+  SWord small_sword() const {
     G_ASSERT(is_small());
 //    Std::fmt("small_get_s val=" FMT_0xHEX " val=" FMT_0xHEX "\n", m_val, term_tag::Smallint::value(m_val));
     return term_tag::Smallint::value(value_);
   }
-  inline Word small_word() const {
+  Word small_word() const {
     G_ASSERT(is_small());
     Word v = term_tag::Smallint::value_u(value_);
     return (Word)v;
   }
-  inline static bool are_both_small(Term a, Term b) {
+  static bool are_both_small(Term a, Term b) {
     return term_tag::Smallint::check(a.as_word() & b.as_word());
   }
 
@@ -646,34 +646,34 @@ public:
   //
   // Tuple
   //
-  static inline Term make_zero_tuple() {
+  static Term make_zero_tuple() {
     return Term(term_tag::Tuple::create_from_ptr(&term::g_zero_sized_tuple));
   }
   // NOTE: Elements should contain 1 extra slot for arity!
-  static inline Term make_tuple(Term *elements, Word arity) {
+  static Term make_tuple(Term *elements, Word arity) {
     layout::TUPLE::arity((Word *)elements) = arity;
     return Term(term_tag::Tuple::create_from_ptr(elements));
   }
   // Does not set arity field, assuming that element values are already all set
-  static inline Term make_tuple_prepared(Term *elements) {
+  static Term make_tuple_prepared(Term *elements) {
     return Term(term_tag::Tuple::create_from_ptr(elements));
   }
   constexpr bool is_tuple() const {
     return term_tag::Tuple::check(value_);
   }
-  inline Word tuple_get_arity() const {
+  Word tuple_get_arity() const {
     G_ASSERT(is_tuple());
     auto p = boxed_get_ptr<Word>();
     return layout::TUPLE::arity(p);
   }
   // Zero based index n
-  inline Term tuple_get_element(Word n) const {
+  Term tuple_get_element(Word n) const {
     auto p = boxed_get_ptr<Word>();
     G_ASSERT(layout::TUPLE::arity(p) > n);
     return Term(layout::TUPLE::element(p, n));
   }
   // Zero based index n
-  inline void tuple_set_element(Word n, Term t) const {
+  void tuple_set_element(Word n, Term t) const {
     auto p = boxed_get_ptr<Word>();
     G_ASSERT(layout::TUPLE::arity(p) > n);
     layout::TUPLE::element(p, n) = t.as_word();
@@ -746,7 +746,7 @@ public:
   bool is_boxed_export() const {
     return term_tag::BoxedExport::unbox_and_check(value_);
   }
-  static inline Term make_boxed_export(Export *ex) {
+  static Term make_boxed_export(Export *ex) {
     // Assuming that pointer has subtag in first word of memory already
     Word val = term_tag::BoxedExport::create_from_ptr(ex);
     G_ASSERT(term_tag::BoxedExport::unbox_and_check(val));
@@ -816,7 +816,7 @@ public:
 
   FunArity() {}
   FunArity(Term f, Word a): fun(f), arity(a) {}
-  inline bool operator <(const FunArity &x) const {
+  bool operator <(const FunArity &x) const {
     return fun < x.fun || (fun == x.fun && arity < x.arity);
   }
 };

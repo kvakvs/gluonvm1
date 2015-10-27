@@ -325,8 +325,8 @@ void BeamLoader::load_line_table(tool::Reader &r0)
 
 Term BeamLoader::parse_term(tool::Reader &r)
 {
-  Uint8 first  = r.read_byte();
-  Tag tag     = parse_tag(r, first);
+  Uint8 first = r.read_byte();
+  Tag tag     = parse_tag(r, first, -1);
 
   //
   // Base tagged values (int, literal, atom, label, register, character)
@@ -430,18 +430,22 @@ Term BeamLoader::parse_term(tool::Reader &r)
   throw err::BeamLoad("bad extended tag");
 }
 
-BeamLoader::Tag BeamLoader::parse_tag(tool::Reader &r, Uint8 value, int tag) {
+BeamLoader::Tag BeamLoader::parse_tag(tool::Reader &r,
+                                      Uint8 value,
+                                      int tag)
+{
   if (tag == -1) {
     tag = value;
   }
-  if ((tag & 0x7) == (Uint8)Tag::Extended) {
-    return (Tag)(((Uint8)tag >> 4) + (Uint8)Tag::Extended_Base);
+  if ((Word)(tag & 0x7) == (Word)Tag::Extended) {
+    Word result = ((Word)tag >> 4) + (Word)Tag::Extended_Base;
+    return (Tag)result;
   }
   return (Tag)(tag & 0x7);
 }
 
 Term BeamLoader::parse_int_term(tool::Reader &r, Uint8 first) {
-  Tag tag = parse_tag(r, first);
+  Tag tag = parse_tag(r, first, -1);
   G_ASSERT(tag < Tag::Extended_Base);
   return create_int_term(r, first);
 }
@@ -470,7 +474,7 @@ Term BeamLoader::create_int_term(tool::Reader &r, Uint8 tag)
 
 Pair<SWord, bool>
 BeamLoader::parse_small_int(tool::Reader &r, Uint8 first) {
-  Tag tag = parse_tag(r, first);
+  Tag tag = parse_tag(r, first, -1);
   G_ASSERT(tag < Tag::Extended_Base);
   return parse_create_small_int(r, first);
 }

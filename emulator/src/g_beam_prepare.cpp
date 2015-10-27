@@ -78,41 +78,48 @@ Vector<Word> BeamLoader::read_code(Module *m,
     op_ptr = reinterpret_cast<Word>(vm_.g_opcode_labels[(Word)opcode]);
     output.push_back(op_ptr);
 
-    Std::fmt("op %s(", genop::opcode_name_map[(Word)opcode]);
-    tool::Reader r2(r);
-    for (Word p = 0; p < arity; ++p) {
-      Term arg = parse_term(r2);
-      arg.print(vm_);
-      Std::fmt("; ");
-    }
-    Std::fmt(")\n");
+    debug_print_opcode(opcode, arity, r);
 
-    Word *first_arg = &output.back() + 1;
+    Word *args = &output.back()+1;
     if (rewrite_opcode(opcode, output, r)) {
       continue;
     }
-
 
     for (Word a = 0; a < arity; ++a) {
       Term arg = parse_term(r);
 
       // Use runtime value 'Catch' to mark label references
-      if (term_tag::Catch::check(arg.as_word())) {
+      if (arg.is_catch()) {
         postponed_labels.push_back(output.size());
       }
 
       output.push_back(arg.as_word());
     }
 
-    post_rewrite_opcode(opcode, first_arg, m, output);
+    post_rewrite_opcode(opcode, args, m, output);
   } // end for all code
 
   return postponed_labels;
 }
 
+void BeamLoader::debug_print_opcode(genop::Opcode opcode, Word arity,
+                                    tool::Reader &r)
+{
+  Std::fmt("op %s(", genop::opcode_name_map[(Word)opcode]);
+  tool::Reader r2(r);
+  for (Word p = 0; p < arity; ++p) {
+    Term arg = parse_term(r2);
+    arg.print(vm_);
+    if (p+1 < arity) {
+      Std::fmt("; ");
+    }
+  }
+  Std::fmt(")\n");
+}
+
 // Here we get chance to preview opcode before its been placed to output,
-// parse and place it ourself. Returning true means we did it, and calling
-// loop will 'continue' jumping over own implementation.
+// parse and place it ourself. Returning true means we did it, and outer
+// loop will skip own arg parse implementation.
 bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
                                 Vector<Word> &output,
                                 tool::Reader &r) {
