@@ -78,7 +78,7 @@ Vector<Word> BeamLoader::read_code(Module *m,
     op_ptr = reinterpret_cast<Word>(vm_.g_opcode_labels[(Word)opcode]);
     output.push_back(op_ptr);
 
-    debug_print_opcode(opcode, arity, r);
+    //debug_print_opcode(opcode, arity, r);
 
     Word *args = &output.back()+1;
     if (rewrite_opcode(opcode, output, r)) {

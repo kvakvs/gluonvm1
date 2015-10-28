@@ -84,7 +84,7 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
             print("  impl::opcode_%s(proc, ctx);" % (op['name']))
         print("  goto next_instr;")
     else:
-        print("  G_FAIL(\"notimpl %s\");" % (op['name']))
+        print("  throw err::TODO(\"notimpl %s\");" % (op['name']))
         print("  G_IF_NODEBUG(goto next_instr;)")
     print
 

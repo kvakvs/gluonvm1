@@ -30,6 +30,8 @@ namespace Std {
   //
   void sleep(size_t micro_sec);
 
+  void assert_fail(const char *what, const char *file, int line);
+
 } // ns stdlib
 
 } // ns gluon

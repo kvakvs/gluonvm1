@@ -92,14 +92,14 @@ void Scheduler::on_new_message(Process *p)
     break;
 
   case proc::Queue::TimedWait:
-    G_TODO("timed wait new message");
+    throw err::TODO("timed wait new message");
 
   case proc::Queue::None:
     // Message arrived to a currently running process (for example send to self)
     return;
 
   case proc::Queue::PendingTimers:
-    G_FAIL("q_pending_timers");
+    throw err::TODO("q_pending_timers");
   } // switch
 
   p->current_queue_ = proc::Queue::None;
@@ -194,7 +194,7 @@ Process *Scheduler::next()
     Std::sleep(1);
   }
 
-  G_FAIL("should not be here");
+  throw err::TODO("should not be here");
 //  return nullptr;
 }
 

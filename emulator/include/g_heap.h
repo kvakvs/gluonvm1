@@ -29,11 +29,11 @@ namespace mem {
   class SystemMemoryAllocator {
   public:
     template <typename T>
-    T *allocate() { return system_memory::allocate<T>(); }
+    T *allocate() { return SysMemory::allocate<T>(); }
 
     template <typename T>
     T *allocate(size_t n) {
-      mem::Blk<T> blk = system_memory::allocate<T>(n);
+      mem::Blk<T> blk = SysMemory::allocate<T>(n);
       return blk.mem();
     }
 
@@ -46,13 +46,13 @@ namespace mem {
     template <typename T>
     void deallocate_one(T *mem) {
       mem::Blk<T> mem1(mem, 1);
-      system_memory::deallocate<T>(mem1);
+      SysMemory::deallocate<T>(mem1);
     }
 
     template <typename T>
     void deallocate_many(T *mem, size_t sz) {
       mem::Blk<T> mem1(mem, sz);
-      system_memory::deallocate<T>(mem1);
+      SysMemory::deallocate<T>(mem1);
     }
   };
 

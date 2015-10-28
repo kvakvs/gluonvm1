@@ -15,7 +15,7 @@ namespace etf {
 Term read_atom_string_i16(VM &vm, tool::Reader &r);
 Term read_atom_string_i8(VM &vm, tool::Reader &r);
 Term read_tagged_atom_string(VM &vm, tool::Reader &r);
-Node *get_node(VM &vm, Term /*sysname*/, dist::creation_t /*creation*/);
+Node *get_node(VM &vm, Term /*sysname*/, dist::Creation /*creation*/);
 Term make_pid(VM &vm, Term sysname, Word id, Word serial, Uint8 creation);
 Term read_tuple(VM &vm, proc::Heap *heap, tool::Reader &r, Word arity);
 Term read_string_ext(proc::Heap *heap, tool::Reader &r);
@@ -51,7 +51,7 @@ Term read_tagged_atom_string(VM &vm, tool::Reader &r) {
 }
 
 
-Node *get_node(VM &vm, Term /*sysname*/, dist::creation_t /*creation*/) {
+Node *get_node(VM &vm, Term /*sysname*/, dist::Creation /*creation*/) {
 #if FEATURE_ERL_DIST
   G_TODO("distribution support pid etf")
 #endif

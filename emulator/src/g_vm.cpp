@@ -23,16 +23,6 @@ namespace err {
   IMPL_EXCEPTION(Process)
 } // ns err
 
-//str_atom_map_t  VM::g_atoms;
-//atom_str_map_t  VM::g_atoms_reverse;
-//Word          VM::g_atom_counter; // initialized in init_predef_atoms
-//Node           *VM::g_this_node = nullptr;
-//const void    **VM::g_opcode_labels;
-//Str             VM::g_empty_str;
-//Scheduler      *VM::g_scheduler = nullptr;
-//code::Server   *VM::g_cs = nullptr;
-//Process        *VM::g_root_proc = nullptr;
-//atom_proc_map_t VM::g_registered_names;
 
 VM::VM(): sched_(*this)
 {

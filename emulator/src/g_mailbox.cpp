@@ -39,7 +39,7 @@ void Mailbox::remove_current()
   G_ASSERT(*current_ != the_non_value);
 
   if (current_ == messages_.end() || *current_ == the_non_value) {
-    G_FAIL("removing from empty msgbox cell");
+    throw err::Process("removing from empty msgbox cell");
     //m_mbox_ptr = m_mbox.begin();
   } else {
     messages_.erase(current_);

@@ -26,5 +26,13 @@ namespace Std {
   void puts() {
     std::puts("");
   }
-} // ns mem
+
+  void assert_fail(const char *what, const char *file, int line)
+  {
+    Std::fmt("FAIL: %s (%s:%d)\n", what, file, line);
+    Std::abort();
+  }
+
+
+} // ns Std
 } // ns gluon

@@ -261,14 +261,14 @@ namespace dist {
   //
   // Creation in node specific data (pids, ports, refs)
   //
-  const Word CRE_SIZE = 2;
+  const Word creation_size = 2;
 
-  typedef Uint8 creation_t;
+  using Creation = Uint8;
 
   // MAX value for the creation field in pid, port and reference
-  const creation_t MAX_CREATION  = (1 << CRE_SIZE);
-  const creation_t ORIG_CREATION     = 0;
-  const creation_t INTERNAL_CREATION = 255;
+  const Creation max_creation      = (1 << creation_size);
+  const Creation orig_creation     = 0;
+  const Creation internal_creation = 255;
 } // ns dist
 
 namespace term {

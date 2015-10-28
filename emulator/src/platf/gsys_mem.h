@@ -1,8 +1,7 @@
 #pragma once
 
+//#include <memory>
 #include <stdlib.h>
-//#include "g_defs.h"
-//#include "g_error.h"
 
 namespace gluon {
 
@@ -41,16 +40,10 @@ namespace mem {
         delete [] p.mem();
       }
     }
-
-//    template <typename T>
-//    static void free(T *p) {
-//      // NOTE: this won't call no destructor
-//      return free_bytes(reinterpret_cast<u8_t *>(p));
-//    }
   };
 
 } // ns mem
 
-using system_memory = mem::CppStdlibMemory;
+using SysMemory = mem::CppStdlibMemory;
 
 } // ns gluon

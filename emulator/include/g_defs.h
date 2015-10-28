@@ -159,6 +159,10 @@ namespace gluon {
   } // ns line
 #endif
 
+  namespace Std {
+    // Used by G_ASSERT macro
+    void assert_fail(const char *what, const char *file, int line);
+  } // ns Std
 
 } // ns gluon
 
@@ -169,11 +173,11 @@ namespace gluon {
 
 #define G_NORETURN __attribute__((noreturn))
 
-#define G_FAIL(MSG) ::fprintf(stderr, "FAIL: %s (%s:%d)\n", MSG, __FILE__, __LINE__); ::abort();
+//#define G_FAIL(MSG) ::fprintf(stderr, "FAIL: %s (%s:%d)\n", MSG, __FILE__, __LINE__); ::abort();
 
 // TODO: debug macro goes here
 #if G_DEBUG
-#   define G_ASSERT(X) if (!(X)) { G_FAIL(#X); }
+#   define G_ASSERT(X) if (!(X)) { Std::assert_fail(#X, __FILE__, __LINE__); }
 #   define G_ASSERT_MSG(X, MSG) if (!(X)) { G_FAIL(MSG); }
 #   define G_TODO(what) { \
       ::fprintf(stderr, "TODO: %s (%s:%d)\n", what, __FILE__, __LINE__);  \

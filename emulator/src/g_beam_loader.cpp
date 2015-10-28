@@ -502,7 +502,7 @@ BeamLoader::read_signed_word(tool::Reader &r, Word count) {
     bool overflow = (r.peek_byte() & ((size_t)1 << (count * 8 - 1)));
     return std::make_pair(r.read_big_s(count), overflow);
   }
-  G_FAIL("oops");
+  throw err::TODO("oops");
 }
 
 Pair<SWord, bool>
@@ -589,7 +589,7 @@ Term BeamLoader::parse_alloclist(tool::Reader &r)
   type = Tag::Literal;
   val = words;
 #endif
-  G_FAIL("alloc list?");
+  throw err::TODO("alloc list?");
 }
 
 void BeamLoader::resolve_labels(const Vector<Word> &postponed_labels,

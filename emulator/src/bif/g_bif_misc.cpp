@@ -469,7 +469,7 @@ Term bif_length_1(Process *proc, Term a)
     counter++;
   }
   if (!a.is_nil()) {
-    G_FAIL("throw badarg");
+    throw proc->bif_badarg();
   }
   return Term::make_small(counter);
 }

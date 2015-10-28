@@ -8,7 +8,7 @@ namespace gluon {
 class Node {
 public:
   Term m_sysname = the_nil;
-  dist::creation_t m_creation = dist::INTERNAL_CREATION;
+  dist::Creation m_creation = dist::internal_creation;
 };
 
 } // ns gluon

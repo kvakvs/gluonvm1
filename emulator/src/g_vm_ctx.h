@@ -212,7 +212,7 @@ struct VMRuntimeContext: RuntimeContext {
       regs[0].print(vm_);
       Std::fmt(":");
       regs[1].println(vm_);
-      G_FAIL("Stopping execution here");
+      throw err::Process("Stopping execution here");
     }
     // unwind stack
   }
