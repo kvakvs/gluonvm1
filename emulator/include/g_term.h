@@ -36,167 +36,167 @@ namespace term_tag {
   // 111011 nil,noval,rip
   // xxx111 small integer
 
-  enum {
-    CONS   = 0,
-    TUPLE  = 1,
-    BOXED  = 2,
-    IMMED1 = 3,
+  enum class PrimaryTag {
+    Cons   = 0,
+    Tuple  = 1,
+    Boxed  = 2,
+    Immediate1 = 3,
   };
 
   //
   // Group of operations on level 0 tag (stores tag in bits 0,1)
   //
-  const Word PRIMARY_SIZE = 2;
+  const Word Primary_tag_size = 2;
 
-  template <Word TAG> struct LEVEL0_TAG {
-    const static Word MASK = 0x3;
+  template <PrimaryTag TagType> struct Level0Tag {
+    const static Word Mask = 0x3;
     constexpr static bool check(Word x) {
-      return (x & MASK) == TAG;
+      return (x & Mask) == (Word)TagType;
     }
     template <typename T>
     inline static Word create_from_ptr(T *p) {
-      return compress_pointer(p) | TAG;
+      return compress_pointer(p) | (Word)TagType;
     }
     template <typename T>
     inline static T *expand_ptr(Word x) {
-      return expand_pointer<T>(x & ~MASK);
+      return expand_pointer<T>(x & ~Mask);
     }
     constexpr static Word create(Word v) {
-      return (v << PRIMARY_SIZE) | TAG;
+      return (v << Primary_tag_size) | (Word)TagType;
     }
     constexpr static Word value(Word t) {
-      return (t >> PRIMARY_SIZE);
+      return (t >> Primary_tag_size);
     }
   };
 
-  typedef LEVEL0_TAG<CONS> Cons;
-  typedef LEVEL0_TAG<TUPLE> Tuple;
-  typedef LEVEL0_TAG<BOXED> Boxed;
-  typedef LEVEL0_TAG<IMMED1> Immed;
+  typedef Level0Tag<PrimaryTag::Cons>       Cons;
+  typedef Level0Tag<PrimaryTag::Tuple>      Tuple;
+  typedef Level0Tag<PrimaryTag::Boxed>      Boxed;
+  typedef Level0Tag<PrimaryTag::Immediate1> Immed;
 
   //
   // Templatized tag/untag/check functions for level 1 tags (bits 2,3 when
   // bits 0,1 are equal to IMMED1)
   //
-  enum {
-    ATOM      = 0, //(0 << PRIMARY_SIZE) | IMMED1,
-    SMALL_INT = 1,
-    SHORT_PID = 2,
-    SHORT_PORT = 4,
-    FP_REG    = 6,
-    CATCH     = 8,
-    X_REG     = 10,
-    Y_REG     = 12,
-    SPECIAL   = 14, // includes nil,noval,rip
+  enum class Imm1Tag {
+    Atom       = 0, //(0 << PRIMARY_SIZE) | IMMED1,
+    SmallInt   = 1,
+    ShortPid   = 2,
+    ShortPort  = 4,
+    FpRegister = 6,
+    Catch      = 8,
+    XRegister  = 10,
+    YRegister  = 12,
+    Special    = 14, // includes nil,noval,rip
   };
 
   //
   // Group of operations on level 1 tag (stores tag in bits 2,3,4,5 while bits
   // 0,1 contain 0x03)
   //
-  template <Word TAG> struct LEVEL1_TAG {
-    const static Word MASK = 0x3F;
-    // level 1 bits shifted left with IMMED1 level 0 tag together
-    const static Word TAG_L0_L1 = (TAG << PRIMARY_SIZE) | IMMED1;
-    const static Word L1_TAG_BITS = 6;
+  template <Imm1Tag TagType> struct Level1Tag {
+    const static Word Mask = 0x3F; // 6 least bits = 1
+    // level 1 tag bits shifted left | level 0 Immediate1 tag
+    const static Word Tag_incl_L0L1 =
+        ((Word)TagType << Primary_tag_size) | (Word)PrimaryTag::Immediate1;
+    const static Word L1_tag_bits = 6;
 
     constexpr static bool check(Word x) {
-      return (x & MASK) == TAG_L0_L1;
+      return (x & Mask) == Tag_incl_L0L1;
     }
     constexpr static Word create(Word v) {
-      return (v << L1_TAG_BITS) | TAG_L0_L1;
+      return (v << L1_tag_bits) | Tag_incl_L0L1;
     }
     constexpr static Word value(Word t) {
-      return t >> L1_TAG_BITS;
+      return t >> L1_tag_bits;
     }
   };
 
-  typedef LEVEL1_TAG<ATOM> Atom;
-  typedef LEVEL1_TAG<SHORT_PID> ShortPid;
-  typedef LEVEL1_TAG<SHORT_PORT> ShortPort;
-  typedef LEVEL1_TAG<CATCH> Catch;
-  typedef LEVEL1_TAG<FP_REG> FloatRegReference;
-  typedef LEVEL1_TAG<X_REG> RegReference;
-  typedef LEVEL1_TAG<Y_REG> StackReference;
-  typedef LEVEL1_TAG<SPECIAL> Special; // includes nil,noval,rip
+  typedef Level1Tag<Imm1Tag::Atom> Atom;
+  typedef Level1Tag<Imm1Tag::ShortPid> ShortPid;
+  typedef Level1Tag<Imm1Tag::ShortPort> ShortPort;
+  typedef Level1Tag<Imm1Tag::Catch> Catch;
+  typedef Level1Tag<Imm1Tag::FpRegister> FloatRegReference;
+  typedef Level1Tag<Imm1Tag::XRegister> RegReference;
+  typedef Level1Tag<Imm1Tag::YRegister> StackReference;
+  typedef Level1Tag<Imm1Tag::Special> Special; // includes nil,noval,rip
 
   struct Smallint {
-    const static Word TAG           = 0x1;
-    const static Word MASK          = 0x7;
+    const static Word Tag           = 0x1;
+    const static Word Mask          = 0x7;
 
     // level 1 bits shifted left with IMMED1 level 0 tag together
-    const static Word TAG_L0_L1 = (TAG << PRIMARY_SIZE) | IMMED1;
-    const static Word L1_TAG_BITS = 3;
+    const static Word Tag_incl_L0L1 =
+        (Tag << Primary_tag_size) | (Word)PrimaryTag::Immediate1;
+    const static Word L1_tag_bits = 3;
 
     constexpr static bool check(Word x) {
-      return (x & MASK) == TAG_L0_L1;
+      return (x & Mask) == Tag_incl_L0L1;
     }
     constexpr static Word create(SWord v) {
-      return (Word)(v << L1_TAG_BITS) | TAG_L0_L1;
+      return (Word)(v << L1_tag_bits) | Tag_incl_L0L1;
     }
     constexpr static Word create_u(Word v) {
-      return (Word)(v << L1_TAG_BITS) | TAG_L0_L1;
+      return (Word)(v << L1_tag_bits) | Tag_incl_L0L1;
     }
     constexpr static SWord value(Word t) {
-      return ((SWord)t) >> L1_TAG_BITS;
+      return ((SWord)t) >> L1_tag_bits;
     }
     constexpr static Word value_u(Word t) {
-      return t >> L1_TAG_BITS;
+      return t >> L1_tag_bits;
     }
   };
 
   //
   // Boxed subtags
   //
-  const Word BOXED_SUBTAG_BITS = 4;
-  const Word BOXED_SUBTAG_MASK = 0x0F;
-  const Word BOXED_MAX_SUBTAG_VALUE
-    = (1UL << (get_hardware_bits() - BOXED_SUBTAG_BITS)) - 1;
+  const Word boxed_subtag_bits = 4;
+  const Word boxed_subtag_mask = 0x0F;
+  const Word boxed_max_subtag_val =
+      (1UL << (gluon::word_bitsize - boxed_subtag_bits)) - 1;
 
   inline Word boxed_subtag(Word *p) {
-    return p[0] & BOXED_SUBTAG_MASK;
+    return p[0] & boxed_subtag_mask;
   }
 
-  enum {
-    BOXED_POS_BIGNUM  = 0,
-    BOXED_NEG_BIGNUM  = 1,
-#if FEATURE_FLOAT
-    BOXED_FLOAT       = 2,
-#endif
-    BOXED_MAP         = 3,
-    BOXED_FUN         = 6,
-    BOXED_EXPORT      = 7,
-    BOXED_PID         = 8,
-    BOXED_PORT        = 9,
-    BOXED_REF         = 10,
-    BOXED_RIP         = 11,
-    BOXED_PROC_BIN    = 12,
-    BOXED_HEAP_BIN    = 13,
-    BOXED_MATCH_CTX   = 14,
-    BOXED_SUB_BIN     = 15,
+  enum class BoxedSubtag {
+    PositiveBignum  = 0,
+    NegativeBignum  = 1,
+    Float     = 2,
+    Map       = 3,
+    FunObject = 6,
+    Export    = 7,
+    Pid       = 8,
+    Port      = 9,
+    Ref       = 10,
+    DestroyedSomething = 11,
+    ProcBinary      = 12,
+    HeapBinary      = 13,
+    MatchContext    = 14,
+    SubBinary       = 15,
   };
 
   // Takes least 4 bits of subtag
-  static constexpr Word get_subtag(Word x) {
-    return x & BOXED_SUBTAG_MASK;
+  static constexpr BoxedSubtag get_subtag(Word x) {
+    return (BoxedSubtag)(x & boxed_subtag_mask);
   }
   // Removes least 4 bits of subtag returning what's left
   static constexpr Word get_subtag_value(Word x) {
-    return x >> BOXED_SUBTAG_BITS;
+    return x >> boxed_subtag_bits;
   }
   // Takes m_val from Term, converts to pointer and reads subtag (least 4 bits)
-  static inline Word unbox_and_get_subtag(Word x) {
-    return Boxed::expand_ptr<Word>(x)[0] & BOXED_SUBTAG_MASK;
+  static inline BoxedSubtag unbox_and_get_subtag(Word x) {
+    return (BoxedSubtag)(Boxed::expand_ptr<Word>(x)[0] & boxed_subtag_mask);
   }
 
-  template <Word SUBTAG> struct BOXED_SUBTAG {
+  template <BoxedSubtag Subtag> struct TaggedBox {
     // Takes a term value, converts to pointer, checks if it was boxed, then
     // follows the pointer and checks that first word is tagged with SUBTAG
     static inline bool unbox_and_check(Word x) {
-      return Boxed::check(x) && unbox_and_get_subtag(x) == SUBTAG;
+      return Boxed::check(x) && unbox_and_get_subtag(x) == Subtag;
     }
     static constexpr bool check_subtag(Word x) {
-      return get_subtag(x) == SUBTAG;
+      return get_subtag(x) == Subtag;
     }
     template <typename T>
     inline static Word create_from_ptr(T *p) {
@@ -207,44 +207,42 @@ namespace term_tag {
       return Boxed::expand_ptr<T>(x);
     }
     static constexpr Word create_subtag(Word x) {
-      return (x << BOXED_SUBTAG_BITS) | SUBTAG;
+      return (x << boxed_subtag_bits) | (Word)Subtag;
     }
   };
 
-  typedef BOXED_SUBTAG<BOXED_POS_BIGNUM> BoxedPosBignum;
-  typedef BOXED_SUBTAG<BOXED_NEG_BIGNUM> BoxedNegBignum;
-#if FEATURE_FLOAT
-  typedef BOXED_SUBTAG<BOXED_FLOAT> BoxedFloat;
-#endif
-  typedef BOXED_SUBTAG<BOXED_MAP> BoxedMap;
-  typedef BOXED_SUBTAG<BOXED_FUN> BoxedFun;
-  typedef BOXED_SUBTAG<BOXED_EXPORT> BoxedExport;
-  typedef BOXED_SUBTAG<BOXED_PID> BoxedPid;
-  typedef BOXED_SUBTAG<BOXED_PORT> BoxedPort;
-  typedef BOXED_SUBTAG<BOXED_REF> BoxedRef;
-  typedef BOXED_SUBTAG<BOXED_RIP> BoxedRIP;
-  typedef BOXED_SUBTAG<BOXED_PROC_BIN> BoxedProcBin;
-  typedef BOXED_SUBTAG<BOXED_HEAP_BIN> BoxedHeapBin;
-  typedef BOXED_SUBTAG<BOXED_MATCH_CTX> BoxedMatchCtx;
-  typedef BOXED_SUBTAG<BOXED_SUB_BIN> BoxedSubBin;
+  typedef TaggedBox<BoxedSubtag::PositiveBignum>  BoxedPosBignum;
+  typedef TaggedBox<BoxedSubtag::NegativeBignum>  BoxedNegBignum;
+  typedef TaggedBox<BoxedSubtag::Float>           BoxedFloat;
+  typedef TaggedBox<BoxedSubtag::Map>             BoxedMap;
+  typedef TaggedBox<BoxedSubtag::FunObject>       BoxedFun;
+  typedef TaggedBox<BoxedSubtag::Export>          BoxedExport;
+  typedef TaggedBox<BoxedSubtag::Pid>             BoxedPid;
+  typedef TaggedBox<BoxedSubtag::Port>            BoxedPort;
+  typedef TaggedBox<BoxedSubtag::Ref>             BoxedRef;
+  typedef TaggedBox<BoxedSubtag::DestroyedSomething> BoxedRIP;
+  typedef TaggedBox<BoxedSubtag::ProcBinary>      BoxedProcBin;
+  typedef TaggedBox<BoxedSubtag::HeapBinary>      BoxedHeapBin;
+  typedef TaggedBox<BoxedSubtag::MatchContext>    BoxedMatchCtx;
+  typedef TaggedBox<BoxedSubtag::SubBinary>       BoxedSubBin;
 
-  const Word CP_TAG = 1UL << (G_HARDWARE_BITS-1);
+  const Word continuation_tag = 1UL << (gluon::word_bitsize - 1);
   // Check highest bit if it was CP pushed on stack
   template <typename T>
   inline constexpr bool is_cp(T *x) {
-    return 0 != (((Word)x) & CP_TAG);
+    return 0 != (((Word)x) & continuation_tag);
   }
   // Set highest bit to mark CP pushed on stack
   template <typename T>
   inline T *make_cp(T *x) {
     G_ASSERT(!is_cp(x));
-    return (T *)(((Word)x) | CP_TAG);
+    return (T *)(((Word)x) | continuation_tag);
   }
   // Check and clear highest bit to mark CP pushed on stack
   template <typename T>
   inline T *untag_cp(T *x) {
     G_ASSERT(is_cp(x));
-    return (T *)(((Word)x) & (~CP_TAG));
+    return (T *)(((Word)x) & (~continuation_tag));
   }
 } // ns term_tag
 
@@ -274,15 +272,15 @@ namespace dist {
 } // ns dist
 
 namespace term {
-  const Word NIL = term_tag::Special::create(~0UL);
-  const Word THE_NON_VALUE = term_tag::Special::create(0);
+  const Word nil_as_word        = term_tag::Special::create(~0UL);
+  const Word non_value_as_word  = term_tag::Special::create(0);
 
   const Word pid_id_size = 15;
   const Word pid_data_size = 28;
   const Word pid_serial_size = (pid_data_size - pid_id_size);
 
   const Word small_bits = sizeof(Word) * 8
-                            - term_tag::Smallint::L1_TAG_BITS;
+                            - term_tag::Smallint::L1_tag_bits;
   const SWord small_upper_bound = (1L << (small_bits-1))-1;
   const SWord small_lower_bound = -(1L << (small_bits-1));
 
@@ -298,7 +296,7 @@ class BoxedFun;
 namespace layout {
   // Cons layout has no place for bit tag
   struct CONS {
-    static const Word BOX_SIZE = 2;
+    static const Word box_word_size = 2;
 
     template <typename Cell>
     static inline Cell &head(Cell *box) {
@@ -322,9 +320,9 @@ namespace layout {
   // Tuple layout has no place for bit tag.
   // First goes arity, then elements
   struct TUPLE {
-    static const Word BOX_EXTRA = 1;
+    static const Word box_extra_words = 1;
 
-    static inline Word box_size(Word Arity) { return Arity + BOX_EXTRA; }
+    static inline Word box_size(Word Arity) { return Arity + box_extra_words; }
 
     template <typename Cell>
     static inline Cell &arity(Cell *box) {
@@ -335,7 +333,7 @@ namespace layout {
     template <typename Cell>
     static inline Cell &element(Cell *box, Word i) {
       static_assert(sizeof(Cell) == sizeof(Word), "bad cell size");
-      return box[i+BOX_EXTRA];
+      return box[i+box_extra_words];
     }
   };
 
@@ -350,7 +348,7 @@ namespace layout {
   // Box structure
   // Word { size, tag_bits: 4 }; u8_t data[size]
   struct PROC_BIN {
-    static const Word BOX_EXTRA = 1;
+    static const Word box_extra_words = 1;
 
     static inline Word box_size(Word bytes);
 
@@ -396,7 +394,7 @@ namespace layout {
 #pragma clang diagnostic pop
 
   struct HEAP_BIN {
-    static const Word FAR_HEAP_EXTRA = sizeof(HeapbinBox) / sizeof(Word);
+    static const Word farheap_extra_words = sizeof(HeapbinBox) / sizeof(Word);
 
     static inline Word box_size(Word bytes);
   };
@@ -413,16 +411,16 @@ private:
 
 public:
   explicit constexpr Term(Word v): value_(v) {}
-  constexpr Term(): value_(0) {}
+  constexpr Term(): value_(term::non_value_as_word) {}
   //constexpr Term(const Term &other): m_val(other.m_val) {}
 
   // Do not call this; for better looking code use gluon::NIL const instead
   constexpr static Term make_nil_() {
-    return Term(term::NIL);
+    return Term(term::nil_as_word);
   }
   // Do not call this; for better looking code use gluon::NONVALUE const instead
   constexpr static Term make_non_value_() {
-    return Term(term::THE_NON_VALUE);
+    return Term(term::non_value_as_word);
   }
 
   //
@@ -438,10 +436,10 @@ public:
   inline bool operator ==(const Word x) const { return value_ == x; }
   inline bool operator !=(const Term &x) const { return value_ != x.value_; }
   inline bool operator !=(const Word x) const { return value_ != x; }
-  inline bool is_nil() const { return value_ == term::NIL; }
-  inline bool is_not_nil() const { return value_ != term::NIL; }
-  inline bool is_non_value() const { return value_ == term::THE_NON_VALUE; }
-  inline bool is_value() const { return value_ != term::THE_NON_VALUE; }
+  inline bool is_nil() const { return value_ == term::nil_as_word; }
+  inline bool is_not_nil() const { return value_ != term::nil_as_word; }
+  inline bool is_non_value() const { return value_ == term::non_value_as_word; }
+  inline bool is_value() const { return value_ != term::non_value_as_word; }
 
   inline bool is_immed() const {
     return term_tag::Immed::check(value_);

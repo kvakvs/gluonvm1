@@ -23,10 +23,6 @@ public:
     Reader new_r(ArrayView<const Uint8>(ptr_, new_size));
     return new_r;
   }
-  Reader clone() {
-    Reader new_r(ArrayView<const Uint8>(ptr_, (Word)(view_.limit() - ptr_)));
-    return new_r;
-  }
 
   inline Uint8 peek_byte() {
     return *ptr_;

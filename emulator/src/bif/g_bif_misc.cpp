@@ -604,7 +604,7 @@ Term bif_plusplus_2(Process *proc, Term a, Term b)
     return proc->bif_badarg(a);  // a must be proper list
   }
 
-  Term *htop = (Term *)proc->heap_alloc(len.first * layout::CONS::BOX_SIZE);
+  Term *htop = (Term *)proc->heap_alloc(len.first * layout::CONS::box_word_size);
   Term result(Term::make_cons(htop));
 
   //Word *term_data = peel_cons(As);
@@ -614,7 +614,7 @@ Term bif_plusplus_2(Process *proc, Term a, Term b)
     td.cons_head_tail(layout::CONS::head(htop), layout::CONS::tail(htop));
 
     Term *tail_ref = &layout::CONS::tail(htop);
-    htop += layout::CONS::BOX_SIZE;
+    htop += layout::CONS::box_word_size;
 
     if (tail_ref->is_nil()) {
       *tail_ref = b; // cons the second list

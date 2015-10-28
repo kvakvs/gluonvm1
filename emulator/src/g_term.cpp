@@ -20,7 +20,7 @@ Word term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
 #endif
 
 Term Term::allocate_cons(proc::Heap *heap, Term head, Term tail) {
-  Term *d = (Term *)heap->allocate<Word>(layout::CONS::BOX_SIZE);
+  Term *d = (Term *)heap->allocate<Word>(layout::CONS::box_word_size);
   layout::CONS::head(d) = head;
   layout::CONS::tail(d) = tail;
   return make_cons(d);
@@ -205,7 +205,7 @@ Term Term::make_binary(VM &vm, proc::Heap *h, Word bytes)
 {
   // This many bytes fits boxed subtag value. Going larger means storing size
   // elsewhere or losing significant bit from the size
-  G_ASSERT(bytes < term_tag::BOXED_MAX_SUBTAG_VALUE);
+  G_ASSERT(bytes < term_tag::boxed_max_subtag_val);
 
   if (bytes <= bin::heapbin_limit) {
     Word *box = h->allocate<Word>(layout::PROC_BIN::box_size(bytes));
@@ -236,11 +236,11 @@ void MFArity::print(const VM &vm)
 }
 
 Word layout::PROC_BIN::box_size(Word bytes) {
-  return calculate_word_size(bytes) + BOX_EXTRA;
+  return calculate_word_size(bytes) + box_extra_words;
 }
 
 Word layout::HEAP_BIN::box_size(Word bytes) {
-  return calculate_word_size(bytes) + FAR_HEAP_EXTRA;
+  return calculate_word_size(bytes) + farheap_extra_words;
 }
 
 #endif // DEBUG

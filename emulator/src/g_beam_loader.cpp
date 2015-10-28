@@ -167,7 +167,6 @@ void BeamLoader::load_export_table(tool::Reader &r0) {
 
     auto arity = r.read_big_u32();
     auto label = r.read_big_u32();
-//    Std::fmt("load export %s/" FMT_UWORD " @label %zu\n", f.atom_str().c_str(), arity, label);
 
     exp_indexes_[FunArity(f, arity)] = LabelIndex(label);
   }
@@ -441,8 +440,19 @@ BeamLoader::Tag BeamLoader::parse_tag(tool::Reader &r,
     Word result = ((Word)tag >> 4) + (Word)Tag::Extended_Base;
     return (Tag)result;
   }
-  return (Tag)(tag & 0x7);
+    return (Tag)(tag & 0x7);
 }
+
+/*
+Uint8 BeamLoader::parse_tag_u8(tool::Reader &r, Uint8 value, int tag) {
+  if (tag == -1) {
+    tag = value;
+  }
+  if ((tag & 0x7) == (Uint8)Tag::Extended) {
+    return ((Uint8)tag >> 4) + (Uint8)Tag::Extended_Base;
+  }
+  return (tag & 0x7);
+}*/
 
 Term BeamLoader::parse_int_term(tool::Reader &r, Uint8 first) {
   Tag tag = parse_tag(r, first, -1);

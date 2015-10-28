@@ -187,7 +187,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // @doc  Clear the Nth stack word. (By writing NIL.)
     Term y_reg(ctx.ip[0]);
     G_ASSERT(y_reg.is_regy());
-    ctx.stack().set_y(y_reg.regy_get_value(), term::NIL);
+    ctx.stack().set_y(y_reg.regy_get_value(), term::nil_as_word);
     ctx.ip++;
   }
   inline void opcode_deallocate(Process *proc, VMRuntimeContext &ctx) { // opcode: 18

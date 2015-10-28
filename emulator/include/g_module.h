@@ -40,7 +40,7 @@ public:
     G_ASSERT(co != nullptr); // either biffn or code must be not-null
   }
 
-  static const Word BIF_BIT = (1U << term_tag::BOXED_SUBTAG_BITS);
+  static const Word BIF_BIT = (1U << term_tag::boxed_subtag_bits);
   inline bool is_bif() const {
     return (hdr_ & BIF_BIT) == BIF_BIT;
   }

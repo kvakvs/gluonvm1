@@ -59,9 +59,7 @@ namespace gluon {
     DECL_EXCEPTION(Process)
   } // ns err
 
-  constexpr unsigned int get_hardware_bits() {
-    return (8*sizeof(void*));
-  }
+  constexpr unsigned int word_bitsize = G_HARDWARE_BITS;
 
   //template <typename T>
   //using array_view = gsl::array_view<T>;
@@ -122,7 +120,14 @@ namespace gluon {
     void value(T newvalue) { value_ = newvalue; }
   };
   // Index in label table, wrapped to create a distinct compile-time type
-  using LabelIndex = Wrap<Word>;
+  struct LabelIndex: Wrap<Word> {
+    LabelIndex()                               = default;
+    LabelIndex(Word x): Wrap<Word>(x) {}
+    LabelIndex(const LabelIndex &other)        = default;
+    LabelIndex(LabelIndex &&other)             = default;
+    LabelIndex &operator =(const LabelIndex &) = default;
+    LabelIndex &operator =(LabelIndex &&)      = default;
+  };
 
   namespace erts {
     // How many reds will a process be allowed to run before next proc wakes up

@@ -55,7 +55,7 @@ Term build_list(proc::Heap *heap, Iter iter, Iter to) {
 
   Word len = length(iter, to);
   Std::fmt("len=" FMT_UWORD "\n", len);
-  Term *h = (Term *)heap->allocate<Word>(layout::CONS::BOX_SIZE * len);
+  Term *h = (Term *)heap->allocate<Word>(layout::CONS::box_word_size * len);
 
   Term result = Term::make_cons(h);
   Word i = 0;
@@ -63,8 +63,8 @@ Term build_list(proc::Heap *heap, Iter iter, Iter to) {
     layout::CONS::head(h) = make_term(*iter);
     layout::CONS::tail(h) = (i == len - 1)
                             ? ::gluon::the_nil
-                            : Term::make_cons(h + layout::CONS::BOX_SIZE);
-    h += layout::CONS::BOX_SIZE;
+                            : Term::make_cons(h + layout::CONS::box_word_size);
+    h += layout::CONS::box_word_size;
     i++;
   }
 

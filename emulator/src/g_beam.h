@@ -180,11 +180,12 @@ private:
     output.push_back(arg1.as_word());
     output.push_back(arg2.as_word());
   }
-
-  //void emit_opcode(Vector<Word> &output, genop::Opcode op, Term arg1, Term arg2, Term arg3);
   // end code parsing
+  //
 
   static Tag parse_tag(tool::Reader &r, Uint8 value, int tag /*=-1*/);
+  //static Uint8 parse_tag_u8(tool::Reader &r, Uint8 value, int tag);
+
   static Term parse_int_term(tool::Reader &r, Uint8 first);
   inline static bool is_base_tag(Tag t) { return t < Tag::Extended_Base; }
   static Term create_int_term(tool::Reader &r, Uint8 first);

@@ -133,7 +133,7 @@ Term read_string_ext(proc::Heap *heap, tool::Reader &r) {
   Term *ref = &result;
 
   for (Word i = 0; i < length; ++i) {
-    Term *cons = (Term *)heap->allocate<Word>(layout::CONS::BOX_SIZE);
+    Term *cons = (Term *)heap->allocate<Word>(layout::CONS::box_word_size);
     layout::CONS::head(cons) = Term::make_small(r.read_byte());
     *ref = Term::make_cons(cons);
     ref = &layout::CONS::tail(cons);
@@ -150,7 +150,7 @@ Term read_list_ext(VM &vm, proc::Heap *heap, tool::Reader &r) {
   Term *ref = &result;
 
   for (SWord i = (SWord)length - 1; i >= 0; i--) {
-    Term *cons = (Term *)heap->allocate<Word>(layout::CONS::BOX_SIZE);
+    Term *cons = (Term *)heap->allocate<Word>(layout::CONS::box_word_size);
 
     layout::CONS::head(cons) = read_ext_term(vm, heap, r);
     *ref = Term::make_cons(cons);
@@ -183,7 +183,7 @@ Term read_ext_term(VM &vm, proc::Heap *heap, tool::Reader &r) {
   case Tag::IntegerExt: {
       // 32-bit integer
       SWord n = r.read_big_s(4);
-      if (get_hardware_bits() > 32) {
+      if (gluon::word_bitsize > 32) {
         // fits into small_int if platform is x64
         return Term::make_small(n);
       } else { // hardware bits = 32
