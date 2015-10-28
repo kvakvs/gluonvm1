@@ -112,14 +112,14 @@ namespace term_tag {
     }
   };
 
-  typedef Level1Tag<Imm1Tag::Atom> Atom;
-  typedef Level1Tag<Imm1Tag::ShortPid> ShortPid;
+  typedef Level1Tag<Imm1Tag::Atom>      Atom;
+  typedef Level1Tag<Imm1Tag::ShortPid>  ShortPid;
   typedef Level1Tag<Imm1Tag::ShortPort> ShortPort;
-  typedef Level1Tag<Imm1Tag::Catch> Catch;
-  typedef Level1Tag<Imm1Tag::FpRegister> FloatRegReference;
-  typedef Level1Tag<Imm1Tag::XRegister> RegReference;
-  typedef Level1Tag<Imm1Tag::YRegister> StackReference;
-  typedef Level1Tag<Imm1Tag::Special> Special; // includes nil,noval,rip
+  typedef Level1Tag<Imm1Tag::Catch>     Catch;
+  typedef Level1Tag<Imm1Tag::FpRegister> FpRegister;
+  typedef Level1Tag<Imm1Tag::XRegister> XRegister;
+  typedef Level1Tag<Imm1Tag::YRegister> YRegister;
+  typedef Level1Tag<Imm1Tag::Special>   Special; // includes nil,noval,rip
 
   struct Smallint {
     const static Word Tag           = 0x1;
@@ -162,13 +162,13 @@ namespace term_tag {
   enum class BoxedSubtag {
     PositiveBignum  = 0,
     NegativeBignum  = 1,
-    Float     = 2,
-    Map       = 3,
-    FunObject = 6,
-    Export    = 7,
-    Pid       = 8,
-    Port      = 9,
-    Ref       = 10,
+    Float           = 2,
+    Map             = 3,
+    FunObject       = 6,
+    Export          = 7,
+    Pid             = 8,
+    Port            = 9,
+    Ref             = 10,
     DestroyedSomething = 11,
     ProcBinary      = 12,
     HeapBinary      = 13,
@@ -700,41 +700,41 @@ public:
   // Special values
   //
   constexpr bool is_regx() const {
-    return term_tag::RegReference::check(value_);
+    return term_tag::XRegister::check(value_);
   }
   static constexpr Term make_regx(Word x) {
-    return Term(term_tag::RegReference::create(x));
+    return Term(term_tag::XRegister::create(x));
   }
   constexpr Word regx_get_value() const {
-    return term_tag::RegReference::value(value_);
+    return term_tag::XRegister::value(value_);
   }
   constexpr bool is_regfp() const {
     if (feature_float) {
-      return term_tag::FloatRegReference::check(value_);
+      return term_tag::FpRegister::check(value_);
     }
     return false;
   }
   static constexpr Term make_regfp(Word x) {
     if (feature_float) {
-      return Term(term_tag::FloatRegReference::create(x));
+      return Term(term_tag::FpRegister::create(x));
     }
     return make_non_value_();
   }
   constexpr Word regfp_get_value() const {
     if (feature_float) {
-      return term_tag::FloatRegReference::value(value_);
+      return term_tag::FpRegister::value(value_);
     }
     return 0;
   }
 
   constexpr bool is_regy() const {
-    return term_tag::StackReference::check(value_);
+    return term_tag::YRegister::check(value_);
   }
   static constexpr Term make_regy(Word x) {
-    return Term(term_tag::StackReference::create(x));
+    return Term(term_tag::YRegister::create(x));
   }
   constexpr Word regy_get_value() const {
-    return term_tag::StackReference::value(value_);
+    return term_tag::YRegister::value(value_);
   }
 
   bool is_boxed_fun() const {

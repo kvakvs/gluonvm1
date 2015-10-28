@@ -325,21 +325,24 @@ void BeamLoader::load_line_table(tool::Reader &r0)
 Term BeamLoader::parse_term(tool::Reader &r)
 {
   Uint8 first = r.read_byte();
-  Tag tag     = parse_tag(r, first, -1);
+  TermTag tag = peek_tag(first);
 
   //
   // Base tagged values (int, literal, atom, label, register, character)
   //
   if (is_base_tag(tag)) {
-    auto psi_result = parse_small_int(r, first);
-    G_ASSERT(psi_result.second == false); // assert there's no overflow
+    auto int_overflow = parse_small_int(r, first);
+    G_ASSERT(int_overflow.second == false); // assert there's no overflow
     // TODO: on overflow read bigint or something
-    Word val = (Word)psi_result.first;
+    Word val = (Word)int_overflow.first;
 
-    if (tag == Tag::Integer || tag == Tag::Literal) {
+    switch (tag) {
+    case TermTag::Integer:
+    case TermTag::Literal: {
       return Term::make_small((SWord)val);
     }
-    if (tag == Tag::Atom) {
+
+    case TermTag::Atom: {
       if (val == 0) {
         return the_nil;
       } else if (val > atoms_.size()) { // we will subtract 1 when indexing
@@ -347,7 +350,8 @@ Term BeamLoader::parse_term(tool::Reader &r)
       }
       return vm_.to_atom(atom_tab_index_to_str(val));
     }
-    if (tag == Tag::Label) {
+
+    case TermTag::Label: {
       if (val == 0) {
         return the_non_value; //Tag::NoLabel; // empty destination
       } else if (val >= code_label_count_) {
@@ -356,31 +360,35 @@ Term BeamLoader::parse_term(tool::Reader &r)
       // special value to be recognized by label resolver
       return Term::make_catch(val);
     }
-    if (tag == Tag::XRegister) {
+
+    case TermTag::XRegister: {
       if (val >= erts::max_regs) {
         throw err::BeamLoad("invalid x register");
       }
       return Term::make_regx(val);
     }
-    if (tag == Tag::YRegister) {
+
+    case TermTag::YRegister: {
       if (val >= erts::max_stack) {
         throw err::BeamLoad("invalid y register");
       }
       return Term::make_regy(val);
     }
-    if (tag == Tag::Character) {
+
+    case TermTag::Character: {
       if (val > 65535) {
         throw err::BeamLoad("invalid character range");
       }
       return Term::make_small_u(val);
     }
-  }
+    } // end switch tag (Base tags)
+  } else
   // ---- END BASE TAGS --- BEGIN EXTENDED ---
   //
-  else if (tag == Tag::Extended_Float) {
+  if (tag == TermTag::Extended_Float) {
     return parse_float(r);
   }
-  else if (tag == Tag::Extended_List) {
+  else if (tag == TermTag::Extended_List) {
     auto psi = parse_small_int(r, r.read_byte());
     G_ASSERT(psi.second == false); // assert no overflow
     Word length = (Word)psi.first;
@@ -400,7 +408,7 @@ Term BeamLoader::parse_term(tool::Reader &r)
     resolve_selectlists_.push_back(result);
     return result;
   }
-  else if (tag == Tag::Extended_FloatRegister) {
+  else if (tag == TermTag::Extended_FloatRegister) {
 #if FEATURE_FLOAT
 //      pc, val = self._parse_floatreg(pc)
 //      args.append((tag, val))
@@ -415,10 +423,10 @@ Term BeamLoader::parse_term(tool::Reader &r)
     throw err::FeatureMissing("FLOAT");
 #endif
   }
-  else if (tag == Tag::Extended_AllocList) {
+  else if (tag == TermTag::Extended_AllocList) {
     return parse_alloclist(r);
   }
-  else if (tag == Tag::Extended_Literal) {
+  else if (tag == TermTag::Extended_Literal) {
     Word val1 = parse_int_term(r, r.read_byte()).small_word();
 
     if (val1 >= literals_.size()) {
@@ -429,34 +437,19 @@ Term BeamLoader::parse_term(tool::Reader &r)
   throw err::BeamLoad("bad extended tag");
 }
 
-BeamLoader::Tag BeamLoader::parse_tag(tool::Reader &r,
-                                      Uint8 value,
-                                      int tag)
+// TODO: return reader as arg here, parse tag and value at once, while reading more
+BeamLoader::TermTag BeamLoader::peek_tag(Uint8 value)
 {
-  if (tag == -1) {
-    tag = value;
+  if ((Word)(value & 0x7) == (Word)TermTag::Extended) {
+    Word result = ((Word)value >> 4) + (Word)TermTag::Extended_Base;
+    return (TermTag)result;
   }
-  if ((Word)(tag & 0x7) == (Word)Tag::Extended) {
-    Word result = ((Word)tag >> 4) + (Word)Tag::Extended_Base;
-    return (Tag)result;
-  }
-    return (Tag)(tag & 0x7);
+  return (TermTag)(value & 0x7);
 }
 
-/*
-Uint8 BeamLoader::parse_tag_u8(tool::Reader &r, Uint8 value, int tag) {
-  if (tag == -1) {
-    tag = value;
-  }
-  if ((tag & 0x7) == (Uint8)Tag::Extended) {
-    return ((Uint8)tag >> 4) + (Uint8)Tag::Extended_Base;
-  }
-  return (tag & 0x7);
-}*/
-
 Term BeamLoader::parse_int_term(tool::Reader &r, Uint8 first) {
-  Tag tag = parse_tag(r, first, -1);
-  G_ASSERT(tag < Tag::Extended_Base);
+  TermTag tag = peek_tag(first);
+  G_ASSERT(tag < TermTag::Extended_Base);
   return create_int_term(r, first);
 }
 
@@ -484,8 +477,8 @@ Term BeamLoader::create_int_term(tool::Reader &r, Uint8 tag)
 
 Pair<SWord, bool>
 BeamLoader::parse_small_int(tool::Reader &r, Uint8 first) {
-  Tag tag = parse_tag(r, first, -1);
-  G_ASSERT(tag < Tag::Extended_Base);
+  TermTag tag = peek_tag(first);
+  G_ASSERT(tag < TermTag::Extended_Base);
   return parse_create_small_int(r, first);
 }
 

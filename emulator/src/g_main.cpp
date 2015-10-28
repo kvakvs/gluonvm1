@@ -26,13 +26,13 @@ int main(int argc, const char *argv[]) {
   //vm::load_module("../test/g_test1.S.gleam");
   vm.codeserver().path_append("../test");
 
+  auto rootp = vm.root_process();
+  vm.codeserver().load_module(rootp, vm.to_atom("g_test1"));
+  //vm.codeserver().load_module(rootp, atom::ERLANG);
+
   // create root process and set it to some entry function
   Term start_args[2] = {the_nil, the_nil};
   MFArity mfa(vm.to_atom("otp_ring0"), vm.to_atom("start"), 2);
-
-  auto rootp = vm.root_process();
-
-  vm.codeserver().load_module(rootp, atom::ERLANG);
 
   rootp->spawn(mfa, start_args);
 

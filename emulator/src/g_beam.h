@@ -107,7 +107,7 @@ public:
   void beam_prepare_code(Module *m, ArrayView<const Uint8> data);
 
 private:
-  enum class Tag {
+  enum class TermTag {
     // The following operand types for generic instructions
     // occur in beam files.
     Literal       = 0,    // TAG_u
@@ -183,11 +183,12 @@ private:
   // end code parsing
   //
 
-  static Tag parse_tag(tool::Reader &r, Uint8 value, int tag /*=-1*/);
-  //static Uint8 parse_tag_u8(tool::Reader &r, Uint8 value, int tag);
+  static TermTag peek_tag(Uint8 byte);
 
   static Term parse_int_term(tool::Reader &r, Uint8 first);
-  inline static bool is_base_tag(Tag t) { return t < Tag::Extended_Base; }
+  constexpr static bool is_base_tag(TermTag t) {
+    return t < TermTag::Extended_Base;
+  }
   static Term create_int_term(tool::Reader &r, Uint8 first);
   static Term parse_bigint(tool::Reader & /*r*/, Word /*byte_count*/);
   static Term parse_float(tool::Reader & /*r*/);

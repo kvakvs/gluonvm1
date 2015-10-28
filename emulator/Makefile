@@ -7,7 +7,7 @@ testerlfiles:
 	cd ../test/ && make && cd ../emulator
 
 compile: codegen
-	cd _build && make -j4 && cd ..
+	cd _build && make -j7 && cd ..
 
 vg: compile
 	valgrind --leak-check=yes --log-file="valgrind.txt" _build/gluon
