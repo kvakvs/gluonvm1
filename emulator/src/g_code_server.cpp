@@ -53,7 +53,7 @@ void Server::load_module(Process *proc, Term name)
 
       Std::fmt("Loading BEAM %s\n", path.c_str());
       load_module(proc, name, ArrayView<const Uint8>(tmp_buffer, size));
-      heap->deallocate(tmp_buffer);
+      heap->deallocate_many(tmp_buffer, size);
       return;
     }
   }
@@ -90,8 +90,9 @@ bool Server::print_mfa(Word *ptr) const {
     Std::fmt(FMT_0xHEX, (Word)ptr);
     return false;
   }
-  Std::fmt("%s:%s/" FMT_UWORD,
-         mfa.mod.atom_c_str(vm_), mfa.fun.atom_c_str(vm_), mfa.arity);
+  mfa.print(vm_);
+//  Std::fmt("%s:%s/" FMT_UWORD,
+//         mfa.mod.atom_c_str(vm_), mfa.fun.atom_c_str(vm_), mfa.arity);
   return true;
 }
 

@@ -36,7 +36,7 @@ private:
   // how often low prio gets to run despite all the business
   static constexpr Word NORMAL_ADVANTAGE = 8;
 
-  Word normal_count_;
+  Word normal_count_ = 0;
 
 public:
   Scheduler(VM &vm): vm_(vm) {}

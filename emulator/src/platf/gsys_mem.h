@@ -8,29 +8,39 @@ namespace gluon {
 
 namespace mem {
 
+  template <class Type>
   class Blk {
   private:
-    void *mem_;
-    //size_t size_;
+    Type *mem_;
+    size_t size_;
   public:
-    Blk(void *m, size_t): mem_(m) {}
-    void *mem() const { return mem_; }
-    //size_t size() const { return size_; }
+    Blk(Type *m, size_t size): mem_(m), size_(size) {}
+    Type *mem() const { return mem_; }
+    size_t size() const { return size_; }
   };
 
   // Uses new and delete to allocate system memory blocks
   // TODO: get rid of typed allocate and free here, use bytes
   class CppStdlibMemory {
   public:
-    static Blk allocate(size_t bytes);
+    template <class Type>
+    static Blk<Type> allocate() {
+      return Blk<Type>(new Type, sizeof(Type));
+    }
 
-//    template <typename T>
-//    static T *alloc(Word count) {
-//      // NOTE: this won't call no constructor
-//      return reinterpret_cast<T*>(alloc_bytes(count * sizeof(T)));
-//    }
+    template <class Type>
+    static Blk<Type> allocate(size_t count) {
+      return Blk<Type>(new Type[count], count * sizeof(Type));
+    }
 
-    static void deallocate(Blk &p);
+    template <class Type>
+    static void deallocate(Blk<Type> &p) {
+      if (p.size() == 1) {
+        delete p.mem();
+      } else {
+        delete [] p.mem();
+      }
+    }
 
 //    template <typename T>
 //    static void free(T *p) {

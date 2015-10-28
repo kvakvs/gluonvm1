@@ -82,6 +82,7 @@ Vector<Word> BeamLoader::read_code(Module *m,
 
     Word *args = &output.back()+1;
     if (rewrite_opcode(opcode, output, r)) {
+      output.resize(output.size() - 1);
       continue;
     }
 
@@ -128,7 +129,7 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
     if (feature_line_numbers) {
       beam_op_line(output, parse_term(r));
     }
-    return true; // rewritten
+    return true; // processed and we want to skip writing it
   }
 
   // label/1 opcode - save offset to labels table
@@ -140,7 +141,7 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
     G_ASSERT(l_id < code_label_count_);
     labels_[l_id] = (&output.back())+1;
 
-    return true; // rewritten
+    return true; // processed and we want to skip writing it
   }
 
   if (opcode == Opcode::Func_info) {
