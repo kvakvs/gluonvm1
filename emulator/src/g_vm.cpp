@@ -44,8 +44,13 @@ VM::VM(): sched_(*this)
   init_predef_atoms();
 
   codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
+  codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.5/ebin");
+
   codeserver_->path_append("/usr/lib/erlang/lib/erts-6.4.1/ebin");
+  codeserver_->path_append("/usr/lib/erlang/lib/erts-7.0/ebin");
+
   codeserver_->path_append("/usr/lib/erlang/lib/xmerl-1.3.7/ebin");
+  codeserver_->path_append("/usr/lib/erlang/lib/xmerl-1.3.8/ebin");
 
   // create root process and set it to some entry function
   root_process_ = new Process(*this, the_non_value);

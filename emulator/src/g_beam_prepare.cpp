@@ -144,9 +144,10 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
   }
 
   if (opcode == Opcode::Func_info) {
-    parse_term(r); // mod
-    auto fun   = parse_term(r);
-    auto arity = parse_term(r);
+    tool::Reader r1(r); // clone reader to peek opcode args ahead
+    parse_term(r1); // mod
+    auto fun   = parse_term(r1);
+    auto arity = parse_term(r1);
 
     if (feature_line_numbers || feature_code_ranges) {
       beam_op_func_info(output, fun, arity, current_label_);
@@ -168,6 +169,7 @@ void BeamLoader::post_rewrite_opcode(genop::Opcode opcode,
                                      Vector<Word> &output)
 {
   if (opcode == genop::Opcode::Call_ext_only) {
+    /*
     Term arity(opcode_args[0]);
     Term label(opcode_args[1]);
 
@@ -185,6 +187,7 @@ void BeamLoader::post_rewrite_opcode(genop::Opcode opcode,
 
       return; // stop rewriting right here
     }
+      */
   }
 
   // Things to resolve from imports:

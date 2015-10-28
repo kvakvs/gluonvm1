@@ -70,6 +70,8 @@ is_binary
 is_pid
 is_boolean
 is_function
+is_reference
+is_port
 
 #--- debug ---
 #line - processed on load stage and removed

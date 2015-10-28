@@ -47,7 +47,7 @@ public:
   }
 
   // Find code location in tree of ranges
-  T find(Word *x) const
+  bool find(Word *x, T &out) const
   {
     // I cannot into range search, something with lower_bound/upper_bound which
     // compares ranges using operator < and that is too hard
@@ -56,18 +56,12 @@ public:
     while (rng.have()) {
       auto kv = rng.current();
       if (kv->first.contains(x)) {
-        return kv->second;
+        out = kv->second;
+        return true;
       }
       rng.advance();
     }
-    return T();
-//    auto find = std::make_pair(Range(x, nullptr), T());
-//    auto i = std::lower_bound(m_ranges.begin(), m_ranges.end(), find,
-//                              custom_compare<T>);
-//    if (i->first.contains(x)) {inline
-//      return i->second;
-//    }
-//    return T();
+    return false;
   }
 };
 #endif

@@ -27,9 +27,9 @@ void Module::set_exports(Module::Exports &e) {
 }
 
 #if FEATURE_CODE_RANGES
-FunArity Module::find_fun_arity(Word *ptr) const
+bool Module::find_fun_arity(Word *ptr, FunArity &out) const
 {
-  return fun_index_.find(ptr);
+  return fun_index_.find(ptr, out);
 }
 #endif
 

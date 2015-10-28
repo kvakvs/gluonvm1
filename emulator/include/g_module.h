@@ -133,7 +133,7 @@ public:
   void set_fun_ranges(code::Index<FunArity> &ci) {
     fun_index_ = std::move(ci);
   }
-  FunArity find_fun_arity(Word *ptr) const;
+  bool find_fun_arity(Word *ptr, FunArity &out) const;
 #endif
 
   void set_line_numbers(LineRefs &lr, FileNames &fn) {

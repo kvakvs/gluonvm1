@@ -56,7 +56,7 @@ public:
   // Find module, function and arity for code location and print it.
   // Returns true if mfa was found and printed, else false
   bool print_mfa(Word *ptr) const;
-  MFArity find_mfa_from_code(Word *ptr) const;
+  bool find_mfa_from_code(Word *ptr, MFArity &out) const;
   Export *find_mfa(const MFArity &mfa, Module **out_mod=nullptr) const;
 
 protected:

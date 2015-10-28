@@ -9,16 +9,15 @@ class FunEntry {
 public:
   MFArity mfa;
 
-  Word  index;
-  Uint32   uniq[4];
-  Word  old_index;
-  Word  old_uniq;
+  Word   index = 0;
+  Uint32 uniq[4] = {0, 0, 0, 0};
+  Word  old_index = 0;
+  Word  old_uniq = 0;
 
-  Word  num_free;   // how many extra terms with frozen values
-  Word  *code;
+  Word  num_free = 0;   // how many extra terms with frozen values
+  Word  *code = nullptr;
 
-  FunEntry(): mfa(the_nil, the_nil, 0) {
-  }
+  FunEntry() = default;
 };
 
 #pragma clang diagnostic push

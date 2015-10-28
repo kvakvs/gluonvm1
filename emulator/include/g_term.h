@@ -795,6 +795,14 @@ public:
     layout::HeapbinBox *far_box = (layout::HeapbinBox *)p;
     return far_box->data<T>();
   }
+
+  bool is_reference() const {
+    if (!is_boxed()) {
+      return false;
+    }
+    Word *p = boxed_get_ptr<Word>();
+    return term_tag::BoxedRef::check_subtag(p[0]);
+  }
 };
 
 #define G_IS_BOOLEAN(T) ((T) == atom::TRUE || (T) == atom::FALSE)
@@ -813,7 +821,9 @@ public:
   Word arity = 0;
 
   FunArity() {}
-  FunArity(Term f, Word a): fun(f), arity(a) {}
+  FunArity(Term f, Word a): fun(f), arity(a) {
+    G_ASSERT(f.is_atom());
+  }
   bool operator <(const FunArity &x) const {
     return fun < x.fun || (fun == x.fun && arity < x.arity);
   }
@@ -823,16 +833,24 @@ class MFArity {
 public:
   Term    mod;
   Term    fun;
-  Word  arity;
+  Word    arity;
   MFArity(): mod(the_non_value), fun(the_non_value), arity(0) {}
   MFArity(Term m, Term f, Word a): mod(m), fun(f), arity(a) {
+    G_ASSERT(m.is_atom());
+    G_ASSERT(f.is_atom());
     G_ASSERT(a <= erts::max_fun_arity);
   }
   MFArity(Term m, const FunArity &fa)
     : mod(m), fun(fa.fun), arity(fa.arity)
   {
+    G_ASSERT(m.is_atom());
     G_ASSERT(arity <= erts::max_fun_arity);
   }
+  MFArity(const MFArity &)             = default;
+  MFArity(MFArity &&)                  = delete;
+  MFArity &operator =(const MFArity &) = default;
+  MFArity &operator =(MFArity &&)      = default;
+
   FunArity as_funarity() const {
     return FunArity(fun, arity);
   }

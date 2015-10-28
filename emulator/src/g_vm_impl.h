@@ -14,12 +14,12 @@ namespace impl {
 WantSchedule opcode_gc_bif1(Process *proc, VMRuntimeContext &ctx);
 WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
 
-//  inline void opcode_label(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 1
+//  inline void opcode_label(Process *proc, VMRuntimeContext &ctx) { // opcode: 1
 //  }
   inline void opcode_func_info(Process *proc, VMRuntimeContext &ctx) { // opcode: 2
     return ctx.raise(proc, atom::ERROR, atom::FUNCTION_CLAUSE);
   }
-//  inline void opcode_int_code_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 3
+//  inline void opcode_int_code_end(Process *proc, VMRuntimeContext &ctx) { // opcode: 3
 //  }
   inline WantSchedule opcode_call(Process *proc, VMRuntimeContext &ctx) { // opcode: 4
     // @spec call Arity Label
@@ -238,7 +238,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     proc->mailbox().remove_current();
   }
 
-//  inline void opcode_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 22
+//  inline void opcode_timeout(Process *proc, VMRuntimeContext &ctx) { // opcode: 22
 //  }
 
   inline void opcode_loop_rec(Process *proc, VMRuntimeContext &ctx) { // opcode: 23
@@ -277,31 +277,31 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     // we always yield after wait
   }
 
-//  inline void opcode_wait_timeout(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 26
+//  inline void opcode_wait_timeout(Process *proc, VMRuntimeContext &ctx) { // opcode: 26
 //  }
-//  inline void opcode_m_plus(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 27
+//  inline void opcode_m_plus(Process *proc, VMRuntimeContext &ctx) { // opcode: 27
 //  }
-//  inline void opcode_m_minus(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 28
+//  inline void opcode_m_minus(Process *proc, VMRuntimeContext &ctx) { // opcode: 28
 //  }
-//  inline void opcode_m_times(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 29
+//  inline void opcode_m_times(Process *proc, VMRuntimeContext &ctx) { // opcode: 29
 //  }
-//  inline void opcode_m_div(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 30
+//  inline void opcode_m_div(Process *proc, VMRuntimeContext &ctx) { // opcode: 30
 //  }
-//  inline void opcode_int_div(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 31
+//  inline void opcode_int_div(Process *proc, VMRuntimeContext &ctx) { // opcode: 31
 //  }
-//  inline void opcode_int_rem(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 32
+//  inline void opcode_int_rem(Process *proc, VMRuntimeContext &ctx) { // opcode: 32
 //  }
-//  inline void opcode_int_band(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 33
+//  inline void opcode_int_band(Process *proc, VMRuntimeContext &ctx) { // opcode: 33
 //  }
-//  inline void opcode_int_bor(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 34
+//  inline void opcode_int_bor(Process *proc, VMRuntimeContext &ctx) { // opcode: 34
 //  }
-//  inline void opcode_int_bxor(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 35
+//  inline void opcode_int_bxor(Process *proc, VMRuntimeContext &ctx) { // opcode: 35
 //  }
-//  inline void opcode_int_bsl(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 36
+//  inline void opcode_int_bsl(Process *proc, VMRuntimeContext &ctx) { // opcode: 36
 //  }
-//  inline void opcode_int_bsr(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 37
+//  inline void opcode_int_bsr(Process *proc, VMRuntimeContext &ctx) { // opcode: 37
 //  }
-//  inline void opcode_int_bnot(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 38
+//  inline void opcode_int_bnot(Process *proc, VMRuntimeContext &ctx) { // opcode: 38
 //  }
   inline void opcode_is_lt(Process *proc, VMRuntimeContext &ctx) { // opcode: 39
     // @spec is_lt Lbl Arg1 Arg2
@@ -357,7 +357,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
       ctx.jump(proc, Term(ctx.ip[0]));
     }
   }
-//  inline void opcode_is_ne(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 42
+//  inline void opcode_is_ne(Process *proc, VMRuntimeContext &ctx) { // opcode: 42
 //  }
   inline void opcode_is_eq_exact(Process *proc, VMRuntimeContext &ctx) { // opcode: 43
     // @spec is_eq_exact Lbl Arg1 Arg2
@@ -376,7 +376,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     }
     ctx.ip += 3;
   }
-//  inline void opcode_is_ne_exact(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 44
+//  inline void opcode_is_ne_exact(Process *proc, VMRuntimeContext &ctx) { // opcode: 44
 //  }
   inline void opcode_is_integer(Process *proc, VMRuntimeContext &ctx) { // opcode: 45
     // @spec is_integer Lbl Arg1
@@ -395,7 +395,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     return ctx.jump(proc, Term(ctx.ip[0]));
 #endif
   }
-//  inline void opcode_is_number(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 47
+//  inline void opcode_is_number(Process *proc, VMRuntimeContext &ctx) { // opcode: 47
 //  }
   inline void opcode_is_atom(Process *proc, VMRuntimeContext &ctx) { // opcode: 48
     // @spec is_atom Lbl Arg1
@@ -417,10 +417,26 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     }
     ctx.ip += 2;
   }
-//  inline void opcode_is_reference(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 50
-//  }
-//  inline void opcode_is_port(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 51
-//  }
+  inline void opcode_is_reference(Process *proc, VMRuntimeContext &ctx) { // opcode: 50
+    // @spec is_reference Lbl, Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not a reference.
+    Term t(ctx.ip[1]);
+    DEREF(t);
+    if (t.is_reference() == false) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 2;
+  }
+  inline void opcode_is_port(Process *proc, VMRuntimeContext &ctx) { // opcode: 51
+    // @spec is_port Lbl, Arg1
+    // @doc Test the type of Arg1 and jump to Lbl if it is not a port.
+    Term t(ctx.ip[1]);
+    DEREF(t);
+    if (t.is_port() == false) {
+      return ctx.jump(proc, Term(ctx.ip[0]));
+    }
+    ctx.ip += 2;
+  }
   inline void opcode_is_nil(Process *proc, VMRuntimeContext &ctx) { // opcode: 52
     // @spec is_nil Lbl Arg1
     // @doc Test the type of Arg1 and jump to Lbl if it is not nil.
@@ -440,7 +456,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     return ctx.jump(proc, Term(ctx.ip[0]));
 #endif
   }
-//  inline void opcode_is_constant(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 54
+//  inline void opcode_is_constant(Process *proc, VMRuntimeContext &ctx) { // opcode: 54
 //  }
   inline void opcode_is_list(Process *proc, VMRuntimeContext &ctx) { // opcode: 55
     // @spec is_list Lbl Arg1
@@ -528,9 +544,9 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
   inline void opcode_jump(Process *proc, VMRuntimeContext &ctx) { // opcode: 61
     return ctx.jump(proc, Term(ctx.ip[0]));
   }
-//  inline void opcode_catch(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 62
+//  inline void opcode_catch(Process *proc, VMRuntimeContext &ctx) { // opcode: 62
 //  }
-//  inline void opcode_catch_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 63
+//  inline void opcode_catch_end(Process *proc, VMRuntimeContext &ctx) { // opcode: 63
 //  }
 
   inline void opcode_move(Process *proc, VMRuntimeContext &ctx) { // opcode: 64
@@ -566,9 +582,9 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     ctx.move(src.tuple_get_element(el), Term(ctx.ip[2]));
     ctx.ip += 3;
   }
-//  inline void opcode_set_tuple_element(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 67
+//  inline void opcode_set_tuple_element(Process *proc, VMRuntimeContext &ctx) { // opcode: 67
 //  }
-//  inline void opcode_put_string(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 68
+//  inline void opcode_put_string(Process *proc, VMRuntimeContext &ctx) { // opcode: 68
 //  }
   inline void opcode_put_list(Process *proc, VMRuntimeContext &ctx) { // opcode: 69
     // @spec put_list H T Dst
@@ -609,7 +625,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
 
     ctx.move(Term::make_tuple(cells, t_arity.small_word()), dst);
   }
-//  inline void opcode_put(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 71
+//  inline void opcode_put(Process *proc, VMRuntimeContext &ctx) { // opcode: 71
 //  }
   inline void opcode_badmatch(Process *proc, VMRuntimeContext &ctx) { // opcode: 72
     return ctx.raise(proc, atom::ERROR, atom::BADMATCH);
@@ -669,7 +685,7 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     }
     return ctx.consume_reduction(proc);
   }
-//  inline void opcode_make_fun(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 76
+//  inline void opcode_make_fun(Process *proc, VMRuntimeContext &ctx) { // opcode: 76
 //  }
   inline void opcode_is_function(Process *proc, VMRuntimeContext &ctx) { // opcode: 77
     // @spec is_function Lbl Arg1
@@ -691,53 +707,53 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     ctx.jump_ext(proc, boxed_mfa);
     return ctx.consume_reduction(proc);
   }
-//  inline void opcode_bs_start_match(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 79
+//  inline void opcode_bs_start_match(Process *proc, VMRuntimeContext &ctx) { // opcode: 79
 //  }
-//  inline void opcode_bs_get_integer(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 80
+//  inline void opcode_bs_get_integer(Process *proc, VMRuntimeContext &ctx) { // opcode: 80
 //  }
-//  inline void opcode_bs_get_float(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 81
+//  inline void opcode_bs_get_float(Process *proc, VMRuntimeContext &ctx) { // opcode: 81
 //  }
-//  inline void opcode_bs_get_binary(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 82
+//  inline void opcode_bs_get_binary(Process *proc, VMRuntimeContext &ctx) { // opcode: 82
 //  }
-//  inline void opcode_bs_skip_bits(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 83
+//  inline void opcode_bs_skip_bits(Process *proc, VMRuntimeContext &ctx) { // opcode: 83
 //  }
-//  inline void opcode_bs_test_tail(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 84
+//  inline void opcode_bs_test_tail(Process *proc, VMRuntimeContext &ctx) { // opcode: 84
 //  }
-//  inline void opcode_bs_save(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 85
+//  inline void opcode_bs_save(Process *proc, VMRuntimeContext &ctx) { // opcode: 85
 //  }
-//  inline void opcode_bs_restore(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 86
+//  inline void opcode_bs_restore(Process *proc, VMRuntimeContext &ctx) { // opcode: 86
 //  }
-//  inline void opcode_bs_init(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 87
+//  inline void opcode_bs_init(Process *proc, VMRuntimeContext &ctx) { // opcode: 87
 //  }
-//  inline void opcode_bs_final(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 88
+//  inline void opcode_bs_final(Process *proc, VMRuntimeContext &ctx) { // opcode: 88
 //  }
-//  inline void opcode_bs_put_integer(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 89
+//  inline void opcode_bs_put_integer(Process *proc, VMRuntimeContext &ctx) { // opcode: 89
 //  }
-//  inline void opcode_bs_put_binary(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 90
+//  inline void opcode_bs_put_binary(Process *proc, VMRuntimeContext &ctx) { // opcode: 90
 //  }
-//  inline void opcode_bs_put_float(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 91
+//  inline void opcode_bs_put_float(Process *proc, VMRuntimeContext &ctx) { // opcode: 91
 //  }
-//  inline void opcode_bs_put_string(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 92
+//  inline void opcode_bs_put_string(Process *proc, VMRuntimeContext &ctx) { // opcode: 92
 //  }
-//  inline void opcode_bs_need_buf(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 93
+//  inline void opcode_bs_need_buf(Process *proc, VMRuntimeContext &ctx) { // opcode: 93
 //  }
-//  inline void opcode_fclearerror(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 94
+//  inline void opcode_fclearerror(Process *proc, VMRuntimeContext &ctx) { // opcode: 94
 //  }
-//  inline void opcode_fcheckerror(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 95
+//  inline void opcode_fcheckerror(Process *proc, VMRuntimeContext &ctx) { // opcode: 95
 //  }
-//  inline void opcode_fmove(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 96
+//  inline void opcode_fmove(Process *proc, VMRuntimeContext &ctx) { // opcode: 96
 //  }
-//  inline void opcode_fconv(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 97
+//  inline void opcode_fconv(Process *proc, VMRuntimeContext &ctx) { // opcode: 97
 //  }
-//  inline void opcode_fadd(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 98
+//  inline void opcode_fadd(Process *proc, VMRuntimeContext &ctx) { // opcode: 98
 //  }
-//  inline void opcode_fsub(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 99
+//  inline void opcode_fsub(Process *proc, VMRuntimeContext &ctx) { // opcode: 99
 //  }
-//  inline void opcode_fmul(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 100
+//  inline void opcode_fmul(Process *proc, VMRuntimeContext &ctx) { // opcode: 100
 //  }
-//  inline void opcode_fdiv(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 101
+//  inline void opcode_fdiv(Process *proc, VMRuntimeContext &ctx) { // opcode: 101
 //  }
-//  inline void opcode_fnegate(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 102
+//  inline void opcode_fnegate(Process *proc, VMRuntimeContext &ctx) { // opcode: 102
 //  }
   inline void opcode_make_fun2(Process *proc, VMRuntimeContext &ctx) { // opcode: 103
     // @spec make_fun2 LambdaT_index
@@ -759,20 +775,20 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
   inline void opcode_try(Process *proc, VMRuntimeContext &ctx) { // opcode: 104
     // @spec try Arg1 Label
   }
-//  inline void opcode_try_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 105
+//  inline void opcode_try_end(Process *proc, VMRuntimeContext &ctx) { // opcode: 105
 //  }
   inline void opcode_try_case(Process *proc, VMRuntimeContext &ctx) { // opcode: 106
     // @spec try_case Arg1
   }
-//  inline void opcode_try_case_end(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 107
+//  inline void opcode_try_case_end(Process *proc, VMRuntimeContext &ctx) { // opcode: 107
 //  }
-//  inline void opcode_raise(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 108
+//  inline void opcode_raise(Process *proc, VMRuntimeContext &ctx) { // opcode: 108
 //  }
-//  inline void opcode_bs_init2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 109
+//  inline void opcode_bs_init2(Process *proc, VMRuntimeContext &ctx) { // opcode: 109
 //  }
-//  inline void opcode_bs_bits_to_bytes(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 110
+//  inline void opcode_bs_bits_to_bytes(Process *proc, VMRuntimeContext &ctx) { // opcode: 110
 //  }
-//  inline void opcode_bs_add(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 111
+//  inline void opcode_bs_add(Process *proc, VMRuntimeContext &ctx) { // opcode: 111
 //  }
 
   inline WantSchedule opcode_apply(Process *proc,
@@ -865,21 +881,21 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
 
     ctx.ip += 3;
   }
-//  inline void opcode_bs_start_match2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 116
+//  inline void opcode_bs_start_match2(Process *proc, VMRuntimeContext &ctx) { // opcode: 116
 //  }
-//  inline void opcode_bs_get_integer2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 117
+//  inline void opcode_bs_get_integer2(Process *proc, VMRuntimeContext &ctx) { // opcode: 117
 //  }
-//  inline void opcode_bs_get_float2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 118
+//  inline void opcode_bs_get_float2(Process *proc, VMRuntimeContext &ctx) { // opcode: 118
 //  }
-//  inline void opcode_bs_get_binary2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 119
+//  inline void opcode_bs_get_binary2(Process *proc, VMRuntimeContext &ctx) { // opcode: 119
 //  }
-//  inline void opcode_bs_skip_bits2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 120
+//  inline void opcode_bs_skip_bits2(Process *proc, VMRuntimeContext &ctx) { // opcode: 120
 //  }
-//  inline void opcode_bs_test_tail2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 121
+//  inline void opcode_bs_test_tail2(Process *proc, VMRuntimeContext &ctx) { // opcode: 121
 //  }
-//  inline void opcode_bs_save2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 122
+//  inline void opcode_bs_save2(Process *proc, VMRuntimeContext &ctx) { // opcode: 122
 //  }
-//  inline void opcode_bs_restore2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 123
+//  inline void opcode_bs_restore2(Process *proc, VMRuntimeContext &ctx) { // opcode: 123
 //  }
 
   inline WantSchedule opcode_gc_bif1(Process *proc, VMRuntimeContext &ctx) { // opcode: 124
@@ -926,25 +942,25 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     ctx.ip += 6;
     return ctx.consume_reduction(proc);
   }
-//  inline void opcode_bs_final2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 126
+//  inline void opcode_bs_final2(Process *proc, VMRuntimeContext &ctx) { // opcode: 126
 //  }
-//  inline void opcode_bs_bits_to_bytes2(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 127
+//  inline void opcode_bs_bits_to_bytes2(Process *proc, VMRuntimeContext &ctx) { // opcode: 127
 //  }
-//  inline void opcode_put_literal(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 128
+//  inline void opcode_put_literal(Process *proc, VMRuntimeContext &ctx) { // opcode: 128
 //  }
-//  inline void opcode_is_bitstr(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 129
+//  inline void opcode_is_bitstr(Process *proc, VMRuntimeContext &ctx) { // opcode: 129
 //  }
-//  inline void opcode_bs_context_to_binary(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 130
+//  inline void opcode_bs_context_to_binary(Process *proc, VMRuntimeContext &ctx) { // opcode: 130
 //  }
-//  inline void opcode_bs_test_unit(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 131
+//  inline void opcode_bs_test_unit(Process *proc, VMRuntimeContext &ctx) { // opcode: 131
 //  }
-//  inline void opcode_bs_match_string(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 132
+//  inline void opcode_bs_match_string(Process *proc, VMRuntimeContext &ctx) { // opcode: 132
 //  }
-//  inline void opcode_bs_init_writable(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 133
+//  inline void opcode_bs_init_writable(Process *proc, VMRuntimeContext &ctx) { // opcode: 133
 //  }
-//  inline void opcode_bs_append(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 134
+//  inline void opcode_bs_append(Process *proc, VMRuntimeContext &ctx) { // opcode: 134
 //  }
-//  inline void opcode_bs_private_append(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 135
+//  inline void opcode_bs_private_append(Process *proc, VMRuntimeContext &ctx) { // opcode: 135
 //  }
   inline void opcode_trim(Process *proc, VMRuntimeContext &ctx) { // opcode: 136
     // @spec trim N Remaining
@@ -955,31 +971,31 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     ctx.stack().push(masq_cp);
     ctx.ip += 2;
   }
-//  inline void opcode_bs_init_bits(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 137
+//  inline void opcode_bs_init_bits(Process *proc, VMRuntimeContext &ctx) { // opcode: 137
 //  }
-//  inline void opcode_bs_get_utf8(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 138
+//  inline void opcode_bs_get_utf8(Process *proc, VMRuntimeContext &ctx) { // opcode: 138
 //  }
-//  inline void opcode_bs_skip_utf8(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 139
+//  inline void opcode_bs_skip_utf8(Process *proc, VMRuntimeContext &ctx) { // opcode: 139
 //  }
-//  inline void opcode_bs_get_utf16(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 140
+//  inline void opcode_bs_get_utf16(Process *proc, VMRuntimeContext &ctx) { // opcode: 140
 //  }
-//  inline void opcode_bs_skip_utf16(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 141
+//  inline void opcode_bs_skip_utf16(Process *proc, VMRuntimeContext &ctx) { // opcode: 141
 //  }
-//  inline void opcode_bs_get_utf32(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 142
+//  inline void opcode_bs_get_utf32(Process *proc, VMRuntimeContext &ctx) { // opcode: 142
 //  }
-//  inline void opcode_bs_skip_utf32(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 143
+//  inline void opcode_bs_skip_utf32(Process *proc, VMRuntimeContext &ctx) { // opcode: 143
 //  }
-//  inline void opcode_bs_utf8_size(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 144
+//  inline void opcode_bs_utf8_size(Process *proc, VMRuntimeContext &ctx) { // opcode: 144
 //  }
-//  inline void opcode_bs_put_utf8(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 145
+//  inline void opcode_bs_put_utf8(Process *proc, VMRuntimeContext &ctx) { // opcode: 145
 //  }
-//  inline void opcode_bs_utf16_size(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 146
+//  inline void opcode_bs_utf16_size(Process *proc, VMRuntimeContext &ctx) { // opcode: 146
 //  }
-//  inline void opcode_bs_put_utf16(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 147
+//  inline void opcode_bs_put_utf16(Process *proc, VMRuntimeContext &ctx) { // opcode: 147
 //  }
-//  inline void opcode_bs_put_utf32(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 148
+//  inline void opcode_bs_put_utf32(Process *proc, VMRuntimeContext &ctx) { // opcode: 148
 //  }
-//  inline void opcode_on_load(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 149
+//  inline void opcode_on_load(Process *proc, VMRuntimeContext &ctx) { // opcode: 149
 //  }
   //
   // R14A
@@ -1001,19 +1017,19 @@ WantSchedule opcode_gc_bif2(Process *proc, VMRuntimeContext &ctx);
     ctx.ip++;
     // ip+1 points to the next iop, supposedly loop_rec
   }
-//  inline void opcode_gc_bif3(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 152
+//  inline void opcode_gc_bif3(Process *proc, VMRuntimeContext &ctx) { // opcode: 152
 //  }
-//  inline void opcode_line(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 153
+//  inline void opcode_line(Process *proc, VMRuntimeContext &ctx) { // opcode: 153
 //  }
-//  inline void opcode_put_map_assoc(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 154
+//  inline void opcode_put_map_assoc(Process *proc, VMRuntimeContext &ctx) { // opcode: 154
 //  }
-//  inline void opcode_put_map_exact(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 155
+//  inline void opcode_put_map_exact(Process *proc, VMRuntimeContext &ctx) { // opcode: 155
 //  }
-//  inline void opcode_is_map(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 156
+//  inline void opcode_is_map(Process *proc, VMRuntimeContext &ctx) { // opcode: 156
 //  }
-//  inline void opcode_has_map_fields(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 157
+//  inline void opcode_has_map_fields(Process *proc, VMRuntimeContext &ctx) { // opcode: 157
 //  }
-//  inline void opcode_get_map_elements(Process *proc, vm_runtime_ctx_t &ctx) { // opcode: 158
+//  inline void opcode_get_map_elements(Process *proc, VMRuntimeContext &ctx) { // opcode: 158
 //  }
 
 } // ns impl
