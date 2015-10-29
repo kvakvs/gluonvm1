@@ -62,8 +62,8 @@ void Server::load_module(Process *proc, Term name)
 
 Module *Server::find_module(Process *proc, Term m, FindModule load)
 {
-  auto result = modules_.find_ref(m, nullptr);
-  if (!result) {
+  auto presult = modules_.find_ptr(m);
+  if (!presult) {
     if (load == code::FindModule::FindExisting) {
       throw err::CodeServer("function not found");
     } else {
@@ -71,7 +71,7 @@ Module *Server::find_module(Process *proc, Term m, FindModule load)
       return modules_[m];
     }
   }
-  return result;
+  return *presult;
 }
 
 void Server::path_append(const Str &p)
@@ -86,13 +86,22 @@ void Server::path_prepend(const Str &p)
 
 bool Server::print_mfa(Word *ptr) const {
   MFArity mfa;
-  if (!find_mfa_from_code(ptr, /*out*/mfa) || mfa.mod.is_non_value()) {
+  if (!find_mfa_from_code(ptr, /*out*/mfa)) {
     Std::fmt(FMT_0xHEX, (Word)ptr);
     return false;
   }
-  mfa.print(vm_);
-//  Std::fmt("%s:%s/" FMT_UWORD,
-//         mfa.mod.atom_c_str(vm_), mfa.fun.atom_c_str(vm_), mfa.arity);
+  if (!mfa.mod.is_atom() || !mfa.fun.is_atom()) {
+//    Std::fmt("mod=");
+//    mfa.mod.print(vm_);
+//    Std::fmt("; fun=");
+//    mfa.fun.println(vm_);
+    throw err::CodeServer("mfa is not atom:atom");
+  }
+  mfa.mod.print(vm_);
+  Std::fmt(":");
+  mfa.fun.print(vm_);
+  Std::fmt("/" FMT_UWORD, mfa.arity);
+
   return true;
 }
 
@@ -112,14 +121,14 @@ bool Server::find_mfa_from_code(Word *ptr, MFArity &out) const
 
 Export *Server::find_mfa(const MFArity &mfa, Module **out_mod) const
 {
-  auto result = modules_.find_ref(mfa.mod, nullptr);
-  if (!result) {
+  auto presult = modules_.find_ptr(mfa.mod);
+  if (!presult) {
     return nullptr;
   }
   if (out_mod) {
-    *out_mod = result;
+    *out_mod = *presult;
   }
-  return result->find_export(mfa.as_funarity());
+  return (*presult)->find_export(mfa.as_funarity());
 }
 
 } // ns code

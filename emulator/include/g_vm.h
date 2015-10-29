@@ -8,8 +8,8 @@
 
 namespace gluon {
 
-using str_atom_map_t = Dict<Str, Term>;
-using atom_str_map_t = Dict<Term, Str>;
+using StrAtomMap = Dict<Str, Term>;
+using AtomStrMap = Dict<Term, Str>;
 
 namespace erts {
   class Heap;
@@ -20,7 +20,7 @@ namespace code {
 } // ns code
 
 // TODO: also ports somewhere here
-using atom_proc_map_t = Dict<Term, Process *>;
+using AtomProcMap = Dict<Term, Process *>;
 
 enum class RegisterResult { Ok, RegistrationExists, ProcessNotFound };
 
@@ -28,9 +28,9 @@ enum class RegisterResult { Ok, RegistrationExists, ProcessNotFound };
 class VM {
 private:
   // TODO: Optimize atom tab for insert-only, like OTP does
-  str_atom_map_t atoms_;
-  atom_str_map_t reverse_atoms_;
-  Word         atom_id_counter_;
+  StrAtomMap atoms_;
+  AtomStrMap reverse_atoms_;
+  Word       atom_id_counter_;
 
   Node           *this_node_ = nullptr;
   // used as "" constant when atom is not found
@@ -39,7 +39,7 @@ private:
   code::Server   *codeserver_ = nullptr;
 
   // Registered names
-  atom_proc_map_t  reg_names_;
+  AtomProcMap  reg_names_;
   Process *root_process_ = nullptr;
 
 public:
@@ -64,8 +64,12 @@ public:
   // Creates atom or returns existing
   Term to_atom(const Str &s);
   // Returns existing or nil
-  Term to_existing_atom(const Str &s) {
-    return atoms_.find_ref(s, the_nil);
+  Term to_existing_atom(const Str &s) const {
+    auto presult = atoms_.find_ptr(s);
+    if (!presult) {
+      return the_nil;
+    }
+    return *presult;
   }
   const Str &find_atom(Term a) const;
 

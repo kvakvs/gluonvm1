@@ -77,7 +77,7 @@ namespace containers {
       if (i == map_.end()) { return nullptr; }
       return &i->second;
     }
-
+/*
     // Returns reference to result or a default value you provide
     Value &find_ref(const Key &k, Value &defa) {
       auto i = map_.find(k);
@@ -90,6 +90,7 @@ namespace containers {
       if (i == map_.end()) { return defa; }
       return i->second;
     }
+*/
 
     void erase(const Key &k) { map_.erase(k); }
     size_t size() const { return map_.size(); }

@@ -28,7 +28,7 @@ void BeamLoader::beam_prepare_code(Module *m, ArrayView<const Uint8> data)
   //
   if (feature_code_ranges) {
     // mark end of code by adding last open fun to code index
-    beam_op_func_info(output, the_non_value, the_non_value, the_non_value);
+    beam_op_func_info(output, the_non_value, 0);
     m->set_fun_ranges(coderanges_.fun_map);
   }
 
@@ -149,13 +149,14 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
     parse_term(r1); // mod
     auto fun   = parse_term(r1);
     auto arity = parse_term(r1);
+    auto w_arity = arity.small_word();
 
     if (feature_line_numbers || feature_code_ranges) {
-      beam_op_func_info(output, fun, arity, current_label_);
+      beam_op_func_info(output, fun, w_arity);
     }
     // Remember that function begins here
-    auto w_arity = arity.small_word();
     label_to_fun_[current_label_] = FunArity(fun, w_arity);
+
     // FALL THROUGH AND EMIT THE OPCODE
   }
 
@@ -269,16 +270,17 @@ void BeamLoader::output_selectlists(Module *m)
   }
 }
 
-void BeamLoader::beam_op_func_info(Vector<Word> &code, Term, Term f, Term a)
+void BeamLoader::beam_op_func_info(Vector<Word> &code, Term f, Word arity)
 {
   Word *last_ptr = nullptr;
 
   if (feature_code_ranges) {
-  last_ptr = (&code.back()) + 1;
+    last_ptr = (&code.back()) + 1;
 
     // Finish previous function if it already started
     if (current_fun_.fun.is_value()) {
       code::Range range(coderanges_.fun_begin, last_ptr);
+      G_ASSERT(current_fun_.fun.is_atom());
       coderanges_.fun_map.add(range, current_fun_);
     }
     if (f.is_non_value()) {
@@ -287,8 +289,7 @@ void BeamLoader::beam_op_func_info(Vector<Word> &code, Term, Term f, Term a)
     }
   }
 
-  current_fun_.fun = f;
-  current_fun_.arity = a.small_word();
+  current_fun_ = FunArity(f, arity);
 
   if (feature_code_ranges) {
     coderanges_.fun_begin = last_ptr;

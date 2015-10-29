@@ -145,7 +145,7 @@ private:
   void beam_op_line(Vector<Word> &code, Term arg);
 
   // on FEATURE_LINE_NUMBERS || FEATURE_CODE_RANGES
-  void beam_op_func_info(Vector<Word> &code, Term, Term, Term);
+  void beam_op_func_info(Vector<Word> &code, Term f, Word arity);
 
   Term parse_term(tool::Reader &r);
 

@@ -21,6 +21,11 @@ enum class WantSchedule {
   KeepGoing     // decided to continue current process
 };
 
+static void assert_address_makes_sense(const VM &vm, void *p) {
+  G_ASSERT(p >= vm.g_opcode_labels[1]
+        && p <= vm.g_opcode_labels[genop::max_opcode]);
+}
+
 //
 // VM execution context, inherited from process context
 // Used to run current process by vm loop, also holds some extra local variables

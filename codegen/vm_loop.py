@@ -47,6 +47,7 @@ next_instr:
 #endif
 
   ctx.ip++;
+  impl::assert_address_makes_sense(ctx.vm_, jmp_to);
   goto *jmp_to;
 """)
 

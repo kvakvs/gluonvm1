@@ -43,7 +43,8 @@ Process *Scheduler::find(Term pid) const
   if (pid.is_pid() == false) {
     return nullptr;
   }
-  return pid_to_proc_.find_ref(pid, nullptr);
+  auto presult = pid_to_proc_.find_ptr(pid);
+  return presult ? *presult : nullptr;
 }
 
 void Scheduler::exit_process(Process *p, Term reason)

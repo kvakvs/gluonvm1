@@ -92,7 +92,8 @@ void VM::init_predef_atoms()
 const Str &VM::find_atom(Term a) const
 {
   G_ASSERT(a.is_atom());
-  return reverse_atoms_.find_ref(a, const_empty_str_);
+  auto presult = reverse_atoms_.find_ptr(a);
+  return presult ? *presult : const_empty_str_;
 }
 
 Node *VM::dist_this_node() {
