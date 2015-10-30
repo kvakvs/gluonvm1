@@ -9,5 +9,5 @@ namespace bin {
 
 static constexpr Word heapbin_limit = 64;
 
-} // ns bin
-} // ns gluon
+}  // ns bin
+}  // ns gluon

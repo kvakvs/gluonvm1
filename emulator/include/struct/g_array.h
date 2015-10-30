@@ -8,46 +8,47 @@ namespace gluon {
 
 namespace containers {
 
-  template <class ContainerType>
-  class STLArray {
-  private:
-    using Self = STLArray<ContainerType>;
-    ContainerType data_;
-  public:
-    using Iterator = typename ContainerType::iterator;
-    using Value = typename ContainerType::value_type;
+template <class ContainerType>
+class STLArray {
+ private:
+  using Self = STLArray<ContainerType>;
+  ContainerType data_;
 
-    size_t size() const { return data_.size(); }
+ public:
+  using Iterator = typename ContainerType::iterator;
+  using Value = typename ContainerType::value_type;
 
-    Value &operator [] (size_t i) {
-      G_ASSERT(i < size());
-      return data_[i];
-    }
-    const Value &operator [] (size_t i) const {
-      G_ASSERT(i < size());
-      return data_[i];
-    }
+  size_t size() const { return data_.size(); }
 
-    // Storage access
-    Value *data() { return data_.data(); }
-    const Value *data() const { return data_.data(); }
+  Value& operator[](size_t i) {
+    G_ASSERT(i < size());
+    return data_[i];
+  }
+  const Value& operator[](size_t i) const {
+    G_ASSERT(i < size());
+    return data_[i];
+  }
 
-    Value &front() { return data_.front(); }
-    const Value &front() const { return data_.front(); }
+  // Storage access
+  Value* data() { return data_.data(); }
+  const Value* data() const { return data_.data(); }
 
-    Value &back() { return data_.back(); }
-    const Value &back() const { return data_.back(); }
+  Value& front() { return data_.front(); }
+  const Value& front() const { return data_.front(); }
 
-    Iterator begin() { return data_.begin(); }
-    Iterator end() { return data_.end(); }
+  Value& back() { return data_.back(); }
+  const Value& back() const { return data_.back(); }
 
-    void resize(size_t sz) { data_.resize(sz); }
-    void reserve(size_t sz) { data_.reserve(sz); }
+  Iterator begin() { return data_.begin(); }
+  Iterator end() { return data_.end(); }
 
-    void push_back(const Value &x) { data_.push_back(x); }
-  };
+  void resize(size_t sz) { data_.resize(sz); }
+  void reserve(size_t sz) { data_.reserve(sz); }
 
-} // ns containers
+  void push_back(const Value& x) { data_.push_back(x); }
+};
+
+}  // ns containers
 
 // A fixed array
 template <typename Val, size_t Sz>
@@ -59,21 +60,21 @@ using Vector = containers::STLArray<std::vector<Val>>;
 
 // Non-owning pointer to a window of memory
 template <class T>
-class ArrayView
-{
-private:
-  T *start_ = nullptr;
-  T *end_ = nullptr;
-public:
-  ArrayView() {}
-  ArrayView(T *start, size_t sz): start_(start), end_(start+sz) {}
+class ArrayView {
+ private:
+  T* start_ = nullptr;
+  T* end_ = nullptr;
 
-  T *data() const { return start_; }
-  T *limit() const { return end_; }
+ public:
+  ArrayView() {}
+  ArrayView(T* start, size_t sz) : start_(start), end_(start + sz) {}
+
+  T* data() const { return start_; }
+  T* limit() const { return end_; }
   size_t size() const {
     G_ASSERT(end_ >= start_);
     return (size_t)(end_ - start_);
   }
 };
 
-} // ns gluon
+}  // ns gluon

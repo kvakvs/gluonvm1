@@ -14,3 +14,6 @@ vg: compile
 
 codegen:
 	cd ../codegen && make && cd ../emulator
+
+format:
+	./format.sh

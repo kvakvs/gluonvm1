@@ -5,8 +5,7 @@
 
 namespace gluon {
 
-void Scheduler::add_new_runnable(Process *p)
-{
+void Scheduler::add_new_runnable(Process* p) {
   G_ASSERT(p->current_queue_ == proc::Queue::None);
   G_ASSERT(p->get_pid().is_pid() == false);
 
@@ -17,10 +16,10 @@ void Scheduler::add_new_runnable(Process *p)
   return queue_by_priority(p);
 }
 
-void Scheduler::queue_by_priority(Process *p) {
-//  G_ASSERT(!contains(m_normal_q, p));
-//  G_ASSERT(!contains(m_low_q, p));
-//  G_ASSERT(!contains(m_high_q, p));
+void Scheduler::queue_by_priority(Process* p) {
+  //  G_ASSERT(!contains(m_normal_q, p));
+  //  G_ASSERT(!contains(m_low_q, p));
+  //  G_ASSERT(!contains(m_high_q, p));
   G_ASSERT(p->current_queue_ == proc::Queue::None);
 
   auto prio = p->get_priority();
@@ -38,8 +37,7 @@ void Scheduler::queue_by_priority(Process *p) {
   }
 }
 
-Process *Scheduler::find(Term pid) const
-{
+Process* Scheduler::find(Term pid) const {
   if (pid.is_pid() == false) {
     return nullptr;
   }
@@ -47,12 +45,11 @@ Process *Scheduler::find(Term pid) const
   return presult ? *presult : nullptr;
 }
 
-void Scheduler::exit_process(Process *p, Term reason)
-{
+void Scheduler::exit_process(Process* p, Term reason) {
   // assert that process is not in any queue
   G_ASSERT(p->current_queue_ == proc::Queue::None);
   // root process exits with halt()
-  //G_ASSERT(p->get_registered_name() != atom::INIT);
+  // G_ASSERT(p->get_registered_name() != atom::INIT);
 
   // TODO: ets tables
   // TODO: notify monitors
@@ -67,8 +64,8 @@ void Scheduler::exit_process(Process *p, Term reason)
   Std::fmt("; result X[0]=");
   p->get_runtime_ctx().regs[0].println(vm_);
 
-//  m_inf_wait.erase(p);
-//  m_timed_wait.erase(p);
+  //  m_inf_wait.erase(p);
+  //  m_timed_wait.erase(p);
   G_ASSERT(!contains(normal_queue_, p));
   G_ASSERT(!contains(low_queue_, p));
   G_ASSERT(!contains(high_queue_, p));
@@ -76,40 +73,38 @@ void Scheduler::exit_process(Process *p, Term reason)
   delete p;
 }
 
-void Scheduler::on_new_message(Process *p)
-{
-//  Std::fmt("sched: new message to ");
-//  p->get_pid().println();
+void Scheduler::on_new_message(Process* p) {
+  //  Std::fmt("sched: new message to ");
+  //  p->get_pid().println();
   auto current_q = p->current_queue_;
 
   switch (current_q) {
-  case proc::Queue::Normal:
-  case proc::Queue::High:
-  case proc::Queue::Low:
-    return;
+    case proc::Queue::Normal:
+    case proc::Queue::High:
+    case proc::Queue::Low:
+      return;
 
-  case proc::Queue::InfiniteWait:
-    inf_wait_.erase(p);
-    break;
+    case proc::Queue::InfiniteWait:
+      inf_wait_.erase(p);
+      break;
 
-  case proc::Queue::TimedWait:
-    throw err::TODO("timed wait new message");
+    case proc::Queue::TimedWait:
+      throw err::TODO("timed wait new message");
 
-  case proc::Queue::None:
-    // Message arrived to a currently running process (for example send to self)
-    return;
+    case proc::Queue::None:
+      // Message arrived to a currently running process (for example send to
+      // self)
+      return;
 
-  case proc::Queue::PendingTimers:
-    throw err::TODO("q_pending_timers");
-  } // switch
+    case proc::Queue::PendingTimers:
+      throw err::TODO("q_pending_timers");
+  }  // switch
 
   p->current_queue_ = proc::Queue::None;
   queue_by_priority(p);
 }
 
-Process *Scheduler::next()
-{
-
+Process* Scheduler::next() {
   if (current_) {
     // G_ASSERT(!contains(m_normal_q, m_current));
     // G_ASSERT(!contains(m_low_q, m_current));
@@ -117,34 +112,34 @@ Process *Scheduler::next()
     G_ASSERT(current_->current_queue_ == proc::Queue::None);
 
     switch (current_->get_slice_result()) {
-    case proc::SliceResult::Yield:
-    case proc::SliceResult::None: {
+      case proc::SliceResult::Yield:
+      case proc::SliceResult::None: {
         queue_by_priority(current_);
         current_ = nullptr;
       } break;
 
-    case proc::SliceResult::Finished: { // normal exit
+      case proc::SliceResult::Finished: {  // normal exit
         exit_process(current_, atom::NORMAL);
         current_ = nullptr;
       } break;
 
       // TODO: WAIT put into infinite or timed wait queue
       // TODO: PURGE_PROCS running on old code
-    case proc::SliceResult::Exception: {
+      case proc::SliceResult::Exception: {
         exit_process(current_, current_->slice_result_reason_);
         current_ = nullptr;
       } break;
 
-    case proc::SliceResult::Wait: {
+      case proc::SliceResult::Wait: {
         if (current_->slice_result_wait_ == proc::wait_infinite) {
           inf_wait_.insert(current_);
           current_->current_queue_ = proc::Queue::InfiniteWait;
           current_ = nullptr;
         }
       } break;
-    //default:
-      // G_FAIL("unknown slice result");
-    } // switch slice result
+        // default:
+        // G_FAIL("unknown slice result");
+    }  // switch slice result
   }
 
   while (current_ == nullptr) {
@@ -152,31 +147,31 @@ Process *Scheduler::next()
     // TODO: wait lists
     // TODO: network checks
 
-    Process *next_proc = nullptr;
+    Process* next_proc = nullptr;
 
     // See if any are waiting in realtime (high) priority queue
-    if (         !high_queue_.empty()) {
+    if (!high_queue_.empty()) {
       next_proc = high_queue_.front();
-                  high_queue_.pop_front();
+      high_queue_.pop_front();
     } else if (normal_count_ < NORMAL_ADVANTAGE) {
-      if (         !normal_queue_.empty()) {
+      if (!normal_queue_.empty()) {
         next_proc = normal_queue_.front();
-                    normal_queue_.pop_front();
-      } else if (  !low_queue_.empty()) {
+        normal_queue_.pop_front();
+      } else if (!low_queue_.empty()) {
         next_proc = low_queue_.front();
-                    low_queue_.pop_front();
+        low_queue_.pop_front();
       }
       normal_count_++;
     } else {
-      if (         !low_queue_.empty()) {
+      if (!low_queue_.empty()) {
         next_proc = low_queue_.front();
-                    low_queue_.pop_front();
-      } else if (  !normal_queue_.empty()) {
+        low_queue_.pop_front();
+      } else if (!normal_queue_.empty()) {
         next_proc = normal_queue_.front();
-                    normal_queue_.pop_front();
+        normal_queue_.pop_front();
       }
       normal_count_ = 0;
-    } // select proc from q
+    }  // select proc from q
 
     if (next_proc) {
       Std::fmt("-----------------------------\nScheduler::next() -> ");
@@ -196,8 +191,7 @@ Process *Scheduler::next()
   }
 
   throw err::TODO("should not be here");
-//  return nullptr;
+  //  return nullptr;
 }
 
-
-} // ns gluon
+}  // ns gluon

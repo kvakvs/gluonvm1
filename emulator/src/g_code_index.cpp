@@ -5,8 +5,6 @@ namespace code {
 
 #if FEATURE_CODE_RANGES
 
-
-
 #endif
-} // ns code
-} // ns gluon
+}  // ns code
+}  // ns gluon

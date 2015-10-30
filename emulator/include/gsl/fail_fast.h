@@ -40,13 +40,13 @@ struct fail_fast : public std::runtime_error
 	explicit fail_fast(char const* const message) : std::runtime_error(message) {}
 };
 
-inline void fail_fast_assert(bool cond) { if (!cond) throw fail_fast(); }
-inline void fail_fast_assert(bool cond, const char* const message) { if (!cond) throw fail_fast(message); }
+void fail_fast_assert(bool cond) { if (!cond) throw fail_fast(); }
+void fail_fast_assert(bool cond, const char* const message) { if (!cond) throw fail_fast(message); }
 
 #else
 
-inline void fail_fast_assert(bool cond) { if (!cond) std::terminate(); }
-inline void fail_fast_assert(bool cond, const char* const) { if (!cond) std::terminate(); }
+void fail_fast_assert(bool cond) { if (!cond) std::terminate(); }
+void fail_fast_assert(bool cond, const char* const) { if (!cond) std::terminate(); }
 
 #endif // GSL_THROWS_FOR_TESTING
 

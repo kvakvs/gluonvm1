@@ -22,49 +22,50 @@ static constexpr Word calculate_word_size(Word bytes) {
 
 namespace mem {
 
-  //
-  // Takes memory blocks directly from system_memory (whatever that is) without
-  // any additional tricks, segmenting, grouping by size, free-lists and so on
-  //
-  class SystemMemoryAllocator {
-  public:
-    template <typename T>
-    T *allocate() { return SysMemory::allocate<T>(); }
+//
+// Takes memory blocks directly from system_memory (whatever that is) without
+// any additional tricks, segmenting, grouping by size, free-lists and so on
+//
+class SystemMemoryAllocator {
+ public:
+  template <typename T>
+  T* allocate() {
+    return SysMemory::allocate<T>();
+  }
 
-    template <typename T>
-    T *allocate(size_t n) {
-      mem::Blk<T> blk = SysMemory::allocate<T>(n);
-      return blk.mem();
-    }
+  template <typename T>
+  T* allocate(size_t n) {
+    mem::Blk<T> blk = SysMemory::allocate<T>(n);
+    return blk.mem();
+  }
 
-    template <typename T, typename... Args>
-    inline T *alloc_object(Args&&... args) { // NOTE: calls ctor
-      Word *bytes = allocate<Word>(calculate_storage_size<T>());
-      return new(bytes)T(std::forward<Args>(args)...);
-    }
+  template <typename T, typename... Args>
+  T* alloc_object(Args&&... args) {  // NOTE: calls ctor
+    Word* bytes = allocate<Word>(calculate_storage_size<T>());
+    return new (bytes) T(std::forward<Args>(args)...);
+  }
 
-    template <typename T>
-    void deallocate_one(T *mem) {
-      mem::Blk<T> mem1(mem, 1);
-      SysMemory::deallocate<T>(mem1);
-    }
+  template <typename T>
+  void deallocate_one(T* mem) {
+    mem::Blk<T> mem1(mem, 1);
+    SysMemory::deallocate<T>(mem1);
+  }
 
-    template <typename T>
-    void deallocate_many(T *mem, size_t sz) {
-      mem::Blk<T> mem1(mem, sz);
-      SysMemory::deallocate<T>(mem1);
-    }
-  };
+  template <typename T>
+  void deallocate_many(T* mem, size_t sz) {
+    mem::Blk<T> mem1(mem, sz);
+    SysMemory::deallocate<T>(mem1);
+  }
+};
 
-} // ns mem
+}  // ns mem
 
 namespace erts {
 
 // VM heap is abstract interface which gets memory from underlying system.
-class Heap: public mem::SystemMemoryAllocator {
-};
+class Heap : public mem::SystemMemoryAllocator {};
 
-} // ns vm
+}  // ns vm
 
 namespace proc {
 
@@ -83,24 +84,26 @@ class Heap;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-length-array"
 class Node {
-public:
-  static constexpr Word FIELDS_WORD_SIZE = 3; // how many words this class takes
-  static_assert(DEFAULT_PROC_STACK_WORDS < DEFAULT_PROC_HEAP_WORDS - FIELDS_WORD_SIZE,
+ public:
+  static constexpr Word FIELDS_WORD_SIZE =
+      3;  // how many words this class takes
+  static_assert(DEFAULT_PROC_STACK_WORDS <
+                    DEFAULT_PROC_HEAP_WORDS - FIELDS_WORD_SIZE,
                 "default stack does not fit default heap size");
 
-  Node *next = nullptr;
-  Word *start;  // this points at first free space and grows
-  Word *limit;  // marks end of node
-  Word heap_start[0]; // marks end of headers and beginning of heap
+  Node* next = nullptr;
+  Word* start;         // this points at first free space and grows
+  Word* limit;         // marks end of node
+  Word heap_start[0];  // marks end of headers and beginning of heap
 
-  static Node *create(Word sz_words);
+  static Node* create(Word sz_words);
 
   Word get_avail() const {
     G_ASSERT(limit >= start);
     return (Word)(limit - start);
   }
   // Allocated memory is not tagged in any way except regular term bitfields
-  Word *allocate_words(Word n) {
+  Word* allocate_words(Word n) {
     auto result = start;
     start += n;
     return result;
@@ -112,24 +115,24 @@ public:
 // Stack
 //
 class Stack {
-  //Node      *m_node = nullptr;  // where stack is
-  Word    *end_;             // stack underflow mark
-  Word    *top_;             // stack tip, grows down from heap end
-  Word    *bottom_;          // stack bottom, delimits stack growth
+  // Node      *m_node = nullptr;  // where stack is
+  Word* end_;     // stack underflow mark
+  Word* top_;     // stack tip, grows down from heap end
+  Word* bottom_;  // stack bottom, delimits stack growth
 
-public:
-  Stack(Word *bottom, Word *top): end_(top), top_(top), bottom_(bottom) {}
+ public:
+  Stack(Word* bottom, Word* top) : end_(top), top_(top), bottom_(bottom) {}
 
   // Lowers 'limit' by 'size' words, puts stack there
-  //void put_stack(Node *h_node, Word size);
+  // void put_stack(Node *h_node, Word size);
 
   void set_y(Word index, Word value) {
     G_ASSERT(get_used() >= index + 1);
-    top_[index+1] = value;
+    top_[index + 1] = value;
   }
   Word get_y(Word index) const {
     G_ASSERT(get_used() >= index + 1);
-    return top_[index+1];
+    return top_[index + 1];
   }
   void push(Word x) {
     G_ASSERT(get_avail() > 0);
@@ -184,13 +187,13 @@ public:
   Word *h_alloc(Word);
 
   // TODO: Mark memory so that GC will know its size
-  inline Word *h_alloc_bytes(Word bytes) {
+  Word *h_alloc_bytes(Word bytes) {
     return h_alloc(calculate_word_size(bytes));
   }
 
   // TODO: Mark memory so that GC will know its size
   template <typename T, typename... Args>
-  inline T *h_alloc_object(Args&&... args) { // NOTE: calls ctor
+  T *h_alloc_object(Args&&... args) { // NOTE: calls ctor
     Word *bytes = h_alloc(calculate_storage_size<T>());
     return new(bytes)T(std::forward<Args>(args)...);
   }
@@ -198,30 +201,27 @@ public:
 */
 
 template <class A>
-class Heap_: public A {
+class Heap_ : public A {
   constexpr static Word STK_SZ = 1024;
   Word stack_data_[STK_SZ];
-public:
+
+ public:
   Stack stack_;
 
-  Heap_(): A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {
-
-  }
+  Heap_() : A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {}
 };
 
-class Heap: public Heap_<mem::SystemMemoryAllocator> {};
-
+class Heap : public Heap_<mem::SystemMemoryAllocator> {};
 
 // Takes all terms between 'start' and 'end', and copies them to 'dstheap', new
 // resulting terms are placed in array 'dst' which should be large enough.
-bool copy_terms(VM &vm, Heap *dstheap,
-                const Term *start,
-                const Term *end,
-                Term *dst);
+bool copy_terms(VM& vm,
+                Heap* dstheap,
+                const Term* start,
+                const Term* end,
+                Term* dst);
 // Copies one term 't' to 'dstheap' returns new clone term located in new heap
-Term copy_one_term(VM &vm,
-                   Heap *dstheap,
-                   Term t);
+Term copy_one_term(VM& vm, Heap* dstheap, Term t);
 
-} // ns proc
-} // ns gluon
+}  // ns proc
+}  // ns gluon

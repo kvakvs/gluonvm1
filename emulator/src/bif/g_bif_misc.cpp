@@ -23,7 +23,6 @@ Pair<Word, bool> length(Term list) {
   return std::make_pair(result, list.is_nil());
 }
 
-
 #if 0
 static int term_order(Term t)
 {
@@ -99,35 +98,35 @@ static int term_order(Term t)
     G_FAIL("what term is it?");
   }
 }
-#endif // 0
+#endif  // 0
 
-bool is_term_smaller(const VM &vm, Term a, Term b)
-{
+bool is_term_smaller(const VM& vm, Term a, Term b) {
   if (a == b) {
     return false;
   }
 
-  // number < atom < reference < fun < oid < pid < tuple < empty_list < list < binary
+  // number < atom < reference < fun < oid < pid < tuple < empty_list < list <
+  // binary
   if (Term::are_both_immed(a, b)) {
     if (Term::are_both_small(a, b)) {
       return a.small_sword() < b.small_sword();
     }
 #if FEATURE_BIGNUM
-    // TODO: case when one small and one big? Compare both +-- as big
-    //if (Term::are_both_big(a, b)) {
-#     error "bigint compare"
-    //}
+// TODO: case when one small and one big? Compare both +-- as big
+// if (Term::are_both_big(a, b)) {
+#error "bigint compare"
+//}
 #endif
 
-    if (a.is_small()) { // means b is not smallint
+    if (a.is_small()) {  // means b is not smallint
       return true;
     }
 
-    if (a.is_nil()) { // means b is not nil
+    if (a.is_nil()) {  // means b is not nil
       return false;
     }
 
-    if (b.is_nil()) { // means a is not nil
+    if (b.is_nil()) {  // means a is not nil
       return true;
     }
 
@@ -137,8 +136,8 @@ bool is_term_smaller(const VM &vm, Term a, Term b)
         return false;
       } else if (b.is_atom()) {
         // Compare atoms
-        const Str &print1 = vm.find_atom(a);
-        const Str &print2 = vm.find_atom(b);
+        const Str& print1 = vm.find_atom(a);
+        const Str& print2 = vm.find_atom(b);
         return print1 < print2;
       } else {
         // Atom is < everything else
@@ -160,7 +159,7 @@ bool is_term_smaller(const VM &vm, Term a, Term b)
         return 0;
       } else {
 #if FEATURE_ERL_DIST
-#       error "long pids?"
+#error "long pids?"
 #endif
         G_ASSERT(b.is_short_pid());
         return a.short_pid_get_value() < b.short_pid_get_value();
@@ -169,14 +168,13 @@ bool is_term_smaller(const VM &vm, Term a, Term b)
   }
 
   G_TODO("compare boxed values");
-  //return false;
+  // return false;
 
   // a and b are quaranteed to have different types
   G_IF_NODEBUG(return term_order(a) < term_order(b));
 }
 
-bool are_terms_equal(const VM &vm, Term a, Term b, bool exact)
-{
+bool are_terms_equal(const VM& vm, Term a, Term b, bool exact) {
   Std::fmt("are_terms_eq(exact=%d): ", (int)exact);
   a.print(vm);
   Std::fmt(" ? ");
@@ -194,33 +192,33 @@ bool are_terms_equal(const VM &vm, Term a, Term b, bool exact)
 
     if (a.is_integer() && b.is_boxed()) {
 #if FEATURE_FLOAT
-      Word *term_data = peel_boxed(b);
-      return (boxed_tag(term_data) == SUBTAG_FLOAT)
-             && (double)int_value(a) == float_value(term_data);
+      Word* term_data = peel_boxed(b);
+      return (boxed_tag(term_data) == SUBTAG_FLOAT) &&
+             (double)int_value(a) == float_value(term_data);
 #else
       return false;
 #endif
     } else if (a.is_boxed() && b.is_integer()) {
 #if FEATURE_FLOAT
-      uint32_t *term_data = peel_boxed(a);
-      return (boxed_tag(term_data) == SUBTAG_FLOAT)
-             && (float_value(term_data) == (double)int_value(b));
+      uint32_t* term_data = peel_boxed(a);
+      return (boxed_tag(term_data) == SUBTAG_FLOAT) &&
+             (float_value(term_data) == (double)int_value(b));
 #else
       return false;
 #endif
     }
     return false;
-//#endif
+    //#endif
   }
 
   if (a.is_cons()) {
     if (b.is_cons()) {
       do {
-        Term *cons_a = a.boxed_get_ptr<Term>();
-        Term *cons_b = b.boxed_get_ptr<Term>();
+        Term* cons_a = a.boxed_get_ptr<Term>();
+        Term* cons_b = b.boxed_get_ptr<Term>();
 
-        if (cons_a[0] != cons_b[0]
-            && !are_terms_equal(vm, cons_a[0], cons_b[0], exact)) {
+        if (cons_a[0] != cons_b[0] &&
+            !are_terms_equal(vm, cons_a[0], cons_b[0], exact)) {
           return false;
         }
 
@@ -234,15 +232,15 @@ bool are_terms_equal(const VM &vm, Term a, Term b, bool exact)
     }
   } else if (a.is_tuple()) {
     if (b.is_tuple()) {
-      Term *a_ptr = a.boxed_get_ptr<Term>();
-      Term *b_ptr = a.boxed_get_ptr<Term>();
+      Term* a_ptr = a.boxed_get_ptr<Term>();
+      Term* b_ptr = a.boxed_get_ptr<Term>();
       if (a_ptr[0] != b_ptr[0]) {
         return false;
       }
 
-      for (Word i = 1; i <= ((Word *)a_ptr)[0]; i++)
-        if (a_ptr[i] != b_ptr[i]
-            && !are_terms_equal(vm, a_ptr[i], b_ptr[i], exact)) {
+      for (Word i = 1; i <= ((Word*)a_ptr)[0]; i++)
+        if (a_ptr[i] != b_ptr[i] &&
+            !are_terms_equal(vm, a_ptr[i], b_ptr[i], exact)) {
           return false;
         }
 
@@ -265,11 +263,14 @@ bool are_terms_equal(const VM &vm, Term a, Term b, bool exact)
     uint32_t subtag = boxed_tag(term_data1);
 
     if (!exact && subtag == SUBTAG_FLOAT && is_bignum(term_data2)) {
-      return float_value(term_data1) == bignum_to_double((bignum_t *)term_data2);
+      return float_value(term_data1) == bignum_to_double((bignum_t
+    *)term_data2);
     }
 
-    if (!exact && is_bignum(term_data1) && boxed_tag(term_data2) == SUBTAG_FLOAT) {
-      return bignum_to_double((bignum_t *)term_data1) == float_value(term_data2);
+    if (!exact && is_bignum(term_data1) && boxed_tag(term_data2) ==
+    SUBTAG_FLOAT) {
+      return bignum_to_double((bignum_t *)term_data1) ==
+    float_value(term_data2);
     }
 
     if (subtag != boxed_tag(term_data2) &&
@@ -383,59 +384,51 @@ bool are_terms_equal(const VM &vm, Term a, Term b, bool exact)
 
     return 1;
     */
-
   }
-
 }
 
-Term bif_equals_2(Process *proc, Term a, Term b)
-{
+Term bif_equals_2(Process* proc, Term a, Term b) {
   if (are_terms_equal(proc->vm(), a, b, false)) {
     return atom::TRUE;
   }
   return atom::FALSE;
 }
 
-Term bif_equals_exact_2(Process *proc, Term a, Term b)
-{
+Term bif_equals_exact_2(Process* proc, Term a, Term b) {
   if (are_terms_equal(proc->vm(), a, b, true)) {
     return atom::TRUE;
   }
   return atom::FALSE;
 }
 
-Term bif_less_equal_2(Process *proc, Term a, Term b)
-{
+Term bif_less_equal_2(Process* proc, Term a, Term b) {
   if (!is_term_smaller(proc->vm(), b, a)) {
     return atom::TRUE;
   }
   return atom::FALSE;
 }
 
-Term bif_greater_equal_2(Process *proc, Term a, Term b)
-{
+Term bif_greater_equal_2(Process* proc, Term a, Term b) {
   if (!is_term_smaller(proc->vm(), a, b)) {
     return atom::TRUE;
   }
   return atom::FALSE;
 }
 
-Term bif_atom_to_list_1(Process *proc, Term a)
-{
+Term bif_atom_to_list_1(Process* proc, Term a) {
   if (!a.is_atom()) {
     return proc->bif_error(atom::BADARG);
   }
 
-  const VM &vm = proc->vm();
-  const Str &atom_str = vm.find_atom(a);
-//  return term::build_string(proc->get_heap(), atom_str);
+  const VM& vm = proc->vm();
+  const Str& atom_str = vm.find_atom(a);
+  //  return term::build_string(proc->get_heap(), atom_str);
   auto x = term::build_string(proc->get_heap(), atom_str);
   x.println(vm);
   return x;
 }
 
-Term bif_minus_2(Process *proc, Term a, Term b)
-{
+Term bif_minus_2(Process* proc, Term a, Term b) {
   if (!a.is_small() || !b.is_small()) {
     return proc->bif_error(atom::BADARITH);
   }
@@ -444,8 +437,7 @@ Term bif_minus_2(Process *proc, Term a, Term b)
   return Term::make_small(a_s - b_s);
 }
 
-Term bif_plus_2(Process *proc, Term a, Term b)
-{
+Term bif_plus_2(Process* proc, Term a, Term b) {
   if (!a.is_small() || !b.is_small()) {
     return proc->bif_error(atom::BADARITH);
   }
@@ -454,14 +446,13 @@ Term bif_plus_2(Process *proc, Term a, Term b)
   return Term::make_small(a_s + b_s);
 }
 
-
-Term bif_length_1(Process *proc, Term a)
-{
+Term bif_length_1(Process* proc, Term a) {
   if (a.is_nil()) {
     return Term::make_small(0);
   }
 
-  Std::fmt("length: "); a.println(proc->vm());
+  Std::fmt("length: ");
+  a.println(proc->vm());
   G_ASSERT(a.is_cons());
   SWord counter = 0;
   while (a.is_cons()) {
@@ -473,8 +464,7 @@ Term bif_length_1(Process *proc, Term a)
   }
   return Term::make_small(counter);
 }
-Term bif_multiply_2(Process *proc, Term a, Term b)
-{
+Term bif_multiply_2(Process* proc, Term a, Term b) {
   if (!a.is_small() || !b.is_small()) {
     return proc->bif_error(atom::BADARITH);
   }
@@ -483,8 +473,7 @@ Term bif_multiply_2(Process *proc, Term a, Term b)
   return Term::make_small(a_s * b_s);
 }
 
-Term bif_divide_2(Process *proc, Term a, Term b)
-{
+Term bif_divide_2(Process* proc, Term a, Term b) {
   if (!a.is_small() || !b.is_small()) {
     return proc->bif_error(atom::BADARITH);
   }
@@ -494,15 +483,14 @@ Term bif_divide_2(Process *proc, Term a, Term b)
 }
 
 // Create an export value
-Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
-{
+Term bif_make_fun_3(Process* proc, Term mod, Term f, Term arity_t) {
   Word arity = arity_t.small_word();
 
   // Box export (1 word for boxed tag and 1 word reference to Export)
   // TODO: calculate is_bif for new object
   MFArity mfa(mod, f, arity);
 
-  Export *exp = proc->vm().codeserver().find_mfa(mfa);
+  Export* exp = proc->vm().codeserver().find_mfa(mfa);
   if (!exp) {
     return proc->bif_error(atom::UNDEF);
   }
@@ -513,7 +501,8 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
   box->mfa = mfa;
   if (biffn == nullptr) {
     // Find module
-    auto m_result = VM::codeserver().find_module(proc, mod, code::LOAD_IF_NOT_FOUND);
+    auto m_result = VM::codeserver().find_module(proc, mod,
+  code::LOAD_IF_NOT_FOUND);
     if (m_result.is_error()) {
       return proc->bif_error(atom::UNDEF);
     }
@@ -527,8 +516,7 @@ Term bif_make_fun_3(Process *proc, Term mod, Term f, Term arity_t)
   return Term::make_boxed_export(exp);
 }
 
-static Term integer_to_list(Process *proc, Term n, SWord base)
-{
+static Term integer_to_list(Process* proc, Term n, SWord base) {
   if (base < 2 || base > 36 || !n.is_small()) {
     return proc->bif_error(atom::BADARG);
   }
@@ -538,8 +526,8 @@ static Term integer_to_list(Process *proc, Term n, SWord base)
     SWord v = n.small_sword();
 
     char buf[16];
-    char *ptr = buf + sizeof(buf) - 1;
-    const char *endptr = ptr + 1;
+    char* ptr = buf + sizeof(buf) - 1;
+    const char* endptr = ptr + 1;
     // We do not need trailing zero as we use end pointer to delimit string
 
     bool is_neg = v < 0;
@@ -549,7 +537,9 @@ static Term integer_to_list(Process *proc, Term n, SWord base)
 
     do {
       SWord d = v % base;
-      if (d >= 10) { d += 'A' - '9' + 1; }
+      if (d >= 10) {
+        d += 'A' - '9' + 1;
+      }
       v /= base;
       *ptr-- = '0' + (char)d;
     } while (v > 0);
@@ -560,13 +550,13 @@ static Term integer_to_list(Process *proc, Term n, SWord base)
       ptr++;
     }
 
-    return term::build_list(proc->get_heap(),
-                            const_cast<const char *>(ptr), endptr);
+    return term::build_list(proc->get_heap(), const_cast<const char*>(ptr),
+                            endptr);
   }
 #if FEATURE_BIGNUM
   else if (is_boxed(N) && is_bignum(peel_boxed(N))) {
-    //TODO: unbounded alloc: burn fat
-    bignum_t *bn = (bignum_t *)peel_boxed(N);
+    // TODO: unbounded alloc: burn fat
+    bignum_t* bn = (bignum_t*)peel_boxed(N);
     int n = bignum_str_size(bn);
     char buf[n];
     bignum_to_str(&proc->hp, bn, buf);
@@ -577,18 +567,15 @@ static Term integer_to_list(Process *proc, Term n, SWord base)
   return proc->bif_error(atom::BADARG);
 }
 
-Term bif_integer_to_list_1(Process *proc, Term n)
-{
+Term bif_integer_to_list_1(Process* proc, Term n) {
   return integer_to_list(proc, n, 10);
 }
 
-Term bif_integer_to_list_2(Process *proc, Term n, Term base)
-{
+Term bif_integer_to_list_2(Process* proc, Term n, Term base) {
   return integer_to_list(proc, n, base.small_sword());
 }
 
-Term bif_plusplus_2(Process *proc, Term a, Term b)
-{
+Term bif_plusplus_2(Process* proc, Term a, Term b) {
   if (!a.is_list()) {
     return proc->bif_badarg(a);
   }
@@ -604,20 +591,20 @@ Term bif_plusplus_2(Process *proc, Term a, Term b)
     return proc->bif_badarg(a);  // a must be proper list
   }
 
-  Term *htop = (Term *)proc->heap_alloc(len.first * layout::CONS::box_word_size);
+  Term* htop = (Term*)proc->heap_alloc(len.first * layout::CONS::box_word_size);
   Term result(Term::make_cons(htop));
 
-  //Word *term_data = peel_cons(As);
+  // Word *term_data = peel_cons(As);
   Term td = a;
 
   do {
     td.cons_head_tail(layout::CONS::head(htop), layout::CONS::tail(htop));
 
-    Term *tail_ref = &layout::CONS::tail(htop);
+    Term* tail_ref = &layout::CONS::tail(htop);
     htop += layout::CONS::box_word_size;
 
     if (tail_ref->is_nil()) {
-      *tail_ref = b; // cons the second list
+      *tail_ref = b;  // cons the second list
       break;
     }
 
@@ -629,37 +616,35 @@ Term bif_plusplus_2(Process *proc, Term a, Term b)
   return result;
 }
 
-Term bif_hd_1(Process *proc, Term a)
-{
+Term bif_hd_1(Process* proc, Term a) {
   if (!a.is_cons()) {
     return proc->bif_badarg(a);
   }
   return a.cons_head();
 }
 
-Term bif_tl_1(Process *prc, Term a)
-{
+Term bif_tl_1(Process* prc, Term a) {
   if (!a.is_cons()) {
     return prc->bif_badarg(a);
   }
   return a.cons_tail();
 }
 
-Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
-{
+Term bif_function_exported_3(Process* proc, Term m, Term f, Term arity) {
   MFArity mfa(m, f, arity.small_word());
-  //Std::fmt("erlang:function_exported "); mfa.println();
-  VM &vm = proc->vm();
-  void *maybe_bif = vm.find_bif(mfa);
+  // Std::fmt("erlang:function_exported "); mfa.println();
+  VM& vm = proc->vm();
+  void* maybe_bif = vm.find_bif(mfa);
   if (maybe_bif != nullptr) {
     Std::fmt("is a bif\n");
     return atom::TRUE;
   }
 
-  Module *mod;
+  Module* mod;
   try {
-    mod = vm.codeserver().find_module(proc, m, code::FindModule::LoadIfNotFound);
-  } catch (std::runtime_error &) {
+    mod =
+        vm.codeserver().find_module(proc, m, code::FindModule::LoadIfNotFound);
+  } catch (std::runtime_error&) {
     Std::fmt("no module\n");
     return atom::FALSE;
   }
@@ -671,13 +656,15 @@ Term bif_function_exported_3(Process *proc, Term m, Term f, Term arity)
   return atom::FALSE;
 }
 
-Either<Word *, Term> apply(Process *proc, Term m, Term f, Term args,
-                             Term *regs)
-{
+Either<Word*, Term> apply(Process* proc,
+                          Term m,
+                          Term f,
+                          Term args,
+                          Term* regs) {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
   if (!f.is_atom()) {
-    proc->bif_badarg(f); // fail right here
+    proc->bif_badarg(f);  // fail right here
     return nullptr;
   }
 
@@ -688,7 +675,7 @@ Either<Word *, Term> apply(Process *proc, Term m, Term f, Term args,
     if (!m.is_tuple() || m.tuple_get_arity() < 1) {
       proc->bif_badarg(m);
       return nullptr;
-    }    
+    }
     // TODO: can optimize here by accessing tuple internals via pointer and
     // checking arity and then taking 2nd element
     _this = m;
@@ -708,7 +695,7 @@ Either<Word *, Term> apply(Process *proc, Term m, Term f, Term args,
     // the parameters to the x registers (regs[]). If the module argument
     // was an abstract module, add 1 to the function arity and put the
     // module argument in the n+1st x register as a THIS reference.
-    Term   tmp = args;
+    Term tmp = args;
     while (tmp.is_list()) {
       if (arity < erts::max_regs - 1) {
         tmp.cons_head_tail(regs[arity++], tmp);
@@ -717,7 +704,7 @@ Either<Word *, Term> apply(Process *proc, Term m, Term f, Term args,
         return nullptr;
       }
     }
-    if (tmp.is_not_nil()) { // Must be well-formed list
+    if (tmp.is_not_nil()) {  // Must be well-formed list
       proc->bif_badarg();
       return nullptr;
     }
@@ -729,26 +716,26 @@ Either<Word *, Term> apply(Process *proc, Term m, Term f, Term args,
   // Get the index into the export table, or failing that the export
   // entry for the error handler.
   // OTP Note: All BIFs have export entries; thus, no special case is needed.
-  VM &vm = proc->vm();
-  Export *ep = vm.codeserver().find_mfa(MFArity(m, f, arity));
+  VM& vm = proc->vm();
+  Export* ep = vm.codeserver().find_mfa(MFArity(m, f, arity));
   if (!ep) {
-     //if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL) goto error;
+    // if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL)
+    // goto error;
     proc->bif_error(atom::UNDEF);
     return nullptr;
   }
   if (ep->is_bif()) {
     return vm.apply_bif(proc, ep->mfa.arity, ep->bif_fn(), regs);
   }
-//  else if (ERTS_PROC_GET_SAVED_CALLS_BUF(proc)) {
-//      save_calls(proc, ep);
-//  }
-//  DTRACE_GLOBAL_CALL_FROM_EXPORT(proc, ep);
-//  return ep->addressv[erts_active_code_ix()];
+  //  else if (ERTS_PROC_GET_SAVED_CALLS_BUF(proc)) {
+  //      save_calls(proc, ep);
+  //  }
+  //  DTRACE_GLOBAL_CALL_FROM_EXPORT(proc, ep);
+  //  return ep->addressv[erts_active_code_ix()];
   return ep->code();
 }
 
-Term bif_apply_2(Process *proc, Term funobject, Term args)
-{
+Term bif_apply_2(Process* proc, Term funobject, Term args) {
   return proc->bif_badarg();
 }
 
@@ -756,10 +743,9 @@ Term bif_apply_2(Process *proc, Term funobject, Term args)
 // erlang module.
 // This function will never be called.  (It could be if init did something
 // like this:  apply(erlang, apply, [M, F, A]). Not recommended.)
-Term bif_apply_3(Process *proc, Term m, Term f, Term args)
-{
+Term bif_apply_3(Process* proc, Term m, Term f, Term args) {
   return proc->bif_badarg();
 }
 
-} // ns bif
-} // ns gluon
+}  // ns bif
+}  // ns gluon

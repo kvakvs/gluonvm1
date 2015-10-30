@@ -4,9 +4,10 @@
 #include "g_defs.h"
 #include "platf/gsys_stdlib.h"
 
-#define G_DEBUG_THROW_E if(e) { \
-  gluon::Std::fmt("debug throw: %s\n", e); \
-  gluon::Std::abort(); \
+#define G_DEBUG_THROW_E                      \
+  if (e) {                                   \
+    gluon::Std::fmt("debug throw: %s\n", e); \
+    gluon::Std::abort();                     \
   }
 
 namespace gluon {
@@ -25,33 +26,33 @@ public:
     : m_what(e), m_result(result) {
     G_DEBUG_THROW_E
   }
-  inline bool is_error() const { return m_what != nullptr; }
-  inline const char *get_error() const { return m_what; }
-  inline bool is_success() const { return m_what == nullptr; }
-  inline void clear() {
+  bool is_error() const { return m_what != nullptr; }
+  const char *get_error() const { return m_what; }
+  bool is_success() const { return m_what == nullptr; }
+  void clear() {
     m_what = nullptr;
     m_result = T();
   }
 
   // Feeling lucky? call something().get_result() directly
-  inline T get_result() const {
+  T get_result() const {
     G_ASSERT(is_success());
     return m_result;
   }
 
   // Repacks error into another type of Result for easier returning
   template <typename U>
-  inline Result<U> rewrap_error() {
+  Result<U> rewrap_error() {
     G_ASSERT(is_error());
     return Result<U>(m_what, U());
   }
 };
 template <typename T>
-inline static Result<T> error(const char *e) {
+static Result<T> error(const char *e) {
   return Result<T>(e, T());
 }
 template <typename T>
-inline static Result<T> success(T result) {
+static Result<T> success(T result) {
   return Result<T>(nullptr, result);
 }
 
@@ -78,7 +79,7 @@ public:
 //    }
   }
 
-  inline void clear() {
+  void clear() {
     m_error = nullptr;
 //    m_owned_memory = false;
   }
@@ -101,13 +102,13 @@ public:
     return *this;
   }
 
-  inline bool is_error() const { return m_error != nullptr; }
-  inline const char *get_error() const { return m_error; }
-  inline bool is_success() const { return m_error == nullptr; }
+  bool is_error() const { return m_error != nullptr; }
+  const char *get_error() const { return m_error; }
+  bool is_success() const { return m_error == nullptr; }
 
   // Repacks error into MaybeResult for easier returning
   template <typename U>
-  inline Result<U> rewrap_error() {
+  Result<U> rewrap_error() {
     G_ASSERT(is_success());
     return Result<U>(m_error, U());
   }
@@ -120,7 +121,7 @@ public:
 //  return Err(err, true);
 //}
 
-static inline MaybeError success() { return MaybeError(); }
+static MaybeError success() { return MaybeError(); }
 
 //
 // Errors are handled by two classes MaybeError and Result<T>, both identically
@@ -133,24 +134,36 @@ static inline MaybeError success() { return MaybeError(); }
 
 // Returns const char * reason of the error (auto converted to MaybeError)
 #define G_RETURN_IF_ERROR(res) \
-  if (res.is_error()) { return res.get_error(); }
+  if (res.is_error()) {        \
+    return res.get_error();    \
+  }
 // Wrapped in unlikely, because we're happy to expect success
 #define G_RETURN_IF_ERROR_UNLIKELY(res) \
-  if (G_UNLIKELY(res.is_error())) { return res.get_error(); }
+  if (G_UNLIKELY(res.is_error())) {     \
+    return res.get_error();             \
+  }
 // Same but error is likely to happen
 #define G_RETURN_IF_ERROR_LIKELY(res) \
-  if (G_LIKELY(res.is_error())) { return res.get_error(); }
+  if (G_LIKELY(res.is_error())) {     \
+    return res.get_error();           \
+  }
 
 // Returns reason of MaybeResult rewrapped into another MaybeResult
-#define G_RETURN_REWRAP_IF_ERROR(res,T) \
-  if (res.is_error()) { return res.rewrap_error<T>(); }
+#define G_RETURN_REWRAP_IF_ERROR(res, T) \
+  if (res.is_error()) {                  \
+    return res.rewrap_error<T>();        \
+  }
 // Wrapped in unlikely, because we're happy to expect success
-#define G_RETURN_REWRAP_IF_ERROR_UNLIKELY(res,T) \
-  if (G_UNLIKELY(res.is_error())) { return res.rewrap_error<T>(); }
+#define G_RETURN_REWRAP_IF_ERROR_UNLIKELY(res, T) \
+  if (G_UNLIKELY(res.is_error())) {               \
+    return res.rewrap_error<T>();                 \
+  }
 // Same but error is likely to happen
-#define G_RETURN_REWRAP_IF_ERROR_LIKELY(res,T) \
-  if (G_LIKELY(res.is_error())) { return res.rewrap_error<T>(); }
+#define G_RETURN_REWRAP_IF_ERROR_LIKELY(res, T) \
+  if (G_LIKELY(res.is_error())) {               \
+    return res.rewrap_error<T>();               \
+  }
 
-#endif //0
+#endif  // 0
 
-} // ns gluon
+}  // ns gluon

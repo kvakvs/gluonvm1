@@ -8,18 +8,18 @@
 namespace gluon {
 namespace code {
 
-//mod_map_t Server::g_modules;
-//List<Str> Server::g_search_path;
+// mod_map_t Server::g_modules;
+// List<Str> Server::g_search_path;
 
-//void Server::init() {
+// void Server::init() {
 //}
 
-void Server::load_module(Process *proc,
-                        Term name_atom, ArrayView<const Uint8> data)
-{
+void Server::load_module(Process* proc,
+                         Term name_atom,
+                         ArrayView<const Uint8> data) {
   // TODO: module versions for hot code loading
   // TODO: free if module already existed, check module usage by processes
-  Module *m = load_module_internal(proc->get_heap(), name_atom, data);
+  Module* m = load_module_internal(proc->get_heap(), name_atom, data);
   modules_[m->get_name()] = m;
 
   // assume that mod already registered own functions in own fun index
@@ -30,13 +30,12 @@ void Server::load_module(Process *proc,
   }
 }
 
-void Server::load_module(Process *proc, Term name)
-{
+void Server::load_module(Process* proc, Term name) {
   // Scan for locations where module file can be found
   Str mod_filename(name.atom_str(vm_));
   mod_filename += ".beam";
 
-  for (const Str &dir: search_path_) {
+  for (const Str& dir : search_path_) {
     Str path(dir);
     path += "/";
     path += mod_filename;
@@ -45,9 +44,9 @@ void Server::load_module(Process *proc, Term name)
       fs::File f;
       f.open(path);
 
-      Word  size = f.size();
-      erts::Heap *heap = vm_.get_heap(VM::HEAP_CODE);
-      Uint8 *tmp_buffer = heap->allocate<Uint8>(size);
+      Word size = f.size();
+      erts::Heap* heap = vm_.get_heap(VM::HEAP_CODE);
+      Uint8* tmp_buffer = heap->allocate<Uint8>(size);
       f.seek(0);
       f.read(tmp_buffer, size);
 
@@ -60,8 +59,7 @@ void Server::load_module(Process *proc, Term name)
   throw err::CodeServer("module not found");
 }
 
-Module *Server::find_module(Process *proc, Term m, FindModule load)
-{
+Module* Server::find_module(Process* proc, Term m, FindModule load) {
   auto presult = modules_.find_ptr(m);
   if (!presult) {
     if (load == code::FindModule::FindExisting) {
@@ -74,27 +72,25 @@ Module *Server::find_module(Process *proc, Term m, FindModule load)
   return *presult;
 }
 
-void Server::path_append(const Str &p)
-{
+void Server::path_append(const Str& p) {
   search_path_.push_back(p);
 }
 
-void Server::path_prepend(const Str &p)
-{
+void Server::path_prepend(const Str& p) {
   search_path_.push_front(p);
 }
 
-bool Server::print_mfa(Word *ptr) const {
+bool Server::print_mfa(Word* ptr) const {
   MFArity mfa;
-  if (!find_mfa_from_code(ptr, /*out*/mfa)) {
+  if (!find_mfa_from_code(ptr, /*out*/ mfa)) {
     Std::fmt(FMT_0xHEX, (Word)ptr);
     return false;
   }
   if (!mfa.mod.is_atom() || !mfa.fun.is_atom()) {
-//    Std::fmt("mod=");
-//    mfa.mod.print(vm_);
-//    Std::fmt("; fun=");
-//    mfa.fun.println(vm_);
+    //    Std::fmt("mod=");
+    //    mfa.mod.print(vm_);
+    //    Std::fmt("; fun=");
+    //    mfa.fun.println(vm_);
     throw err::CodeServer("mfa is not atom:atom");
   }
   mfa.mod.print(vm_);
@@ -105,9 +101,8 @@ bool Server::print_mfa(Word *ptr) const {
   return true;
 }
 
-bool Server::find_mfa_from_code(Word *ptr, MFArity &out) const
-{
-  Module *m = nullptr;
+bool Server::find_mfa_from_code(Word* ptr, MFArity& out) const {
+  Module* m = nullptr;
   if (!mod_index_.find(ptr, /*out*/ m) || !m) {
     return false;
   }
@@ -119,8 +114,7 @@ bool Server::find_mfa_from_code(Word *ptr, MFArity &out) const
   return true;
 }
 
-Export *Server::find_mfa(const MFArity &mfa, Module **out_mod) const
-{
+Export* Server::find_mfa(const MFArity& mfa, Module** out_mod) const {
   auto presult = modules_.find_ptr(mfa.mod);
   if (!presult) {
     return nullptr;
@@ -131,5 +125,5 @@ Export *Server::find_mfa(const MFArity &mfa, Module **out_mod) const
   return (*presult)->find_export(mfa.as_funarity());
 }
 
-} // ns code
-} // ns gluon
+}  // ns code
+}  // ns gluon

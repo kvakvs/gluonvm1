@@ -17,9 +17,7 @@
 using namespace gluon;
 namespace gluontest {
 
-struct process_test_t: public fructose::test_base<process_test_t>
-{
-
+struct process_test_t : public fructose::test_base<process_test_t> {
   /*void test_process_stack(const std::string &tn) {
     ProcessStack s;
     s.push(Term::make_small_u(1)); // y[3]
@@ -32,12 +30,12 @@ struct process_test_t: public fructose::test_base<process_test_t>
     fructose_assert(s.get_y(3) == Term::make_small_u(1));
   }*/
 
-}; // struct
+};  // struct
 
-void gluon_test_processes(int argc, const char *argv[]) {
-  //process_test_t tests;
-  //tests.add_test("process.stack", &process_test_t::test_process_stack);
-  //tests.run(argc, const_cast<char **>(argv));
+void gluon_test_processes(int argc, const char* argv[]) {
+  // process_test_t tests;
+  // tests.add_test("process.stack", &process_test_t::test_process_stack);
+  // tests.run(argc, const_cast<char **>(argv));
 }
 
-} // ns gluontest
+}  // ns gluontest

@@ -8,13 +8,12 @@
 #include <stdio.h>
 
 #if G_TEST
-#   include "../test/test.h"
+#include "../test/test.h"
 #endif
 
 using namespace gluon;
 
-int main(int argc, const char *argv[]) {
-
+int main(int argc, const char* argv[]) {
   VM vm;
 
 #if G_TEST
@@ -23,12 +22,12 @@ int main(int argc, const char *argv[]) {
 #else
 
   // normal start
-  //vm::load_module("../test/g_test1.S.gleam");
+  // vm::load_module("../test/g_test1.S.gleam");
   vm.codeserver().path_append("../test");
 
   auto rootp = vm.root_process();
   vm.codeserver().load_module(rootp, vm.to_atom("g_test1"));
-  //vm.codeserver().load_module(rootp, atom::ERLANG);
+  // vm.codeserver().load_module(rootp, atom::ERLANG);
 
   // create root process and set it to some entry function
   Term start_args[2] = {the_nil, the_nil};

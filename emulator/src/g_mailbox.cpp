@@ -34,13 +34,12 @@ Term Mailbox::get_current() {
 }
 
 // Removes current message at pointer
-void Mailbox::remove_current()
-{
+void Mailbox::remove_current() {
   G_ASSERT(*current_ != the_non_value);
 
   if (current_ == messages_.end() || *current_ == the_non_value) {
     throw err::Process("removing from empty msgbox cell");
-    //m_mbox_ptr = m_mbox.begin();
+    // m_mbox_ptr = m_mbox.begin();
   } else {
     messages_.erase(current_);
   }
@@ -53,8 +52,7 @@ void Mailbox::remove_current()
 }
 
 // If pointer is not at terminator, step forward. Else set at mailbox end
-void Mailbox::step_next()
-{
+void Mailbox::step_next() {
   if (*current_ != the_non_value) {
     current_++;
   } else {
@@ -62,18 +60,16 @@ void Mailbox::step_next()
   }
 }
 
-void Mailbox::mark_position(Word label)
-{
+void Mailbox::mark_position(Word label) {
   saved_mark_label_ = label;
   saved_mark_ = --messages_.end();
 }
 
-void Mailbox::set_to_marked(Word label)
-{
+void Mailbox::set_to_marked(Word label) {
   if (saved_mark_label_ == label) {
     current_ = saved_mark_;
   }
 }
 
-} // ns proc
-} // ns mailbox
+}  // ns proc
+}  // ns mailbox
