@@ -14,6 +14,18 @@ Presenting a hobby project that I've been doing for several months now.
 
 Because the VM is small (think 10-20% of regular OTP binary), it opens new and different possibilities which were not reachable before. Main idea would be to use it on IoT platforms which are too small for regular BEAM VM to run. Also those platforms that don't run Linux (again for size reasons), Gluon VM is written in such a portable way, that replacing OS layer or even rewriting it for OS-less chip, would become a fairly short project.
 
-Further work would have to focus on reducing BEAM file sizes and rewriting libraries to a very compact and limited form. In current state libraries take a significant amount of memory, many of them are not used in one specific system, and many of those which are used - are ran only once, at init time.
-
 Another usecase could be embedding into another system in form of a scripting platform. Transpile into Javascript or Asm.js and run in browser maybe?
+
+## What is done?
+
+Status on 15th October: the project was able to load multiple BEAM files at once (automatic import and load) and run most of code in `lists` module, some simple demos, was able to run and return result from famous ring example (spawn multiple processes and chain send/receive a number).
+
+## When is it ready?
+
+The work is in progress. Several months ahead, to say least. This is a hobby project, so basically it is done when it is done (or I start working full time on it and then it's ready much faster).
+
+## Ideas and improvements
+
+A standard C library has to be replaced to an embedded-oriented micro-library. Such as `dietlibc` or similar. It is possible that it may have to be replaced more than once for certain platforms where `dietlibc` won't run.
+
+Further work would have to focus on reducing BEAM file sizes and rewriting libraries to a very compact and limited form. In current state libraries take a significant amount of memory, many of them are not used in one specific system, and many of those which are used - are ran only once, at init time.
