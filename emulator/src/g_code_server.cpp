@@ -20,7 +20,7 @@ void Server::load_module(Process* proc,
   // TODO: module versions for hot code loading
   // TODO: free if module already existed, check module usage by processes
   Module* m = load_module_internal(proc->get_heap(), name_atom, data);
-  modules_[m->get_name()] = m;
+  modules_.insert(m->get_name(), m);
 
   // assume that mod already registered own functions in own fun index
   // code to fun/arity mapping should be updated on loading stage
@@ -66,7 +66,8 @@ Module* Server::find_module(Process* proc, Term m, FindModule load) {
       throw err::CodeServer("function not found");
     } else {
       load_module(proc, m);
-      return modules_[m];
+      auto mptr = modules_.find_ptr(m);
+      return mptr ? *mptr : nullptr;
     }
   }
   return *presult;

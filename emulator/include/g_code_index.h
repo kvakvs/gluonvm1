@@ -40,7 +40,7 @@ class Index {
   Index() {}
 
   // Register new loaded code as range [start,end)
-  void add(const Range& r, T value) { ranges_[r] = value; }
+  void add(const Range& r, T value) { ranges_.insert(r, value); }
 
   // Find code location in tree of ranges
   bool find(Word* x, T& out) const {

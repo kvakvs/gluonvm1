@@ -9,7 +9,8 @@ Word* Module::resolve_label(LabelIndex label) {
   if (label.value() >= labels_.size()) {
     throw err::BeamLoad("label index too big");
   }
-  return labels_[label.value()];
+  auto lptr = labels_.find_ptr(label.value());
+  return lptr ? *lptr : nullptr;
 }
 
 void Module::set_exports(Module::Exports& e) {
@@ -20,7 +21,7 @@ void Module::set_exports(Module::Exports& e) {
   for_each(exps, [this](auto fa_exp) {
     void* bif_ptr = vm_->find_bif(MFArity(name_, fa_exp->first));
     if (bif_ptr) {
-      exports_[fa_exp->first] = Export(bif_ptr);
+      exports_.insert(fa_exp->first, Export(bif_ptr));
     }
   });
 }

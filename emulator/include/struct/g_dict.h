@@ -57,8 +57,12 @@ class STLDict {
   STLDict(STLDict&&) = default;
   STLDict& operator=(STLDict&&) = default;
 
-  const Value& operator[](const Key& k) const { return map_[k]; }
-  Value& operator[](const Key& k) { return map_[k]; }
+  // Removed operator[] to separate insert and find semantic
+  //const Value& operator[](const Key& k) const { return map_[k]; }
+  //Value& operator[](const Key& k) { return map_[k]; }
+  void insert(const Key& k, const Value& v) {
+    map_[k] = v;
+  }
 
   bool contains(const Key& k) const {
     auto i = map_.find(k);

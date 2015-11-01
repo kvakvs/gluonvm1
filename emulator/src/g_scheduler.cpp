@@ -12,7 +12,7 @@ void Scheduler::add_new_runnable(Process* p) {
   auto new_pid = Term::make_short_pid(pid_counter_++);
   p->set_pid(new_pid);
 
-  pid_to_proc_[new_pid] = p;
+  pid_to_proc_.insert(new_pid, p);
   return queue_by_priority(p);
 }
 

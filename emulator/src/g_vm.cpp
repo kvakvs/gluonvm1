@@ -9,6 +9,7 @@
 
 #include "bif/g_bif_misc.h"
 #include "g_vm_bif_tab.h"
+#include "g_genop.h"
 
 #include <algorithm>
 
@@ -54,7 +55,7 @@ RegisterResult VM::register_name(Term name, Term pid_port) {
   if (!p) {
     return RegisterResult::ProcessNotFound;
   }
-  reg_names_[name] = p;
+  reg_names_.insert(name, p);
   p->registered_as(name);
   return RegisterResult::Ok;
 }
@@ -66,8 +67,8 @@ Term VM::to_atom(const Str& s) {
 
 Term VM::new_atom(const Str& s) {
   Term new_a = Term::make_atom(atom_id_counter_);
-  atoms_[s] = new_a;
-  reverse_atoms_[new_a] = s;
+  atoms_.insert(s, new_a);
+  reverse_atoms_.insert(new_a, s);
   atom_id_counter_++;
   return new_a;
 }
@@ -156,6 +157,11 @@ Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
       return ((bif3_fn)fn)(proc, args[0], args[1], args[2]);
   }
   return proc->bif_error(atom::UNDEF);
+}
+
+void VM::assert_opcode_handler_label(const void *p) const {
+  G_ASSERT(p >= g_opcode_labels[1] &&
+      p <= g_opcode_labels[genop::max_opcode]);
 }
 
 }  // ns gluon

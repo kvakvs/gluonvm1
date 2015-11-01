@@ -102,10 +102,6 @@ class Module {
   }
   Export* find_export(const FunArity& fa) { return exports_.find_ptr(fa); }
 
-  // Resolves function in current module to a code pointer
-  // TODO: duplicates find_export, replace with fun table search or remove?
-  // Result<Word *> resolve_function(Term f, Word arity);
-
   // Resolves label to a code pointer
   Word* resolve_label(LabelIndex label);
 

@@ -172,7 +172,7 @@ void BeamLoader::load_export_table(tool::Reader& r0) {
     auto arity = r.read_big_u32();
     auto label = r.read_big_u32();
 
-    exp_indexes_[FunArity(f, arity)] = LabelIndex(label);
+    exp_indexes_.insert(FunArity(f, arity), LabelIndex(label));
   }
 
   r0.advance_align<4>(chunk_size);
@@ -584,20 +584,5 @@ Term BeamLoader::parse_alloclist(tool::Reader& r) {
   throw err::TODO("alloc list?");
 }
 
-void BeamLoader::resolve_labels(const Vector<Word>& postponed_labels,
-                                Vector<Word>& code) {
-  //  Word *base = code.data();
-  for (Word i = 0; i < postponed_labels.size(); ++i) {
-    Word code_index = postponed_labels[i];
-
-    // Unwrap catch-marked value
-    Word label_index = term_tag::Catch::value(code[code_index]);
-
-    // New value will be small int
-    Term resolved_label = Term::make_boxed_cp(labels_[label_index]);
-    code[code_index] = resolved_label.as_word();
-  }
-  return;
-}
 
 }  // ns gluon

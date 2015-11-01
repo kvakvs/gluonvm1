@@ -56,7 +56,6 @@ Vector<Word> BeamLoader::read_code(Module* m,
                 "oops word size must be same as void*");
 
   Word arity;
-  Word op_ptr;
   Vector<Word> postponed_labels;
 
   while (!r.is_end()) {
@@ -72,8 +71,9 @@ Vector<Word> BeamLoader::read_code(Module* m,
     }
 
     // Convert opcode into jump address
-    op_ptr = reinterpret_cast<Word>(vm_.g_opcode_labels[(Word)opcode]);
-    output.push_back(op_ptr);
+    const void *op_ptr = vm_.g_opcode_labels[(Word)opcode];
+    vm_.assert_opcode_handler_label(op_ptr);
+    output.push_back((Word)op_ptr);
 
     // debug_print_opcode(opcode, arity, r);
 
@@ -136,7 +136,9 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
 
     Word l_id = label.small_word();
     G_ASSERT(l_id < code_label_count_);
-    labels_[l_id] = (&output.back()) + 1;
+
+    Word *opcode_ptr = &output.back();
+    labels_.insert(l_id, opcode_ptr);
 
     return true;  // processed and we want to skip writing it
   }
@@ -152,7 +154,7 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
       beam_op_func_info(output, fun, w_arity);
     }
     // Remember that function begins here
-    label_to_fun_[current_label_] = FunArity(fun, w_arity);
+    label_to_fun_.insert(current_label_, FunArity(fun, w_arity));
 
     // FALL THROUGH AND EMIT THE OPCODE
   }
@@ -229,16 +231,17 @@ void BeamLoader::output_exports(Module* m) {
     // find out what is label value
     auto lresult = labels_.find_ptr(fa_lindex->second.value());
     G_ASSERT(lresult);  // assume it must exist
-    exports[fa_lindex->first] =
-        Export(*lresult, MFArity(mod_name_, fa_lindex->first));
+    MFArity mfa(mod_name_, fa_lindex->first);
+    exports.insert(fa_lindex->first, Export(*lresult, mfa));
   });
   m->set_exports(exports);
 }
 
 void BeamLoader::output_lambdas(Module* m) {
   for (auto& la : lambdas_) {
-    auto ptr = labels_[la.uniq[0]];
-    la.code = ptr;
+    auto lptr = labels_.find_ptr(la.uniq[0]);
+    G_ASSERT(lptr);
+    la.code = *lptr;
   }
   m->set_lambdas(lambdas_);
 }
@@ -249,9 +252,9 @@ void BeamLoader::output_selectlists(Module* m) {
     Word t_arity = t.tuple_get_arity() / 2;
     for (Word i = 0; i < t_arity; ++i) {
       Word l_index = t.tuple_get_element(i * 2 + 1).small_word();
-      G_ASSERT(labels_.contains(l_index));
-      Word* ptr = labels_[l_index];
-      t.tuple_set_element(i * 2 + 1, Term::make_boxed_cp(ptr));
+      auto lptr = labels_.find_ptr(l_index);
+      G_ASSERT(lptr);
+      t.tuple_set_element(i * 2 + 1, Term::make_boxed_cp(*lptr));
     }
   }
 }
@@ -296,6 +299,23 @@ void BeamLoader::replace_lambda_index_with_ptr(Word* p, Module* m) {
   Term i(*p);
   Term j = Term::make_boxed(&lambdas_[i.small_word()]);
   *p = j.as_word();
+}
+
+void BeamLoader::resolve_labels(const Vector<Word>& postponed_labels,
+                                Vector<Word>& code) {
+  for (Word i = 0; i < postponed_labels.size(); ++i) {
+    Word code_index = postponed_labels[i];
+
+    // Unwrap catch-marked value
+    Word label_index = term_tag::Catch::value(code[code_index]);
+
+    // New value will be small int
+    auto lptr = labels_.find_ptr(label_index);
+    G_ASSERT(lptr);
+    Term resolved_label = Term::make_boxed_cp(*lptr);
+    code[code_index] = resolved_label.as_word();
+  }
+  return;
 }
 
 }  // ns gluon

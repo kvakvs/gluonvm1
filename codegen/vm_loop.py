@@ -36,18 +36,17 @@ next_instr:
   jmp_to = (void *)(*ctx.ip);
   ctx.println();
 
-  printf("[");
+  Std::fmt("[");
+  //Std::fmt("[0x" FMT_0xHEX, (Word)ctx.ip);
   proc->get_pid().print(*this);
-  printf(";");
+  Std::fmt(";");
 #if FEATURE_CODE_RANGES
   codeserver().print_mfa(ctx.ip); // prints mfarity or pointer
-  printf("]: ");
-#else
-  printf("0x%zx]: ", (word_t)ctx.ip);
 #endif
+  Std::fmt("]: ");
 
   ctx.ip++;
-  impl::assert_address_makes_sense(ctx.vm_, jmp_to);
+  ctx.vm_.assert_opcode_handler_label(jmp_to);
   goto *jmp_to;
 """)
 
