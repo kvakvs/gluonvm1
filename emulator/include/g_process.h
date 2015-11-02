@@ -5,6 +5,7 @@
 #include "g_error.h"
 #include "g_heap.h"
 #include "g_mailbox.h"
+#include "g_functional.h"
 
 namespace gluon {
 
@@ -145,6 +146,15 @@ class Process {
   void msg_send(Term pid, Term value);
   proc::Mailbox& mailbox() { return mailbox_; }
   const proc::Mailbox& mailbox() const { return mailbox_; }
+
+  // Prepares (attempts) to call m:f with args, m is atom or tuple pair
+  // Returns one of:
+  // *  Word* position in code; Code is not executed by apply just a code
+  //    pointer is returned to continue execution from there;
+  // *  Term if result is known immediately.
+  // Pass small integer (arity) in args if regs already contain args in the
+  // first 'arity' cells.
+  Either<Word*, Term> apply(Term m, Term f, Term args, Term *regs);
 };
 
 #if G_TEST

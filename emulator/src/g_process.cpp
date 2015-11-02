@@ -99,4 +99,84 @@ void ProcessStack::println()
 #endif
 #endif  // 0
 
+Either<Word*, Term> Process::apply(Term m, Term f, Term args, Term* regs) {
+  // Check the arguments which should be of the form apply(M,F,Args) where
+  // F is an atom and Args is an arity long list of terms
+  if (!f.is_atom()) {
+    bif_badarg(f);  // fail right here
+    return nullptr;
+  }
+
+  // The module argument may be either an atom or an abstract module
+  // (currently implemented using tuples, but this might change)
+  Term _this = the_non_value;
+  if (!m.is_atom()) {
+    if (!m.is_tuple() || m.tuple_get_arity() < 1) {
+      bif_badarg(m);
+      return nullptr;
+    }
+    // TODO: can optimize here by accessing tuple internals via pointer and
+    // checking arity and then taking 2nd element
+    _this = m;
+    m = m.tuple_get_element(1);
+    if (!m.is_atom()) {
+      bif_badarg(m);
+      return nullptr;
+    }
+  }
+
+  Word arity = 0;
+  if (args.is_small()) {
+    // Small unsigned in args means args already are loaded in regs
+    arity = args.small_word();
+  } else {
+    // Walk down the 3rd parameter of apply (the argument list) and copy
+    // the parameters to the x registers (regs[]). If the module argument
+    // was an abstract module, add 1 to the function arity and put the
+    // module argument in the n+1st x register as a THIS reference.
+    Term tmp = args;
+    while (tmp.is_cons()) {
+      if (arity < erts::max_regs - 1) {
+        tmp.cons_head_tail(regs[arity++], tmp);
+      } else {
+        bif_error(atom::SYSTEM_LIMIT);
+        return nullptr;
+      }
+    }
+    if (tmp.is_not_nil()) {  // Must be well-formed list
+      bif_badarg();
+      return nullptr;
+    }
+    if (_this != the_non_value) {
+      regs[arity++] = _this;
+    }
+  }
+
+  // Get the index into the export table, or failing that the export
+  // entry for the error handler.
+  MFArity mfa(m, f, arity);
+
+  auto maybe_bif = vm_.find_bif(mfa);
+  if (maybe_bif) {
+    return vm_.apply_bif(this, mfa.arity, maybe_bif, regs);
+  }
+
+  Export* ep = vm_.codeserver().find_mfa(mfa);
+  if (!ep) {
+    // if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL)
+    // goto error;
+    bif_error(atom::UNDEF);
+    return nullptr;
+  }
+  if (ep->is_bif()) {
+    return vm_.apply_bif(this, ep->mfa.arity, ep->bif_fn(), regs);
+  }
+  //  else if (ERTS_PROC_GET_SAVED_CALLS_BUF(proc)) {
+  //      save_calls(proc, ep);
+  //  }
+  //  DTRACE_GLOBAL_CALL_FROM_EXPORT(proc, ep);
+  //  return ep->addressv[erts_active_code_ix()];
+  return ep->code();
+}
+
 }  // ns

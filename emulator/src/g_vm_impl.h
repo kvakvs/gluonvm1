@@ -910,7 +910,7 @@ inline WantSchedule opcode_apply(Process* proc,
   Term mod = ctx.regs[arity];
   Term fun = ctx.regs[arity + 1];
 
-  Either<Word*, Term> res = bif::apply(proc, mod, fun, arity_as_term, ctx.regs);
+  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs);
   // Check error
   if (ctx.check_bif_error(proc)) {
     return WantSchedule::NextProcess;
@@ -937,7 +937,7 @@ inline WantSchedule opcode_apply_last(Process* proc,
   Term mod = ctx.regs[arity];
   Term fun = ctx.regs[arity + 1];
 
-  Either<Word*, Term> res = bif::apply(proc, mod, fun, arity_as_term, ctx.regs);
+  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs);
   // Check error
   if (ctx.check_bif_error(proc)) {
     return WantSchedule::NextProcess;
@@ -1214,7 +1214,7 @@ inline void opcode_apply_mfargs_(Process* proc,
   mod.println(ctx.vm_);
   fun.println(ctx.vm_);
   args.println(ctx.vm_);
-  Either<Word*, Term> res = bif::apply(proc, mod, fun, args, ctx.regs);
+  Either<Word*, Term> res = proc->apply(mod, fun, args, ctx.regs);
   // Check error
   if (ctx.check_bif_error(proc)) {
     return;

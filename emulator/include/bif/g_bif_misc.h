@@ -2,7 +2,6 @@
 
 #include "g_defs.h"
 #include "g_term.h"
-#include "g_functional.h"
 
 namespace gluon {
 
@@ -14,12 +13,6 @@ bool is_term_smaller(const VM& vm, Term a, Term b);
 bool are_terms_equal(const VM& vm, Term a, Term b, bool exact);
 // Returns pair of {length, proper=true/improper=false}
 Pair<Word, bool> length(Term list);
-
-// Attempts to call m:f with args
-// Returns Word * if code execution should jump there, or a Term if result is
-// known immediately. Pass small integer (arity) in args if regs already
-// contained args in the first 'arity' cells.
-Either<Word*, Term> apply(Process* proc, Term m, Term f, Term args, Term* regs);
 
 Term bif_apply_2(Process*, Term funobject, Term args);
 Term bif_apply_3(Process*, Term m, Term f, Term args);
