@@ -21,11 +21,6 @@ enum class WantSchedule {
   KeepGoing     // decided to continue current process
 };
 
-static void assert_address_makes_sense(const VM& vm, void* p) {
-  G_ASSERT(p >= vm.g_opcode_labels[1] &&
-           p <= vm.g_opcode_labels[genop::max_opcode]);
-}
-
 //
 // VM execution context, inherited from process context
 // Used to run current process by vm loop, also holds some extra local variables
@@ -145,6 +140,14 @@ struct VMRuntimeContext : RuntimeContext {
     Std::fmt("ctx.jump_ext -> ");
     mfa->println(vm_);
 
+    // Quick check if it accidentally is a BIF
+    if (mfa->mod == atom::ERLANG) {
+      auto maybe_bif = vm_.find_bif(*mfa);
+      if (maybe_bif) {
+        return jump_ext_bif(proc, mfa, maybe_bif);
+      }
+    }
+
     Module* mod = nullptr;
     Export* exp = vm_.codeserver().find_mfa(*mfa, &mod);
     if (!exp) {
@@ -153,31 +156,33 @@ struct VMRuntimeContext : RuntimeContext {
 
     // check for bif, a nonvalue result with error flag set to undef means that
     // this was not a bif
-    if (exp->is_bif()) {
-      // Swap out because BIF may decide to modify ip/cp
-      swap_out_light(proc);
-      Term result = vm_.apply_bif(proc, mfa->arity, exp->bif_fn(), regs);
-      swap_in_light(proc);
+    return exp->is_bif() ? jump_ext_bif(proc, mfa, exp->bif_fn())
+                         : jump_far(proc, mod, exp->code());
+  }
 
-      if (result.is_non_value()) {
-        if (proc->bif_err_reason_ != atom::UNDEF) {
-          // a real error happened
-          Term reason = proc->bif_err_reason_;
-          proc->bif_err_reason_ = the_non_value;
-          return raise(proc, atom::ERROR, reason);
-        }
-        // if it was undef - do nothing, it wasn't a bif - we just continue
-      } else {
-        // simulate real call but return bif result instead
-        regs[0] = result;
-        G_ASSERT(cp);
-        ip = cp;
-        cp = nullptr;
-        return;
+  // Finish jump_ext by jumping to a BIF
+  void jump_ext_bif(Process* proc, MFArity* mfa, void* fn) {
+    // Swap out because BIF may decide to modify ip/cp
+    swap_out_light(proc);
+    Term result = vm_.apply_bif(proc, mfa->arity, fn, regs);
+    swap_in_light(proc);
+
+    if (result.is_non_value()) {
+      if (proc->bif_err_reason_ != atom::UNDEF) {
+        // a real error happened
+        Term reason = proc->bif_err_reason_;
+        proc->bif_err_reason_ = the_non_value;
+        return raise(proc, atom::ERROR, reason);
       }
+      // if it was undef - do nothing, it wasn't a bif - we just continue
+    } else {
+      // simulate real call but return bif result instead
+      regs[0] = result;
+      G_ASSERT(cp);
+      ip = cp;
+      cp = nullptr;
+      return;
     }
-
-    return jump_far(proc, mod, exp->code());
   }
 
   // Jumps between modules updating base and mod fields

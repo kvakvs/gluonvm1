@@ -136,7 +136,7 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
 
     Word l_id = label.small_word();
     G_ASSERT(l_id < code_label_count_);
-    labels_[l_id] = (&output.back()) + 1;
+    labels_[l_id] = &output.back();
 
     return true;  // processed and we want to skip writing it
   }
@@ -166,13 +166,11 @@ void BeamLoader::post_rewrite_opcode(genop::Opcode opcode,
                                      Word* opcode_args,
                                      Module* m,
                                      Vector<Word>& output) {
-  if (opcode == genop::Opcode::Call_ext_only) {
-    /*
+  /*if (opcode == genop::Opcode::Call_ext_only) {
     Term arity(opcode_args[0]);
     Term label(opcode_args[1]);
 
     // If the command was call_ext_only to erlang:apply - overwrite with apply
-    opcode
     FunArity *fa = label_to_fun_.find_ptr(label);
     G_ASSERT(fa);
 
@@ -186,8 +184,7 @@ void BeamLoader::post_rewrite_opcode(genop::Opcode opcode,
 
       return; // stop rewriting right here
     }
-      */
-  }
+  }*/
 
   // Things to resolve from imports:
   if (opcode == Opcode::Bif0) {

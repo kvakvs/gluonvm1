@@ -6,8 +6,7 @@
 namespace gluon {
 
 namespace err {
-DECL_EXCEPTION(ext_term_error)
-IMPL_EXCEPTION(ext_term_error)
+DECL_IMPL_EXCEPTION(ExternalTerm)
 }  // ns err
 
 namespace etf {
@@ -39,14 +38,12 @@ Term read_atom_string_i8(VM& vm, tool::Reader& r) {
 // create it in atom table.
 Term read_tagged_atom_string(VM& vm, tool::Reader& r) {
   Tag tag = (Tag)r.read_byte();
-  switch (tag) {
-    case Tag::AtomExt:
-      return read_atom_string_i16(vm, r);
-    case Tag::SmallAtomExt:
-      return read_atom_string_i8(vm, r);
-    default:;
+  if (tag == Tag::AtomExt) {
+    return read_atom_string_i16(vm, r);
+  } else if (tag == Tag::SmallAtomExt) {
+    return read_atom_string_i8(vm, r);
   }
-  throw err::ext_term_error("atom expected");
+  throw err::ExternalTerm("atom expected");
 }
 
 Node* get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/) {
@@ -58,7 +55,7 @@ Node* get_node(VM& vm, Term /*sysname*/, dist::Creation /*creation*/) {
 
 Term make_pid(VM& vm, Term sysname, Word id, Word serial, Uint8 creation) {
   if (!Term::is_valid_pid_id(id) || !Term::is_valid_pid_serial(serial)) {
-    throw err::ext_term_error("bad pid");
+    throw err::ExternalTerm("bad pid");
   }
   // TODO: check valid creation
   Word data = Term::make_pid_data(serial, id);
@@ -274,9 +271,10 @@ Term read_ext_term(VM& vm, proc::Heap* heap, tool::Reader& r) {
         throw err::TODO("BIGNUM");
       }
 
-    default:
-      Std::fmt("invalid ETF value tag %d\n", t);
-      throw err::ext_term_error("bad etf tag");
+    case Tag::DistHeader:
+    case Tag::AtomCacheRef:
+      // Std::fmt("invalid ETF value tag %d\n", t);
+      throw err::ExternalTerm("bad etf tag");
   }  // switch tag
 }  // parse function
 

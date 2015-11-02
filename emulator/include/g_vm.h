@@ -107,6 +107,9 @@ class VM {
   void* find_bif(const MFArity& mfa) const;
   Term apply_bif(Process* proc, Word arity, void* fn, Term* args);
 
+  // Check that void* label address to go to actually is ok
+  void assert_jmp_address(void* p) const;
+
  private:
   // Does not check if atom existed before. Will break old values on overwrite
   Term new_atom(const Str& s);

@@ -9,6 +9,7 @@
 
 #include "bif/g_bif_misc.h"
 #include "g_vm_bif_tab.h"
+#include "g_genop.h"
 
 #include <algorithm>
 
@@ -156,6 +157,10 @@ Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
       return ((bif3_fn)fn)(proc, args[0], args[1], args[2]);
   }
   return proc->bif_error(atom::UNDEF);
+}
+
+void VM::assert_jmp_address(void* p) const {
+  G_ASSERT(p >= g_opcode_labels[1] && p <= g_opcode_labels[genop::max_opcode]);
 }
 
 }  // ns gluon

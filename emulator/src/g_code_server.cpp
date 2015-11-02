@@ -87,10 +87,6 @@ bool Server::print_mfa(Word* ptr) const {
     return false;
   }
   if (!mfa.mod.is_atom() || !mfa.fun.is_atom()) {
-    //    Std::fmt("mod=");
-    //    mfa.mod.print(vm_);
-    //    Std::fmt("; fun=");
-    //    mfa.fun.println(vm_);
     throw err::CodeServer("mfa is not atom:atom");
   }
   mfa.mod.print(vm_);
