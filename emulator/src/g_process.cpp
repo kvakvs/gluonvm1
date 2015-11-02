@@ -16,6 +16,7 @@ Process::Process(VM& vm, Term gleader) : vm_(vm), gleader_(gleader) {
 void Process::jump_to_mfa(MFArity& mfa) {
   G_ASSERT(this);
 
+  /*
   auto mod = vm_.codeserver().find_module(this, mfa.mod,
                                           code::FindModule::LoadIfNotFound);
 
@@ -29,8 +30,12 @@ void Process::jump_to_mfa(MFArity& mfa) {
     mfa.println(vm_);
     throw err::Process("jump to a bif");
   }
+  */
 
-  ctx_.ip = exp->code();
+  ctx_.cp = vm_.premade_beaminstr_normal_exit();
+  ctx_.ip =
+  //ctx_.ip = exp->code();
+
   Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (Word)ctx_.ip);
   G_ASSERT(ctx_.ip > 0);
 }

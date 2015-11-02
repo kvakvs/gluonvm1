@@ -29,6 +29,7 @@ VM::VM() : sched_(*this) {
   codeserver_ = new code::Server(*this);
 
   vm_loop(true);  // initialize labels
+  throw err::FeatureMissing("PREMADE BEAMINSTR");
 
   init_predef_atoms();
 

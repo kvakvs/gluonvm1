@@ -42,6 +42,14 @@ class VM {
   AtomProcMap reg_names_;
   Process* root_process_ = nullptr;
 
+  // Premade BEAM opcodes (used as return address at spawn)
+  enum class Premade: Word {
+    Apply,
+    Normal_exit,
+    Total_count
+  };
+  Word premade_beaminstr_[Premade::Total_count];
+
  public:
   VM();
 
