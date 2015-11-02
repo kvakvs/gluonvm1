@@ -1,17 +1,17 @@
-/////////////////////////////////////////////////////////////////////////////// 
-// 
-// Copyright (c) 2015 Microsoft Corporation. All rights reserved. 
-// 
-// This code is licensed under the MIT License (MIT). 
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN 
-// THE SOFTWARE. 
-// 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2015 Microsoft Corporation. All rights reserved.
+//
+// This code is licensed under the MIT License (MIT).
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -19,8 +19,8 @@
 #ifndef GSL_GSL_H
 #define GSL_GSL_H
 
-#include "array_view.h"     // array_view, strided_array_view...
-#include "string_view.h"    // zstring, string_view, zstring_builder...
+#include "array_view.h"   // array_view, strided_array_view...
+#include "string_view.h"  // zstring, string_view, zstring_builder...
 #include <memory>
 
 #ifdef _MSC_VER
@@ -32,30 +32,30 @@
 // MSVC 2013 workarounds
 #if _MSC_VER <= 1800
 
-// noexcept is not understood 
+// noexcept is not understood
 #ifndef GSL_THROWS_FOR_TESTING
-#define noexcept /* nothing */ 
+#define noexcept /* nothing */
 #endif
 
 // turn off some misguided warnings
 #pragma warning(push)
-#pragma warning(disable: 4351) // warns about newly introduced aggregate initializer behavior
+#pragma warning(disable : 4351)  // warns about newly introduced aggregate
+                                 // initializer behavior
 
-#endif // _MSC_VER <= 1800
+#endif  // _MSC_VER <= 1800
 
-#endif // _MSC_VER
+#endif  // _MSC_VER
 
-// In order to test the library, we need it to throw exceptions that we can catch
+// In order to test the library, we need it to throw exceptions that we can
+// catch
 #ifdef GSL_THROWS_FOR_TESTING
-#define noexcept /* nothing */ 
-#endif // GSL_THROWS_FOR_TESTING 
+#define noexcept /* nothing */
+#endif           // GSL_THROWS_FOR_TESTING
 
-
-namespace gsl
-{
+namespace gsl {
 
 //
-// GSL.owner: ownership pointers 
+// GSL.owner: ownership pointers
 //
 using std::unique_ptr;
 using std::shared_ptr;
@@ -66,8 +66,8 @@ using owner = T;
 //
 // GSL.assert: assertions
 //
-#define Expects(x)  gsl::fail_fast_assert((x))
-#define Ensures(x)  gsl::fail_fast_assert((x))
+#define Expects(x) gsl::fail_fast_assert((x))
+#define Ensures(x) gsl::fail_fast_assert((x))
 
 //
 // GSL.util: utilities
@@ -75,314 +75,362 @@ using owner = T;
 
 // final_act allows you to ensure something gets run at the end of a scope
 template <class F>
-class final_act
-{
-public:
-    explicit final_act(F f) noexcept : f_(std::move(f)), invoke_(true) {}
+class final_act {
+ public:
+  explicit final_act(F f) noexcept : f_(std::move(f)), invoke_(true) {}
 
-    final_act(final_act&& other) noexcept : f_(std::move(other.f_)), invoke_(other.invoke_) { other.invoke_ = false; }
-    final_act(const final_act&) = delete;
-    final_act& operator=(const final_act&) = delete;
+  final_act(final_act&& other) noexcept : f_(std::move(other.f_)),
+                                          invoke_(other.invoke_) {
+    other.invoke_ = false;
+  }
+  final_act(const final_act&) = delete;
+  final_act& operator=(const final_act&) = delete;
 
-    ~final_act() noexcept { if (invoke_) f_(); }
+  ~final_act() noexcept {
+    if (invoke_)
+      f_();
+  }
 
-private:
-    F f_;
-    bool invoke_;
+ private:
+  F f_;
+  bool invoke_;
 };
 
 // finally() - convenience function to generate a final_act
 template <class F>
-final_act<F> finally(const F &f) noexcept { return final_act<F>(f); }
+final_act<F> finally(const F& f) noexcept {
+  return final_act<F>(f);
+}
 
 template <class F>
-final_act<F> finally(F &&f) noexcept { return final_act<F>(std::forward<F>(f)); }
+final_act<F> finally(F&& f) noexcept {
+  return final_act<F>(std::forward<F>(f));
+}
 
 // narrow_cast(): a searchable way to do narrowing casts of values
-template<class T, class U>
-T narrow_cast(U u) noexcept { return static_cast<T>(u); }
+template <class T, class U>
+T narrow_cast(U u) noexcept {
+  return static_cast<T>(u);
+}
 
 struct narrowing_error : public std::exception {};
-// narrow() : a checked version of narrow_cast() that throws if the cast changed the value
-template<class T, class U>
-T narrow(U u) { T t = narrow_cast<T>(u); if (static_cast<U>(t) != u) throw narrowing_error(); return t; }
+// narrow() : a checked version of narrow_cast() that throws if the cast changed
+// the value
+template <class T, class U>
+T narrow(U u) {
+  T t = narrow_cast<T>(u);
+  if (static_cast<U>(t) != u)
+    throw narrowing_error();
+  return t;
+}
 
 //
 // at() - Bounds-checked way of accessing static arrays, std::array, std::vector
 //
 template <class T, size_t N>
-T& at(T(&arr)[N], size_t index) { fail_fast_assert(index < N); return arr[index]; }
+T& at(T (&arr)[N], size_t index) {
+  fail_fast_assert(index < N);
+  return arr[index];
+}
 
 template <class T, size_t N>
-T& at(std::array<T, N>& arr, size_t index) { fail_fast_assert(index < N); return arr[index]; }
+T& at(std::array<T, N>& arr, size_t index) {
+  fail_fast_assert(index < N);
+  return arr[index];
+}
 
 template <class Cont>
-typename Cont::value_type& at(Cont& cont, size_t index) { fail_fast_assert(index < cont.size()); return cont[index]; }
-
+typename Cont::value_type& at(Cont& cont, size_t index) {
+  fail_fast_assert(index < cont.size());
+  return cont[index];
+}
 
 //
 // not_null
 //
 // Restricts a pointer or smart pointer to only hold non-null values.
-// 
+//
 // Has zero size overhead over T.
 //
-// If T is a pointer (i.e. T == U*) then 
-// - allow construction from U* or U& 
+// If T is a pointer (i.e. T == U*) then
+// - allow construction from U* or U&
 // - disallow construction from nullptr_t
 // - disallow default construction
 // - ensure construction from U* fails with nullptr
 // - allow implicit conversion to U*
 //
-template<class T>
-class not_null
-{
-    static_assert(std::is_assignable<T&, std::nullptr_t>::value, "T cannot be assigned nullptr.");
-public:
-    not_null(T t) : ptr_(t) { ensure_invariant(); }
-    not_null& operator=(const T& t) { ptr_ = t; ensure_invariant(); return *this; }
+template <class T>
+class not_null {
+  static_assert(std::is_assignable<T&, std::nullptr_t>::value,
+                "T cannot be assigned nullptr.");
 
-    not_null(const not_null &other) = default;
-    not_null& operator=(const not_null &other) = default;
+ public:
+  not_null(T t) : ptr_(t) { ensure_invariant(); }
+  not_null& operator=(const T& t) {
+    ptr_ = t;
+    ensure_invariant();
+    return *this;
+  }
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    not_null(const not_null<U> &other)
-    {
-        *this = other;
-    }
+  not_null(const not_null& other) = default;
+  not_null& operator=(const not_null& other) = default;
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    not_null& operator=(const not_null<U> &other)
-    {
-        ptr_ = other.get();
-        return *this;
-    }
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  not_null(const not_null<U>& other) {
+    *this = other;
+  }
 
-    // prevents compilation when someone attempts to assign a nullptr 
-    not_null(std::nullptr_t) = delete;
-    not_null(int) = delete;
-    not_null<T>& operator=(std::nullptr_t) = delete;
-	not_null<T>& operator=(int) = delete;
-    
-    T get() const {
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  not_null& operator=(const not_null<U>& other) {
+    ptr_ = other.get();
+    return *this;
+  }
+
+  // prevents compilation when someone attempts to assign a nullptr
+  not_null(std::nullptr_t) = delete;
+  not_null(int) = delete;
+  not_null<T>& operator=(std::nullptr_t) = delete;
+  not_null<T>& operator=(int) = delete;
+
+  T get() const {
 #ifdef _MSC_VER
-        __assume(ptr_ != nullptr);
+    __assume(ptr_ != nullptr);
 #endif
-        return ptr_;
-    } // the assume() should help the optimizer
+    return ptr_;
+  }  // the assume() should help the optimizer
 
-    operator T() const {  return get(); }
-    T operator->() const { return get(); }
+  operator T() const { return get(); }
+  T operator->() const { return get(); }
 
-	bool operator==(const T& rhs) const { return ptr_ == rhs; }
-	bool operator!=(const T& rhs) const { return !(*this == rhs); }
-private:
-    T ptr_;
+  bool operator==(const T& rhs) const { return ptr_ == rhs; }
+  bool operator!=(const T& rhs) const { return !(*this == rhs); }
 
-    // we assume that the compiler can hoist/prove away most of the checks inlined from this function
-    // if not, we could make them optional via conditional compilation
-    void ensure_invariant() const { fail_fast_assert(ptr_ != nullptr); }
+ private:
+  T ptr_;
 
-    // unwanted operators...pointers only point to single objects!
-    // TODO ensure all arithmetic ops on this type are unavailable
-    not_null<T>& operator++() = delete;
-    not_null<T>& operator--() = delete;
-    not_null<T> operator++(int) = delete;
-    not_null<T> operator--(int) = delete;
-    not_null<T>& operator+(size_t) = delete;
-    not_null<T>& operator+=(size_t) = delete;
-    not_null<T>& operator-(size_t) = delete;
-    not_null<T>& operator-=(size_t) = delete;
+  // we assume that the compiler can hoist/prove away most of the checks inlined
+  // from this function
+  // if not, we could make them optional via conditional compilation
+  void ensure_invariant() const { fail_fast_assert(ptr_ != nullptr); }
+
+  // unwanted operators...pointers only point to single objects!
+  // TODO ensure all arithmetic ops on this type are unavailable
+  not_null<T>& operator++() = delete;
+  not_null<T>& operator--() = delete;
+  not_null<T> operator++(int) = delete;
+  not_null<T> operator--(int) = delete;
+  not_null<T>& operator+(size_t) = delete;
+  not_null<T>& operator+=(size_t) = delete;
+  not_null<T>& operator-(size_t) = delete;
+  not_null<T>& operator-=(size_t) = delete;
 };
 
-
-// 
+//
 // maybe_null
 //
 // Describes an optional pointer - provides symmetry with not_null
 //
-template<class T>
+template <class T>
 class maybe_null_ret;
 
-template<class T>
-class maybe_null_dbg
-{
-    template<class U>
-    friend class maybe_null_dbg;
+template <class T>
+class maybe_null_dbg {
+  template <class U>
+  friend class maybe_null_dbg;
 
-    static_assert(std::is_assignable<T&, std::nullptr_t>::value, "T cannot be assigned nullptr.");
-public:
-    maybe_null_dbg() : ptr_(nullptr), tested_(false) {}
-    maybe_null_dbg(std::nullptr_t) : ptr_(nullptr), tested_(false) {}
+  static_assert(std::is_assignable<T&, std::nullptr_t>::value,
+                "T cannot be assigned nullptr.");
 
-    maybe_null_dbg(const T& p) : ptr_(p), tested_(false) {}
-    maybe_null_dbg& operator=(const T& p)
-    {
-        if (ptr_ != p)
-        {
-            ptr_ = p;
-            tested_ = false;
-        }
-        return *this;
+ public:
+  maybe_null_dbg() : ptr_(nullptr), tested_(false) {}
+  maybe_null_dbg(std::nullptr_t) : ptr_(nullptr), tested_(false) {}
+
+  maybe_null_dbg(const T& p) : ptr_(p), tested_(false) {}
+  maybe_null_dbg& operator=(const T& p) {
+    if (ptr_ != p) {
+      ptr_ = p;
+      tested_ = false;
     }
+    return *this;
+  }
 
-
-    maybe_null_dbg(const maybe_null_dbg& rhs) : ptr_(rhs.ptr_), tested_(false) {}
-    maybe_null_dbg& operator=(const maybe_null_dbg& rhs)
-    {
-        if (this != &rhs)
-        {
-            ptr_ = rhs.ptr_;
-            tested_ = false;
-        }
-        return *this;
+  maybe_null_dbg(const maybe_null_dbg& rhs) : ptr_(rhs.ptr_), tested_(false) {}
+  maybe_null_dbg& operator=(const maybe_null_dbg& rhs) {
+    if (this != &rhs) {
+      ptr_ = rhs.ptr_;
+      tested_ = false;
     }
+    return *this;
+  }
 
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_dbg(const not_null<U>& other)
+      : ptr_(other.get()), tested_(false) {}
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_dbg(const not_null<U> &other) : ptr_(other.get()), tested_(false) {}
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_dbg& operator=(const not_null<U>& other) {
+    ptr_ = other.get();
+    tested_ = false;
+    return *this;
+  }
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_dbg& operator=(const not_null<U> &other)
-    {
-        ptr_ = other.get();
-        tested_ = false;
-        return *this;
-    }
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_dbg(const maybe_null_dbg<U>& other)
+      : ptr_(other.ptr_), tested_(false) {}
 
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_dbg& operator=(const maybe_null_dbg<U>& other) {
+    ptr_ = other.ptr_;
+    tested_ = false;
+    return *this;
+  }
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_dbg(const maybe_null_dbg<U> &other) : ptr_(other.ptr_), tested_(false) {}
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_dbg(const maybe_null_ret<U>& other)
+      : ptr_(other.get()), tested_(false) {}
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_dbg& operator=(const maybe_null_dbg<U> &other)
-    {
-        ptr_ = other.ptr_;
-        tested_ = false;
-        return *this;
-    }
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_dbg& operator=(const maybe_null_ret<U>& other) {
+    ptr_ = other.get();
+    tested_ = false;
+    return *this;
+  }
 
+  bool present() const {
+    tested_ = true;
+    return ptr_ != nullptr;
+  }
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_dbg(const maybe_null_ret<U> &other) : ptr_(other.get()), tested_(false) {}
+  bool operator==(const T& rhs) const {
+    tested_ = true;
+    return ptr_ == rhs;
+  }
+  bool operator!=(const T& rhs) const { return !(*this == rhs); }
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  bool operator==(const maybe_null_dbg<U>& rhs) const {
+    tested_ = true;
+    rhs.tested_ = true;
+    return ptr_ == rhs.ptr_;
+  }
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  bool operator!=(const maybe_null_dbg<U>& rhs) const {
+    return !(*this == rhs);
+  }
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_dbg& operator=(const maybe_null_ret<U> &other)
-    {
-        ptr_ = other.get();
-        tested_ = false;
-        return *this;
-    }
-
-
-    bool present() const { tested_ = true; return ptr_ != nullptr; }
-
-    bool operator==(const T& rhs) const { tested_ = true; return ptr_ == rhs; }
-    bool operator!=(const T& rhs) const { return !(*this == rhs); }
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    bool operator==(const maybe_null_dbg<U>& rhs) const { tested_ = true; rhs.tested_ = true; return ptr_ == rhs.ptr_; }
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    bool operator!=(const maybe_null_dbg<U>& rhs) const { return !(*this == rhs); }
-
-    T get() const {
-        fail_fast_assert(tested_);
+  T get() const {
+    fail_fast_assert(tested_);
 #ifdef _MSC_VER
-        __assume(ptr_ != nullptr);
+    __assume(ptr_ != nullptr);
 #endif
-        return ptr_; 
-    }
+    return ptr_;
+  }
 
-    operator T() const { return get(); }
-    T operator->() const { return get(); }
+  operator T() const { return get(); }
+  T operator->() const { return get(); }
 
-private:
-    // unwanted operators...pointers only point to single objects!
-    // TODO ensure all arithmetic ops on this type are unavailable
-    maybe_null_dbg<T>& operator++() = delete;
-    maybe_null_dbg<T>& operator--() = delete;
-    maybe_null_dbg<T> operator++(int) = delete;
-    maybe_null_dbg<T> operator--(int) = delete;
-    maybe_null_dbg<T>& operator+(size_t) = delete;
-    maybe_null_dbg<T>& operator+=(size_t) = delete;
-    maybe_null_dbg<T>& operator-(size_t) = delete;
-    maybe_null_dbg<T>& operator-=(size_t) = delete;
+ private:
+  // unwanted operators...pointers only point to single objects!
+  // TODO ensure all arithmetic ops on this type are unavailable
+  maybe_null_dbg<T>& operator++() = delete;
+  maybe_null_dbg<T>& operator--() = delete;
+  maybe_null_dbg<T> operator++(int) = delete;
+  maybe_null_dbg<T> operator--(int) = delete;
+  maybe_null_dbg<T>& operator+(size_t) = delete;
+  maybe_null_dbg<T>& operator+=(size_t) = delete;
+  maybe_null_dbg<T>& operator-(size_t) = delete;
+  maybe_null_dbg<T>& operator-=(size_t) = delete;
 
-    T ptr_;
-    mutable bool tested_;
+  T ptr_;
+  mutable bool tested_;
 };
 
-template<class T>
-class maybe_null_ret
-{
-    static_assert(std::is_assignable<T&, std::nullptr_t>::value, "T cannot be assigned nullptr.");
-public:
-    maybe_null_ret() : ptr_(nullptr) {}
-    maybe_null_ret(std::nullptr_t) : ptr_(nullptr) {}
+template <class T>
+class maybe_null_ret {
+  static_assert(std::is_assignable<T&, std::nullptr_t>::value,
+                "T cannot be assigned nullptr.");
 
-    maybe_null_ret(const T& p) : ptr_(p) {}
-    maybe_null_ret& operator=(const T& p) { ptr_ = p; return *this; }
-    
-    maybe_null_ret(const maybe_null_ret& rhs) = default;
-    maybe_null_ret& operator=(const maybe_null_ret& rhs) = default;
+ public:
+  maybe_null_ret() : ptr_(nullptr) {}
+  maybe_null_ret(std::nullptr_t) : ptr_(nullptr) {}
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_ret(const not_null<U> &other) : ptr_(other.get()) {}
+  maybe_null_ret(const T& p) : ptr_(p) {}
+  maybe_null_ret& operator=(const T& p) {
+    ptr_ = p;
+    return *this;
+  }
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_ret& operator=(const not_null<U> &other)
-    {
-        ptr_ = other.get();
-        return *this;
-    }
+  maybe_null_ret(const maybe_null_ret& rhs) = default;
+  maybe_null_ret& operator=(const maybe_null_ret& rhs) = default;
 
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_ret(const not_null<U>& other) : ptr_(other.get()) {}
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_ret(const maybe_null_ret<U> &other) : ptr_(other.get()) {}
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_ret& operator=(const not_null<U>& other) {
+    ptr_ = other.get();
+    return *this;
+  }
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_ret& operator=(const maybe_null_ret<U> &other)
-    {
-        ptr_ = other.get();
-        return *this;
-    }
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_ret(const maybe_null_ret<U>& other) : ptr_(other.get()) {}
 
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_ret& operator=(const maybe_null_ret<U>& other) {
+    ptr_ = other.get();
+    return *this;
+  }
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_ret(const maybe_null_dbg<U> &other) : ptr_(other.get()) {}
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_ret(const maybe_null_dbg<U>& other) : ptr_(other.get()) {}
 
-    template <typename U, typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
-    maybe_null_ret& operator=(const maybe_null_dbg<U> &other)
-    {
-        ptr_ = other.get();
-        return *this;
-    }
+  template <typename U,
+            typename Dummy = std::enable_if_t<std::is_convertible<U, T>::value>>
+  maybe_null_ret& operator=(const maybe_null_dbg<U>& other) {
+    ptr_ = other.get();
+    return *this;
+  }
 
+  bool present() const { return ptr_ != nullptr; }
 
-    bool present() const { return ptr_ != nullptr; }
+  T get() const { return ptr_; }
 
-    T get() const { return ptr_; }
+  operator T() const { return get(); }
+  T operator->() const { return get(); }
 
-    operator T() const { return get(); }
-    T operator->() const { return get(); }
+ private:
+  // unwanted operators...pointers only point to single objects!
+  // TODO ensure all arithmetic ops on this type are unavailable
+  maybe_null_ret<T>& operator++() = delete;
+  maybe_null_ret<T>& operator--() = delete;
+  maybe_null_ret<T> operator++(int) = delete;
+  maybe_null_ret<T> operator--(int) = delete;
+  maybe_null_ret<T>& operator+(size_t) = delete;
+  maybe_null_ret<T>& operator+=(size_t) = delete;
+  maybe_null_ret<T>& operator-(size_t) = delete;
+  maybe_null_ret<T>& operator-=(size_t) = delete;
 
-private:
-    // unwanted operators...pointers only point to single objects!
-    // TODO ensure all arithmetic ops on this type are unavailable
-    maybe_null_ret<T>& operator++() = delete;
-    maybe_null_ret<T>& operator--() = delete;
-    maybe_null_ret<T> operator++(int) = delete;
-    maybe_null_ret<T> operator--(int) = delete;
-    maybe_null_ret<T>& operator+(size_t) = delete;
-    maybe_null_ret<T>& operator+=(size_t) = delete;
-    maybe_null_ret<T>& operator-(size_t) = delete;
-    maybe_null_ret<T>& operator-=(size_t) = delete;
-
-    T ptr_;
+  T ptr_;
 };
 
-template<class T> using maybe_null = maybe_null_ret<T>;
+template <class T>
+using maybe_null = maybe_null_ret<T>;
 
-} // namespace gsl
+}  // namespace gsl
 
 #ifdef _MSC_VER
 
@@ -394,14 +442,14 @@ template<class T> using maybe_null = maybe_null_ret<T>;
 
 #ifndef GSL_THROWS_FOR_TESTING
 #pragma undef noexcept
-#endif // GSL_THROWS_FOR_TESTING
+#endif  // GSL_THROWS_FOR_TESTING
 
-#endif // _MSC_VER <= 1800
+#endif  // _MSC_VER <= 1800
 
-#endif // _MSC_VER
+#endif  // _MSC_VER
 
-#if defined(GSL_THROWS_FOR_TESTING) 
-#undef noexcept 
-#endif // GSL_THROWS_FOR_TESTING 
+#if defined(GSL_THROWS_FOR_TESTING)
+#undef noexcept
+#endif  // GSL_THROWS_FOR_TESTING
 
-#endif // GSL_GSL_H
+#endif  // GSL_GSL_H

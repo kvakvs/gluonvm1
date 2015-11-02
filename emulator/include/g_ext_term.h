@@ -13,7 +13,7 @@ class Heap;
 namespace etf {
 
 constexpr Uint8 etf_marker = 131;
-enum class Tag {
+enum class Tag : Uint8 {
   DistHeader = 68,  // contains atom cache
   // 69
   IeeeFloatExt = 70,  // 8-byte double

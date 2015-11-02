@@ -381,6 +381,14 @@ Term BeamLoader::parse_term(tool::Reader& r) {
         }
         return Term::make_small_u(val);
       }
+
+      case TermTag::Extended:
+      case TermTag::Extended_Base:
+      case TermTag::Extended_List:
+      case TermTag::Extended_FloatRegister:
+      case TermTag::Extended_Literal:
+      case TermTag::Extended_AllocList:
+        throw err::BeamLoad("bad tag");
     }  // end switch tag (Base tags)
   } else
       // ---- END BASE TAGS --- BEGIN EXTENDED ---

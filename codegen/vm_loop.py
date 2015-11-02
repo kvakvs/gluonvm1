@@ -46,7 +46,7 @@ next_instr:
   Std::fmt("]: ");
 
   ctx.ip++;
-  ctx.vm_.assert_opcode_handler_label(jmp_to);
+  ctx.vm_.assert_jmp_address(jmp_to);
   goto *jmp_to;
 """)
 

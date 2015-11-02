@@ -29,6 +29,7 @@ VM::VM() : sched_(*this) {
   codeserver_ = new code::Server(*this);
 
   vm_loop(true);  // initialize labels
+  throw err::FeatureMissing("PREMADE BEAMINSTR");
 
   init_predef_atoms();
 
@@ -159,9 +160,14 @@ Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
   return proc->bif_error(atom::UNDEF);
 }
 
+<<<<<<< HEAD
 void VM::assert_opcode_handler_label(const void *p) const {
   G_ASSERT(p >= g_opcode_labels[1] &&
       p <= g_opcode_labels[genop::max_opcode]);
+=======
+void VM::assert_jmp_address(void* p) const {
+  G_ASSERT(p >= g_opcode_labels[1] && p <= g_opcode_labels[genop::max_opcode]);
+>>>>>>> cb01d71382325c484a4e56047de14a26297e37d8
 }
 
 }  // ns gluon

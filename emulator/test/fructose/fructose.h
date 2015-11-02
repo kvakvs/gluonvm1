@@ -1,4 +1,4 @@
-/* FRUCTOSE C++ unit test library. 
+/* FRUCTOSE C++ unit test library.
 Copyright (c) 2012 Andrew Peter Marlow. All rights reserved.
 http://www.andrewpetermarlow.co.uk.
 

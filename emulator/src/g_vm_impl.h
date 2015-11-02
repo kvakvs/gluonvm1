@@ -20,13 +20,15 @@ inline WantSchedule opcode_gc_bif2(Process* proc, VMRuntimeContext& ctx);
 //  inline void opcode_label(Process *proc, VMRuntimeContext &ctx) { // opcode:
 //  1
 //  }
-inline void opcode_func_info(Process* proc, VMRuntimeContext& ctx) {  // opcode: 2
+inline void opcode_func_info(Process* proc,
+                             VMRuntimeContext& ctx) {  // opcode: 2
   return ctx.raise(proc, atom::ERROR, atom::FUNCTION_CLAUSE);
 }
 //  inline void opcode_int_code_end(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 3
 //  }
-inline WantSchedule opcode_call(Process* proc, VMRuntimeContext& ctx) {  // opcode: 4
+inline WantSchedule opcode_call(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 4
   // @spec call Arity Label
   // @doc Call the function at Label.
   //      Save the next instruction as the return address in the CP register.
@@ -37,7 +39,7 @@ inline WantSchedule opcode_call(Process* proc, VMRuntimeContext& ctx) {  // opco
   return ctx.consume_reduction(proc);
 }
 inline WantSchedule opcode_call_last(Process* proc,
-                              VMRuntimeContext& ctx) {  // opcode: 5
+                                     VMRuntimeContext& ctx) {  // opcode: 5
   // @spec call_last Arity Label Deallocate
   // @doc Deallocate and do a tail recursive call to the function at Label.
   // Do not update the CP register. Before the call deallocate Deallocate
@@ -51,7 +53,7 @@ inline WantSchedule opcode_call_last(Process* proc,
   return ctx.consume_reduction(proc);
 }
 inline WantSchedule opcode_call_only(Process* proc,
-                              VMRuntimeContext& ctx) {  // opcode: 6
+                                     VMRuntimeContext& ctx) {  // opcode: 6
   // @spec call_only Arity Label
   // @doc Do a tail recursive call to the function at Label.
   //      Do not update the CP register.
@@ -61,7 +63,7 @@ inline WantSchedule opcode_call_only(Process* proc,
   return ctx.consume_reduction(proc);
 }
 inline WantSchedule opcode_call_ext(Process* proc,
-                             VMRuntimeContext& ctx) {  // opcode: 7
+                                    VMRuntimeContext& ctx) {  // opcode: 7
   // @spec call_ext Arity Destination
   // @doc Call the function of arity Arity pointed to by Destination.
   //      Save the next instruction as the return address in the CP register.
@@ -75,7 +77,7 @@ inline WantSchedule opcode_call_ext(Process* proc,
   return ctx.consume_reduction(proc);
 }
 inline WantSchedule opcode_call_ext_last(Process* proc,
-                                  VMRuntimeContext& ctx) {  // opcode: 8
+                                         VMRuntimeContext& ctx) {  // opcode: 8
   // @spec call_ext_last Arity Destination Deallocate
   // @doc Deallocate and do a tail call to function of arity Arity pointed
   // to by Destination. Do not update the CP register. Deallocate Deallocate
@@ -89,7 +91,8 @@ inline WantSchedule opcode_call_ext_last(Process* proc,
   return ctx.consume_reduction(proc);
 }
 
-inline WantSchedule opcode_bif0(Process* proc, VMRuntimeContext& ctx) {  // opcode: 9
+inline WantSchedule opcode_bif0(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 9
   // bif0 import_index Dst - cannot fail
   Term boxed_mfa(ctx.ip[0]);
   Term result_dst(ctx.ip[1]);
@@ -105,7 +108,8 @@ inline WantSchedule opcode_bif0(Process* proc, VMRuntimeContext& ctx) {  // opco
   return ctx.consume_reduction(proc);
 }
 
-inline WantSchedule opcode_bif1(Process* proc, VMRuntimeContext& ctx) {  // opcode: 10
+inline WantSchedule opcode_bif1(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 10
   // bif1 Fail import_index Arg1 Dst
   Term boxed_mfa(ctx.ip[1]);
   Term arg1(ctx.ip[2]);
@@ -125,7 +129,8 @@ inline WantSchedule opcode_bif1(Process* proc, VMRuntimeContext& ctx) {  // opco
   return ctx.consume_reduction(proc);
 }
 
-inline WantSchedule opcode_bif2(Process* proc, VMRuntimeContext& ctx) {  // opcode: 11
+inline WantSchedule opcode_bif2(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 11
   // bif1 Fail import_index Arg1 Arg2 Dst
   Term boxed_mfa(ctx.ip[1]);
   Term arg1(ctx.ip[2]);
@@ -147,7 +152,8 @@ inline WantSchedule opcode_bif2(Process* proc, VMRuntimeContext& ctx) {  // opco
   return ctx.consume_reduction(proc);
 }
 
-inline void opcode_allocate(Process* proc, VMRuntimeContext& ctx) {  // opcode: 12
+inline void opcode_allocate(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 12
   // @spec allocate StackNeed Live
   // @doc Allocate space for StackNeed words on the stack. If a GC is needed
   //      during allocation there are Live number of live X registers.
@@ -158,7 +164,8 @@ inline void opcode_allocate(Process* proc, VMRuntimeContext& ctx) {  // opcode: 
   ctx.ip += 2;
 }
 
-inline void opcode_allocate_heap(Process* proc, VMRuntimeContext& ctx) {  // opcode: 13
+inline void opcode_allocate_heap(Process* proc,
+                                 VMRuntimeContext& ctx) {  // opcode: 13
   // @spec allocate_heap StackNeed HeapNeed Live
   // @doc Allocate space for StackNeed words on the stack and ensure there is
   //      space for HeapNeed words on the heap. If a GC is needed
@@ -169,7 +176,8 @@ inline void opcode_allocate_heap(Process* proc, VMRuntimeContext& ctx) {  // opc
   ctx.ip += 3;
 }
 
-inline void opcode_allocate_zero(Process* proc, VMRuntimeContext& ctx) {  // opcode: 14
+inline void opcode_allocate_zero(Process* proc,
+                                 VMRuntimeContext& ctx) {  // opcode: 14
   // @spec allocate_zero StackNeed Live
   // @doc Allocate space for StackNeed words on the stack. If a GC is needed
   //      during allocation there are Live number of live X registers.
@@ -179,7 +187,7 @@ inline void opcode_allocate_zero(Process* proc, VMRuntimeContext& ctx) {  // opc
 }
 
 inline void opcode_allocate_heap_zero(Process* proc,
-                               VMRuntimeContext& ctx) {  // opcode: 15
+                                      VMRuntimeContext& ctx) {  // opcode: 15
   // @spec allocate_heap_zero StackNeed HeapNeed Live
   // @doc Allocate space for StackNeed words on the stack and HeapNeed words
   // on the heap. If a GC is needed during allocation there are Live number
@@ -190,7 +198,8 @@ inline void opcode_allocate_heap_zero(Process* proc,
   ctx.ip += 3;
 }
 
-inline void opcode_test_heap(Process* proc, VMRuntimeContext& ctx) {  // opcode: 16
+inline void opcode_test_heap(Process* proc,
+                             VMRuntimeContext& ctx) {  // opcode: 16
   // @spec test_heap HeapNeed Live
   // @doc Ensure there is space for HeapNeed words on the heap. If a GC is
   // needed
@@ -205,7 +214,8 @@ inline void opcode_init(Process* proc, VMRuntimeContext& ctx) {  // opcode: 17
   ctx.stack().set_y(y_reg.regy_get_value(), term::nil_as_word);
   ctx.ip++;
 }
-inline void opcode_deallocate(Process* proc, VMRuntimeContext& ctx) {  // opcode: 18
+inline void opcode_deallocate(Process* proc,
+                              VMRuntimeContext& ctx) {  // opcode: 18
   // @spec deallocate N
   // @doc  Restore the continuation pointer (CP) from the stack and deallocate
   //       N+1 words from the stack (the + 1 is for the CP).
@@ -214,7 +224,7 @@ inline void opcode_deallocate(Process* proc, VMRuntimeContext& ctx) {  // opcode
   ctx.ip++;
 }
 inline WantSchedule opcode_return(Process* proc,
-                           VMRuntimeContext& ctx) {  // opcode: 19
+                                  VMRuntimeContext& ctx) {  // opcode: 19
   // @spec return
   // @doc  Return to the address in the continuation pointer (CP).
   if (!ctx.cp) {
@@ -228,7 +238,8 @@ inline WantSchedule opcode_return(Process* proc,
   return WantSchedule::KeepGoing;
 }
 
-inline WantSchedule opcode_send(Process* proc, VMRuntimeContext& ctx) {  // opcode: 20
+inline WantSchedule opcode_send(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 20
   // @spec send
   // @doc  Send argument in x(1) as a message to the destination process in
   // x(0).
@@ -248,7 +259,7 @@ inline WantSchedule opcode_send(Process* proc, VMRuntimeContext& ctx) {  // opco
 }
 
 inline void opcode_remove_message(Process* proc,
-                           VMRuntimeContext& ctx) {  // opcode: 21
+                                  VMRuntimeContext& ctx) {  // opcode: 21
   // @spec remove_message
   // @doc  Unlink the current message from the message queue and store a
   //       pointer to the message in x(0). Remove any timeout.
@@ -260,7 +271,8 @@ inline void opcode_remove_message(Process* proc,
 //  opcode: 22
 //  }
 
-inline void opcode_loop_rec(Process* proc, VMRuntimeContext& ctx) {  // opcode: 23
+inline void opcode_loop_rec(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 23
   // @spec loop_rec Label Source
   // @doc  Pick up the next message and place it in x(0). If no message,
   //       jump to a wait or wait_timeout instruction.
@@ -276,7 +288,8 @@ inline void opcode_loop_rec(Process* proc, VMRuntimeContext& ctx) {  // opcode: 
   ctx.ip += 2;
 }
 
-inline void opcode_loop_rec_end(Process* proc, VMRuntimeContext& ctx) {  // opcode: 24
+inline void opcode_loop_rec_end(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 24
   // @spec loop_rec_end Label
   // @doc  Advance the save pointer to the next message (the current
   // message didn't match), then jump to the Label (loop_rec instruction).
@@ -392,7 +405,8 @@ inline void opcode_is_eq(Process* proc, VMRuntimeContext& ctx) {  // opcode: 41
 //  inline void opcode_is_ne(Process *proc, VMRuntimeContext &ctx) { // opcode:
 //  42
 //  }
-inline void opcode_is_eq_exact(Process* proc, VMRuntimeContext& ctx) {  // opcode: 43
+inline void opcode_is_eq_exact(Process* proc,
+                               VMRuntimeContext& ctx) {  // opcode: 43
   // @spec is_eq_exact Lbl Arg1 Arg2
   // @doc Compare two terms and jump to Lbl if Arg1 is not exactly equal to
   // Arg2.
@@ -412,7 +426,8 @@ inline void opcode_is_eq_exact(Process* proc, VMRuntimeContext& ctx) {  // opcod
 //  inline void opcode_is_ne_exact(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 44
 //  }
-inline void opcode_is_integer(Process* proc, VMRuntimeContext& ctx) {  // opcode: 45
+inline void opcode_is_integer(Process* proc,
+                              VMRuntimeContext& ctx) {  // opcode: 45
   // @spec is_integer Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not an integer.
   Term arg(ctx.ip[1]);
@@ -422,7 +437,8 @@ inline void opcode_is_integer(Process* proc, VMRuntimeContext& ctx) {  // opcode
   }
   ctx.ip += 2;
 }
-inline void opcode_is_float(Process* proc, VMRuntimeContext& ctx) {  // opcode: 46
+inline void opcode_is_float(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 46
 #if FEATURE_FLOAT
   G_TODO("is_float");
 #else
@@ -432,7 +448,8 @@ inline void opcode_is_float(Process* proc, VMRuntimeContext& ctx) {  // opcode: 
 //  inline void opcode_is_number(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 47
 //  }
-inline void opcode_is_atom(Process* proc, VMRuntimeContext& ctx) {  // opcode: 48
+inline void opcode_is_atom(Process* proc,
+                           VMRuntimeContext& ctx) {  // opcode: 48
   // @spec is_atom Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not an atom.
   Term arg(ctx.ip[1]);
@@ -452,7 +469,8 @@ inline void opcode_is_pid(Process* proc, VMRuntimeContext& ctx) {  // opcode: 49
   }
   ctx.ip += 2;
 }
-inline void opcode_is_reference(Process* proc, VMRuntimeContext& ctx) {  // opcode: 50
+inline void opcode_is_reference(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 50
   // @spec is_reference Lbl, Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a reference.
   Term t(ctx.ip[1]);
@@ -462,7 +480,8 @@ inline void opcode_is_reference(Process* proc, VMRuntimeContext& ctx) {  // opco
   }
   ctx.ip += 2;
 }
-inline void opcode_is_port(Process* proc, VMRuntimeContext& ctx) {  // opcode: 51
+inline void opcode_is_port(Process* proc,
+                           VMRuntimeContext& ctx) {  // opcode: 51
   // @spec is_port Lbl, Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a port.
   Term t(ctx.ip[1]);
@@ -482,7 +501,8 @@ inline void opcode_is_nil(Process* proc, VMRuntimeContext& ctx) {  // opcode: 52
   }
   ctx.ip += 2;
 }
-inline void opcode_is_binary(Process* proc, VMRuntimeContext& ctx) {  // opcode: 53
+inline void opcode_is_binary(Process* proc,
+                             VMRuntimeContext& ctx) {  // opcode: 53
 // @spec is_binary Lbl Arg1
 // @doc Test the type of Arg1 and jump to Lbl if it is not a binary.
 #if FEATURE_BINARIES
@@ -494,7 +514,8 @@ inline void opcode_is_binary(Process* proc, VMRuntimeContext& ctx) {  // opcode:
 //  inline void opcode_is_constant(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 54
 //  }
-inline void opcode_is_list(Process* proc, VMRuntimeContext& ctx) {  // opcode: 55
+inline void opcode_is_list(Process* proc,
+                           VMRuntimeContext& ctx) {  // opcode: 55
   // @spec is_list Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a cons or nil.
   Term t(ctx.ip[1]);
@@ -505,7 +526,7 @@ inline void opcode_is_list(Process* proc, VMRuntimeContext& ctx) {  // opcode: 5
   ctx.ip += 2;
 }
 inline void opcode_is_nonempty_list(Process* proc,
-                             VMRuntimeContext& ctx) {  // opcode: 56
+                                    VMRuntimeContext& ctx) {  // opcode: 56
   // @spec is_nonempty_list Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a cons.
   Term t(ctx.ip[1]);
@@ -515,7 +536,8 @@ inline void opcode_is_nonempty_list(Process* proc,
   }
   ctx.ip += 2;
 }
-inline void opcode_is_tuple(Process* proc, VMRuntimeContext& ctx) {  // opcode: 57
+inline void opcode_is_tuple(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 57
   // @spec is_tuple Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a tuple.
   Term t(ctx.ip[1]);
@@ -525,7 +547,8 @@ inline void opcode_is_tuple(Process* proc, VMRuntimeContext& ctx) {  // opcode: 
   }
   ctx.ip += 2;
 }
-inline void opcode_test_arity(Process* proc, VMRuntimeContext& ctx) {  // opcode: 58
+inline void opcode_test_arity(Process* proc,
+                              VMRuntimeContext& ctx) {  // opcode: 58
   // @spec test_arity Lbl Arg1 Arity
   // @doc Test the arity of (the tuple in) Arg1 and jump to Lbl if it is
   // not equal to Arity.
@@ -538,7 +561,8 @@ inline void opcode_test_arity(Process* proc, VMRuntimeContext& ctx) {  // opcode
   }
   ctx.ip += 3;
 }
-inline void opcode_select_val(Process* proc, VMRuntimeContext& ctx) {  // opcode: 59
+inline void opcode_select_val(Process* proc,
+                              VMRuntimeContext& ctx) {  // opcode: 59
   // @spec select_val Arg FailLabel Destinations
   // @doc Jump to the destination label corresponding to Arg
   //      in the Destinations list, if no arity matches, jump to FailLabel.
@@ -558,7 +582,7 @@ inline void opcode_select_val(Process* proc, VMRuntimeContext& ctx) {  // opcode
   ctx.jump(proc, Term(ctx.ip[1]));
 }
 inline void opcode_select_tuple_arity(Process* proc,
-                               VMRuntimeContext& ctx) {  // opcode: 60
+                                      VMRuntimeContext& ctx) {  // opcode: 60
   // @spec select_tuple_arity Tuple FailLabel Destinations
   // @doc Check the arity of the tuple Tuple and jump to the corresponding
   //      destination label, if no arity matches, jump to FailLabel.
@@ -596,7 +620,8 @@ inline void opcode_move(Process* proc, VMRuntimeContext& ctx) {  // opcode: 64
   ctx.move(val, dst);
   ctx.ip += 2;
 }
-inline void opcode_get_list(Process* proc, VMRuntimeContext& ctx) {  // opcode: 65
+inline void opcode_get_list(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 65
   // @spec get_list  Source Head Tail
   // @doc  Get the head and tail (or car and cdr) parts of a list
   //       (a cons cell) from Source and put them into the registers
@@ -610,7 +635,7 @@ inline void opcode_get_list(Process* proc, VMRuntimeContext& ctx) {  // opcode: 
   ctx.ip += 3;
 }
 inline void opcode_get_tuple_element(Process* proc,
-                              VMRuntimeContext& ctx) {  // opcode: 66
+                                     VMRuntimeContext& ctx) {  // opcode: 66
   // @spec get_tuple_element Source Element Destination
   // @doc  Get element number Element from the tuple in Source and put
   //       it in the destination register Destination.
@@ -629,7 +654,8 @@ inline void opcode_get_tuple_element(Process* proc,
 //  inline void opcode_put_string(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 68
 //  }
-inline void opcode_put_list(Process* proc, VMRuntimeContext& ctx) {  // opcode: 69
+inline void opcode_put_list(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 69
   // @spec put_list H T Dst
   Term h(ctx.ip[0]);
   Term t(ctx.ip[1]);
@@ -640,7 +666,8 @@ inline void opcode_put_list(Process* proc, VMRuntimeContext& ctx) {  // opcode: 
   ctx.move(result, dst);
   ctx.ip += 3;
 }
-inline void opcode_put_tuple(Process* proc, VMRuntimeContext& ctx) {  // opcode: 70
+inline void opcode_put_tuple(Process* proc,
+                             VMRuntimeContext& ctx) {  // opcode: 70
   // @spec put_tuple Arity Dst
   // followed by Arity 'put N' commands
   Term t_arity(ctx.ip[0]);
@@ -670,17 +697,19 @@ inline void opcode_put_tuple(Process* proc, VMRuntimeContext& ctx) {  // opcode:
 }
 //  inline void opcode_put(Process *proc, VMRuntimeContext &ctx) { // opcode: 71
 //  }
-inline void opcode_badmatch(Process* proc, VMRuntimeContext& ctx) {  // opcode: 72
+inline void opcode_badmatch(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 72
   return ctx.raise(proc, atom::ERROR, atom::BADMATCH);
 }
 inline void opcode_if_end(Process* proc, VMRuntimeContext& ctx) {  // opcode: 73
   return ctx.raise(proc, atom::ERROR, atom::IF_CLAUSE);
 }
-inline void opcode_case_end(Process* proc, VMRuntimeContext& ctx) {  // opcode: 74
+inline void opcode_case_end(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 74
   return ctx.raise(proc, atom::ERROR, atom::CASE_CLAUSE);
 }
 inline WantSchedule opcode_call_fun(Process* proc,
-                             VMRuntimeContext& ctx) {  // opcode: 75
+                                    VMRuntimeContext& ctx) {  // opcode: 75
   // @spec call_fun Arity
   // @doc Call a fun of arity Arity. Assume arguments in registers x(0) to
   // x(Arity-1) and that the fun is in x(Arity). Save the next instruction as
@@ -734,7 +763,8 @@ inline WantSchedule opcode_call_fun(Process* proc,
 //  inline void opcode_make_fun(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 76
 //  }
-inline void opcode_is_function(Process* proc, VMRuntimeContext& ctx) {  // opcode: 77
+inline void opcode_is_function(Process* proc,
+                               VMRuntimeContext& ctx) {  // opcode: 77
   // @spec is_function Lbl Arg1
   // @doc Test the type of Arg1; jump to Lbl if it is not a function or closure.
   Term arg1(ctx.ip[1]);
@@ -746,7 +776,7 @@ inline void opcode_is_function(Process* proc, VMRuntimeContext& ctx) {  // opcod
   ctx.ip += 2;
 }
 inline WantSchedule opcode_call_ext_only(Process* proc,
-                                  VMRuntimeContext& ctx) {  // opcode: 78
+                                         VMRuntimeContext& ctx) {  // opcode: 78
   // @spec call_ext_only Arity Label
   // Do a tail recursive call to the function at Label. Do not update CP.
   Term boxed_mfa(ctx.ip[1]);
@@ -827,7 +857,8 @@ inline WantSchedule opcode_call_ext_only(Process* proc,
 //  inline void opcode_fnegate(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 102
 //  }
-inline void opcode_make_fun2(Process* proc, VMRuntimeContext& ctx) {  // opcode: 103
+inline void opcode_make_fun2(Process* proc,
+                             VMRuntimeContext& ctx) {  // opcode: 103
   // @spec make_fun2 LambdaT_index
   // @doc Produces a callable fun object
   Term boxed_fe(ctx.ip[0]);
@@ -851,7 +882,8 @@ inline void opcode_try(Process* proc, VMRuntimeContext& ctx) {  // opcode: 104
 //  inline void opcode_try_end(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 105
 //  }
-inline void opcode_try_case(Process* proc, VMRuntimeContext& ctx) {  // opcode: 106
+inline void opcode_try_case(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 106
   // @spec try_case Arg1
 }
 //  inline void opcode_try_case_end(Process *proc, VMRuntimeContext &ctx) { //
@@ -871,7 +903,7 @@ inline void opcode_try_case(Process* proc, VMRuntimeContext& ctx) {  // opcode: 
 //  }
 
 inline WantSchedule opcode_apply(Process* proc,
-                          VMRuntimeContext& ctx) {  // opcode: 112
+                                 VMRuntimeContext& ctx) {  // opcode: 112
   // @spec apply Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
   Term arity_as_term(ctx.ip[0]);
   Word arity = arity_as_term.small_word();
@@ -898,7 +930,7 @@ inline WantSchedule opcode_apply(Process* proc,
 }
 
 inline WantSchedule opcode_apply_last(Process* proc,
-                               VMRuntimeContext& ctx) {  // opcode: 113
+                                      VMRuntimeContext& ctx) {  // opcode: 113
   // @spec apply_last _ Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
   Term arity_as_term(ctx.ip[0]);
   Word arity = arity_as_term.small_word();
@@ -925,7 +957,8 @@ inline WantSchedule opcode_apply_last(Process* proc,
   return ctx.consume_reduction(proc);
 }
 
-inline void opcode_is_boolean(Process* proc, VMRuntimeContext& ctx) {  // opcode: 114
+inline void opcode_is_boolean(Process* proc,
+                              VMRuntimeContext& ctx) {  // opcode: 114
   // @spec is_boolean Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a Boolean.
   Term arg1(ctx.ip[1]);
@@ -936,7 +969,8 @@ inline void opcode_is_boolean(Process* proc, VMRuntimeContext& ctx) {  // opcode
   ctx.ip++;
 }
 
-inline void opcode_is_function2(Process* proc, VMRuntimeContext& ctx) {  // opcode: 115
+inline void opcode_is_function2(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 115
   // @spec is_function2 Lbl Arg1 Arity
   // @doc Test the type of Arg1 and jump to Lbl if it is not a function
   // of arity Arity.
@@ -989,7 +1023,7 @@ inline void opcode_is_function2(Process* proc, VMRuntimeContext& ctx) {  // opco
 //  }
 
 inline WantSchedule opcode_gc_bif1(Process* proc,
-                            VMRuntimeContext& ctx) {  // opcode: 124
+                                   VMRuntimeContext& ctx) {  // opcode: 124
   // @spec gc_bif1 Lbl Live Bif Arg Reg
   // @doc Call the bif Bif with the argument Arg, and store the result in Reg.
   // On failure jump to Lbl. Do a garbage collection if necessary to allocate
@@ -1013,7 +1047,7 @@ inline WantSchedule opcode_gc_bif1(Process* proc,
 }
 
 inline WantSchedule opcode_gc_bif2(Process* proc,
-                            VMRuntimeContext& ctx) {  // opcode: 125
+                                   VMRuntimeContext& ctx) {  // opcode: 125
   // @spec gc_bif2 Lbl Live Bif Arg1 Arg2 Reg
   // @doc Call the bif Bif with the arguments Arg1 and Arg2, and store the
   // result in Reg. On failure jump to Lbl. Do a garbage collection if
@@ -1119,7 +1153,8 @@ inline void opcode_trim(Process* proc, VMRuntimeContext& ctx) {  // opcode: 136
 //
 // R14A
 //
-inline void opcode_recv_mark(Process* proc, VMRuntimeContext& ctx) {  // opcode: 150
+inline void opcode_recv_mark(Process* proc,
+                             VMRuntimeContext& ctx) {  // opcode: 150
   // @spec recv_mark Label
   // @doc  Save the end of the message queue and the address of the label
   // Label so that a recv_set instruction can start scanning the inbox from
@@ -1127,7 +1162,8 @@ inline void opcode_recv_mark(Process* proc, VMRuntimeContext& ctx) {  // opcode:
   proc->mailbox().mark_position(ctx.ip[0]);
   ctx.ip++;
 }
-inline void opcode_recv_set(Process* proc, VMRuntimeContext& ctx) {  // opcode: 151
+inline void opcode_recv_set(Process* proc,
+                            VMRuntimeContext& ctx) {  // opcode: 151
   // @spec recv_set Label
   // @doc Check that the saved mark points to Label and set the save pointer
   // in the message queue to the last position of the message queue saved by
@@ -1155,7 +1191,7 @@ inline void opcode_recv_set(Process* proc, VMRuntimeContext& ctx) {  // opcode: 
 //  opcode: 157
 //  }
 inline void opcode_get_map_elements(Process* proc,
-                             VMRuntimeContext& ctx) {  // opcode: 158
+                                    VMRuntimeContext& ctx) {  // opcode: 158
   // This must be implemented for assert_address_makes_sense/2 to know
   // whether a jump address is valid or random garbage. We throw up here
   throw err::TODO("notimpl get_map_elements");
