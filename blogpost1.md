@@ -28,15 +28,19 @@ Another usecase could be embedding into another application in form of a scripti
 
 ## What is done?
 
-Status on 1st of November: the project was able to read multiple BEAM files and run most of code in `lists` module, some simple demos, was able to run and return result from famous ring example (spawn multiple processes and chain send/receive a number).
+Status on 1st of November the project was able to:
+* Read multiple BEAM files and run most of code in `lists` module, some simple demos.
+* Run and return result from famous ring example (spawn multiple processes and chain send/receive a number).
+* Switch between multiple processes, handle mailboxes.
+* Pattern-match on functions.
+* Manipulate lists, tuples, use list comprehensions, do simple math.
+* Handle lambdas and function objects in a way that made sense.
 
-Currently slowly making my way to be able to enter and run otp_ring0 (init entry point for OTP and to get to the shell).
+Currently working on the ability to enter and run otp_ring0 (entry point for OTP and to getting to the shell).
 
-## When is it ready?
+When is it ready you may ask? The work is in progress. Several months ahead, to say least. This is a hobby project, so basically it is done when it is done (or I start working full time on it and then it's ready much faster). 
 
-The work is in progress. Several months ahead, to say least. This is a hobby project, so basically it is done when it is done (or I start working full time on it and then it's ready much faster). 
-
-### TODO
+## TODO and improvements
 
 * GC, this is coming soon. I am using "The garbage collection handbook" from 2012.
 * Ports, sockets, file access for Erlang code, io in general
@@ -48,8 +52,6 @@ Optional improvements:
 * Bignums and floats
 * More compact BEAM format
 
-## Ideas and improvements
-
 To go the path of further shrinking:
 * Standard C library has to be replaced with an embedded-oriented library. Such as `dietlibc` or a similar. 
 * Try how 32-bit version affects the binary size and memory footprint.
@@ -57,9 +59,9 @@ To go the path of further shrinking:
 * Shrink the BEAM file size, possibly develop a new smaller format. Possibly optimize out unused functions in standard library and produce 'release-like' output directory with shrinked Erlang library.
 * Possibly optimize out unused BIF functions from the VM source to produce smaller VM.
 * Optimize Erlang startup, load start modules temporarily then remove them from memory.
-* Tweak startup memory usage.
+* Tweak startup memory usage, aggressively reduce memory allocations in init.
 * JIT? Not there yet.
-* Reduce Erlang and library to a small subset of desktop Erlang, call it, say, Embedded Erlang or something, and run it. Similar to what they did to Java Card to be able to run on 64k smart cards and SIM.
+* Reduce Erlang and library to a small subset of desktop Erlang, call it, say, Embedded Erlang or something, and run it. Similar to what they did to [Java Card](https://en.wikipedia.org/wiki/Java_Card) to be able to run on 64kb smart cards and SIM.
 
 Further work would have to focus on reducing BEAM file sizes and rewriting libraries to a very compact and limited form. In current state libraries take a significant amount of memory, many of them are not used in one specific system, and many of those which are used - are ran only once, at init time.
 
