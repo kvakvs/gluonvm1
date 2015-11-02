@@ -1,13 +1,8 @@
 .PHONY: all
-all: asm_genop genop vm_loop vm_predef_atoms vm_bif_tab
-#vm_jump_table 
+all: genop vm_loop vm_predef_atoms vm_bif_tab
 
 SRCDIR="../emulator/src"
 INCDIR="../emulator/include"
-
-.PHONY: asm_genop
-asm_genop:
-	./genop.py > ../apps/asm/src/asm_genop.erl
 
 .PHONY: genop
 genop:

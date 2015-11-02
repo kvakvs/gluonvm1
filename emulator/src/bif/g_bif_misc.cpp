@@ -696,7 +696,7 @@ Either<Word*, Term> apply(Process* proc,
     // was an abstract module, add 1 to the function arity and put the
     // module argument in the n+1st x register as a THIS reference.
     Term tmp = args;
-    while (tmp.is_list()) {
+    while (tmp.is_cons()) {
       if (arity < erts::max_regs - 1) {
         tmp.cons_head_tail(regs[arity++], tmp);
       } else {
@@ -715,9 +715,16 @@ Either<Word*, Term> apply(Process* proc,
 
   // Get the index into the export table, or failing that the export
   // entry for the error handler.
-  // OTP Note: All BIFs have export entries; thus, no special case is needed.
   VM& vm = proc->vm();
-  Export* ep = vm.codeserver().find_mfa(MFArity(m, f, arity));
+  MFArity mfa(m, f, arity);
+
+  mfa.println(vm);
+  auto maybe_bif = vm.find_bif(mfa);
+  if (maybe_bif) {
+    return vm.apply_bif(proc, mfa.arity, maybe_bif, regs);
+  }
+
+  Export* ep = vm.codeserver().find_mfa(mfa);
   if (!ep) {
     // if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL)
     // goto error;
@@ -736,7 +743,7 @@ Either<Word*, Term> apply(Process* proc,
 }
 
 Term bif_apply_2(Process* proc, Term funobject, Term args) {
-  return proc->bif_badarg();
+  return proc->bif_badarg(atom::APPLY);
 }
 
 // apply/3 is implemented as an instruction and as erlang code in the
@@ -744,7 +751,7 @@ Term bif_apply_2(Process* proc, Term funobject, Term args) {
 // This function will never be called.  (It could be if init did something
 // like this:  apply(erlang, apply, [M, F, A]). Not recommended.)
 Term bif_apply_3(Process* proc, Term m, Term f, Term args) {
-  return proc->bif_badarg();
+  return proc->bif_badarg(atom::APPLY);
 }
 
 }  // ns bif

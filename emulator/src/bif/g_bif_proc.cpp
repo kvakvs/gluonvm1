@@ -38,6 +38,7 @@ static Term spawn_mfargs(Process* proc, Term m, Term f, Term args, bool link) {
                    old_heap_args + mfa.arity, new_heap_args);
 
   try {
+    mfa.println(proc->vm());
     new_proc->spawn(mfa, new_heap_args);
   } catch (std::runtime_error& e) {
     return proc->bif_error(atom::ERROR, e.what());

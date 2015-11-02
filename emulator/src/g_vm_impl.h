@@ -1204,5 +1204,33 @@ inline void opcode_normal_exit_(Process* proc,
   throw err::TODO("notimpl exit");
 }
 
+inline void opcode_apply_mfargs_(Process* proc,
+                                 VMRuntimeContext& ctx) {  // opcode: 112
+  // @spec apply_mfargs_, regs contain m,f,[args]
+  Term mod = ctx.regs[0];
+  Term fun = ctx.regs[1];
+  Term args = ctx.regs[2];
+
+  mod.println(ctx.vm_);
+  fun.println(ctx.vm_);
+  args.println(ctx.vm_);
+  Either<Word*, Term> res = bif::apply(proc, mod, fun, args, ctx.regs);
+  // Check error
+  if (ctx.check_bif_error(proc)) {
+    return;
+  }
+  // What to do with apply result, is it code pointer to jump to or a bif result
+  if (res.is_left()) {
+    // Imitate a call
+    ctx.live = bif::bif_length_1(proc, args).small_word();
+    ctx.cp = ctx.ip + 1;
+    ctx.ip = res.left();
+    return;
+  }
+  // Or we already know the result, no call is happening
+  ctx.regs[0] = res.right();
+  ctx.ip++;
+}
+
 }  // ns impl
 }  // ns gluon

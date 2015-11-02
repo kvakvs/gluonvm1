@@ -24,8 +24,9 @@ def load_opcodes():
         ops.append({'name': opname, 'arity': int(oparity), 'opcode': int(opcode)})
 
     global MAX_OPCODE
-    extra_codes = 1
+    extra_codes = 2
     ops.append({'name': 'normal_exit_', 'arity': 0, 'opcode': MAX_OPCODE+1})
+    ops.append({'name': 'apply_mfargs_', 'arity': 0, 'opcode': MAX_OPCODE+2})
     MAX_OPCODE += extra_codes
 
     # make op map by opcode

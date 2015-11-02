@@ -42,6 +42,10 @@ template <>
 inline Term make_term(const SWord& x) {
   return Term::make_small(x);
 }
+template <>
+inline Term make_term(const Term &x) {
+  return x;
+}
 
 template <typename Iter>
 Word length(Iter iter, Iter to) {
@@ -55,14 +59,14 @@ inline Word length<const char*>(const char* iter, const char* to) {
   return (Word)(to - iter);
 }
 
-template <typename Iter>
+template <typename Iter> // TODO: const Iter args?
 Term build_list(proc::Heap* heap, Iter iter, Iter to) {
   if (iter == to) {
     return ::gluon::the_nil;
   }
 
   Word len = length(iter, to);
-  Std::fmt("len=" FMT_UWORD "\n", len);
+  Std::fmt("build_list: len=" FMT_UWORD "\n", len);
   Term* h = (Term*)heap->allocate<Word>(layout::CONS::box_word_size * len);
 
   Term result = Term::make_cons(h);

@@ -29,7 +29,6 @@ VM::VM() : sched_(*this) {
   codeserver_ = new code::Server(*this);
 
   vm_loop(true);  // initialize labels
-  throw err::FeatureMissing("PREMADE BEAMINSTR");
 
   init_predef_atoms();
   premade_.init(*this);
@@ -45,6 +44,7 @@ VM::VM() : sched_(*this) {
 
   // create root process and set it to some entry function
   root_process_ = new Process(*this, the_non_value);
+  codeserver_->load_module(root_process_, atom::INIT);
   codeserver_->load_module(root_process_, atom::ERLANG);
 }
 
@@ -167,10 +167,10 @@ void VM::assert_jmp_address(const void* p) const {
 }
 
 void PremadeBeaminstr::init(const VM& vm) {
-  instr_[(Word)PremadeIndex::Apply]
-      = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Apply];
+  instr_[(Word)PremadeIndex::Apply_mfargs_]
+      = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Apply_mfargs_];
 
-  instr_[(Word)PremadeIndex::Normal_exit]
+  instr_[(Word)PremadeIndex::Normal_exit_]
       = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Normal_exit_];
 }
 

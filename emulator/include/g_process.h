@@ -145,11 +145,6 @@ class Process {
   void msg_send(Term pid, Term value);
   proc::Mailbox& mailbox() { return mailbox_; }
   const proc::Mailbox& mailbox() const { return mailbox_; }
-
- protected:
-  // Resolves M:F/Arity and sets instruction pointer to it. Runs no code. Args
-  // should be placed in registers before this process is scheduled to execute.
-  void jump_to_mfa(MFArity& mfa);
 };
 
 #if G_TEST

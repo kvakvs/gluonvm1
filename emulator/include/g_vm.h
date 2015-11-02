@@ -25,8 +25,8 @@ using AtomProcMap = Dict<Term, Process*>;
 enum class RegisterResult { Ok, RegistrationExists, ProcessNotFound };
 
 enum class PremadeIndex: Word {
-  Apply,
-  Normal_exit,
+  Apply_mfargs_,
+  Normal_exit_,
   Total_count
 };
 
