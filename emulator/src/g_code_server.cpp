@@ -81,7 +81,7 @@ void Server::path_prepend(const Str& p) {
   search_path_.push_front(p);
 }
 
-bool Server::print_mfa(Word* ptr) const {
+bool Server::print_mfa(const Word* ptr) const {
   MFArity mfa;
   if (!find_mfa_from_code(ptr, /*out*/ mfa)) {
     Std::fmt(FMT_0xHEX, (Word)ptr);
@@ -98,7 +98,7 @@ bool Server::print_mfa(Word* ptr) const {
   return true;
 }
 
-bool Server::find_mfa_from_code(Word* ptr, MFArity& out) const {
+bool Server::find_mfa_from_code(const Word* ptr, MFArity& out) const {
   Module* m = nullptr;
   if (!mod_index_.find(ptr, /*out*/ m) || !m) {
     return false;

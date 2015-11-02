@@ -32,9 +32,9 @@ void Process::jump_to_mfa(MFArity& mfa) {
   }
   */
 
-  ctx_.cp = vm_.premade_beaminstr_normal_exit();
-  ctx_.ip =
-  //ctx_.ip = exp->code();
+  // Precondition: Registers should be set to execute apply call
+  ctx_.cp = vm_.premade_instr(PremadeIndex::Normal_exit);
+  ctx_.ip = vm_.premade_instr(PremadeIndex::Apply);
 
   Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (Word)ctx_.ip);
   G_ASSERT(ctx_.ip > 0);

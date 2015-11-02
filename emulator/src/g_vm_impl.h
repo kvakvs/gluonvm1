@@ -1197,5 +1197,12 @@ inline void opcode_get_map_elements(Process* proc,
   throw err::TODO("notimpl get_map_elements");
 }
 
+inline void opcode_normal_exit_(Process* proc,
+                                VMRuntimeContext& ctx) {  // opcode: 158
+  // This must be implemented for assert_address_makes_sense/2 to know
+  // whether a jump address is valid or random garbage. We throw up here
+  throw err::TODO("notimpl exit");
+}
+
 }  // ns impl
 }  // ns gluon

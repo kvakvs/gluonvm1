@@ -14,13 +14,13 @@ namespace code {
 #if FEATURE_CODE_RANGES
 class Range {
  public:
-  Word* start;
-  Word* end;  // one word after code end
+  const Word* start;
+  const Word* end;  // one word after code end
 
   Range() : start(nullptr), end(nullptr) {}
-  Range(Word* s, Word* e) : start(s), end(e) {}
+  Range(const Word* s, const Word* e) : start(s), end(e) {}
 
-  bool contains(Word* p) const {
+  bool contains(const Word* p) const {
     // we only compare single pointer and store it in start, 'end' should be
     // null
     return p >= start && p < end;
@@ -43,7 +43,7 @@ class Index {
   void add(const Range& r, T value) { ranges_.insert(r, value); }
 
   // Find code location in tree of ranges
-  bool find(Word* x, T& out) const {
+  bool find(const Word* x, T& out) const {
     // I cannot into range search, something with lower_bound/upper_bound which
     // compares ranges using operator < and that is too hard
     // TODO: fix this

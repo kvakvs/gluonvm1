@@ -50,8 +50,8 @@ class Server {
 
   // Find module, function and arity for code location and print it.
   // Returns true if mfa was found and printed, else false
-  bool print_mfa(Word* ptr) const;
-  bool find_mfa_from_code(Word* ptr, MFArity& out) const;
+  bool print_mfa(const Word* ptr) const;
+  bool find_mfa_from_code(const Word* ptr, MFArity& out) const;
   Export* find_mfa(const MFArity& mfa, Module** out_mod = nullptr) const;
 
  protected:

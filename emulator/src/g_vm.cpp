@@ -32,6 +32,7 @@ VM::VM() : sched_(*this) {
   throw err::FeatureMissing("PREMADE BEAMINSTR");
 
   init_predef_atoms();
+  premade_.init(*this);
 
   codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
   codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.5/ebin");
@@ -160,14 +161,17 @@ Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
   return proc->bif_error(atom::UNDEF);
 }
 
-<<<<<<< HEAD
-void VM::assert_opcode_handler_label(const void *p) const {
-  G_ASSERT(p >= g_opcode_labels[1] &&
-      p <= g_opcode_labels[genop::max_opcode]);
-=======
-void VM::assert_jmp_address(void* p) const {
-  G_ASSERT(p >= g_opcode_labels[1] && p <= g_opcode_labels[genop::max_opcode]);
->>>>>>> cb01d71382325c484a4e56047de14a26297e37d8
+void VM::assert_jmp_address(const void* p) const {
+  G_ASSERT(p >= g_opcode_labels[1]
+        && p <= g_opcode_labels[genop::max_opcode]);
+}
+
+void PremadeBeaminstr::init(const VM& vm) {
+  instr_[(Word)PremadeIndex::Apply]
+      = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Apply];
+
+  instr_[(Word)PremadeIndex::Normal_exit]
+      = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Normal_exit_];
 }
 
 }  // ns gluon

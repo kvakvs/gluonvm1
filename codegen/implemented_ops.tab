@@ -76,3 +76,6 @@ is_port
 #--- debug ---
 #line - processed on load stage and removed
 #func_info - processed on load stage and removed
+
+#--- Internal self-made opcodes
+normal_exit_

@@ -16,10 +16,10 @@ class Process;
 // by loop runner on context switch or loop end
 typedef struct {
   //  Module *mod = nullptr;
-  Word* ip = nullptr;  // code pointer
+  const Word* ip = nullptr;  // code pointer
   // continuation, works like return address for a single call. If more nested
   // calls are done, cp is saved to stack
-  Word* cp = nullptr;
+  const Word* cp = nullptr;
   Word live = 0;  // saved registers count
 
   // TODO: maybe cache r0 in a local variable in vm loop?

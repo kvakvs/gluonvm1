@@ -72,7 +72,7 @@ Vector<Word> BeamLoader::read_code(Module* m,
 
     // Convert opcode into jump address
     const void *op_ptr = vm_.g_opcode_labels[(Word)opcode];
-    vm_.assert_opcode_handler_label(op_ptr);
+    vm_.assert_jmp_address(op_ptr);
     output.push_back((Word)op_ptr);
 
     // debug_print_opcode(opcode, arity, r);
@@ -136,13 +136,9 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
 
     Word l_id = label.small_word();
     G_ASSERT(l_id < code_label_count_);
-<<<<<<< HEAD
 
     Word *opcode_ptr = &output.back();
     labels_.insert(l_id, opcode_ptr);
-=======
-    labels_[l_id] = &output.back();
->>>>>>> cb01d71382325c484a4e56047de14a26297e37d8
 
     return true;  // processed and we want to skip writing it
   }

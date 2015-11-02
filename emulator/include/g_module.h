@@ -114,7 +114,7 @@ class Module {
 #if FEATURE_CODE_RANGES
   code::Range get_code_range();
   void set_fun_ranges(code::Index<FunArity>& ci) { fun_index_ = std::move(ci); }
-  bool find_fun_arity(Word* ptr, FunArity& out) const;
+  bool find_fun_arity(const Word* ptr, FunArity& out) const;
 #endif
 
   void set_line_numbers(LineRefs& lr, FileNames& fn) {

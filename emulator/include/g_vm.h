@@ -24,6 +24,20 @@ using AtomProcMap = Dict<Term, Process*>;
 
 enum class RegisterResult { Ok, RegistrationExists, ProcessNotFound };
 
+enum class PremadeIndex: Word {
+  Apply,
+  Normal_exit,
+  Total_count
+};
+
+// Contains VM code to execute one specific instruction. 'Apply' is
+// used as process entry address and 'Exit' as process exit address
+class PremadeBeaminstr {
+public:
+  Word instr_[(Word)PremadeIndex::Total_count];
+  void init(const VM& vm);
+};
+
 // Note: singleton, do not instantiate even
 class VM {
  private:
@@ -42,17 +56,14 @@ class VM {
   AtomProcMap reg_names_;
   Process* root_process_ = nullptr;
 
-  // Premade BEAM opcodes (used as return address at spawn)
-  enum class Premade: Word {
-    Apply,
-    Normal_exit,
-    Total_count
-  };
-  Word premade_beaminstr_[Premade::Total_count];
+  PremadeBeaminstr premade_;
 
- public:
+public:
   VM();
 
+  const Word* premade_instr(PremadeIndex i) const {
+    return &premade_.instr_[(Word)i];
+  }
   code::Server& codeserver() { return *codeserver_; }
   const code::Server& codeserver() const { return *codeserver_; }
   Process* root_process() const { return root_process_; }
@@ -115,14 +126,9 @@ class VM {
   void* find_bif(const MFArity& mfa) const;
   Term apply_bif(Process* proc, Word arity, void* fn, Term* args);
 
-<<<<<<< HEAD
   // Checks that opcode label is in allowed range and makes sense. Do not confuse
   // this with actual code address which is Word*
-  void assert_opcode_handler_label(const void* p) const;
-=======
-  // Check that void* label address to go to actually is ok
-  void assert_jmp_address(void* p) const;
->>>>>>> cb01d71382325c484a4e56047de14a26297e37d8
+  void assert_jmp_address(const void* p) const;
 
  private:
   // Does not check if atom existed before. Will break old values on overwrite
