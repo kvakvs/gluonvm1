@@ -169,8 +169,7 @@ void Term::print(const VM& vm) const {
     Std::fmt(cSpecialTermColor "#Catch(" FMT_0xHEX ")" cRst,
              catch_val());
   } else if (is_short_pid()) {
-    Std::fmt("#Pid<" FMT_0xHEX ">",
-             short_pid_get_value());
+    Std::fmt("#Pid<" FMT_0xHEX ">", short_pid_get_value());
   } else if (is_regx()) {
     Std::fmt("X[" FMT_UWORD "]", regx_get_value());
   }

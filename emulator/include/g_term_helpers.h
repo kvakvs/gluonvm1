@@ -66,7 +66,6 @@ Term build_list(proc::Heap* heap, Iter iter, Iter to) {
   }
 
   Word len = length(iter, to);
-  Std::fmt("build_list: len=" FMT_UWORD "\n", len);
   Term* h = (Term*)heap->allocate<Word>(layout::CONS::box_word_size * len);
 
   Term result = Term::make_cons(h);
