@@ -206,3 +206,47 @@ void assert_fail(const char* what, const char* file, int line);
 // TODO: borrow hot/cold table or build my own
 #define G_ATTR_HOT __attribute((__hot__))
 #define G_ATTR_COLD __attribute((__cold__))
+
+//
+// Colors!
+//
+// FOREGROUND
+#define cRst      "\x1B[0m"
+#define cBlack    "\x1B[30m"
+#define cRed      "\x1B[31m"
+#define cGreen    "\x1B[32m"
+#define cYellow   "\x1B[33m"
+#define cBlue     "\x1B[34m"
+#define cMagenta  "\x1B[35m"
+#define cCyan     "\x1B[36m"
+#define cWhite    "\x1B[37m"
+
+#define bBlack    "\x1B[40m"
+#define bRed      "\x1B[41m"
+#define bGreen    "\x1B[42m"
+#define bYellow   "\x1B[43m"
+#define bBlue     "\x1B[44m"
+#define bMagenta  "\x1B[45m"
+#define bCyan     "\x1B[46m"
+#define bWhite    "\x1B[47m"
+
+#define cBold       "\x1B[1m"
+#define cUnderline  "\x1B[4m"
+#define cItalic     "\x1B[3m"
+#define cInverse    "\x1B[7m"
+#define cStrike     "\x1B[9m"
+#define noBold       "\x1B[21m"
+#define noUnderline  "\x1B[24m"
+#define noItalic     "\x1B[23m"
+#define noInverse    "\x1B[27m"
+#define noStrike     "\x1B[29m"
+
+#define tRed(x)     cRed x cRst
+#define tGreen(x)   cGreen x cRst
+#define tYellow(x)  cYellow x cRst
+#define tBlue(x)    cBlue x cRst
+#define tMagenta(x) cMagenta x cRst
+#define tCyan(x)    cCyan x cRst
+#define tWhite(x)   cWhite x cRst
+#define tBold(x)      cBold x cRst
+#define tUnderline(x) cUnderline x cRst

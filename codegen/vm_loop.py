@@ -36,14 +36,14 @@ next_instr:
   jmp_to = (void *)(*ctx.ip);
   ctx.println();
 
-  Std::fmt("[");
+  Std::fmt(cBlue "[");
   //Std::fmt("[0x" FMT_0xHEX, (Word)ctx.ip);
   proc->get_pid().print(*this);
   Std::fmt(";");
 #if FEATURE_CODE_RANGES
   codeserver().print_mfa(ctx.ip); // prints mfarity or pointer
 #endif
-  Std::fmt("]: ");
+  Std::fmt("]: " cRst);
 
   ctx.ip++;
   ctx.vm_.assert_jmp_address(jmp_to);
@@ -66,7 +66,7 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
 
     # call handler or print TODO error
     if op['name'] in libgenop.implemented_ops:
-        print('  printf("%s/%d args=");' % (op['name'], op['arity']))
+        print('  printf(tGreen("%s") "/%d args=");' % (op['name'], op['arity']))
         print('  ctx.print_args(%d);' % (op['arity']))
 
         # unconditional scheduling

@@ -113,12 +113,12 @@ public:
   }
 
   void move(Term val, Term dst) {
-#if G_DEBUG
-    Std::fmt("ctx.move ");
-    val.print(vm_);
-    Std::fmt(" -> ");
-    dst.println(vm_);
-#endif
+//#if G_DEBUG
+//    Std::fmt(tMagenta("ctx.move "));
+//    val.print(vm_);
+//    Std::fmt(" -> ");
+//    dst.println(vm_);
+//#endif
     if (dst.is_regx()) {
       Word x = dst.regx_get_value();
       G_ASSERT(x < sizeof(regs));
@@ -140,7 +140,7 @@ public:
   void jump_ext(Process* proc, Term mfa_box) {
     G_ASSERT(mfa_box.is_boxed());
     MFArity* mfa = mfa_box.boxed_get_ptr<MFArity>();
-    Std::fmt("ctx.jump_ext -> ");
+    Std::fmt(tMagenta("ctx.jump_ext") " -> ");
     mfa->println(vm_);
 
     // Quick check if it accidentally is a BIF
@@ -198,7 +198,7 @@ public:
   void jump(Process* proc, Term t) {
     G_ASSERT(t.is_boxed() && term_tag::is_cp(t.boxed_get_ptr<Word>()));
     Word* t_ptr = term_tag::untag_cp(t.boxed_get_ptr<Word>());
-    Std::fmt("ctx.jump -> " FMT_0xHEX "\n", (Word)t_ptr);
+    Std::fmt(tMagenta("ctx.jump") " -> " FMT_0xHEX "\n", (Word)t_ptr);
     ip = t_ptr;
     // TODO: some meaningful assertion here?
     // G_ASSERT(ip > base);
@@ -217,11 +217,11 @@ public:
   void exception(Process* proc) {
     if (proc->catch_level_ == 0) {
       // we're not catching anything here
-      Std::fmt("EXCEPTION: ");
+      Std::fmt(tRed("VM EXCEPTION: "));
       regs[0].print(vm_);
       Std::fmt(":");
       regs[1].println(vm_);
-      throw err::Process("Stopping execution here");
+      throw err::Process(tRed("Stopping execution here"));
     }
     // unwind stack
   }

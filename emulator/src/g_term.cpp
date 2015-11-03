@@ -18,6 +18,7 @@ Word term::g_zero_sized_tuple = 0;
 #if FEATURE_MAPS
 Word term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
 #endif
+#define cSpecialTermColor cYellow cUnderline
 
 Term Term::allocate_cons(proc::Heap* heap, Term head, Term tail) {
   Term* d = (Term*)heap->allocate<Word>(layout::CONS::box_word_size);
@@ -124,24 +125,24 @@ void Term::print(const VM& vm) const {
     auto p = boxed_get_ptr<Word>();
     if (term_tag::is_cp<Word>(p)) {
       Word* cp = term_tag::untag_cp<Word>(p);
-      Std::fmt("#CP<");
+      Std::fmt(cSpecialTermColor "#CP<");
       vm.codeserver().print_mfa(cp);
-      Std::fmt(">");
+      Std::fmt(">" cRst);
       return;
     }
     if (is_boxed_fun()) {
-      Std::fmt("#Fun<");
+      Std::fmt(cSpecialTermColor "#Fun<");
       auto bf = boxed_get_ptr<BoxedFun>();
       //      if ((Word)(bf->fun_entry) < 0x1000) {
       //        Std::fmt(FMT_0xHEX, (Word)bf->fun_entry);
       //      } else {
       vm.codeserver().print_mfa(bf->fun_entry->code);
       //      }
-      Std::fmt(">");
+      Std::fmt(">" cRst);
       return;
     }
     if (is_boxed_export()) {
-      Std::fmt("#ExportedFun<");
+      Std::fmt(cSpecialTermColor "#ExportedFun<");
       auto ex = boxed_get_ptr<Export>();
       ex->mfa.print(vm);
       Std::fmt(";");
@@ -150,24 +151,26 @@ void Term::print(const VM& vm) const {
       } else {
         vm.codeserver().print_mfa(ex->code());
       }
-      Std::fmt(">");
+      Std::fmt(">" cRst);
       return;
     }
-    Std::fmt("#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
+    Std::fmt(cSpecialTermColor "#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
     vm.codeserver().print_mfa(boxed_get_ptr<Word>());
-    Std::fmt(">");
+    Std::fmt(">" cRst);
   } else if (is_nil()) {
     Std::fmt("[]");
   } else if (is_non_value()) {
-    Std::fmt("NON_VALUE");
+    Std::fmt(cSpecialTermColor "NON_VALUE" cRst);
   } else if (is_atom()) {
     Std::fmt("'%s'", atom_str(vm).c_str());
   } else if (is_small()) {
     Std::fmt(FMT_SWORD, small_sword());
   } else if (is_catch()) {
-    Std::fmt("#Catch(" FMT_0xHEX ")", catch_val());
+    Std::fmt(cSpecialTermColor "#Catch(" FMT_0xHEX ")" cRst,
+             catch_val());
   } else if (is_short_pid()) {
-    Std::fmt("#Pid<" FMT_0xHEX ">", short_pid_get_value());
+    Std::fmt("#Pid<" FMT_0xHEX ">",
+             short_pid_get_value());
   } else if (is_regx()) {
     Std::fmt("X[" FMT_UWORD "]", regx_get_value());
   }
