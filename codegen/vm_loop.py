@@ -30,7 +30,7 @@ print("""void VM::vm_loop(bool init) {
 schedule:
   proc = sched.next();
   if (!proc) { return; } // program finished
-  ctx.load(proc); // get copies of quick access data from environment
+  ctx.swap_in(proc); // get copies of quick access data from environment
 
 next_instr:
   jmp_to = (void *)(*ctx.ip);

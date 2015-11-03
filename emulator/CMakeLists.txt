@@ -71,6 +71,7 @@ set(SRC_LIST
     src/g_module.cpp     include/g_module.h
     src/g_predef_atoms.cpp include/g_predef_atoms.h
     src/g_process.cpp    include/g_process.h
+    src/g_runtime_ctx.cpp src/g_runtime_ctx.h
     src/g_scheduler.cpp  include/g_scheduler.h
     src/g_term.cpp       include/g_term.h
     src/g_term_helpers.cpp include/g_term_helpers.h

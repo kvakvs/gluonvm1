@@ -230,7 +230,7 @@ inline WantSchedule opcode_return(Process* proc,
   if (!ctx.cp) {
     // nowhere to return: end process
     proc->finished();
-    ctx.save(proc);
+    ctx.swap_out(proc);
     return WantSchedule::NextProcess;
   }
   ctx.ip = ctx.cp;
@@ -305,7 +305,7 @@ inline void opcode_wait(Process* p, VMRuntimeContext& ctx) {  // opcode: 25
   // Schedule out
   p->set_slice_result(proc::SliceResult::Wait);
   ctx.jump(p, Term(ctx.ip[0]));
-  ctx.swap_out_light(p);
+  ctx.swap_out_partial(p);
   // we always yield after wait
 }
 
@@ -1037,7 +1037,10 @@ inline WantSchedule opcode_gc_bif1(Process* proc,
   bif1_fn fn1 = (bif1_fn)ctx.vm_.find_bif(*mfa);
   G_ASSERT(fn1);
 
+  ctx.swap_out(proc);
   Term result = fn1(proc, arg1);
+  ctx.swap_in(proc);
+
   if (ctx.check_bif_error(proc)) {
     return WantSchedule::NextProcess;
   }
@@ -1064,7 +1067,10 @@ inline WantSchedule opcode_gc_bif2(Process* proc,
   bif2_fn fn2 = (bif2_fn)ctx.vm_.find_bif(*mfa);
   G_ASSERT(fn2);
 
+  ctx.swap_out(proc);
   Term result = fn2(proc, arg1, arg2);
+  ctx.swap_in(proc);
+
   if (ctx.check_bif_error(proc)) {
     return WantSchedule::NextProcess;
   }
@@ -1214,7 +1220,11 @@ inline void opcode_apply_mfargs_(Process* proc,
   mod.println(ctx.vm_);
   fun.println(ctx.vm_);
   args.println(ctx.vm_);
+
+  ctx.swap_out(proc);
   Either<Word*, Term> res = proc->apply(mod, fun, args, ctx.regs);
+  ctx.swap_in(proc);
+
   // Check error
   if (ctx.check_bif_error(proc)) {
     return;

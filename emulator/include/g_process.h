@@ -6,29 +6,13 @@
 #include "g_heap.h"
 #include "g_mailbox.h"
 #include "g_functional.h"
+#include "g_runtime_ctx.h"
 
 namespace gluon {
 
 class VM;
 class Module;
 class Process;
-
-// Set of stuff we take from Process struct to keep running, this will be saved
-// by loop runner on context switch or loop end
-typedef struct {
-  //  Module *mod = nullptr;
-  const Word* ip = nullptr;  // code pointer
-  // continuation, works like return address for a single call. If more nested
-  // calls are done, cp is saved to stack
-  const Word* cp = nullptr;
-  Word live = 0;  // saved registers count
-
-  // TODO: maybe cache r0 in a local variable in vm loop?
-  Term regs[erts::max_regs];
-#if FEATURE_FLOAT
-// Float fp_regs[vm::MAX_FP_REGS];
-#endif
-} RuntimeContext;
 
 namespace proc {
 enum class SliceResult {
@@ -67,7 +51,7 @@ class Process {
 
  protected:
   VM& vm_;
-  RuntimeContext ctx_;
+  erts::RuntimeContext ctx_;
   proc::Heap heap_;
   Term pid_ = the_non_value;
   MFArity initial_call_;
@@ -112,7 +96,7 @@ class Process {
 
   Term get_pid() const { return pid_; }
   Term get_priority() const { return prio_; }
-  RuntimeContext& get_runtime_ctx() { return ctx_; }
+  erts::RuntimeContext& get_runtime_ctx() { return ctx_; }
   Term get_group_leader() const { return gleader_; }
   void set_group_leader(Term pid) { gleader_ = pid; }
 
@@ -146,6 +130,22 @@ class Process {
   void msg_send(Term pid, Term value);
   proc::Mailbox& mailbox() { return mailbox_; }
   const proc::Mailbox& mailbox() const { return mailbox_; }
+
+  //
+  // Execution control
+  //
+  // Copies args from proper list with precalculated length to registers
+  void set_args(Term args, Word len);
+  // Jumps to code saving current IP in CP. Make sure ctx is swapped out from VM!
+  void call(Word* code) {
+    ctx_.assert_swapped_out_partial();
+    ctx_.cp = ctx_.ip;
+    jump(code);
+  }
+  void jump(Word* code) {
+    ctx_.assert_swapped_out_partial();
+    ctx_.ip = code;
+  }
 
   // Prepares (attempts) to call m:f with args, m is atom or tuple pair
   // Returns one of:

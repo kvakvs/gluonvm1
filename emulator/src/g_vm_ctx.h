@@ -25,7 +25,8 @@ enum class WantSchedule {
 // VM execution context, inherited from process context
 // Used to run current process by vm loop, also holds some extra local variables
 //
-struct VMRuntimeContext : RuntimeContext {
+class VMRuntimeContext: public erts::RuntimeContextFields {
+public:
   VM& vm_;
   proc::Heap* heap_;
   SWord reds_ = 0;
@@ -48,14 +49,15 @@ struct VMRuntimeContext : RuntimeContext {
       // ip[-4] == fun_info
       // TODO: remove live from all call opcodes and uncomment this
       // live = ip[-1];
-      swap_out_light(p);
+      swap_out_partial(p);
       return WantSchedule::NextProcess;
     }
     return WantSchedule::KeepGoing;
   }
 
-  void load(Process* proc) {
-    RuntimeContext& proc_ctx = proc->get_runtime_ctx();
+  void swap_in(Process* proc) {
+    erts::RuntimeContext& proc_ctx = proc->get_runtime_ctx();
+    proc_ctx.swapped_in();
     ip = proc_ctx.ip;
     cp = proc_ctx.cp;
     live = proc_ctx.live;
@@ -67,8 +69,9 @@ struct VMRuntimeContext : RuntimeContext {
     reds_ = erts::reductions_per_slice;
   }
 
-  void save(Process* proc) {
-    RuntimeContext& proc_ctx = proc->get_runtime_ctx();
+  void swap_out(Process* proc) {
+    erts::RuntimeContext& proc_ctx = proc->get_runtime_ctx();
+    proc_ctx.swapped_out();
     proc_ctx.ip = ip;
     proc_ctx.cp = cp;
     proc_ctx.live = live;
@@ -79,16 +82,16 @@ struct VMRuntimeContext : RuntimeContext {
   }
 
   // TODO: swap_out: save r0, stack top and heap top
-  void swap_out_light(Process* proc) {
-    RuntimeContext& proc_ctx = proc->get_runtime_ctx();
+  void swap_out_partial(Process* proc) {
+    erts::RuntimeContext& proc_ctx = proc->get_runtime_ctx();
+    proc_ctx.swapped_out_partial();
     proc_ctx.ip = ip;
     proc_ctx.cp = cp;
-    // TODO: Make this little lighter
-    // return save(proc);
   }
 
-  void swap_in_light(Process* proc) {
-    RuntimeContext& proc_ctx = proc->get_runtime_ctx();
+  void swap_in_partial(Process* proc) {
+    erts::RuntimeContext& proc_ctx = proc->get_runtime_ctx();
+    proc_ctx.swapped_in();
     ip = proc_ctx.ip;
     cp = proc_ctx.cp;
   }
@@ -163,9 +166,9 @@ struct VMRuntimeContext : RuntimeContext {
   // Finish jump_ext by jumping to a BIF
   void jump_ext_bif(Process* proc, MFArity* mfa, void* fn) {
     // Swap out because BIF may decide to modify ip/cp
-    swap_out_light(proc);
+    swap_out_partial(proc);
     Term result = vm_.apply_bif(proc, mfa->arity, fn, regs);
-    swap_in_light(proc);
+    swap_in_partial(proc);
 
     if (result.is_non_value()) {
       if (proc->bif_err_reason_ != atom::UNDEF) {
@@ -204,7 +207,7 @@ struct VMRuntimeContext : RuntimeContext {
 
   // Throws type:reason (for example error:badmatch)
   void raise(Process* proc, Term type, Term reason) {
-    swap_out_light(proc);
+    swap_out_partial(proc);
     regs[0] = type;
     regs[1] = reason;
     proc->stack_trace_ = the_non_value;

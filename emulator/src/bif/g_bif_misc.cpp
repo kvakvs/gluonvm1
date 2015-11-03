@@ -658,7 +658,23 @@ Term bif_function_exported_3(Process* proc, Term m, Term f, Term arity) {
 
 
 Term bif_apply_2(Process* proc, Term funobject, Term args) {
-  return proc->bif_badarg(atom::APPLY);
+  auto fbox = funobject.boxed_get_ptr<BoxedFun>();
+  auto fe = fbox->fun_entry;
+
+  // Arity check
+  if (!args.is_list()) {
+    return proc->bif_badarg(args);
+  }
+  auto len = bif::length(args);
+  if (len.second == false) {
+    // improper args list, bam!
+    return proc->bif_badarg(args);
+  }
+
+  // Set registers and live, and enter the code
+  proc->set_args(args, len.first);
+  proc->call(fe->code);
+  return atom::OK;
 }
 
 // apply/3 is implemented as an instruction and as erlang code in the

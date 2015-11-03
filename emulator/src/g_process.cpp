@@ -77,6 +77,18 @@ void Process::msg_send(Term pid, Term value) {
   vm_.scheduler().on_new_message(other);  // wake up receiver
 }
 
+void Process::set_args(Term args, Word len)
+{
+  ctx_.assert_swapped_out();
+  ctx_.live = len;
+  Term* reg = &ctx_.regs[0];
+  while (args.is_cons()) {
+    args.cons_head_tail(*reg, args);
+    reg++;
+  }
+}
+
+
 #if 0
 #if G_DEBUG
 void ProcessStack::println()
