@@ -73,6 +73,7 @@ set(SRC_LIST
     src/g_process.cpp    include/g_process.h
     src/g_runtime_ctx.cpp src/g_runtime_ctx.h
     src/g_scheduler.cpp  include/g_scheduler.h
+    src/g_stack.cpp      src/g_stack.h
     src/g_term.cpp       include/g_term.h
     src/g_term_helpers.cpp include/g_term_helpers.h
     src/g_vm.cpp         include/g_vm.h
