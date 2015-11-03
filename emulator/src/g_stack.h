@@ -62,10 +62,56 @@ class OverlayStack {
 class SelfContainingStack {
 private:
   Vector<Word> data_;
+
 public:
+  void push(Word x) { data_.push_back(x); }
+  Word pop() {
+    Word t = data_.back();
+    data_.resize(data_.size() - 1);
+    return t;
+  }
+  void set_y(Word index, Word value) {
+    G_ASSERT(index < data_.size());
+    data_[data_.size() - index - 1] = value;
+  }
+  Word get_y(Word index) const {
+    G_ASSERT(index < data_.size());
+    return data_[data_.size() - index - 1];
+  }
+  void push_n_nils(Word n);
+  void drop_n(Word n) {
+    data_.resize(data_.size() - n);
+  }
 };
 
 using Stack = SelfContainingStack;
+
+namespace check {
+
+template <class C>
+class InterfaceCheck {
+  static_assert(std::is_member_function_pointer<decltype(&C::push)>::value,
+                "push is missing");
+//  using push_t = void(*)(Word);
+//  using maybe_push_t = decltype(&C::push);
+//  static_assert(std::is_same<maybe_push_t, push_t>::value,
+//                "push is missing");
+
+  static_assert(std::is_member_function_pointer<decltype(&C::pop)>::value,
+                "pop is missing");
+  static_assert(std::is_member_function_pointer<decltype(&C::get_y)>::value,
+                "get_y is missing");
+  static_assert(std::is_member_function_pointer<decltype(&C::set_y)>::value,
+                "set_y is missing");
+  static_assert(std::is_member_function_pointer<decltype(&C::push_n_nils)>::value,
+                "push_n_nils is missing");
+  static_assert(std::is_member_function_pointer<decltype(&C::drop_n)>::value,
+                "drop_n is missing");
+};
+
+struct CheckStack1: InterfaceCheck<SelfContainingStack> {};
+struct CheckStack2: InterfaceCheck<OverlayStack> {};
+} // ns check
 
 } // ns proc
 } // ns gluon

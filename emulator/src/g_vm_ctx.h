@@ -113,12 +113,12 @@ public:
   }
 
   void move(Term val, Term dst) {
-//#if G_DEBUG
-//    Std::fmt(tMagenta("ctx.move "));
-//    val.print(vm_);
-//    Std::fmt(" -> ");
-//    dst.println(vm_);
-//#endif
+#if G_DEBUG
+    Std::fmt(tMagenta("ctx.move "));
+    val.print(vm_);
+    Std::fmt(" -> ");
+    dst.println(vm_);
+#endif
     if (dst.is_regx()) {
       Word x = dst.regx_get_value();
       G_ASSERT(x < sizeof(regs));
@@ -248,6 +248,7 @@ public:
 
   void print_args(Word arity) {
 #if G_DEBUG
+    Std::fmt("(");
     for (Word i = 0; i < arity; ++i) {
       Term value(ip[i]);
       value.print(vm_);
@@ -256,9 +257,9 @@ public:
         Std::fmt("=");
         value.print(vm_);
       }
-      Std::fmt(";");
+      if (i < arity - 1) { Std::fmt(";"); }
     }
-    Std::puts();
+    Std::fmt(")\n");
 #endif
   }
 

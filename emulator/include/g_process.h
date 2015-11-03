@@ -94,7 +94,10 @@ class Process {
   proc::SliceResult get_slice_result() const { return slice_result_; }
   void set_slice_result(proc::SliceResult sr) { slice_result_ = sr; }
 
-  Term get_pid() const { return pid_; }
+  Term get_pid() const {
+    G_ASSERT(pid_.is_non_value() || pid_.is_pid());
+    return pid_;
+  }
   Term get_priority() const { return prio_; }
   erts::RuntimeContext& get_runtime_ctx() { return ctx_; }
   Term get_group_leader() const { return gleader_; }

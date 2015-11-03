@@ -155,13 +155,14 @@ public:
 
 template <class A>
 class Heap_ : public A {
-  constexpr static Word STK_SZ = 1024;
-  Word stack_data_[STK_SZ];
+//  constexpr static Word STK_SZ = 1024;
+//  Word stack_data_[STK_SZ];
 
  public:
   Stack stack_;
 
-  Heap_() : A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {}
+  //Heap_() : A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {}
+  Heap_() : A(), stack_() {}
 };
 
 class Heap : public Heap_<mem::SystemMemoryAllocator> {};

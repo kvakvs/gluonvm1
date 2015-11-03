@@ -50,12 +50,6 @@ void Stack::put_stack(Node *stk_node, Word size) {
 }
 */
 
-void Stack::push_n_nils(Word n) {
-  G_ASSERT(get_avail() >= n);
-  top_ -= n;
-  std::fill_n(top_, n, term::nil_as_word);
-}
-
 // Takes all terms between 'start' and 'end', and copies them to 'dstheap', new
 // resulting terms are placed in array 'dst' which should be large enough.
 bool copy_terms(VM& vm,

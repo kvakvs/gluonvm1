@@ -20,10 +20,10 @@ Term Process::spawn(MFArity& mfa, Term* args) {
   initial_call_ = mfa;
 
   // Set regs to M,F,A and jump to apply_mfargs_
-  ctx_.regs[0] = mfa.mod;
-  ctx_.regs[1] = mfa.fun;
-  ctx_.regs[2] = term::build_list(get_heap(), args, args+mfa.arity);
-  ctx_.live = 3;
+  ctx_.arg_regs_[0] = mfa.mod;
+  ctx_.arg_regs_[1] = mfa.fun;
+  ctx_.arg_regs_[2] = term::build_list(get_heap(), args, args+mfa.arity);
+  ctx_.live = 0;
 
   // Precondition: Registers should be set to execute apply call
   ctx_.cp = vm_.premade_instr(PremadeIndex::Normal_exit_);

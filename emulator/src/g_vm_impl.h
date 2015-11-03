@@ -1213,9 +1213,10 @@ inline void opcode_normal_exit_(Process* proc,
 inline void opcode_apply_mfargs_(Process* proc,
                                  VMRuntimeContext& ctx) {  // opcode: 112
   // @spec apply_mfargs_, regs contain m,f,[args]
-  Term mod = ctx.regs[0];
-  Term fun = ctx.regs[1];
-  Term args = ctx.regs[2];
+  auto arg_regs = &proc->get_runtime_ctx().arg_regs_[0];
+  Term mod = arg_regs[0];
+  Term fun = arg_regs[1];
+  Term args = arg_regs[2];
 
   mod.println(ctx.vm_);
   fun.println(ctx.vm_);

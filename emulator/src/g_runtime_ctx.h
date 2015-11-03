@@ -66,6 +66,10 @@ public:
   void swapped_out_partial() {}
   void swapped_in() {}
 #endif
+public:
+  // Entry arguments for apply
+  constexpr static Word num_arg_regs = 6;
+  Term arg_regs_[num_arg_regs];
 };
 
 } // ns erts
