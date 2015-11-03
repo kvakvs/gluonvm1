@@ -687,7 +687,7 @@ inline void opcode_put_tuple(Process* proc,
     Term value(ctx.ip[1]);
     ctx.ip += 2;
     DEREF(value);
-    Std::fmt("put ");
+    Std::fmt(tMagenta("put element "));
     value.println(ctx.vm_);
     layout::TUPLE::element(cells, index) = value;
     index++;

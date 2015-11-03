@@ -438,6 +438,12 @@ class Term {
     G_ASSERT(is_boxed() || is_tuple() || is_cons());
     return term_tag::Boxed::expand_ptr<T>(value_);
   }
+  // Same as boxed_get_ptr but is usable on masked CP boxes which may point to
+  // random stuff
+  template <typename T>
+  T* boxed_get_ptr_unchecked() const {
+    return term_tag::Boxed::expand_ptr<T>(value_);
+  }
   template <typename T>
   static Term make_boxed(T* x) {
     return Term(term_tag::Boxed::create_from_ptr<T>(x));

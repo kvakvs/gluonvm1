@@ -113,12 +113,12 @@ public:
   }
 
   void move(Term val, Term dst) {
-#if G_DEBUG
-    Std::fmt(tMagenta("ctx.move "));
-    val.print(vm_);
-    Std::fmt(" -> ");
-    dst.println(vm_);
-#endif
+//#if G_DEBUG
+//    Std::fmt(tMagenta("ctx.move "));
+//    val.print(vm_);
+//    Std::fmt(" -> ");
+//    dst.println(vm_);
+//#endif
     if (dst.is_regx()) {
       Word x = dst.regx_get_value();
       G_ASSERT(x < sizeof(regs));
@@ -233,7 +233,8 @@ public:
 
   void pop_cp() {
     Term p(stack().pop());
-    cp = term_tag::untag_cp<Word>(p.boxed_get_ptr<Word>());
+    auto cp0 = p.boxed_get_ptr_unchecked<Word>();
+    cp = term_tag::untag_cp<Word>(cp0);
   }
 
   void stack_allocate(Word n) {
