@@ -1,5 +1,5 @@
 #include "g_stack.h"
-#include "g_term.h"
+#include "term.h"
 
 namespace gluon {
 namespace proc {

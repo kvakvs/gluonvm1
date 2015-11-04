@@ -1,5 +1,5 @@
 #include "g_defs.h"
-#include "g_vm.h"
+#include "vm.h"
 #include "g_ext_term.h"
 #include "g_heap.h"
 

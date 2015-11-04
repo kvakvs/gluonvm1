@@ -1,11 +1,11 @@
-#include "g_vm.h"
+#include "vm.h"
 #include "g_code_server.h"
 #include "platf/gsys_file.h"
 #include "platf/gsys_mem.h"
 #include "g_dist.h"
 #include "g_heap.h"
 #include "predef_atoms.h"
-#include "g_process.h"
+#include "process.h"
 
 #include "bif/g_bif_misc.h"
 #include "bif_tab.h"

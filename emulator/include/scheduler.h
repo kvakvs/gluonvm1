@@ -2,7 +2,7 @@
 
 #include "g_defs.h"
 #include "g_error.h"
-#include "g_term.h"
+#include "term.h"
 #include "struct/g_dict.h"
 
 #include <algorithm>

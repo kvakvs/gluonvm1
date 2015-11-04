@@ -1,6 +1,6 @@
-#include "g_module.h"
-#include "g_reader.h"
-#include "g_vm.h"
+#include "module.h"
+#include "reader.h"
+#include "vm.h"
 #include "g_functional.h"
 
 namespace gluon {

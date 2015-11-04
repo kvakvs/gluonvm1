@@ -1,7 +1,7 @@
 #pragma once
 
 #include "g_defs.h"
-#include "g_term.h"
+#include "term.h"
 
 namespace gluon {
 namespace proc {

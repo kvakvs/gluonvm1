@@ -1,7 +1,7 @@
 #pragma once
 
-#include "g_vm.h"
-#include "g_module.h"
+#include "vm.h"
+#include "module.h"
 
 #include "struct/g_array.h"
 

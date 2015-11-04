@@ -1,6 +1,6 @@
-#include "g_scheduler.h"
+#include "scheduler.h"
 #include "predef_atoms.h"
-#include "g_process.h"
+#include "process.h"
 #include "platf/gsys_stdlib.h"
 
 namespace gluon {

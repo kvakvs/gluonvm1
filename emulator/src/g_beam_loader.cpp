@@ -1,10 +1,10 @@
 #include "g_code_server.h"
 #include "platf/gsys_mem.h"
-#include "g_reader.h"
+#include "reader.h"
 #include "g_ext_term.h"
 #include "g_heap.h"
 #include "predef_atoms.h"
-#include "g_term_helpers.h"
+#include "term_helpers.h"
 #include "g_binary.h"
 #include "g_functional.h"
 

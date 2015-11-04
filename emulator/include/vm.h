@@ -1,10 +1,10 @@
 #pragma once
 
 #include "g_defs.h"
-#include "g_term.h"
+#include "term.h"
 #include "g_error.h"
 #include "g_dist.h"
-#include "g_scheduler.h"
+#include "scheduler.h"
 #include "platf/gsys_mem.h"
 
 namespace gluon {

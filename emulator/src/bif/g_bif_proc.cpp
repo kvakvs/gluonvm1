@@ -1,9 +1,9 @@
 #include "bif/g_bif_proc.h"
 #include "bif/g_bif_misc.h"
-#include "g_process.h"
+#include "process.h"
 #include "predef_atoms.h"
-#include "g_term_helpers.h"
-#include "g_vm.h"
+#include "term_helpers.h"
+#include "vm.h"
 
 namespace gluon {
 namespace bif {

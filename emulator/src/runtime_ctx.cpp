@@ -1,4 +1,4 @@
-#include "g_runtime_ctx.h"
+#include "runtime_ctx.h"
 
 namespace gluon {
 namespace erts {

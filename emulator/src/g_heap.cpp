@@ -1,5 +1,5 @@
 #include "g_heap.h"
-#include "g_term.h"
+#include "term.h"
 #include "g_fun.h"
 
 namespace gluon {

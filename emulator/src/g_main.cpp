@@ -1,5 +1,5 @@
-#include "g_vm.h"
-#include "g_process.h"
+#include "vm.h"
+#include "process.h"
 #include "g_code_server.h"
 #include "g_code_index.h"
 #include "g_error.h"

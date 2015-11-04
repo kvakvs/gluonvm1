@@ -1,15 +1,15 @@
 #pragma once
 
-#include "g_process.h"
-#include "g_module.h"
+#include "process.h"
+#include "module.h"
 #include "g_code_server.h"
 #include "bif/g_bif_misc.h"
 #include "genop.h"
 #include "predef_atoms.h"
 #include "g_fun.h"
 #include "g_heap.h"
-#include "g_vm.h"
-#include "g_term_helpers.h"
+#include "vm.h"
+#include "term_helpers.h"
 
 #include <cstring>
 

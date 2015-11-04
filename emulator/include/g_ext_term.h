@@ -1,8 +1,8 @@
 #pragma once
 
 #include "g_defs.h"
-#include "g_term.h"
-#include "g_reader.h"
+#include "term.h"
+#include "reader.h"
 #include "g_error.h"
 
 namespace gluon {

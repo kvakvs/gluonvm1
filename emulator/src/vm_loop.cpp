@@ -1,5 +1,5 @@
-#include "g_vm.h"
-#include "g_process.h"
+#include "vm.h"
+#include "process.h"
 // has own gluon namespace
 #include "vm_impl.h"
 namespace gluon {

@@ -46,7 +46,6 @@ set(SRC_LIST
     include/g_defs.h
     include/g_error.h
     include/g_functional.h
-    include/g_reader.h
 
     include/struct/g_array.h
     include/struct/g_dict.h
@@ -68,18 +67,19 @@ set(SRC_LIST
     src/g_heap.cpp       include/g_heap.h
     src/g_mailbox.cpp    include/g_mailbox.h
     src/g_main.cpp
-    src/g_module.cpp     include/g_module.h
+    src/module.cpp            include/module.h
     src/predef_atoms.cpp include/predef_atoms.h
-    src/g_process.cpp    include/g_process.h
-    src/g_runtime_ctx.cpp src/g_runtime_ctx.h
-    src/g_scheduler.cpp  include/g_scheduler.h
+    src/process.cpp           include/process.h
+    src/reader.h
+    src/runtime_ctx.cpp       src/runtime_ctx.h
+    src/scheduler.cpp         include/scheduler.h
     src/g_stack.cpp      src/g_stack.h
-    src/g_term.cpp       include/g_term.h
-    src/g_term_helpers.cpp include/g_term_helpers.h
-    src/g_vm.cpp         include/g_vm.h
-    src/bif_tab.cpp      src/bif_tab.h
+    src/term.cpp              include/term.h
+    src/term_helpers.cpp      include/term_helpers.h
+    src/vm.cpp                include/vm.h
+    src/bif_tab.cpp           src/bif_tab.h
     src/vm_loop.cpp
-    src/vm_ctx.h          src/vm_impl.h
+    src/vm_ctx.h              src/vm_impl.h
 
     src/bif/g_bif_misc.cpp include/bif/g_bif_misc.h
     src/bif/g_bif_proc.cpp include/bif/g_bif_proc.h

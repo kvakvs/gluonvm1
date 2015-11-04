@@ -1,4 +1,4 @@
-#include "g_term_helpers.h"
+#include "term_helpers.h"
 
 namespace gluon {
 namespace term {

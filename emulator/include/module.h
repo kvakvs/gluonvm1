@@ -1,9 +1,9 @@
 #pragma once
 
 #include "g_defs.h"
-#include "g_term.h"
+#include "term.h"
 #include "g_error.h"
-#include "g_reader.h"
+#include "reader.h"
 #include "g_fun.h"
 #include "g_code_index.h"
 #include "struct/g_array.h"

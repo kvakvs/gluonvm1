@@ -1,11 +1,11 @@
-#include "g_process.h"
+#include "process.h"
 #include "g_code_server.h"
 #include "g_code.h"
-#include "g_module.h"
-#include "g_vm.h"
+#include "module.h"
+#include "vm.h"
 #include "g_error.h"
 #include "predef_atoms.h"
-#include "g_term_helpers.h"
+#include "term_helpers.h"
 
 namespace gluon {
 
