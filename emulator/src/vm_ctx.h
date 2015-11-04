@@ -2,12 +2,12 @@
 
 #include "process.h"
 #include "module.h"
-#include "g_code_server.h"
+#include "code_server.h"
 #include "bif/g_bif_misc.h"
 #include "genop.h"
 #include "predef_atoms.h"
-#include "g_fun.h"
-#include "g_heap.h"
+#include "fun.h"
+#include "heap.h"
 #include "vm.h"
 #include "term_helpers.h"
 

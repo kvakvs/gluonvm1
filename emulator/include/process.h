@@ -1,11 +1,11 @@
 #pragma once
 
-#include "g_defs.h"
+#include "defs.h"
 #include "term.h"
-#include "g_error.h"
-#include "g_heap.h"
-#include "g_mailbox.h"
-#include "g_functional.h"
+#include "error.h"
+#include "heap.h"
+#include "mailbox.h"
+#include "functional.h"
 #include "runtime_ctx.h"
 
 namespace gluon {

@@ -2,9 +2,9 @@
 #include "process.h"
 #include "predef_atoms.h"
 #include "vm.h"
-#include "g_heap.h"
+#include "heap.h"
 #include "module.h"
-#include "g_code_server.h"
+#include "code_server.h"
 #include "term_helpers.h"
 
 namespace gluon {

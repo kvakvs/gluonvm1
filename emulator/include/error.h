@@ -1,7 +1,7 @@
 #pragma once
 
 #include <functional>
-#include "g_defs.h"
+#include "defs.h"
 #include "platf/gsys_stdlib.h"
 
 #define G_DEBUG_THROW_E                      \

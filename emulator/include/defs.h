@@ -8,7 +8,7 @@
 #include <cstdint>
 
 // set features for use in code in this file
-#include "g_FEATURE.h"
+#include "FEATURE.h"
 
 // Default value (set in CMakeLists.txt, do not edit here)
 #ifndef G_DEBUG

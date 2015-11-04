@@ -1,5 +1,5 @@
-#include "g_beam.h"
-#include "g_functional.h"
+#include "beam.h"
+#include "functional.h"
 #include "predef_atoms.h"
 
 // Generated opcode arity table

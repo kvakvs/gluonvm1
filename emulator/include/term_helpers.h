@@ -1,8 +1,8 @@
 #pragma once
 
-#include "g_defs.h"
+#include "defs.h"
 #include "term.h"
-#include "g_heap.h"
+#include "heap.h"
 
 #if G_DEBUG
 #include "bif/g_bif_misc.h"

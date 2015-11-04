@@ -1,7 +1,7 @@
 #include "module.h"
 #include "reader.h"
 #include "vm.h"
-#include "g_functional.h"
+#include "functional.h"
 
 namespace gluon {
 

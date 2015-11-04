@@ -1,5 +1,5 @@
 #include "gsys_file.h"
-//#include "g_error.h"
+//#include "error.h"
 #include "struct/g_str.h"
 
 #include <stdio.h>

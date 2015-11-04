@@ -1,9 +1,9 @@
 #pragma once
 
-#include "g_defs.h"
+#include "defs.h"
 #include "term.h"
 #include "reader.h"
-#include "g_error.h"
+#include "error.h"
 
 namespace gluon {
 namespace proc {

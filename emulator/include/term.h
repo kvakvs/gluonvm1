@@ -1,6 +1,6 @@
 #pragma once
 
-#include "g_defs.h"
+#include "defs.h"
 #include "struct/g_str.h"
 
 namespace gluon {

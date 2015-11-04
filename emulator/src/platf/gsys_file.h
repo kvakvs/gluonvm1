@@ -1,7 +1,7 @@
 #pragma once
 
-#include "g_defs.h"
-//#include "g_error.h"
+#include "defs.h"
+//#include "error.h"
 #include "struct/g_str.h"
 
 namespace gluon {

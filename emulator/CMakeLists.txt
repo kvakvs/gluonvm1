@@ -42,10 +42,10 @@ set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS}
     -std=c99
     )
 set(SRC_LIST
-    include/g_FEATURE.h   # edit this to configure stuff
-    include/g_defs.h
-    include/g_error.h
-    include/g_functional.h
+    include/FEATURE.h   # edit this to configure stuff
+    include/defs.h
+    include/error.h
+    include/functional.h
 
     include/struct/g_array.h
     include/struct/g_dict.h
@@ -53,27 +53,27 @@ set(SRC_LIST
     include/struct/g_str.h
     include/struct/g_set.h
 
-    src/g_beam_loader.cpp src/g_beam.h
-    src/g_beam_prepare.cpp
+    src/beam_loader.cpp       src/beam.h
+    src/beam_prepare.cpp
 
-    src/g_binary.cpp     include/g_binary.h
-    src/g_code.cpp       include/g_code.h
-    src/g_code_index.cpp include/g_code_index.h
-    src/g_code_server.cpp include/g_code_server.h
-    src/g_dist.cpp       include/g_dist.h
-    src/g_ext_term.cpp   include/g_ext_term.h
-    src/genop.cpp        include/genop.h        # generated via codegen/ script
-    src/g_fun.cpp        include/g_fun.h
-    src/g_heap.cpp       include/g_heap.h
-    src/g_mailbox.cpp    include/g_mailbox.h
-    src/g_main.cpp
+    src/binary.cpp            include/binary.h
+    src/code.cpp              include/code.h
+    src/code_index.cpp        include/code_index.h
+    src/code_server.cpp       include/code_server.h
+    src/dist.cpp              include/dist.h
+    src/ext_term.cpp          include/ext_term.h
+    src/genop.cpp             include/genop.h        # generated via codegen/ script
+    src/fun.cpp               include/fun.h
+    src/heap.cpp              include/heap.h
+    src/mailbox.cpp           include/mailbox.h
+    src/main.cpp
     src/module.cpp            include/module.h
     src/predef_atoms.cpp include/predef_atoms.h
     src/process.cpp           include/process.h
     src/reader.h
     src/runtime_ctx.cpp       src/runtime_ctx.h
     src/scheduler.cpp         include/scheduler.h
-    src/g_stack.cpp      src/g_stack.h
+    src/stack.cpp             src/stack.h
     src/term.cpp              include/term.h
     src/term_helpers.cpp      include/term_helpers.h
     src/vm.cpp                include/vm.h

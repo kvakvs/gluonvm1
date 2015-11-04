@@ -1,9 +1,9 @@
 #include "process.h"
-#include "g_code_server.h"
-#include "g_code.h"
+#include "code_server.h"
+#include "code.h"
 #include "module.h"
 #include "vm.h"
-#include "g_error.h"
+#include "error.h"
 #include "predef_atoms.h"
 #include "term_helpers.h"
 

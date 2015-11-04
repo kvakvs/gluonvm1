@@ -1,4 +1,4 @@
-#include "g_code_index.h"
+#include "code_index.h"
 
 namespace gluon {
 namespace code {

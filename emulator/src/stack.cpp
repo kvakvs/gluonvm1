@@ -1,4 +1,4 @@
-#include "g_stack.h"
+#include "stack.h"
 #include "term.h"
 
 namespace gluon {

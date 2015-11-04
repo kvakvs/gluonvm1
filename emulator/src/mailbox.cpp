@@ -1,4 +1,4 @@
-#include "g_mailbox.h"
+#include "mailbox.h"
 
 namespace gluon {
 namespace proc {

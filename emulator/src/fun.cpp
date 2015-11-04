@@ -1,7 +1,7 @@
-#include "g_fun.h"
+#include "fun.h"
 #include <string.h>
 
-#include "g_heap.h"
+#include "heap.h"
 
 namespace gluon {
 namespace fun {

@@ -1,14 +1,14 @@
-#include "g_code_server.h"
+#include "code_server.h"
 #include "platf/gsys_mem.h"
 #include "reader.h"
-#include "g_ext_term.h"
-#include "g_heap.h"
+#include "ext_term.h"
+#include "heap.h"
 #include "predef_atoms.h"
 #include "term_helpers.h"
-#include "g_binary.h"
-#include "g_functional.h"
+#include "binary.h"
+#include "functional.h"
 
-#include "g_beam.h"
+#include "beam.h"
 
 #define MINIZ_HEADER_FILE_ONLY
 #include "miniz/miniz.c"

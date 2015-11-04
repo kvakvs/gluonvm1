@@ -1,5 +1,5 @@
 #include "gsys_stdlib.h"
-#include "g_defs.h"
+#include "defs.h"
 
 #include <stdlib.h>
 #include <unistd.h>

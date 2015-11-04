@@ -1,12 +1,12 @@
 #include "term.h"
 #include "vm.h"
-#include "g_heap.h"
-#include "g_code_server.h"
-#include "g_fun.h"
+#include "heap.h"
+#include "code_server.h"
+#include "fun.h"
 #include "module.h"  // for Export class
 #include "term_helpers.h"
-#include "g_heap.h"
-#include "g_binary.h"
+#include "heap.h"
+#include "binary.h"
 #include "predef_atoms.h"
 
 #include <cstring>

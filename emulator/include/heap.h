@@ -1,9 +1,9 @@
 #pragma once
 
-#include "g_defs.h"
-#include "g_error.h"
+#include "defs.h"
+#include "error.h"
 #include "platf/gsys_mem.h"
-#include "g_stack.h"
+#include "stack.h"
 
 //#include <memory>
 //#include <vector>

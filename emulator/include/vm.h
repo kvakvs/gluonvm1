@@ -1,9 +1,9 @@
 #pragma once
 
-#include "g_defs.h"
+#include "defs.h"
 #include "term.h"
-#include "g_error.h"
-#include "g_dist.h"
+#include "error.h"
+#include "dist.h"
 #include "scheduler.h"
 #include "platf/gsys_mem.h"
 

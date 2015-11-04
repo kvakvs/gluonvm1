@@ -1,10 +1,10 @@
 #pragma once
 
-#include "g_defs.h"
+#include "defs.h"
 #include "term.h"
-#include "g_error.h"
-#include "g_code.h"
-#include "g_code_index.h"
+#include "error.h"
+#include "code.h"
+#include "code_index.h"
 #include "struct/g_array.h"
 
 namespace gluon {

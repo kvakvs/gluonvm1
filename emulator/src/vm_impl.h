@@ -2,7 +2,7 @@
 
 #include "process.h"
 #include "vm_ctx.h"
-#include "g_functional.h"
+#include "functional.h"
 
 namespace gluon {
 
