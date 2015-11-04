@@ -39,6 +39,10 @@ public:
 
   PremadeBeaminstr(): instr_(nullptr, 0) {}
   void init(const VM& vm);
+  bool contains(const Word *p) const {
+    return p >= instr_.mem()
+        && p < instr_.mem() + (Word)PremadeIndex::Total_count;
+  }
 };
 
 // Note: singleton, do not instantiate even

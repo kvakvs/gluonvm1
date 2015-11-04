@@ -1227,6 +1227,7 @@ inline void opcode_apply_mfargs_(Process* proc,
 
   // Check error
   if (ctx.check_bif_error(proc)) {
+    ctx.inc_ip();
     return;
   }
   // What to do with apply result, is it code pointer to jump to or a bif result

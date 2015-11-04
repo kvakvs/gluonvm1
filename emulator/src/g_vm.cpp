@@ -162,12 +162,8 @@ Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
 }
 
 void VM::assert_jmp_address(const void* p) const {
-  G_ASSERT(
-        (p >= g_opcode_labels[1]
-        && p <= g_opcode_labels[genop::max_opcode])
-      || (p >= premade_.instr_.mem()
-          && p < premade_.instr_.mem() + (Word)PremadeIndex::Total_count)
-      );
+  G_ASSERT(p >= g_opcode_labels[1]
+      && p <= g_opcode_labels[genop::max_opcode]);
 }
 
 void PremadeBeaminstr::init(const VM& vm) {

@@ -71,11 +71,11 @@ public:
     return t;
   }
   void set_y(Word index, Word value) {
-    G_ASSERT(index < data_.size());
+    G_ASSERT(index < data_.size() - 1);
     data_[data_.size() - index - 2] = value;
   }
   Word get_y(Word index) const {
-    G_ASSERT(index < data_.size());
+    G_ASSERT(index < data_.size() - 1);
     return data_[data_.size() - index - 2];
   }
   void push_n_nils(Word n);

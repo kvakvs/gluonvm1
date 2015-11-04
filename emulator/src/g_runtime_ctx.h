@@ -17,8 +17,7 @@ private:
 
 public:
   void set_ip(const Word* value) {
-    G_ASSERT((Word)value >> 32 != 0x7fffffffu);
-    G_ASSERT((Word)value >> 32 != 0xffffffffu);
+    G_ASSERT((Word)value > 0xffff); // some sane minimum for a pointer
     G_ASSERT(value);
     ip_ = value;
   }
@@ -28,7 +27,8 @@ public:
   void inc_ip() { ip_++; }
 
   void set_cp(const Word* value) {
-    G_ASSERT((Word)value >> 32 != 0x7fffffffu);
+    // some sane minimum for a pointer or nullptr
+    G_ASSERT(!value || (Word)value > 0xffff);
     cp_ = value;
   }
   const Word* cp() const { return cp_; }
