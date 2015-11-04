@@ -7,12 +7,28 @@ namespace erts {
 
 // Set of stuff we take from Process struct to keep running, this will be saved
 // by loop runner on context switch or loop end
-struct RuntimeContextFields {
+class RuntimeContextFields {
+private:
   //  Module *mod = nullptr;
-  const Word* ip = nullptr;
+  const Word* ip_ = nullptr;
   // continuation, works like return address for a single call. If more nested
   // calls are done, cp is saved to stack
-  const Word* cp = nullptr;
+  const Word* cp_ = nullptr;
+
+public:
+  void set_ip(const Word* value) {
+    G_ASSERT((Word)value >> 32 != 0x7fffffffu); // want no negative/zero based
+    G_ASSERT(value);
+    ip_ = value;
+  }
+  const Word* ip() const { return ip_; }
+  Word ip(Word index) const { return ip_[index]; }
+  void step_ip(SWord offset) { ip_ += offset; }
+  void inc_ip() { ip_++; }
+
+  void set_cp(const Word* value) { cp_ = value; }
+  const Word* cp() const { return cp_; }
+
   Word live = 0;  // saved registers count
 
   // TODO: maybe cache r0 in a local variable in vm loop?

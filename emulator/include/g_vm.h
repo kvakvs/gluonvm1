@@ -5,6 +5,7 @@
 #include "g_error.h"
 #include "g_dist.h"
 #include "g_scheduler.h"
+#include "platf/gsys_mem.h"
 
 namespace gluon {
 
@@ -34,7 +35,9 @@ enum class PremadeIndex: Word {
 // used as process entry address and 'Exit' as process exit address
 class PremadeBeaminstr {
 public:
-  Word instr_[(Word)PremadeIndex::Total_count];
+  mem::Blk<Word> instr_;
+
+  PremadeBeaminstr(): instr_(nullptr, 0) {}
   void init(const VM& vm);
 };
 
@@ -62,7 +65,7 @@ public:
   VM();
 
   const Word* premade_instr(PremadeIndex i) const {
-    return &premade_.instr_[(Word)i];
+    return premade_.instr_.mem() + (Word)i;
   }
   code::Server& codeserver() { return *codeserver_; }
   const code::Server& codeserver() const { return *codeserver_; }

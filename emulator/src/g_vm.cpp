@@ -167,10 +167,12 @@ void VM::assert_jmp_address(const void* p) const {
 }
 
 void PremadeBeaminstr::init(const VM& vm) {
-  instr_[(Word)PremadeIndex::Apply_mfargs_]
+  instr_ = SysMemory::allocate<Word>((Word)PremadeIndex::Total_count);
+  auto p = instr_.mem();
+  p[(Word)PremadeIndex::Apply_mfargs_]
       = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Apply_mfargs_];
 
-  instr_[(Word)PremadeIndex::Normal_exit_]
+  p[(Word)PremadeIndex::Normal_exit_]
       = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Normal_exit_];
 }
 

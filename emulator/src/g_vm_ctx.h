@@ -58,8 +58,8 @@ public:
   void swap_in(Process* proc) {
     erts::RuntimeContext& proc_ctx = proc->get_runtime_ctx();
     proc_ctx.swapped_in();
-    ip = proc_ctx.ip;
-    cp = proc_ctx.cp;
+    set_ip(proc_ctx.ip());
+    set_cp(proc_ctx.cp());
     live = proc_ctx.live;
     std::memcpy(regs, proc_ctx.regs, sizeof(Term) * live);
 
@@ -72,8 +72,8 @@ public:
   void swap_out(Process* proc) {
     erts::RuntimeContext& proc_ctx = proc->get_runtime_ctx();
     proc_ctx.swapped_out();
-    proc_ctx.ip = ip;
-    proc_ctx.cp = cp;
+    proc_ctx.set_ip(ip());
+    proc_ctx.set_cp(cp());
     proc_ctx.live = live;
     std::memcpy(proc_ctx.regs, regs, sizeof(Term) * live);
     // TODO: fp_regs
@@ -85,15 +85,15 @@ public:
   void swap_out_partial(Process* proc) {
     erts::RuntimeContext& proc_ctx = proc->get_runtime_ctx();
     proc_ctx.swapped_out_partial();
-    proc_ctx.ip = ip;
-    proc_ctx.cp = cp;
+    proc_ctx.set_ip(ip());
+    proc_ctx.set_cp(cp());
   }
 
   void swap_in_partial(Process* proc) {
     erts::RuntimeContext& proc_ctx = proc->get_runtime_ctx();
     proc_ctx.swapped_in();
-    ip = proc_ctx.ip;
-    cp = proc_ctx.cp;
+    set_ip(proc_ctx.ip());
+    set_cp(proc_ctx.cp());
   }
 
   // For special immed1 types (register and stack ref) convert them to their
@@ -181,9 +181,9 @@ public:
     } else {
       // simulate real call but return bif result instead
       regs[0] = result;
-      G_ASSERT(cp);
-      ip = cp;
-      cp = nullptr;
+      G_ASSERT(cp());
+      set_ip(cp());
+      set_cp(nullptr);
       return;
     }
   }
@@ -192,14 +192,14 @@ public:
   void jump_far(Process* proc, Module* m, Word* new_ip) {
     //    mod = m;
     // base = proc->get_code_base();
-    ip = new_ip;
+    set_ip(new_ip);
   }
 
   void jump(Process* proc, Term t) {
     G_ASSERT(t.is_boxed() && term_tag::is_cp(t.boxed_get_ptr<Word>()));
     Word* t_ptr = term_tag::untag_cp(t.boxed_get_ptr<Word>());
     Std::fmt(tMagenta("ctx.jump") " -> " FMT_0xHEX "\n", (Word)t_ptr);
-    ip = t_ptr;
+    set_ip(t_ptr);
     // TODO: some meaningful assertion here?
     // G_ASSERT(ip > base);
     // G_ASSERT(ip < proc->m_module->m_code.size() + base);
@@ -227,14 +227,14 @@ public:
   }
 
   void push_cp() {
-    stack().push(Term::make_boxed_cp(cp).as_word());
-    cp = nullptr;
+    stack().push(Term::make_boxed_cp(cp()).as_word());
+    set_cp(nullptr);
   }
 
   void pop_cp() {
     Term p(stack().pop());
     auto cp0 = p.boxed_get_ptr_unchecked<Word>();
-    cp = term_tag::untag_cp<Word>(cp0);
+    set_cp(term_tag::untag_cp<Word>(cp0));
   }
 
   void stack_allocate(Word n) {
@@ -251,7 +251,7 @@ public:
 #if G_DEBUG
     Std::fmt("(");
     for (Word i = 0; i < arity; ++i) {
-      Term value(ip[i]);
+      Term value(ip(i));
       value.print(vm_);
       if (value.is_regx() || value.is_regy()) {
         resolve_immed(value);

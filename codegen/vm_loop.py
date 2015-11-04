@@ -33,7 +33,7 @@ schedule:
   ctx.swap_in(proc); // get copies of quick access data from environment
 
 next_instr:
-  jmp_to = (void *)(*ctx.ip);
+  jmp_to = (void *)(ctx.ip(0));
   ctx.println();
 
   Std::fmt(cBlue "[");
@@ -41,11 +41,11 @@ next_instr:
   proc->get_pid().print(*this);
   Std::fmt(";");
 #if FEATURE_CODE_RANGES
-  codeserver().print_mfa(ctx.ip); // prints mfarity or pointer
+  codeserver().print_mfa(ctx.ip()); // prints mfarity or pointer
 #endif
   Std::fmt("]: " cRst);
 
-  ctx.ip++;
+  ctx.inc_ip();
   ctx.vm_.assert_jmp_address(jmp_to);
   goto *jmp_to;
 """)

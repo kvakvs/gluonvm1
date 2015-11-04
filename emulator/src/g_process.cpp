@@ -26,10 +26,10 @@ Term Process::spawn(MFArity& mfa, Term* args) {
   ctx_.live = 0;
 
   // Precondition: Registers should be set to execute apply call
-  ctx_.cp = vm_.premade_instr(PremadeIndex::Normal_exit_);
-  ctx_.ip = vm_.premade_instr(PremadeIndex::Apply_mfargs_);
+  ctx_.set_cp(vm_.premade_instr(PremadeIndex::Normal_exit_));
+  ctx_.set_ip(vm_.premade_instr(PremadeIndex::Apply_mfargs_));
 
-  Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (Word)ctx_.ip);
+  Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (Word)ctx_.ip());
 
   vm_.scheduler().add_new_runnable(this);
   return get_pid();

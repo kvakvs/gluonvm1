@@ -142,12 +142,12 @@ class Process {
   // Jumps to code saving current IP in CP. Make sure ctx is swapped out from VM!
   void call(Word* code) {
     ctx_.assert_swapped_out_partial();
-    ctx_.cp = ctx_.ip;
+    ctx_.set_cp(ctx_.ip());
     jump(code);
   }
   void jump(Word* code) {
     ctx_.assert_swapped_out_partial();
-    ctx_.ip = code;
+    ctx_.set_ip(code);
   }
 
   // Prepares (attempts) to call m:f with args, m is atom or tuple pair

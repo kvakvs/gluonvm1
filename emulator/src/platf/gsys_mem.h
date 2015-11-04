@@ -17,6 +17,7 @@ class Blk {
   Blk(Type* m, size_t size) : mem_(m), size_(size) {}
   Type* mem() const { return mem_; }
   size_t size() const { return size_; }
+  //~Blk() { G_ASSERT(mem == nullptr); }
 };
 
 // Uses new and delete to allocate system memory blocks
