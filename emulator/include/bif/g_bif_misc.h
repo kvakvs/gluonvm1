@@ -11,8 +11,13 @@ namespace bif {
 
 bool is_term_smaller(const VM& vm, Term a, Term b);
 bool are_terms_equal(const VM& vm, Term a, Term b, bool exact);
+
 // Returns pair of {length, proper=true/improper=false}
-Pair<Word, bool> length(Term list);
+struct LengthResult {
+  Word length;
+  bool is_proper;
+};
+LengthResult length(Term list);
 
 Term bif_apply_2(Process*, Term funobject, Term args);
 Term bif_apply_3(Process*, Term m, Term f, Term args);

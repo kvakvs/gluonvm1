@@ -25,7 +25,7 @@ static Term spawn_mfargs(Process* proc, Term m, Term f, Term args, bool link) {
 
   // TODO: on process control blocks' heap
   Process* new_proc = new Process(proc->vm(), proc->get_group_leader());
-  MFArity mfa(m, f, bif::length(args).first);
+  MFArity mfa(m, f, bif::length(args).length);
 
   // A process (proc) spawning another process, and gives args from its heap
   // We should clone args to new process' registers

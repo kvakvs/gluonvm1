@@ -11,16 +11,17 @@ namespace gluon {
 namespace bif {
 
 // Returns pair of {length, proper=true/improper=false}
-Pair<Word, bool> length(Term list) {
+LengthResult length(Term list) {
   if (list.is_nil()) {
-    return std::make_pair(0, true);
+    return LengthResult {0, true};
   }
   Word result = 0;
   do {
     result++;
     list = list.cons_tail();
   } while (list.is_cons());
-  return std::make_pair(result, list.is_nil());
+
+  return LengthResult {result, list.is_nil()};
 }
 
 #if 0
@@ -586,22 +587,24 @@ Term bif_plusplus_2(Process* proc, Term a, Term b) {
     return a;
   }
 
-  auto len = length(a);
-  if (len.second == false) {
+  auto lresult = length(a);
+  if (lresult.length == false) {
     return proc->bif_badarg(a);  // a must be proper list
   }
 
-  Term* htop = (Term*)proc->heap_alloc(len.first * layout::CONS::box_word_size);
+  Term* htop = (Term*)proc->heap_alloc(
+        lresult.length * layout::Cons::box_word_size
+        );
   Term result(Term::make_cons(htop));
 
   // Word *term_data = peel_cons(As);
   Term td = a;
 
   do {
-    td.cons_head_tail(layout::CONS::head(htop), layout::CONS::tail(htop));
+    td.cons_head_tail(layout::Cons::head(htop), layout::Cons::tail(htop));
 
-    Term* tail_ref = &layout::CONS::tail(htop);
-    htop += layout::CONS::box_word_size;
+    Term* tail_ref = &layout::Cons::tail(htop);
+    htop += layout::Cons::box_word_size;
 
     if (tail_ref->is_nil()) {
       *tail_ref = b;  // cons the second list
@@ -665,14 +668,14 @@ Term bif_apply_2(Process* proc, Term funobject, Term args) {
   if (!args.is_list()) {
     return proc->bif_badarg(args);
   }
-  auto len = bif::length(args);
-  if (len.second == false) {
+  auto lresult = bif::length(args);
+  if (lresult.is_proper == false) {
     // improper args list, bam!
     return proc->bif_badarg(args);
   }
 
   // Set registers and live, and enter the code
-  proc->set_args(args, len.first);
+  proc->set_args(args, lresult.length);
   proc->call(fe->code);
   return atom::OK;
 }

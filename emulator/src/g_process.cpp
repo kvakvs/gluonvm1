@@ -67,7 +67,7 @@ void Process::msg_send(Term pid, Term value) {
 
   Process* other = vm_.scheduler().find(pid);
   if (!other) {
-    Std::fmt("msg_send pid not found: ");
+    Std::fmt(tRed("msg_send pid not found: "));
     pid.println(vm_);
     return;
   }
@@ -88,30 +88,7 @@ void Process::set_args(Term args, Word len)
   }
 }
 
-
-#if 0
-#if G_DEBUG
-void ProcessStack::println()
-{
-  Std::fmt("STACK[" FMT_UWORD "words]: ", size());
-  if (size() > 0) {
-    Std::fmt("[-1]=");
-    cells.back().print();
-    Std::fmt("; ");
-  }
-  if (size() > 1) {
-    for (Word i = 0; i < size()-1; i++) {
-      Std::fmt("[" FMT_UWORD "]=", i);
-      get_y(i).print();
-      Std::fmt("; ");
-    }
-  }
-  Std::puts();
-}
-#endif
-#endif  // 0
-
-Either<Word*, Term> Process::apply(Term m, Term f, Term args, Term* regs) {
+Either<Word*, Term> Process::apply(Term m, Term f, Term args_or_arity, Term* regs) {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
   if (!f.is_atom()) {
@@ -138,15 +115,15 @@ Either<Word*, Term> Process::apply(Term m, Term f, Term args, Term* regs) {
   }
 
   Word arity = 0;
-  if (args.is_small()) {
+  if (args_or_arity.is_small()) {
     // Small unsigned in args means args already are loaded in regs
-    arity = args.small_word();
+    arity = args_or_arity.small_word();
   } else {
     // Walk down the 3rd parameter of apply (the argument list) and copy
     // the parameters to the x registers (regs[]). If the module argument
     // was an abstract module, add 1 to the function arity and put the
     // module argument in the n+1st x register as a THIS reference.
-    Term tmp = args;
+    Term tmp = args_or_arity;
     while (tmp.is_cons()) {
       if (arity < erts::max_regs - 1) {
         tmp.cons_head_tail(regs[arity++], tmp);

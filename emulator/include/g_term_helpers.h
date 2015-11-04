@@ -4,6 +4,10 @@
 #include "g_term.h"
 #include "g_heap.h"
 
+#if G_DEBUG
+#include "bif/g_bif_misc.h"
+#endif
+
 namespace gluon {
 namespace term {
 
@@ -14,11 +18,11 @@ class TupleBuilder {
 
  public:
   TupleBuilder(proc::Heap* heap, Word arity) : m_arity(arity), m_index(0) {
-    m_elements = (Term*)heap->allocate<Word>(layout::TUPLE::box_size(arity));
+    m_elements = (Term*)heap->allocate<Word>(layout::Tuple::box_size(arity));
   }
   void add(Term x) {
     G_ASSERT(m_index < m_arity);
-    layout::TUPLE::element(m_elements, m_index) = x;
+    layout::Tuple::element(m_elements, m_index) = x;
     m_index++;
   }
   Term make_tuple() {
@@ -50,35 +54,37 @@ inline Term make_term(const Term &x) {
 template <typename Iter>
 Word length(Iter iter, Iter to) {
   Word result = 0;
-  for (; iter != to; iter++, result++) {
-  }
+  for (; iter != to; iter++, result++) {}
   return result;
 }
-template <>
-inline Word length<const char*>(const char* iter, const char* to) {
-  return (Word)(to - iter);
+template <typename T>
+inline Word length_p(T* iter, T* to) {
+  return (Word)(to - iter + 1);
 }
 
 template <typename Iter> // TODO: const Iter args?
-Term build_list(proc::Heap* heap, Iter iter, Iter to) {
-  if (iter == to) {
+Term build_list(proc::Heap* heap, Iter iter, Iter end) {
+  if (iter == end) {
     return ::gluon::the_nil;
   }
 
-  Word len = length(iter, to);
-  Term* h = (Term*)heap->allocate<Word>(layout::CONS::box_word_size * len);
+  Word len = length_p(iter, end);
+  Term* h = (Term*)heap->allocate<Word>(layout::Cons::box_word_size * len);
 
   Term result = Term::make_cons(h);
-  Word i = 0;
-  for (; iter != to; iter++) {
-    layout::CONS::head(h) = make_term(*iter);
-    layout::CONS::tail(h) =
-        (i == len - 1) ? ::gluon::the_nil
-                       : Term::make_cons(h + layout::CONS::box_word_size);
-    h += layout::CONS::box_word_size;
-    i++;
+  for (; iter < end; iter++) {
+    layout::Cons::head(h) = make_term(*iter);
+    layout::Cons::tail(h) =
+        iter + 1 == end
+        ? ::gluon::the_nil
+        : Term::make_cons(h + layout::Cons::box_word_size);
+    h += layout::Cons::box_word_size;
   }
 
+#if G_DEBUG
+  auto lresult = bif::length(result);
+  G_ASSERT(lresult.is_proper == true); // must be proper
+#endif
   return result;
 }
 

@@ -75,13 +75,13 @@ Term copy_one_term(VM& vm, Heap* dstheap, Term t) {
   if (t.is_tuple()) {
     Word arity = t.tuple_get_arity();
     Term* new_t =
-        (Term*)dstheap->allocate<Word>(layout::TUPLE::box_size(arity));
+        (Term*)dstheap->allocate<Word>(layout::Tuple::box_size(arity));
     Term* this_t = t.boxed_get_ptr<Term>();
-    layout::TUPLE::arity(new_t) = layout::TUPLE::arity(this_t);
+    layout::Tuple::arity(new_t) = layout::Tuple::arity(this_t);
     // Deep clone
     for (Word i = 0; i < arity; ++i) {
-      layout::TUPLE::element(new_t, i) =
-          copy_one_term(vm, dstheap, layout::TUPLE::element(this_t, i));
+      layout::Tuple::element(new_t, i) =
+          copy_one_term(vm, dstheap, layout::Tuple::element(this_t, i));
     }
     return Term::make_tuple_prepared(new_t);
   }

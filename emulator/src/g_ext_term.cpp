@@ -76,11 +76,11 @@ Term read_tuple(VM& vm, proc::Heap* heap, tool::Reader& r, Word arity) {
     return Term::make_zero_tuple();
   }
 
-  Term* cells = (Term*)heap->allocate<Word>(layout::TUPLE::box_size(arity));
+  Term* cells = (Term*)heap->allocate<Word>(layout::Tuple::box_size(arity));
 
   // fill elements or die horribly if something does not decode
   for (Word i = 0; i < arity; ++i) {
-    layout::TUPLE::element(cells, i) = read_ext_term(vm, heap, r);
+    layout::Tuple::element(cells, i) = read_ext_term(vm, heap, r);
   }
 
   return Term::make_tuple(cells, arity);
@@ -123,10 +123,10 @@ Term read_string_ext(proc::Heap* heap, tool::Reader& r) {
   Term* ref = &result;
 
   for (Word i = 0; i < length; ++i) {
-    Term* cons = (Term*)heap->allocate<Word>(layout::CONS::box_word_size);
-    layout::CONS::head(cons) = Term::make_small(r.read_byte());
+    Term* cons = (Term*)heap->allocate<Word>(layout::Cons::box_word_size);
+    layout::Cons::head(cons) = Term::make_small(r.read_byte());
     *ref = Term::make_cons(cons);
-    ref = &layout::CONS::tail(cons);
+    ref = &layout::Cons::tail(cons);
   }
 
   *ref = the_nil;
@@ -140,11 +140,11 @@ Term read_list_ext(VM& vm, proc::Heap* heap, tool::Reader& r) {
   Term* ref = &result;
 
   for (SWord i = (SWord)length - 1; i >= 0; i--) {
-    Term* cons = (Term*)heap->allocate<Word>(layout::CONS::box_word_size);
+    Term* cons = (Term*)heap->allocate<Word>(layout::Cons::box_word_size);
 
-    layout::CONS::head(cons) = read_ext_term(vm, heap, r);
+    layout::Cons::head(cons) = read_ext_term(vm, heap, r);
     *ref = Term::make_cons(cons);
-    ref = &layout::CONS::tail(cons);
+    ref = &layout::Cons::tail(cons);
   }
 
   *ref = read_ext_term(vm, heap, r);

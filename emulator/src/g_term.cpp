@@ -21,9 +21,9 @@ Word term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
 #define cSpecialTermColor cYellow cUnderline
 
 Term Term::allocate_cons(proc::Heap* heap, Term head, Term tail) {
-  Term* d = (Term*)heap->allocate<Word>(layout::CONS::box_word_size);
-  layout::CONS::head(d) = head;
-  layout::CONS::tail(d) = tail;
+  Term* d = (Term*)heap->allocate<Word>(layout::Cons::box_word_size);
+  layout::Cons::head(d) = head;
+  layout::Cons::tail(d) = tail;
   return make_cons(d);
 }
 
@@ -192,14 +192,14 @@ Term Term::make_binary(VM& vm, proc::Heap* h, Word bytes) {
   G_ASSERT(bytes < term_tag::boxed_max_subtag_val);
 
   if (bytes <= bin::heapbin_limit) {
-    Word* box = h->allocate<Word>(layout::PROC_BIN::box_size(bytes));
-    layout::PROC_BIN::set_byte_size(box, bytes);
+    Word* box = h->allocate<Word>(layout::ProcBin::box_size(bytes));
+    layout::ProcBin::set_byte_size(box, bytes);
     return Term(term_tag::BoxedProcBin::create_from_ptr<Word>(box));
   } else {
     // Large bin, with boxed refcount and pointer
     erts::Heap* binheap = vm.get_heap(VM::HEAP_LARGE_BINARY);
     layout::HeapbinBox* box = binheap->allocate<layout::HeapbinBox>(
-        layout::HEAP_BIN::box_size(bytes));
+        layout::HeapBin::box_size(bytes));
     box->set_byte_size(bytes);
     box->set_refcount(1);
     return Term(term_tag::BoxedHeapBin::create_from_ptr(box));
@@ -218,11 +218,11 @@ void MFArity::print(const VM& vm) {
   Std::fmt("/" FMT_UWORD, arity);
 }
 
-Word layout::PROC_BIN::box_size(Word bytes) {
+Word layout::ProcBin::box_size(Word bytes) {
   return calculate_word_size(bytes) + box_extra_words;
 }
 
-Word layout::HEAP_BIN::box_size(Word bytes) {
+Word layout::HeapBin::box_size(Word bytes) {
   return calculate_word_size(bytes) + farheap_extra_words;
 }
 

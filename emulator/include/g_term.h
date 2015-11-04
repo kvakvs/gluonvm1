@@ -286,7 +286,7 @@ class BoxedFun;
 //
 namespace layout {
 // Cons layout has no place for bit tag
-struct CONS {
+struct Cons {
   static const Word box_word_size = 2;
 
   template <typename Cell>
@@ -310,7 +310,7 @@ struct CONS {
 
 // Tuple layout has no place for bit tag.
 // First goes arity, then elements
-struct TUPLE {
+struct Tuple {
   static const Word box_extra_words = 1;
 
   static Word box_size(Word Arity) { return Arity + box_extra_words; }
@@ -329,7 +329,7 @@ struct TUPLE {
 };
 
 // Process-heap (small) and heap (large) binary layout
-struct BINARY {
+struct Binary {
   // both types of binary have size in first (subtag) word
   static Word get_byte_size(Word* p) {
     return term_tag::get_subtag_value(p[0]);
@@ -338,7 +338,7 @@ struct BINARY {
 
 // Box structure
 // Word { size, tag_bits: 4 }; u8_t data[size]
-struct PROC_BIN {
+struct ProcBin {
   static const Word box_extra_words = 1;
 
   static Word box_size(Word bytes);
@@ -380,7 +380,7 @@ class HeapbinBox {
 };
 #pragma clang diagnostic pop
 
-struct HEAP_BIN {
+struct HeapBin {
   static const Word farheap_extra_words = sizeof(HeapbinBox) / sizeof(Word);
 
   static Word box_size(Word bytes);
@@ -488,8 +488,8 @@ class Term {
   // Takes head and tail at once
   void cons_head_tail(Term& h, Term& t) const {
     auto p = boxed_get_ptr<Word>();
-    h = Term(layout::CONS::head(p));
-    t = Term(layout::CONS::tail(p));
+    h = Term(layout::Cons::head(p));
+    t = Term(layout::Cons::tail(p));
   }
   bool is_cons_printable() const;
   // Unfolds list into linear array using limit as array max size
@@ -503,7 +503,7 @@ class Term {
   Term cons_get_element(Word n) const {
     G_ASSERT(n == 0 || n == 1);
     auto p = boxed_get_ptr<Word>();
-    return Term(layout::CONS::element(p, n));
+    return Term(layout::Cons::element(p, n));
   }
 
  public:
@@ -623,7 +623,7 @@ class Term {
   }
   // NOTE: Elements should contain 1 extra slot for arity!
   static Term make_tuple(Term* elements, Word arity) {
-    layout::TUPLE::arity((Word*)elements) = arity;
+    layout::Tuple::arity((Word*)elements) = arity;
     return Term(term_tag::Tuple::create_from_ptr(elements));
   }
   // Does not set arity field, assuming that element values are already all set
@@ -634,19 +634,19 @@ class Term {
   Word tuple_get_arity() const {
     G_ASSERT(is_tuple());
     auto p = boxed_get_ptr<Word>();
-    return layout::TUPLE::arity(p);
+    return layout::Tuple::arity(p);
   }
   // Zero based index n
   Term tuple_get_element(Word n) const {
     auto p = boxed_get_ptr<Word>();
-    G_ASSERT(layout::TUPLE::arity(p) > n);
-    return Term(layout::TUPLE::element(p, n));
+    G_ASSERT(layout::Tuple::arity(p) > n);
+    return Term(layout::Tuple::element(p, n));
   }
   // Zero based index n
   void tuple_set_element(Word n, Term t) const {
     auto p = boxed_get_ptr<Word>();
-    G_ASSERT(layout::TUPLE::arity(p) > n);
-    layout::TUPLE::element(p, n) = t.as_word();
+    G_ASSERT(layout::Tuple::arity(p) > n);
+    layout::Tuple::element(p, n) = t.as_word();
   }
 
 #if FEATURE_MAPS
@@ -749,14 +749,14 @@ class Term {
     G_ASSERT(is_binary());  // this is slow but debug only
     Word* p = boxed_get_ptr<Word>();
     // both types of binary have size in first (subtag) word
-    return layout::BINARY::get_byte_size(p);
+    return layout::Binary::get_byte_size(p);
   }
   template <typename T>
   T* binary_get() const {
     G_ASSERT(is_binary());  // this is slow but debug only
     Word* p = boxed_get_ptr<Word>();
     if (term_tag::BoxedProcBin::check_subtag(p[0])) {
-      return (T*)layout::PROC_BIN::data(p);
+      return (T*)layout::ProcBin::data(p);
     }
     G_ASSERT(term_tag::BoxedHeapBin::check_subtag(p[0]));
     // Get pointer to large binary, add 1 word offset and cast it to T *

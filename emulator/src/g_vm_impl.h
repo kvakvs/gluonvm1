@@ -680,7 +680,7 @@ inline void opcode_put_tuple(Process* proc,
     return;
   }
 
-  Term* cells = (Term*)proc->heap_alloc(layout::TUPLE::box_size(arity));
+  Term* cells = (Term*)proc->heap_alloc(layout::Tuple::box_size(arity));
   Word index = 0;
   do {
     // assert that ip[0] is opcode 'put' skip it and read its argument
@@ -689,7 +689,7 @@ inline void opcode_put_tuple(Process* proc,
     DEREF(value);
     Std::fmt(tMagenta("put element "));
     value.println(ctx.vm_);
-    layout::TUPLE::element(cells, index) = value;
+    layout::Tuple::element(cells, index) = value;
     index++;
   } while (index < arity);
 
@@ -901,6 +901,11 @@ inline void opcode_try_case(Process* proc,
 //  111
 //  }
 
+WantSchedule after_apply(Process* proc,
+                         VMRuntimeContext& ctx,
+                         Word arity,
+                         Either<Word*, Term> res);
+
 inline WantSchedule opcode_apply(Process* proc,
                                  VMRuntimeContext& ctx) {  // opcode: 112
   // @spec apply Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
@@ -909,7 +914,18 @@ inline WantSchedule opcode_apply(Process* proc,
   Term mod = ctx.regs[arity];
   Term fun = ctx.regs[arity + 1];
 
+  ctx.swap_out(proc);
   Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs);
+  ctx.swap_in(proc);
+
+  return after_apply(proc, ctx, arity, res);
+}
+
+WantSchedule after_apply(Process* proc,
+                         VMRuntimeContext& ctx,
+                         Word arity,
+                         Either<Word*, Term> res)
+{
   // Check error
   if (ctx.check_bif_error(proc)) {
     return WantSchedule::NextProcess;
@@ -1202,45 +1218,36 @@ inline void opcode_get_map_elements(Process* proc,
   throw err::TODO("notimpl get_map_elements");
 }
 
-inline void opcode_normal_exit_(Process* proc,
+inline WantSchedule opcode_normal_exit_(Process* proc,
                                 VMRuntimeContext& ctx) {  // opcode: 158
   // This must be implemented for assert_address_makes_sense/2 to know
   // whether a jump address is valid or random garbage. We throw up here
   throw err::TODO("notimpl exit");
 }
 
-inline void opcode_apply_mfargs_(Process* proc,
-                                 VMRuntimeContext& ctx) {  // opcode: 112
+inline WantSchedule opcode_apply_mfargs_(Process* proc,
+                                         VMRuntimeContext& ctx) {  // opcode: N+1
   // @spec apply_mfargs_, regs contain m,f,[args]
   auto arg_regs = &proc->get_runtime_ctx().arg_regs_[0];
   Term mod = arg_regs[0];
   Term fun = arg_regs[1];
   Term args = arg_regs[2];
+  G_ASSERT(args.is_list());
 
-  mod.println(ctx.vm_);
-  fun.println(ctx.vm_);
-  args.println(ctx.vm_);
+  Std::fmt(tMagenta("apply_mfargs_") ": ");
+  mod.print(ctx.vm_);
+  Std::fmt(":");
+  fun.print(ctx.vm_);
+  args.print(ctx.vm_);
+  Std::fmt("\n");
 
   ctx.swap_out(proc);
   Either<Word*, Term> res = proc->apply(mod, fun, args, ctx.regs);
   ctx.swap_in(proc);
 
-  // Check error
-  if (ctx.check_bif_error(proc)) {
-    ctx.inc_ip();
-    return;
-  }
-  // What to do with apply result, is it code pointer to jump to or a bif result
-  if (res.is_left()) {
-    // Imitate a call
-    ctx.live = bif::bif_length_1(proc, args).small_word();
-    ctx.set_cp(ctx.ip() + 1);
-    ctx.set_ip(res.left());
-    return;
-  }
-  // Or we already know the result, no call is happening
-  ctx.regs[0] = res.right();
-  ctx.inc_ip();
+  auto arity_result = bif::length(args);
+  G_ASSERT(arity_result.is_proper == true);
+  return after_apply(proc, ctx, arity_result.length, res);
 }
 
 }  // ns impl
