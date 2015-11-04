@@ -18,10 +18,11 @@ bool exists(const Str& name) {
   return (::stat(name.c_str(), &buffer) == 0);
 }
 
-void* to_internal(FILE* f) {
+static void* to_internal(FILE* f) {
   return reinterpret_cast<void*>(f);
 }
-FILE* to_file(void* f) {
+
+static FILE* to_file(void* f) {
   return reinterpret_cast<FILE*>(f);
 }
 

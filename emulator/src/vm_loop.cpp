@@ -7,15 +7,16 @@ namespace gluon {
 void VM::vm_loop(bool init) {
   impl::VMRuntimeContext ctx(*this);
   void *jmp_to;
-  Process *proc;
+  Process *proc = nullptr;
   Scheduler &sched = VM::scheduler();
   if (init) {
     goto vm_jump_table_init;
   }
   
 schedule:
+  if (proc) { ctx.swap_out(proc); }
   proc = sched.next();
-  if (!proc) { return; } // program finished
+  if (!proc) { return; } // program finished?
   ctx.swap_in(proc); // get copies of quick access data from environment
   
 next_instr:
