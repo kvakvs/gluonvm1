@@ -901,10 +901,27 @@ inline void opcode_try_case(Process* proc,
 //  111
 //  }
 
-WantSchedule after_apply(Process* proc,
-                         VMRuntimeContext& ctx,
-                         Word arity,
-                         Either<Word*, Term> res);
+static WantSchedule after_apply(Process* proc,
+                                VMRuntimeContext& ctx,
+                                Word arity,
+                                Either<Word*, Term> res)
+{
+  // Check error
+  if (ctx.check_bif_error(proc)) {
+    return WantSchedule::NextProcess;
+  }
+  // What to do with apply result, is it code pointer to jump to or a bif result
+  if (res.is_left()) {
+    // Imitate a call
+    ctx.live = arity;
+    ctx.set_cp(ctx.ip());
+    ctx.set_ip(res.left());
+    return ctx.consume_reduction(proc);
+  }
+  // Or we already know the result, no call is happening
+  ctx.regs[0] = res.right();
+  return ctx.consume_reduction(proc);
+}
 
 inline WantSchedule opcode_apply(Process* proc,
                                  VMRuntimeContext& ctx) {  // opcode: 112
@@ -918,31 +935,10 @@ inline WantSchedule opcode_apply(Process* proc,
   Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs);
   ctx.swap_in(proc);
 
+  ctx.inc_ip(); // consume Arity arg
   return after_apply(proc, ctx, arity, res);
 }
 
-WantSchedule after_apply(Process* proc,
-                         VMRuntimeContext& ctx,
-                         Word arity,
-                         Either<Word*, Term> res)
-{
-  // Check error
-  if (ctx.check_bif_error(proc)) {
-    return WantSchedule::NextProcess;
-  }
-  // What to do with apply result, is it code pointer to jump to or a bif result
-  if (res.is_left()) {
-    // Imitate a call
-    ctx.live = arity;
-    ctx.set_cp(ctx.ip() + 1);
-    ctx.set_ip(res.left());
-    return ctx.consume_reduction(proc);
-  }
-  // Or we already know the result, no call is happening
-  ctx.regs[0] = res.right();
-  ctx.inc_ip();
-  return ctx.consume_reduction(proc);
-}
 
 inline WantSchedule opcode_apply_last(Process* proc,
                                       VMRuntimeContext& ctx) {  // opcode: 113
@@ -957,19 +953,9 @@ inline WantSchedule opcode_apply_last(Process* proc,
   if (ctx.check_bif_error(proc)) {
     return WantSchedule::NextProcess;
   }
-  // What to do with apply result, is it code pointer to jump to or a bif result
-  if (res.is_left()) {
-    // Imitate a call
-    ctx.live = arity;
-    // ctx.cp = ctx.ip+1;
-    ctx.set_ip(res.left());
-    return ctx.consume_reduction(proc);
-  }
-  // Or we already know the result, no call is happening
-  ctx.regs[0] = res.right();
-  ctx.set_ip(ctx.cp());
-  ctx.set_cp(nullptr);
-  return ctx.consume_reduction(proc);
+
+  ctx.step_ip(2); // consume (_,Arity) args
+  return after_apply(proc, ctx, arity, res);
 }
 
 inline void opcode_is_boolean(Process* proc,
@@ -1247,6 +1233,7 @@ inline WantSchedule opcode_apply_mfargs_(Process* proc,
 
   auto arity_result = bif::length(args);
   G_ASSERT(arity_result.is_proper == true);
+
   return after_apply(proc, ctx, arity_result.length, res);
 }
 
