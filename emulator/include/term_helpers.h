@@ -5,7 +5,7 @@
 #include "heap.h"
 
 #if G_DEBUG
-#include "bif/g_bif_misc.h"
+#include "bif/bif_misc.h"
 #endif
 
 namespace gluon {

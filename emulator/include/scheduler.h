@@ -3,7 +3,7 @@
 #include "defs.h"
 #include "error.h"
 #include "term.h"
-#include "struct/g_dict.h"
+#include "struct/dict.h"
 
 #include <algorithm>
 

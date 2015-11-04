@@ -3,7 +3,7 @@
 #include "process.h"
 #include "module.h"
 #include "code_server.h"
-#include "bif/g_bif_misc.h"
+#include "bif/bif_misc.h"
 #include "genop.h"
 #include "predef_atoms.h"
 #include "fun.h"

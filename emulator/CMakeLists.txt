@@ -47,11 +47,11 @@ set(SRC_LIST
     include/error.h
     include/functional.h
 
-    include/struct/g_array.h
-    include/struct/g_dict.h
-    include/struct/g_list.h
-    include/struct/g_str.h
-    include/struct/g_set.h
+    include/struct/array.h
+    include/struct/dict.h
+    include/struct/list.h
+    include/struct/str.h
+    include/struct/set.h
 
     src/beam_loader.cpp       src/beam.h
     src/beam_prepare.cpp
@@ -81,8 +81,8 @@ set(SRC_LIST
     src/vm_loop.cpp
     src/vm_ctx.h              src/vm_impl.h
 
-    src/bif/g_bif_misc.cpp include/bif/g_bif_misc.h
-    src/bif/g_bif_proc.cpp include/bif/g_bif_proc.h
+    src/bif/bif_misc.cpp include/bif/bif_misc.h
+    src/bif/bif_proc.cpp include/bif/bif_proc.h
 
     # Zlib replacement
     src/miniz/miniz.c

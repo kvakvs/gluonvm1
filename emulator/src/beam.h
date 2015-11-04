@@ -3,7 +3,7 @@
 #include "vm.h"
 #include "module.h"
 
-#include "struct/g_array.h"
+#include "struct/array.h"
 
 namespace gluon {
 

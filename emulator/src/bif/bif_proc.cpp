@@ -1,5 +1,5 @@
-#include "bif/g_bif_proc.h"
-#include "bif/g_bif_misc.h"
+#include "bif/bif_proc.h"
+#include "bif/bif_misc.h"
 #include "process.h"
 #include "predef_atoms.h"
 #include "term_helpers.h"

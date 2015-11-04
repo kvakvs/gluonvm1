@@ -1,6 +1,6 @@
 #include "gsys_file.h"
 //#include "error.h"
-#include "struct/g_str.h"
+#include "struct/str.h"
 
 #include <stdio.h>
 #include <sys/stat.h>

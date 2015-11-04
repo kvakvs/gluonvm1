@@ -1,7 +1,7 @@
 #pragma once
 
 #include "defs.h"
-#include "struct/g_array.h"
+#include "struct/array.h"
 
 namespace gluon {
 namespace tool {

@@ -7,7 +7,7 @@
 #include "predef_atoms.h"
 #include "process.h"
 
-#include "bif/g_bif_misc.h"
+#include "bif/bif_misc.h"
 #include "bif_tab.h"
 #include "genop.h"
 

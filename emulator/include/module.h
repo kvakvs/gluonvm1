@@ -6,7 +6,7 @@
 #include "reader.h"
 #include "fun.h"
 #include "code_index.h"
-#include "struct/g_array.h"
+#include "struct/array.h"
 
 namespace gluon {
 
