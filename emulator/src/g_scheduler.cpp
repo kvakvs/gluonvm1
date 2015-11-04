@@ -1,5 +1,5 @@
 #include "g_scheduler.h"
-#include "g_predef_atoms.h"
+#include "predef_atoms.h"
 #include "g_process.h"
 #include "platf/gsys_stdlib.h"
 
@@ -153,7 +153,7 @@ Process* Scheduler::next() {
     if (!high_queue_.empty()) {
       next_proc = high_queue_.front();
       high_queue_.pop_front();
-    } else if (normal_count_ < NORMAL_ADVANTAGE) {
+    } else if (normal_count_ < normal_advantage) {
       if (!normal_queue_.empty()) {
         next_proc = normal_queue_.front();
         normal_queue_.pop_front();
@@ -174,8 +174,8 @@ Process* Scheduler::next() {
     }  // select proc from q
 
     if (next_proc) {
-      Std::fmt("-----------------------------\nScheduler::next() -> ");
-      Std::fmt("(Q=%d) ", (int)next_proc->current_queue_);
+      Std::fmt(cGreen cBold "\n---Scheduler::next() -> " cRst);
+      Std::fmt("(Queue %d) ", (int)next_proc->current_queue_);
       next_proc->get_pid().println(vm_);
 
       next_proc->current_queue_ = proc::Queue::None;

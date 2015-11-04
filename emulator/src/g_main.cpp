@@ -3,7 +3,7 @@
 #include "g_code_server.h"
 #include "g_code_index.h"
 #include "g_error.h"
-#include "g_predef_atoms.h"
+#include "predef_atoms.h"
 
 #include <stdio.h>
 

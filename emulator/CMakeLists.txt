@@ -63,13 +63,13 @@ set(SRC_LIST
     src/g_code_server.cpp include/g_code_server.h
     src/g_dist.cpp       include/g_dist.h
     src/g_ext_term.cpp   include/g_ext_term.h
-    src/g_genop.cpp      include/g_genop.h        # generated via codegen/ script
+    src/genop.cpp        include/genop.h        # generated via codegen/ script
     src/g_fun.cpp        include/g_fun.h
     src/g_heap.cpp       include/g_heap.h
     src/g_mailbox.cpp    include/g_mailbox.h
     src/g_main.cpp
     src/g_module.cpp     include/g_module.h
-    src/g_predef_atoms.cpp include/g_predef_atoms.h
+    src/predef_atoms.cpp include/predef_atoms.h
     src/g_process.cpp    include/g_process.h
     src/g_runtime_ctx.cpp src/g_runtime_ctx.h
     src/g_scheduler.cpp  include/g_scheduler.h
@@ -77,9 +77,9 @@ set(SRC_LIST
     src/g_term.cpp       include/g_term.h
     src/g_term_helpers.cpp include/g_term_helpers.h
     src/g_vm.cpp         include/g_vm.h
-    src/g_vm_bif_tab.cpp src/g_vm_bif_tab.h
-    src/g_vm_loop.cpp
-    src/g_vm_ctx.h       src/g_vm_impl.h # because all stuff is inline here
+    src/bif_tab.cpp      src/bif_tab.h
+    src/vm_loop.cpp
+    src/vm_ctx.h          src/vm_impl.h
 
     src/bif/g_bif_misc.cpp include/bif/g_bif_misc.h
     src/bif/g_bif_proc.cpp include/bif/g_bif_proc.h

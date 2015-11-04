@@ -1,9 +1,9 @@
 #include "g_beam.h"
 #include "g_functional.h"
-#include "g_predef_atoms.h"
+#include "predef_atoms.h"
 
 // Generated opcode arity table
-#include "g_genop.h"
+#include "genop.h"
 
 namespace gluon {
 
@@ -72,7 +72,7 @@ Vector<Word> BeamLoader::read_code(Module* m,
 
     // Convert opcode into jump address
     const void *op_ptr = vm_.g_opcode_labels[(Word)opcode];
-    vm_.assert_jmp_address(op_ptr);
+    vm_.assert_valid_vmloop_label(op_ptr);
     output.push_back((Word)op_ptr);
 
     // debug_print_opcode(opcode, arity, r);

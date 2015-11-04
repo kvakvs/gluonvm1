@@ -33,6 +33,12 @@
 
 namespace gluon {
 
+#if G_DEBUG
+constexpr bool debug_mode = true;
+#else
+constexpr bool debug_mode = false;
+#endif
+
 #define FMT_HEX "%zx"
 #define FMT_0xHEX "0x" FMT_HEX
 #define FMT_SWORD "%zi"

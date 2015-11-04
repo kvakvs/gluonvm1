@@ -4,12 +4,12 @@
 #include "platf/gsys_mem.h"
 #include "g_dist.h"
 #include "g_heap.h"
-#include "g_predef_atoms.h"
+#include "predef_atoms.h"
 #include "g_process.h"
 
 #include "bif/g_bif_misc.h"
-#include "g_vm_bif_tab.h"
-#include "g_genop.h"
+#include "bif_tab.h"
+#include "genop.h"
 
 #include <algorithm>
 
@@ -161,7 +161,7 @@ Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
   return proc->bif_error(atom::UNDEF);
 }
 
-void VM::assert_jmp_address(const void* p) const {
+void VM::assert_valid_vmloop_label(const void* p) const {
   G_ASSERT(p >= g_opcode_labels[1]
       && p <= g_opcode_labels[genop::max_opcode]);
 }

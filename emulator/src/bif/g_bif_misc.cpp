@@ -1,6 +1,6 @@
 #include "bif/g_bif_misc.h"
 #include "g_process.h"
-#include "g_predef_atoms.h"
+#include "predef_atoms.h"
 #include "g_vm.h"
 #include "g_heap.h"
 #include "g_module.h"
@@ -686,6 +686,19 @@ Term bif_apply_2(Process* proc, Term funobject, Term args) {
 // like this:  apply(erlang, apply, [M, F, A]). Not recommended.)
 Term bif_apply_3(Process* proc, Term m, Term f, Term args) {
   return proc->bif_badarg(atom::APPLY);
+}
+
+Term bif_element_2(Process* proc, Term n0, Term tup)
+{
+  if (!tup.is_tuple()
+      || !n0.is_small()) {
+    return proc->bif_badarg();
+  }
+  Word n = n0.small_word();
+  if (tup.tuple_get_arity() >= n || n < 1) {
+    return proc->bif_badarg();
+  }
+  return tup.tuple_get_element(n - 1);
 }
 
 }  // ns bif

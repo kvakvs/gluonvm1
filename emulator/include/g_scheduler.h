@@ -34,7 +34,7 @@ class Scheduler {
   //
 
   // how often low prio gets to run despite all the business
-  static constexpr Word NORMAL_ADVANTAGE = 8;
+  static constexpr Word normal_advantage = 8;
 
   Word normal_count_ = 0;
 

@@ -23,6 +23,7 @@ Term bif_apply_2(Process*, Term funobject, Term args);
 Term bif_apply_3(Process*, Term m, Term f, Term args);
 Term bif_atom_to_list_1(Process*, Term a);
 Term bif_divide_2(Process*, Term a, Term b);
+Term bif_element_2(Process*, Term n, Term tup);
 Term bif_equals_2(Process*, Term a, Term b);
 Term bif_equals_exact_2(Process*, Term a, Term b);
 Term bif_function_exported_3(Process* prc, Term m, Term f, Term arity);

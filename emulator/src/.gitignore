@@ -1,6 +1,5 @@
-g_genop.cpp
-g_vm_impl.h
-g_vm_loop.cpp
-g_predef_atoms.cpp
-g_vm_bif_tab.cpp
-g_vm_bif_tab.h
+genop.cpp
+predef_atoms.cpp
+bif_tab.cpp
+bif_tab.h
+vm_loop.inc.cpp

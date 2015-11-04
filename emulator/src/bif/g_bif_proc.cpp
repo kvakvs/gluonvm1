@@ -1,7 +1,7 @@
 #include "bif/g_bif_proc.h"
 #include "bif/g_bif_misc.h"
 #include "g_process.h"
-#include "g_predef_atoms.h"
+#include "predef_atoms.h"
 #include "g_term_helpers.h"
 #include "g_vm.h"
 

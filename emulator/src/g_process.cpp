@@ -4,7 +4,7 @@
 #include "g_module.h"
 #include "g_vm.h"
 #include "g_error.h"
-#include "g_predef_atoms.h"
+#include "predef_atoms.h"
 #include "g_term_helpers.h"
 
 namespace gluon {
