@@ -133,11 +133,7 @@ void Term::print(const VM& vm) const {
     if (is_boxed_fun()) {
       Std::fmt(cSpecialTermColor "#Fun<");
       auto bf = boxed_get_ptr<BoxedFun>();
-      //      if ((Word)(bf->fun_entry) < 0x1000) {
-      //        Std::fmt(FMT_0xHEX, (Word)bf->fun_entry);
-      //      } else {
       vm.codeserver().print_mfa(bf->fun_entry->code);
-      //      }
       Std::fmt(">" cRst);
       return;
     }

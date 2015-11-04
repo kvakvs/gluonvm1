@@ -1,5 +1,5 @@
 #include "gsys_stdlib.h"
-//#include "g_error.h"
+#include "g_defs.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -29,7 +29,7 @@ void puts() {
 }
 
 void assert_fail(const char* what, const char* file, int line) {
-  Std::fmt("FAIL: %s (%s:%d)\n", what, file, line);
+  Std::fmt(cRed cBold "FAIL: %s" cRst " (%s:%d)\n", what, file, line);
   Std::abort();
 }
 

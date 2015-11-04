@@ -219,10 +219,11 @@ typedef TaggedBox<BoxedSubtag::SubBinary> BoxedSubBin;
 
 const Word continuation_tag = 1UL << (gluon::word_bitsize - 1);
 // Check highest bit if it was CP pushed on stack
-template <typename T>
-constexpr bool is_cp(T* x) {
-  return 0 != (((Word)x) & continuation_tag);
+constexpr bool is_cp_word(Word x) {
+  return continuation_tag == (x & continuation_tag);
 }
+template <typename T> constexpr bool is_cp(T* x) { return is_cp_word((Word)x); }
+
 // Set highest bit to mark CP pushed on stack
 template <typename T>
 T* make_cp(T* x) {
@@ -233,7 +234,7 @@ T* make_cp(T* x) {
 template <typename T>
 T* untag_cp(T* x) {
   G_ASSERT(is_cp(x));
-  return (T*)(((Word)x) & (~continuation_tag));
+  return (T*)((Word)x & (~continuation_tag));
 }
 }  // ns term_tag
 

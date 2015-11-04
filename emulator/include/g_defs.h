@@ -181,13 +181,11 @@ void assert_fail(const char* what, const char* file, int line);
   if (!(X)) {                                 \
     Std::assert_fail(#X, __FILE__, __LINE__); \
   }
-#define G_ASSERT_MSG(X, MSG) \
-  if (!(X)) {                \
-    G_FAIL(MSG);             \
-  }
 #define G_TODO(what)                                                   \
   {                                                                    \
-    ::fprintf(stderr, "TODO: %s (%s:%d)\n", what, __FILE__, __LINE__); \
+    ::fprintf(stderr,                                                  \
+      cYellow cBold "TODO:" cRst " %s (%s:%d)\n", \
+      what, __FILE__, __LINE__);                  \
     throw gluon::err::TODO(what);                                      \
   }
 // Famous io:format/2 skill on Linkedin!

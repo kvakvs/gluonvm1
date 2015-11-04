@@ -17,7 +17,8 @@ private:
 
 public:
   void set_ip(const Word* value) {
-    G_ASSERT((Word)value >> 32 != 0x7fffffffu); // want no negative/zero based
+    G_ASSERT((Word)value >> 32 != 0x7fffffffu);
+    G_ASSERT((Word)value >> 32 != 0xffffffffu);
     G_ASSERT(value);
     ip_ = value;
   }
@@ -26,7 +27,10 @@ public:
   void step_ip(SWord offset) { ip_ += offset; }
   void inc_ip() { ip_++; }
 
-  void set_cp(const Word* value) { cp_ = value; }
+  void set_cp(const Word* value) {
+    G_ASSERT((Word)value >> 32 != 0x7fffffffu);
+    cp_ = value;
+  }
   const Word* cp() const { return cp_; }
 
   Word live = 0;  // saved registers count
