@@ -162,8 +162,7 @@ void Term::print(const VM& vm) const {
   } else if (is_small()) {
     Std::fmt(FMT_SWORD, small_sword());
   } else if (is_catch()) {
-    Std::fmt(cSpecialTermColor "#Catch(" FMT_0xHEX ")" cRst,
-             catch_val());
+    Std::fmt(cSpecialTermColor "#Catch(" FMT_0xHEX ")" cRst, catch_val());
   } else if (is_short_pid()) {
     Std::fmt("#Pid<" FMT_0xHEX ">", short_pid_get_value());
   } else if (is_regx()) {
@@ -198,8 +197,8 @@ Term Term::make_binary(VM& vm, proc::Heap* h, Word bytes) {
   } else {
     // Large bin, with boxed refcount and pointer
     erts::Heap* binheap = vm.get_heap(VM::HEAP_LARGE_BINARY);
-    layout::HeapbinBox* box = binheap->allocate<layout::HeapbinBox>(
-        layout::HeapBin::box_size(bytes));
+    layout::HeapbinBox* box =
+        binheap->allocate<layout::HeapbinBox>(layout::HeapBin::box_size(bytes));
     box->set_byte_size(bytes);
     box->set_refcount(1);
     return Term(term_tag::BoxedHeapBin::create_from_ptr(box));

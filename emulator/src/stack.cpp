@@ -12,8 +12,10 @@ void OverlayStack::push_n_nils(Word n) {
 
 void SelfContainingStack::push_n_nils(Word n) {
   data_.reserve(data_.size() + n);
-  for (Word i = 0; i < n; ++i) { push(term::nil_as_word); }
+  for (Word i = 0; i < n; ++i) {
+    push(term::nil_as_word);
+  }
 }
 
-} // ns proc
-} // ns gluon
+}  // ns proc
+}  // ns gluon

@@ -25,8 +25,8 @@ enum class WantSchedule {
 // VM execution context, inherited from process context
 // Used to run current process by vm loop, also holds some extra local variables
 //
-class VMRuntimeContext: public erts::RuntimeContextFields {
-public:
+class VMRuntimeContext : public erts::RuntimeContextFields {
+ public:
   VM& vm_;
   proc::Heap* heap_;
   SWord reds_ = 0;
@@ -113,12 +113,12 @@ public:
   }
 
   void move(Term val, Term dst) {
-//#if G_DEBUG
-//    Std::fmt(tMagenta("ctx.move "));
-//    val.print(vm_);
-//    Std::fmt(" -> ");
-//    dst.println(vm_);
-//#endif
+    //#if G_DEBUG
+    //    Std::fmt(tMagenta("ctx.move "));
+    //    val.print(vm_);
+    //    Std::fmt(" -> ");
+    //    dst.println(vm_);
+    //#endif
     if (dst.is_regx()) {
       Word x = dst.regx_get_value();
       G_ASSERT(x < sizeof(regs));
@@ -258,7 +258,9 @@ public:
         Std::fmt("=");
         value.print(vm_);
       }
-      if (i < arity - 1) { Std::fmt(";"); }
+      if (i < arity - 1) {
+        Std::fmt(";");
+      }
     }
     Std::fmt(")\n");
 #endif

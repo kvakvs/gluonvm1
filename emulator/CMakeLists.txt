@@ -85,7 +85,7 @@ set(SRC_LIST
     src/bif/bif_proc.cpp include/bif/bif_proc.h
 
     # Zlib replacement
-    src/miniz/miniz.c
+    src/miniz/miniz.cpp
 
     include/gsl/gsl.h include/gsl/array_view.h include/gsl/fail_fast.h
 

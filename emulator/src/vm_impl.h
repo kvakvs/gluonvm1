@@ -611,7 +611,7 @@ inline void opcode_jump(Process* proc, VMRuntimeContext& ctx) {  // opcode: 61
   return ctx.jump(proc, Term(ctx.ip(0)));
 }
 
-inline void opcode_catch(Process *proc, VMRuntimeContext &ctx) { // opcode: 62
+inline void opcode_catch(Process* proc, VMRuntimeContext& ctx) {  // opcode: 62
   // @spec catch DstStackY Label
   // @doc Stores label address in given stack cell. Label points to catch_end
   //      section
@@ -622,10 +622,11 @@ inline void opcode_catch(Process *proc, VMRuntimeContext &ctx) { // opcode: 62
   proc->catch_level_++;
 
   ctx.step_ip(2);
-  //throw err::TODO("notimpl catch");
+  // throw err::TODO("notimpl catch");
 }
 
-inline void opcode_catch_end(Process *proc, VMRuntimeContext &ctx) { // opcode: 63
+inline void opcode_catch_end(Process* proc,
+                             VMRuntimeContext& ctx) {  // opcode: 63
   throw err::TODO("notimpl catch_end");
 }
 
@@ -922,8 +923,7 @@ inline void opcode_try_case(Process* proc,
 static WantSchedule after_apply(Process* proc,
                                 VMRuntimeContext& ctx,
                                 Word arity,
-                                Either<Word*, Term> res)
-{
+                                Either<Word*, Term> res) {
   // Check error
   if (ctx.check_bif_error(proc)) {
     return WantSchedule::NextProcess;
@@ -953,10 +953,9 @@ inline WantSchedule opcode_apply(Process* proc,
   Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs);
   ctx.swap_in(proc);
 
-  ctx.inc_ip(); // consume Arity arg
+  ctx.inc_ip();  // consume Arity arg
   return after_apply(proc, ctx, arity, res);
 }
-
 
 inline WantSchedule opcode_apply_last(Process* proc,
                                       VMRuntimeContext& ctx) {  // opcode: 113
@@ -972,7 +971,7 @@ inline WantSchedule opcode_apply_last(Process* proc,
     return WantSchedule::NextProcess;
   }
 
-  ctx.step_ip(2); // consume (_,Arity) args
+  ctx.step_ip(2);  // consume (_,Arity) args
   return after_apply(proc, ctx, arity, res);
 }
 
@@ -1223,14 +1222,15 @@ inline void opcode_get_map_elements(Process* proc,
 }
 
 inline WantSchedule opcode_normal_exit_(Process* proc,
-                                VMRuntimeContext& ctx) {  // opcode: 158
+                                        VMRuntimeContext& ctx) {  // opcode: 158
   // This must be implemented for assert_address_makes_sense/2 to know
   // whether a jump address is valid or random garbage. We throw up here
   throw err::TODO("notimpl exit");
 }
 
-inline WantSchedule opcode_apply_mfargs_(Process* proc,
-                                         VMRuntimeContext& ctx) {  // opcode: N+1
+inline WantSchedule opcode_apply_mfargs_(
+    Process* proc,
+    VMRuntimeContext& ctx) {  // opcode: N+1
   // @spec apply_mfargs_, regs contain m,f,[args]
   auto arg_regs = &proc->get_runtime_ctx().arg_regs_[0];
   Term mod = arg_regs[0];

@@ -139,7 +139,8 @@ class Process {
   //
   // Copies args from proper list with precalculated length to registers
   void set_args(Term args, Word len);
-  // Jumps to code saving current IP in CP. Make sure ctx is swapped out from VM!
+  // Jumps to code saving current IP in CP. Make sure ctx is swapped out from
+  // VM!
   void call(Word* code) {
     ctx_.assert_swapped_out_partial();
     ctx_.set_cp(ctx_.ip());
@@ -157,7 +158,7 @@ class Process {
   // *  Term if result is known immediately.
   // Pass small integer (arity) in args if regs already contain args in the
   // first 'arity' cells.
-  Either<Word*, Term> apply(Term m, Term f, Term args, Term *regs);
+  Either<Word*, Term> apply(Term m, Term f, Term args, Term* regs);
 };
 
 #if G_TEST

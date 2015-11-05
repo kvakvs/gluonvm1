@@ -1,8 +1,5 @@
 #include "runtime_ctx.h"
 
 namespace gluon {
-namespace erts {
-
-
-} // ns erts
-} // ns gluon
+namespace erts {}  // ns erts
+}  // ns gluon

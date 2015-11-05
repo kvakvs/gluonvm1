@@ -11,7 +11,7 @@
 #include "beam.h"
 
 #define MINIZ_HEADER_FILE_ONLY
-#include "miniz/miniz.c"
+#include "miniz/miniz.cpp"
 
 namespace gluon {
 
@@ -591,6 +591,5 @@ Term BeamLoader::parse_alloclist(tool::Reader& r) {
 #endif
   throw err::TODO("alloc list?");
 }
-
 
 }  // ns gluon

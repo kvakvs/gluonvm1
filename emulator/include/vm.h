@@ -25,23 +25,19 @@ using AtomProcMap = Dict<Term, Process*>;
 
 enum class RegisterResult { Ok, RegistrationExists, ProcessNotFound };
 
-enum class PremadeIndex: Word {
-  Apply_mfargs_,
-  Normal_exit_,
-  Total_count
-};
+enum class PremadeIndex : Word { Apply_mfargs_, Normal_exit_, Total_count };
 
 // Contains VM code to execute one specific instruction. 'Apply' is
 // used as process entry address and 'Exit' as process exit address
 class PremadeBeaminstr {
-public:
+ public:
   mem::Blk<Word> instr_;
 
-  PremadeBeaminstr(): instr_(nullptr, 0) {}
+  PremadeBeaminstr() : instr_(nullptr, 0) {}
   void init(const VM& vm);
-  bool contains(const Word *p) const {
-    return p >= instr_.mem()
-        && p < instr_.mem() + (Word)PremadeIndex::Total_count;
+  bool contains(const Word* p) const {
+    return p >= instr_.mem() &&
+           p < instr_.mem() + (Word)PremadeIndex::Total_count;
   }
 };
 
@@ -65,7 +61,7 @@ class VM {
 
   PremadeBeaminstr premade_;
 
-public:
+ public:
   VM();
 
   const Word* premade_instr(PremadeIndex i) const {
@@ -133,7 +129,8 @@ public:
   void* find_bif(const MFArity& mfa) const;
   Term apply_bif(Process* proc, Word arity, void* fn, Term* args);
 
-  // Checks that opcode label is in allowed range and makes sense. Do not confuse
+  // Checks that opcode label is in allowed range and makes sense. Do not
+  // confuse
   // this with actual code address which is Word*
   void assert_valid_vmloop_label(const void* p) const;
 

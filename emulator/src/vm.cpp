@@ -162,18 +162,17 @@ Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
 }
 
 void VM::assert_valid_vmloop_label(const void* p) const {
-  G_ASSERT(p >= g_opcode_labels[1]
-      && p <= g_opcode_labels[genop::max_opcode]);
+  G_ASSERT(p >= g_opcode_labels[1] && p <= g_opcode_labels[genop::max_opcode]);
 }
 
 void PremadeBeaminstr::init(const VM& vm) {
   instr_ = SysMemory::allocate<Word>((Word)PremadeIndex::Total_count);
   auto p = instr_.mem();
-  p[(Word)PremadeIndex::Apply_mfargs_]
-      = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Apply_mfargs_];
+  p[(Word)PremadeIndex::Apply_mfargs_] =
+      (Word)vm.g_opcode_labels[(Word)genop::Opcode::Apply_mfargs_];
 
-  p[(Word)PremadeIndex::Normal_exit_]
-      = (Word)vm.g_opcode_labels[(Word)genop::Opcode::Normal_exit_];
+  p[(Word)PremadeIndex::Normal_exit_] =
+      (Word)vm.g_opcode_labels[(Word)genop::Opcode::Normal_exit_];
 }
 
 }  // ns gluon

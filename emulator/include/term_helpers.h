@@ -47,14 +47,15 @@ inline Term make_term(const SWord& x) {
   return Term::make_small(x);
 }
 template <>
-inline Term make_term(const Term &x) {
+inline Term make_term(const Term& x) {
   return x;
 }
 
 template <typename Iter>
 Word length(Iter iter, Iter to) {
   Word result = 0;
-  for (; iter != to; iter++, result++) {}
+  for (; iter != to; iter++, result++) {
+  }
   return result;
 }
 template <typename T>
@@ -62,7 +63,7 @@ inline Word length_p(T* iter, T* to) {
   return (Word)(to - iter + 1);
 }
 
-template <typename Iter> // TODO: const Iter args?
+template <typename Iter>  // TODO: const Iter args?
 Term build_list(proc::Heap* heap, Iter iter, Iter end) {
   if (iter == end) {
     return ::gluon::the_nil;
@@ -75,15 +76,14 @@ Term build_list(proc::Heap* heap, Iter iter, Iter end) {
   for (; iter < end; iter++) {
     layout::Cons::head(h) = make_term(*iter);
     layout::Cons::tail(h) =
-        iter + 1 == end
-        ? ::gluon::the_nil
-        : Term::make_cons(h + layout::Cons::box_word_size);
+        iter + 1 == end ? ::gluon::the_nil
+                        : Term::make_cons(h + layout::Cons::box_word_size);
     h += layout::Cons::box_word_size;
   }
 
 #if G_DEBUG
   auto lresult = bif::length(result);
-  G_ASSERT(lresult.is_proper == true); // must be proper
+  G_ASSERT(lresult.is_proper == true);  // must be proper
 #endif
   return result;
 }

@@ -30,8 +30,10 @@ int main(int argc, const char* argv[]) {
   // vm.codeserver().load_module(rootp, atom::ERLANG);
 
   // create root process and set it to some entry function
-  Term start_args[1] = {the_nil, };
-  //MFArity mfa(vm.to_atom("otp_ring0"), vm.to_atom("start"), 2);
+  Term start_args[1] = {
+      the_nil,
+  };
+  // MFArity mfa(vm.to_atom("otp_ring0"), vm.to_atom("start"), 2);
   MFArity mfa(vm.to_atom("init"), vm.to_atom("boot"), 1);
 
   rootp->spawn(mfa, start_args);

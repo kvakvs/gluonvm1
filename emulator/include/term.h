@@ -222,7 +222,10 @@ const Word continuation_tag = 1UL << (gluon::word_bitsize - 1);
 constexpr bool is_cp_word(Word x) {
   return continuation_tag == (x & continuation_tag);
 }
-template <typename T> constexpr bool is_cp(T* x) { return is_cp_word((Word)x); }
+template <typename T>
+constexpr bool is_cp(T* x) {
+  return is_cp_word((Word)x);
+}
 
 // Set highest bit to mark CP pushed on stack
 template <typename T>

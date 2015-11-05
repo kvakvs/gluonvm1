@@ -112,7 +112,6 @@ class Node {
 };
 #pragma clang diagnostic pop
 
-
 //
 // Segmented heap which grows by allocating double the last segment size
 // and never shrinks (until process dies). Also contains stack which may migrate
@@ -155,13 +154,13 @@ public:
 
 template <class A>
 class Heap_ : public A {
-//  constexpr static Word STK_SZ = 1024;
-//  Word stack_data_[STK_SZ];
+  //  constexpr static Word STK_SZ = 1024;
+  //  Word stack_data_[STK_SZ];
 
  public:
   Stack stack_;
 
-  //Heap_() : A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {}
+  // Heap_() : A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {}
   Heap_() : A(), stack_() {}
 };
 

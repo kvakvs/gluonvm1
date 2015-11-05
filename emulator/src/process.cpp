@@ -22,7 +22,7 @@ Term Process::spawn(MFArity& mfa, Term* args) {
   // Set regs to M,F,A and jump to apply_mfargs_
   ctx_.arg_regs_[0] = mfa.mod;
   ctx_.arg_regs_[1] = mfa.fun;
-  ctx_.arg_regs_[2] = term::build_list(get_heap(), args, args+mfa.arity);
+  ctx_.arg_regs_[2] = term::build_list(get_heap(), args, args + mfa.arity);
   ctx_.live = 0;
 
   // Precondition: Registers should be set to execute apply call
@@ -77,8 +77,7 @@ void Process::msg_send(Term pid, Term value) {
   vm_.scheduler().on_new_message(other);  // wake up receiver
 }
 
-void Process::set_args(Term args, Word len)
-{
+void Process::set_args(Term args, Word len) {
   ctx_.assert_swapped_out();
   ctx_.live = len;
   Term* reg = &ctx_.regs[0];
@@ -88,7 +87,10 @@ void Process::set_args(Term args, Word len)
   }
 }
 
-Either<Word*, Term> Process::apply(Term m, Term f, Term args_or_arity, Term* regs) {
+Either<Word*, Term> Process::apply(Term m,
+                                   Term f,
+                                   Term args_or_arity,
+                                   Term* regs) {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
   if (!f.is_atom()) {

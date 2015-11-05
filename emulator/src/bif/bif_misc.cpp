@@ -13,7 +13,7 @@ namespace bif {
 // Returns pair of {length, proper=true/improper=false}
 LengthResult length(Term list) {
   if (list.is_nil()) {
-    return LengthResult {0, true};
+    return LengthResult{0, true};
   }
   Word result = 0;
   do {
@@ -21,7 +21,7 @@ LengthResult length(Term list) {
     list = list.cons_tail();
   } while (list.is_cons());
 
-  return LengthResult {result, list.is_nil()};
+  return LengthResult{result, list.is_nil()};
 }
 
 #if 0
@@ -592,9 +592,8 @@ Term bif_plusplus_2(Process* proc, Term a, Term b) {
     return proc->bif_badarg(a);  // a must be proper list
   }
 
-  Term* htop = (Term*)proc->heap_alloc(
-        lresult.length * layout::Cons::box_word_size
-        );
+  Term* htop =
+      (Term*)proc->heap_alloc(lresult.length * layout::Cons::box_word_size);
   Term result(Term::make_cons(htop));
 
   // Word *term_data = peel_cons(As);
@@ -659,7 +658,6 @@ Term bif_function_exported_3(Process* proc, Term m, Term f, Term arity) {
   return atom::FALSE;
 }
 
-
 Term bif_apply_2(Process* proc, Term funobject, Term args) {
   auto fbox = funobject.boxed_get_ptr<BoxedFun>();
   auto fe = fbox->fun_entry;
@@ -688,10 +686,8 @@ Term bif_apply_3(Process* proc, Term m, Term f, Term args) {
   return proc->bif_badarg(atom::APPLY);
 }
 
-Term bif_element_2(Process* proc, Term n0, Term tup)
-{
-  if (!tup.is_tuple()
-      || !n0.is_small()) {
+Term bif_element_2(Process* proc, Term n0, Term tup) {
+  if (!tup.is_tuple() || !n0.is_small()) {
     return proc->bif_badarg();
   }
   Word n = n0.small_word();
