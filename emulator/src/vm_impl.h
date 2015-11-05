@@ -8,13 +8,6 @@ namespace gluon {
 
 namespace impl {
 
-#define DEREF(var)          \
-  if ((var).is_immed()) {   \
-    ctx.resolve_immed(var); \
-  }
-inline WantSchedule opcode_gc_bif1(Process* proc, VMRuntimeContext& ctx);
-inline WantSchedule opcode_gc_bif2(Process* proc, VMRuntimeContext& ctx);
-
 //  inline void opcode_label(Process *proc, VMRuntimeContext &ctx) { // opcode:
 //  1
 //  }
@@ -91,81 +84,20 @@ inline WantSchedule opcode_call_ext_last(Process* proc,
 
 inline WantSchedule opcode_bif0(Process* proc,
                                 VMRuntimeContext& ctx) {  // opcode: 9
-  // bif0 import_index Dst - cannot fail
-  Term boxed_mfa(ctx.ip(0));
-  Term result_dst(ctx.ip(1));
-
-  MFArity* mfa = boxed_mfa.boxed_get_ptr<MFArity>();
-  bif0_fn fn0 = (bif0_fn)ctx.vm_.find_bif(*mfa);
-  if (debug_mode) {
-    if (!fn0) {
-      Std::fmt(tRed("not found bif0: "));
-      mfa->println(ctx.vm_);
-    }
-  }
-  G_ASSERT(fn0);
-
-  Term result = fn0(proc);
-  // if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) { return; }
-  ctx.move(result, result_dst);
-  ctx.step_ip(2);
-  return ctx.consume_reduction(proc);
+  // bif0 Fail import_index Dst
+  return opcode_bif<0>(proc, ctx);
 }
 
 inline WantSchedule opcode_bif1(Process* proc,
                                 VMRuntimeContext& ctx) {  // opcode: 10
-  // bif1 Fail import_index Arg1 Dst
-  Term boxed_mfa(ctx.ip(1));
-  Term arg1(ctx.ip(2));
-  DEREF(arg1);
-  Term result_dst(ctx.ip(3));
-
-  MFArity* mfa = boxed_mfa.boxed_get_ptr<MFArity>();
-  bif1_fn fn1 = (bif1_fn)ctx.vm_.find_bif(*mfa);
-  if (debug_mode) {
-    if (!fn1) {
-      Std::fmt(tRed("not found bif1: "));
-      mfa->println(ctx.vm_);
-    }
-  }
-  G_ASSERT(fn1);
-
-  Term result = fn1(proc, arg1);
-  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
-    return WantSchedule::NextProcess;
-  }
-  ctx.move(result, result_dst);
-  ctx.step_ip(4);
-  return ctx.consume_reduction(proc);
+  // bif1 Fail import_index Arg1 Arg2 Dst
+  return opcode_bif<1>(proc, ctx);
 }
 
 inline WantSchedule opcode_bif2(Process* proc,
                                 VMRuntimeContext& ctx) {  // opcode: 11
   // bif2 Fail import_index Arg1 Arg2 Dst
-  Term boxed_mfa(ctx.ip(1));
-  Term arg1(ctx.ip(2));
-  Term arg2(ctx.ip(3));
-  DEREF(arg1);
-  DEREF(arg2);
-  Term result_dst(ctx.ip(4));
-
-  MFArity* mfa = boxed_mfa.boxed_get_ptr<MFArity>();
-  bif2_fn fn2 = (bif2_fn)ctx.vm_.find_bif(*mfa);
-  if (debug_mode) {
-    if (!fn2) {
-      Std::fmt(tRed("not found bif2: "));
-      mfa->println(ctx.vm_);
-    }
-  }
-  G_ASSERT(fn2);
-
-  Term result = fn2(proc, arg1, arg2);
-  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
-    return WantSchedule::NextProcess;
-  }
-  ctx.move(result, result_dst);
-  ctx.step_ip(5);
-  return ctx.consume_reduction(proc);
+  return opcode_bif<2>(proc, ctx);
 }
 
 inline void opcode_allocate(Process* proc,
@@ -369,8 +301,8 @@ inline void opcode_is_lt(Process* proc, VMRuntimeContext& ctx) {  // opcode: 39
   // @doc Compare two terms and jump to Lbl if Arg1 is not less than Arg2.
   Term arg1(ctx.ip(1));
   Term arg2(ctx.ip(2));
-  DEREF(arg1);  // in case they are reg references
-  DEREF(arg2);
+  ctx.deref(arg1);  // in case they are reg references
+  ctx.deref(arg2);
   if (Term::are_both_small(arg1, arg2)) {
     if (arg1.as_word() >= arg2.as_word()) {
       ctx.jump(proc, Term(ctx.ip(0)));
@@ -389,8 +321,8 @@ inline void opcode_is_ge(Process* proc, VMRuntimeContext& ctx) {  // opcode: 40
   // @doc Compare two terms and jump to Lbl if Arg1 is less than Arg2.
   Term arg1(ctx.ip(1));
   Term arg2(ctx.ip(2));
-  DEREF(arg1);  // in case they are reg references
-  DEREF(arg2);
+  ctx.deref(arg1);  // in case they are reg references
+  ctx.deref(arg2);
   if (Term::are_both_small(arg1, arg2)) {
     if (arg1.as_word() < arg2.as_word()) {
       ctx.jump(proc, Term(ctx.ip(0)));
@@ -410,8 +342,8 @@ inline void opcode_is_eq(Process* proc, VMRuntimeContext& ctx) {  // opcode: 41
   // to Arg2.
   Term arg1(ctx.ip(1));
   Term arg2(ctx.ip(2));
-  DEREF(arg1);  // in case they are reg references
-  DEREF(arg2);
+  ctx.deref(arg1);  // in case they are reg references
+  ctx.deref(arg2);
   if (bif::are_terms_equal(ctx.vm_, arg1, arg2, false)) {
     ctx.step_ip(3);
   } else {
@@ -428,8 +360,8 @@ inline void opcode_is_eq_exact(Process* proc,
   // Arg2.
   Term arg1(ctx.ip(1));
   Term arg2(ctx.ip(2));
-  DEREF(arg1);  // in case they are reg references
-  DEREF(arg2);
+  ctx.deref(arg1);  // in case they are reg references
+  ctx.deref(arg2);
   if (arg1 != arg2) {
     // immediate values must be exactly equal or we fail comparison
     if (Term::are_both_immed(arg1, arg2) ||
@@ -447,7 +379,7 @@ inline void opcode_is_integer(Process* proc,
   // @spec is_integer Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not an integer.
   Term arg(ctx.ip(1));
-  DEREF(arg);
+  ctx.deref(arg);
   if (!arg.is_integer()) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -469,7 +401,7 @@ inline void opcode_is_atom(Process* proc,
   // @spec is_atom Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not an atom.
   Term arg(ctx.ip(1));
-  DEREF(arg);
+  ctx.deref(arg);
   if (!arg.is_atom()) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -479,7 +411,7 @@ inline void opcode_is_pid(Process* proc, VMRuntimeContext& ctx) {  // opcode: 49
   // @spec is_pid Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a pid.
   Term arg(ctx.ip(1));
-  DEREF(arg);
+  ctx.deref(arg);
   if (!arg.is_pid()) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -490,7 +422,7 @@ inline void opcode_is_reference(Process* proc,
   // @spec is_reference Lbl, Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a reference.
   Term t(ctx.ip(1));
-  DEREF(t);
+  ctx.deref(t);
   if (t.is_reference() == false) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -501,7 +433,7 @@ inline void opcode_is_port(Process* proc,
   // @spec is_port Lbl, Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a port.
   Term t(ctx.ip(1));
-  DEREF(t);
+  ctx.deref(t);
   if (t.is_port() == false) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -511,7 +443,7 @@ inline void opcode_is_nil(Process* proc, VMRuntimeContext& ctx) {  // opcode: 52
   // @spec is_nil Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not nil.
   Term t(ctx.ip(1));
-  DEREF(t);
+  ctx.deref(t);
   if (t.is_nil() == false) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -535,7 +467,7 @@ inline void opcode_is_list(Process* proc,
   // @spec is_list Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a cons or nil.
   Term t(ctx.ip(1));
-  DEREF(t);
+  ctx.deref(t);
   if (!t.is_cons() && !t.is_nil()) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -546,7 +478,7 @@ inline void opcode_is_nonempty_list(Process* proc,
   // @spec is_nonempty_list Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a cons.
   Term t(ctx.ip(1));
-  DEREF(t);
+  ctx.deref(t);
   if (t.is_cons() == false) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -557,7 +489,7 @@ inline void opcode_is_tuple(Process* proc,
   // @spec is_tuple Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a tuple.
   Term t(ctx.ip(1));
-  DEREF(t);
+  ctx.deref(t);
   if (!t.is_tuple()) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -569,9 +501,9 @@ inline void opcode_test_arity(Process* proc,
   // @doc Test the arity of (the tuple in) Arg1 and jump to Lbl if it is
   // not equal to Arity.
   Term t(ctx.ip(1));
-  DEREF(t);
+  ctx.deref(t);
   Term t_arity(ctx.ip(2));
-  DEREF(t_arity);
+  ctx.deref(t_arity);
   if (!t.is_tuple() || t.tuple_get_arity() != t_arity.small_word()) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -583,7 +515,7 @@ inline void opcode_select_val(Process* proc,
   // @doc Jump to the destination label corresponding to Arg
   //      in the Destinations list, if no arity matches, jump to FailLabel.
   Term arg(ctx.ip(0));
-  DEREF(arg);
+  ctx.deref(arg);
 
   Term fail_label(ctx.ip(2));
 
@@ -603,7 +535,7 @@ inline void opcode_select_tuple_arity(Process* proc,
   // @doc Check the arity of the tuple Tuple and jump to the corresponding
   //      destination label, if no arity matches, jump to FailLabel.
   Term arg(ctx.ip(0));
-  DEREF(arg);
+  ctx.deref(arg);
   //    Word arity = arg.tuple_get_arity();
 
   // TODO: refactor this fun and select_val into shared fun
@@ -629,7 +561,7 @@ inline void opcode_catch(Process* proc, VMRuntimeContext& ctx) {  // opcode: 62
   //      section
   Term dst(ctx.ip(0));
   Term arg(ctx.ip(1));
-  DEREF(arg);
+  ctx.deref(arg);
   ctx.move(arg, dst);
   proc->catch_level_++;
 
@@ -644,7 +576,7 @@ inline void opcode_catch_end(Process* proc,
 
 inline void opcode_move(Process* proc, VMRuntimeContext& ctx) {  // opcode: 64
   Term val(ctx.ip(0));
-  DEREF(val);
+  ctx.deref(val);
   Term dst(ctx.ip(1));
   ctx.move(val, dst);
   ctx.step_ip(2);
@@ -656,7 +588,7 @@ inline void opcode_get_list(Process* proc,
   //       (a cons cell) from Source and put them into the registers
   //       Head and Tail.
   Term src(ctx.ip(0));
-  DEREF(src);
+  ctx.deref(src);
   Term dst_head(ctx.ip(1));
   Term dst_tail(ctx.ip(2));
   ctx.move(src.cons_head(), dst_head);
@@ -669,9 +601,9 @@ inline void opcode_get_tuple_element(Process* proc,
   // @doc  Get element number Element from the tuple in Source and put
   //       it in the destination register Destination.
   Term src(ctx.ip(0));
-  DEREF(src);
+  ctx.deref(src);
   Term t_el(ctx.ip(1));
-  DEREF(t_el);
+  ctx.deref(t_el);
   Word el = t_el.small_word();
   G_ASSERT(el >= 0 && el < src.tuple_get_arity());
   ctx.move(src.tuple_get_element(el), Term(ctx.ip(2)));
@@ -688,8 +620,8 @@ inline void opcode_put_list(Process* proc,
   // @spec put_list H T Dst
   Term h(ctx.ip(0));
   Term t(ctx.ip(1));
-  DEREF(h);
-  DEREF(t);
+  ctx.deref(h);
+  ctx.deref(t);
   Term dst(ctx.ip(2));
   Term result = Term::allocate_cons(ctx.heap_, h, t);
   ctx.move(result, dst);
@@ -715,7 +647,7 @@ inline void opcode_put_tuple(Process* proc,
     // assert that ip[0] is opcode 'put' skip it and read its argument
     Term value(ctx.ip(1));
     ctx.step_ip(2);
-    DEREF(value);
+    ctx.deref(value);
     Std::fmt(tMagenta("put element "));
     value.println(ctx.vm_);
     layout::Tuple::element(cells, index) = value;
@@ -796,7 +728,7 @@ inline void opcode_is_function(Process* proc,
   // @spec is_function Lbl Arg1
   // @doc Test the type of Arg1; jump to Lbl if it is not a function or closure.
   Term arg1(ctx.ip(1));
-  DEREF(arg1);
+  ctx.deref(arg1);
   // Check if its fun at all
   if (!arg1.is_boxed_fun() && !arg1.is_boxed_export()) {
     return ctx.jump(proc, Term(ctx.ip(0)));
@@ -992,7 +924,7 @@ inline void opcode_is_boolean(Process* proc,
   // @spec is_boolean Lbl Arg1
   // @doc Test the type of Arg1 and jump to Lbl if it is not a Boolean.
   Term arg1(ctx.ip(1));
-  DEREF(arg1);
+  ctx.deref(arg1);
   if (arg1 != atom::TRUE && arg1 != atom::FALSE) {
     return ctx.jump(proc, Term(ctx.ip(0)));
   }
@@ -1005,9 +937,9 @@ inline void opcode_is_function2(Process* proc,
   // @doc Test the type of Arg1 and jump to Lbl if it is not a function
   // of arity Arity.
   Term arg1(ctx.ip(1));
-  DEREF(arg1);
+  ctx.deref(arg1);
   Term arity(ctx.ip(2));
-  DEREF(arity);
+  ctx.deref(arity);
   // Check if its fun at all
   if (arg1.is_boxed_fun()) {
     // check arity
@@ -1060,7 +992,7 @@ inline WantSchedule opcode_gc_bif1(Process* proc,
   // space on the heap for the result (saving Live number of X registers).
   Term boxed_fun(ctx.ip(2));
   Term arg1(ctx.ip(3));
-  DEREF(arg1);
+  ctx.deref(arg1);
   Term result_dst(ctx.ip(4));
 
   MFArity* mfa = boxed_fun.boxed_get_ptr<MFArity>();
@@ -1089,8 +1021,8 @@ inline WantSchedule opcode_gc_bif2(Process* proc,
   Term boxed_fun(ctx.ip(2));
   Term arg1(ctx.ip(3));
   Term arg2(ctx.ip(4));
-  DEREF(arg1);
-  DEREF(arg2);
+  ctx.deref(arg1);
+  ctx.deref(arg2);
   Term result_dst(ctx.ip(5));
 
   MFArity* mfa = boxed_fun.boxed_get_ptr<MFArity>();

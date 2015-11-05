@@ -271,7 +271,56 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     this->raise(p, atom::ERROR, reason);
     return CheckBifError::ErrorOccured;
   }
+
+  void deref(Term &var) {
+    if (var.is_immed()) {
+      resolve_immed(var);
+    }
+  }
 };
+
+template <Word NumArgs>
+WantSchedule opcode_bif(Process* proc,
+                        VMRuntimeContext& ctx) {
+  // bif0 import_index Arg1..ArgN Dst
+  // bif1..3 Fail import_index Arg1..ArgN Dst
+  // For bif0 there is no Fail label, bif0 cannot fail
+  const Word mfa_offset = NumArgs == 0? 0 : 1;
+
+  Term boxed_mfa(ctx.ip(mfa_offset));
+  Term arg[NumArgs > 0 ? NumArgs : 1];
+  for (Word i = 0; i < NumArgs; ++i) {
+    arg[i] = Term(ctx.ip(i + mfa_offset + 1));
+    ctx.deref(arg[i]);
+  }
+  Term result_dst(ctx.ip(NumArgs + mfa_offset + 1));
+
+  MFArity* mfa = boxed_mfa.boxed_get_ptr<MFArity>();
+  using BifFn = typename SelectBifFn<NumArgs>::Type;
+  auto fun_ptr = (BifFn)ctx.vm_.find_bif(*mfa);
+  if (debug_mode) {
+    if (!fun_ptr) {
+      Std::fmt(tRed("not found bif: "));
+      mfa->println(ctx.vm_);
+    }
+  }
+  G_ASSERT(fun_ptr);
+
+  Term result = SelectBifFn<NumArgs>::apply(fun_ptr, proc, arg);
+  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
+    if (NumArgs > 0) { // bif0 cannot fail so we have no fail label
+      Term fail_label(ctx.ip(0));
+      if (fail_label.is_non_value()) {
+        ctx.jump(proc, fail_label);
+        return WantSchedule::KeepGoing;
+      }
+    } // end if bif1-3
+    return WantSchedule::NextProcess;
+  }
+  ctx.move(result, result_dst);
+  ctx.step_ip(2 + NumArgs);
+  return ctx.consume_reduction(proc);
+}
 
 }  // ns impl
 }  // ns gluon

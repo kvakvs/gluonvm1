@@ -196,7 +196,7 @@ Term Term::make_binary(VM& vm, proc::Heap* h, Word bytes) {
     return Term(term_tag::BoxedProcBin::create_from_ptr<Word>(box));
   } else {
     // Large bin, with boxed refcount and pointer
-    erts::Heap* binheap = vm.get_heap(VM::HEAP_LARGE_BINARY);
+    erts::Heap* binheap = vm.get_heap(VM::HeapType::LargeBinary);
     layout::HeapbinBox* box =
         binheap->allocate<layout::HeapbinBox>(layout::HeapBin::box_size(bytes));
     box->set_byte_size(bytes);

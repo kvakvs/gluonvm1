@@ -831,6 +831,32 @@ typedef Term (*bif1_fn)(Process*, Term);
 typedef Term (*bif2_fn)(Process*, Term, Term);
 typedef Term (*bif3_fn)(Process*, Term, Term, Term);
 
+template <Word NumArgs> struct SelectBifFn {};
+template <> struct SelectBifFn<0> {
+  using Type = bif0_fn;
+  static Term apply(Type fn, Process *p, Term *) {
+    return fn(p);
+  }
+};
+template <> struct SelectBifFn<1> {
+  using Type = bif1_fn;
+  static Term apply(Type fn, Process *p, Term *args) {
+    return fn(p, args[0]);
+  }
+};
+template <> struct SelectBifFn<2> {
+  using Type = bif2_fn;
+  static Term apply(Type fn, Process *p, Term *args) {
+    return fn(p, args[0], args[1]);
+  }
+};
+template <> struct SelectBifFn<3> {
+  using Type = bif3_fn;
+  static Term apply(Type fn, Process *p, Term *args) {
+    return fn(p, args[0], args[1], args[2]);
+  }
+};
+
 #if G_TEST
 void term_test(int argc, const char* argv[]);
 #endif  // TEST

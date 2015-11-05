@@ -33,6 +33,8 @@ VM::VM() : sched_(*this) {
   init_predef_atoms();
   premade_.init(*this);
 
+//  codeserver_->path_append(".");
+
   codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
   codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.5/ebin");
 
@@ -101,7 +103,7 @@ Node* VM::dist_this_node() {
 }
 
 // For now all heaps are located in normal C++ heap
-erts::Heap* VM::get_heap(VM::heap_t) {
+erts::Heap* VM::get_heap(VM::HeapType) {
   return nullptr;
 }
 

@@ -45,7 +45,7 @@ void Server::load_module(Process* proc, Term name) {
       f.open(path);
 
       Word size = f.size();
-      erts::Heap* heap = vm_.get_heap(VM::HEAP_CODE);
+      erts::Heap* heap = vm_.get_heap(VM::HeapType::Code);
       Uint8* tmp_buffer = heap->allocate<Uint8>(size);
       f.seek(0);
       f.read(tmp_buffer, size);

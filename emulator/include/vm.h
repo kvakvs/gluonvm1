@@ -103,13 +103,13 @@ class VM {
   //
   // Heap management
   //
-  typedef enum {
-    HEAP_VM_INTERNAL,  // vm needs this for stuff
-    HEAP_CODE,         // modules code goes here
-    HEAP_LOADER_TMP,   // loader uses this, discard after loading
-    HEAP_LARGE_BINARY
-  } heap_t;
-  erts::Heap* get_heap(heap_t);
+  enum class HeapType {
+    Internal,   // vm needs this for stuff
+    Code,       // modules code goes here
+    LoaderTmp,  // loader uses this, discard after loading
+    LargeBinary
+  };
+  erts::Heap* get_heap(HeapType);
 
   //
   // VM loop and loop labels
