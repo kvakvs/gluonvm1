@@ -21,6 +21,10 @@ enum class WantSchedule {
   KeepGoing     // decided to continue current process
 };
 
+enum class CheckBifError {
+  None, ErrorOccured
+};
+
 //
 // VM execution context, inherited from process context
 // Used to run current process by vm loop, also holds some extra local variables
@@ -49,7 +53,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
       // ip[-4] == fun_info
       // TODO: remove live from all call opcodes and uncomment this
       // live = ip[-1];
-      swap_out_partial(p);
+      Std::fmt(tMagenta("out of reductions\n"));
       return WantSchedule::NextProcess;
     }
     return WantSchedule::KeepGoing;
@@ -96,9 +100,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     set_cp(proc_ctx.cp());
   }
 
-  // For special immed1 types (register and stack ref) convert them to their
-  // values
-  // TODO: move to context in g_vm_impl.h
+  // For special immed1 types (register and stack ref) read actual value
   void resolve_immed(Term& i) const {
     if (i.is_regx()) {
       i = regs[i.regx_get_value()];
@@ -113,12 +115,6 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   }
 
   void move(Term val, Term dst) {
-    //#if G_DEBUG
-    //    Std::fmt(tMagenta("ctx.move "));
-    //    val.print(vm_);
-    //    Std::fmt(" -> ");
-    //    dst.println(vm_);
-    //#endif
     if (dst.is_regx()) {
       Word x = dst.regx_get_value();
       G_ASSERT(x < sizeof(regs));
@@ -130,7 +126,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
         regs[dst.regx_get_value()] = val;
       }
     } else {
-      throw err::Process("bad move dst");
+      throw err::Process("move(_,dst): bad dst");
     }
   }
 
@@ -207,22 +203,22 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 
   // Throws type:reason (for example error:badmatch)
   void raise(Process* proc, Term type, Term reason) {
-    swap_out_partial(proc);
     regs[0] = type;
     regs[1] = reason;
     proc->stack_trace_ = the_non_value;
-    return exception(proc);
+    return this->exception(proc);
   }
 
   void exception(Process* proc) {
-    if (proc->catch_level_ == 0) {
+    //if (proc->catch_level_ == 0) {
       // we're not catching anything here
       Std::fmt(tRed("VM EXCEPTION: "));
       regs[0].print(vm_);
       Std::fmt(":");
       regs[1].println(vm_);
-      throw err::Process(tRed("Stopping execution here"));
-    }
+
+      throw err::Process(tRed("notimpl exceptions"));
+    //}
     // unwind stack
   }
 
@@ -266,14 +262,14 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 #endif
   }
 
-  bool check_bif_error(Process* p) {
+  CheckBifError check_bif_error(Process* p) {
     Term reason = p->bif_err_reason_;
     if (reason.is_non_value()) {
-      return false;  // good no error
+      return CheckBifError::None;
     }
     p->bif_err_reason_ = the_non_value;
-    raise(p, atom::ERROR, reason);
-    return true;
+    this->raise(p, atom::ERROR, reason);
+    return CheckBifError::ErrorOccured;
   }
 };
 

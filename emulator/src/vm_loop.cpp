@@ -1,7 +1,9 @@
 #include "vm.h"
 #include "process.h"
+
 // has own gluon namespace
 #include "vm_impl.h"
+
 namespace gluon {
 
 void VM::vm_loop(bool init) {
@@ -25,17 +27,18 @@ schedule:
 
 next_instr:
   jmp_to = (void*)(ctx.ip(0));
+
+  // Print current Pid, MFA (if possible)
   ctx.println();
   Std::fmt(cBlue "[");
   // Std::fmt("[0x" FMT_0xHEX, (Word)ctx.ip);
   proc->get_pid().print(*this);
   Std::fmt(";");
-
   if (feature_code_ranges) {
     codeserver().print_mfa(ctx.ip());  // prints mfarity or pointer
   }
-
   Std::fmt("]: " cRst);
+
   ctx.inc_ip();
   ctx.vm_.assert_valid_vmloop_label(jmp_to);
   goto* jmp_to;

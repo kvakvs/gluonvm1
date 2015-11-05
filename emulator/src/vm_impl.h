@@ -97,10 +97,16 @@ inline WantSchedule opcode_bif0(Process* proc,
 
   MFArity* mfa = boxed_mfa.boxed_get_ptr<MFArity>();
   bif0_fn fn0 = (bif0_fn)ctx.vm_.find_bif(*mfa);
+  if (debug_mode) {
+    if (!fn0) {
+      Std::fmt(tRed("not found bif0: "));
+      mfa->println(ctx.vm_);
+    }
+  }
   G_ASSERT(fn0);
 
   Term result = fn0(proc);
-  // if (ctx.check_bif_error(proc)) { return; }
+  // if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) { return; }
   ctx.move(result, result_dst);
   ctx.step_ip(2);
   return ctx.consume_reduction(proc);
@@ -116,10 +122,16 @@ inline WantSchedule opcode_bif1(Process* proc,
 
   MFArity* mfa = boxed_mfa.boxed_get_ptr<MFArity>();
   bif1_fn fn1 = (bif1_fn)ctx.vm_.find_bif(*mfa);
+  if (debug_mode) {
+    if (!fn1) {
+      Std::fmt(tRed("not found bif1: "));
+      mfa->println(ctx.vm_);
+    }
+  }
   G_ASSERT(fn1);
 
   Term result = fn1(proc, arg1);
-  if (ctx.check_bif_error(proc)) {
+  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
   }
   ctx.move(result, result_dst);
@@ -129,7 +141,7 @@ inline WantSchedule opcode_bif1(Process* proc,
 
 inline WantSchedule opcode_bif2(Process* proc,
                                 VMRuntimeContext& ctx) {  // opcode: 11
-  // bif1 Fail import_index Arg1 Arg2 Dst
+  // bif2 Fail import_index Arg1 Arg2 Dst
   Term boxed_mfa(ctx.ip(1));
   Term arg1(ctx.ip(2));
   Term arg2(ctx.ip(3));
@@ -148,7 +160,7 @@ inline WantSchedule opcode_bif2(Process* proc,
   G_ASSERT(fn2);
 
   Term result = fn2(proc, arg1, arg2);
-  if (ctx.check_bif_error(proc)) {
+  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
   }
   ctx.move(result, result_dst);
@@ -309,7 +321,7 @@ inline void opcode_wait(Process* p, VMRuntimeContext& ctx) {  // opcode: 25
   // Schedule out
   p->set_slice_result(proc::SliceResult::Wait);
   ctx.jump(p, Term(ctx.ip(0)));
-  ctx.swap_out_partial(p);
+  //ctx.swap_out_partial(p); - done by VM loop
   // we always yield after wait
 }
 
@@ -757,7 +769,7 @@ inline WantSchedule opcode_call_fun(Process* proc,
     G_ASSERT(arity == ex->mfa.arity);
     if (ex->is_bif()) {
       Term result = ctx.vm_.apply_bif(proc, arity, ex->code(), ctx.regs);
-      if (ctx.check_bif_error(proc)) {
+      if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
         return WantSchedule::NextProcess;
       }
       ctx.regs[0] = result;
@@ -925,7 +937,7 @@ static WantSchedule after_apply(Process* proc,
                                 Word arity,
                                 Either<Word*, Term> res) {
   // Check error
-  if (ctx.check_bif_error(proc)) {
+  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
   }
   // What to do with apply result, is it code pointer to jump to or a bif result
@@ -967,7 +979,7 @@ inline WantSchedule opcode_apply_last(Process* proc,
 
   Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs);
   // Check error
-  if (ctx.check_bif_error(proc)) {
+  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
   }
 
@@ -1059,7 +1071,7 @@ inline WantSchedule opcode_gc_bif1(Process* proc,
   Term result = fn1(proc, arg1);
   ctx.swap_in(proc);
 
-  if (ctx.check_bif_error(proc)) {
+  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
   }
   ctx.move(result, result_dst);
@@ -1089,7 +1101,7 @@ inline WantSchedule opcode_gc_bif2(Process* proc,
   Term result = fn2(proc, arg1, arg2);
   ctx.swap_in(proc);
 
-  if (ctx.check_bif_error(proc)) {
+  if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
   }
   ctx.move(result, result_dst);

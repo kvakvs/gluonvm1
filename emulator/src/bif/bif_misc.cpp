@@ -687,12 +687,15 @@ Term bif_apply_3(Process* proc, Term m, Term f, Term args) {
 }
 
 Term bif_element_2(Process* proc, Term n0, Term tup) {
-  if (!tup.is_tuple() || !n0.is_small()) {
-    return proc->bif_badarg();
+  if (!tup.is_tuple()) {
+    return proc->bif_badarg(tup);
+  }
+  if (!n0.is_small()) {
+    return proc->bif_badarg(n0);
   }
   Word n = n0.small_word();
   if (tup.tuple_get_arity() >= n || n < 1) {
-    return proc->bif_badarg();
+    return proc->bif_badarg(n0);
   }
   return tup.tuple_get_element(n - 1);
 }
