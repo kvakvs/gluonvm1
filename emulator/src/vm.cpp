@@ -33,7 +33,7 @@ VM::VM() : sched_(*this) {
   init_predef_atoms();
   premade_.init(*this);
 
-//  codeserver_->path_append(".");
+  //  codeserver_->path_append(".");
 
   codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.4/ebin");
   codeserver_->path_append("/usr/lib/erlang/lib/stdlib-2.5/ebin");

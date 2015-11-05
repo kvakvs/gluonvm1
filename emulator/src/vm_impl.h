@@ -253,7 +253,7 @@ inline void opcode_wait(Process* p, VMRuntimeContext& ctx) {  // opcode: 25
   // Schedule out
   p->set_slice_result(proc::SliceResult::Wait);
   ctx.jump(p, Term(ctx.ip(0)));
-  //ctx.swap_out_partial(p); - done by VM loop
+  // ctx.swap_out_partial(p); - done by VM loop
   // we always yield after wait
 }
 

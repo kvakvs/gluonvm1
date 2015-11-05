@@ -116,8 +116,12 @@ set(SRC_LIBTOMMATH
 #SET_SOURCE_FILES_PROPERTIES(src/beam/bw_beam_load.cpp PROPERTIES COMPILE_FLAGS -emit-llvm)
 
 add_executable(${PROJECT_NAME} ${SRC_LIST} ${SRC_LIBTOMMATH})
+## Enable this to get 32-bit build
+## Remember to install gcc-multilib and g++-multilib and libc6-{dev-}i386
+#set_target_properties(${PROJECT_NAME} PROPERTIES
+#                      COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 
-set(G_LINK_LIBS m dl z)
+set(G_LINK_LIBS m dl)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT}
                       ${G_LINK_LIBS}
                       )

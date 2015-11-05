@@ -21,9 +21,7 @@ enum class WantSchedule {
   KeepGoing     // decided to continue current process
 };
 
-enum class CheckBifError {
-  None, ErrorOccured
-};
+enum class CheckBifError { None, ErrorOccured };
 
 //
 // VM execution context, inherited from process context
@@ -210,14 +208,14 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   }
 
   void exception(Process* proc) {
-    //if (proc->catch_level_ == 0) {
-      // we're not catching anything here
-      Std::fmt(tRed("VM EXCEPTION: "));
-      regs[0].print(vm_);
-      Std::fmt(":");
-      regs[1].println(vm_);
+    // if (proc->catch_level_ == 0) {
+    // we're not catching anything here
+    Std::fmt(tRed("VM EXCEPTION: "));
+    regs[0].print(vm_);
+    Std::fmt(":");
+    regs[1].println(vm_);
 
-      throw err::Process(tRed("notimpl exceptions"));
+    throw err::Process(tRed("notimpl exceptions"));
     //}
     // unwind stack
   }
@@ -272,7 +270,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     return CheckBifError::ErrorOccured;
   }
 
-  void deref(Term &var) {
+  void deref(Term& var) {
     if (var.is_immed()) {
       resolve_immed(var);
     }
@@ -280,12 +278,11 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 };
 
 template <Word NumArgs>
-WantSchedule opcode_bif(Process* proc,
-                        VMRuntimeContext& ctx) {
+WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   // bif0 import_index Arg1..ArgN Dst
   // bif1..3 Fail import_index Arg1..ArgN Dst
   // For bif0 there is no Fail label, bif0 cannot fail
-  const Word mfa_offset = NumArgs == 0? 0 : 1;
+  const Word mfa_offset = NumArgs == 0 ? 0 : 1;
 
   Term boxed_mfa(ctx.ip(mfa_offset));
   Term arg[NumArgs > 0 ? NumArgs : 1];
@@ -308,13 +305,13 @@ WantSchedule opcode_bif(Process* proc,
 
   Term result = SelectBifFn<NumArgs>::apply(fun_ptr, proc, arg);
   if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
-    if (NumArgs > 0) { // bif0 cannot fail so we have no fail label
+    if (NumArgs > 0) {  // bif0 cannot fail so we have no fail label
       Term fail_label(ctx.ip(0));
       if (fail_label.is_non_value()) {
         ctx.jump(proc, fail_label);
         return WantSchedule::KeepGoing;
       }
-    } // end if bif1-3
+    }  // end if bif1-3
     return WantSchedule::NextProcess;
   }
   ctx.move(result, result_dst);
