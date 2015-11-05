@@ -98,20 +98,6 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     set_cp(proc_ctx.cp());
   }
 
-  // For special immed1 types (register and stack ref) read actual value
-  void resolve_immed(Term& i) const {
-    if (i.is_regx()) {
-      i = regs[i.regx_get_value()];
-    } else if (i.is_regy()) {
-      i = Term(stack().get_y(i.regy_get_value()));
-    }
-#if FEATURE_FLOAT
-    else if (i.is_regfp()) {
-      i = fp_regs[i.regfp_get_value()];
-    }
-#endif
-  }
-
   void move(Term val, Term dst) {
     if (dst.is_regx()) {
       Word x = dst.regx_get_value();
@@ -270,13 +256,33 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     return CheckBifError::ErrorOccured;
   }
 
+  // If value stored in var is immediate and is a special value referring
+  // register or stack cell, it gets replaced with value stored in that register
+  // or stack cell
   void deref(Term& var) {
     if (var.is_immed()) {
       resolve_immed(var);
     }
   }
+
+  // For special immed1 types (register and stack ref) read actual value
+  void resolve_immed(Term& i) const {
+    if (i.is_regx()) {
+      i = regs[i.regx_get_value()];
+    } else if (i.is_regy()) {
+      i = Term(stack().get_y(i.regy_get_value()));
+    }
+#if FEATURE_FLOAT
+    else if (i.is_regfp()) {
+      i = fp_regs[i.regfp_get_value()];
+    }
+#endif
+  }
 };
 
+// A templated opcode handler for bif0..3, behaves slightly differently for bif0
+// because there is no Fail label and no jumping to fail label on error. Bif0
+// cannot fail.
 template <Word NumArgs>
 WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   // bif0 import_index Arg1..ArgN Dst
