@@ -20,15 +20,17 @@ Word term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
 #endif
 #define cSpecialTermColor cYellow cUnderline
 
-Term Term::allocate_cons(proc::Heap* heap, Term head, Term tail) {
+template <>
+Term term::ConsAspect<Term>::allocate_cons(proc::Heap* heap, Term head, Term tail) {
   Term* d = (Term*)heap->allocate<Word>(layout::Cons::box_word_size);
   layout::Cons::head(d) = head;
   layout::Cons::tail(d) = tail;
   return make_cons(d);
 }
 
-bool Term::is_cons_printable() const {
-  Term item = *this;
+template <>
+bool term::ConsAspect<Term>::is_cons_printable() const {
+  Term item = *self();
   while (item.is_cons()) {
     Term tmp;
     item.cons_head_tail(tmp, item);
@@ -39,54 +41,9 @@ bool Term::is_cons_printable() const {
   return item.is_nil();
 }
 
-Word Term::cons_to_array(Term* arr, Word limit) const {
-  if (is_nil()) {
-    return 0;
-  }
-
-  *arr = cons_head();
-  arr++;
-
-  Term i = cons_tail();
-  Word n = 1;
-
-  while (n < limit && i.is_cons()) {
-    // splits i into head and tail, tail is assigned to i again
-    i.cons_head_tail(*arr, i);
-    ++arr;
-    ++n;
-  }
-  return n;
-}
-
-Str Term::cons_to_str() const {
-  Str result;
-
-  if (is_nil()) {
-    return result;
-  }
-
-  Term i = *this;
-  while (i.is_cons()) {
-    // splits i into head and tail, tail is assigned to i again
-    Term hd;
-    i.cons_head_tail(hd, i);
-    // FIXME: Unicode
-    result += (char)hd.small_word();
-  }
-
-  return result;
-}
-
-bool Term::is_cons_printable_element(Term el) {
-  if (!el.is_small())
-    return false;
-  Word c = el.small_word();
-  return (c >= ' ' && c <= 127);
-}
-
-Str Term::atom_str(const VM& vm) const {
-  return vm.find_atom(*this);
+template <>
+Str term::AtomAspect<Term>::atom_str(const VM& vm) const {
+  return vm.find_atom(*self());
 }
 
 #if G_DEBUG
@@ -204,7 +161,8 @@ void Term::println(const VM& vm) const {
   Std::puts();
 }
 
-Term Term::make_binary(VM& vm, proc::Heap* h, Word bytes) {
+template <>
+Term term::BinaryAspect<Term>::make_binary(VM& vm, proc::Heap* h, Word bytes) {
   // This many bytes fits boxed subtag value. Going larger means storing size
   // elsewhere or losing significant bit from the size
   G_ASSERT(bytes < term_tag::boxed_max_subtag_val);

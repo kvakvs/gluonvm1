@@ -27,7 +27,8 @@ endif()
 add_definitions(-O0 -g -ggdb)
 #add_definitions(-Os)
 # optimize for size AND generate asm, build will fail though
-#add_definitions(-S -Os -g)
+#add_definitions(-S -g -Os) # generate asm in .o files (bad file extension)
+#add_definitions(-S -Os) # same but no debug
 add_definitions(#-m32
     -Weverything #-Werror
     -Wno-c++98-compat-pedantic -Wno-missing-noreturn

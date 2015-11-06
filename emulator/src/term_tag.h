@@ -164,7 +164,7 @@ static constexpr Word get_subtag_value(Word x) {
   return x >> boxed_subtag_bits;
 }
 // Takes m_val from Term, converts to pointer and reads subtag (least 4 bits)
-static BoxedSubtag unbox_and_get_subtag(Word x) {
+static inline BoxedSubtag unbox_and_get_subtag(Word x) {
   return (BoxedSubtag)(Boxed::expand_ptr<Word>(x)[0] & boxed_subtag_mask);
 }
 
