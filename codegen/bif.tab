@@ -22,6 +22,8 @@ atom_to_list 1
 
 #--- E
 element 2
+exit 1
+exit 2
 
 #--- G
 group_leader 0
@@ -40,6 +42,8 @@ is_process_alive 1
 
 #--- L
 length 1
+list_to_atom 1
+list_to_existing_atom 1
 
 #--- M
 make_fun 3

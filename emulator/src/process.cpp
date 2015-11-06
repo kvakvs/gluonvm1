@@ -35,30 +35,24 @@ Term Process::spawn(MFArity& mfa, Term* args) {
   return get_pid();
 }
 
-Term Process::bif_error(Term error_tag, Term reason) {
+Term Process::error(Term error_tag, Term reason) {
   term::TupleBuilder tb(get_heap(), 2);
   tb.add(error_tag);
   tb.add(reason);
-  bif_err_reason_ = tb.make_tuple();
-  return the_non_value;
+  return fail(proc::FailType::Error, tb.make_tuple());
 }
 
-Term Process::bif_error(Term reason) {
-  bif_err_reason_ = reason;
-  return the_non_value;
-}
-
-Term Process::bif_error(Term reason, const char* str) {
+Term Process::error(Term reason, const char* str) {
   Term err = term::build_string(get_heap(), str);
-  return bif_error(reason, err);
+  return error(reason, err);
 }
 
-Term Process::bif_badarg(Term reason) {
-  return bif_error(atom::BADARG, reason);
+Term Process::error_badarg(Term reason) {
+  return error(atom::BADARG, reason);
 }
 
-Term Process::bif_badarg() {
-  return bif_error(atom::BADARG);
+Term Process::error_badarg() {
+  return error(atom::BADARG);
 }
 
 void Process::msg_send(Term pid, Term value) {
@@ -94,7 +88,7 @@ Either<Word*, Term> Process::apply(Term m,
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
   if (!f.is_atom()) {
-    bif_badarg(f);  // fail right here
+    error_badarg(f);  // fail right here
     return nullptr;
   }
 
@@ -103,7 +97,7 @@ Either<Word*, Term> Process::apply(Term m,
   Term _this = the_non_value;
   if (!m.is_atom()) {
     if (!m.is_tuple() || m.tuple_get_arity() < 1) {
-      bif_badarg(m);
+      error_badarg(m);
       return nullptr;
     }
     // TODO: can optimize here by accessing tuple internals via pointer and
@@ -111,7 +105,7 @@ Either<Word*, Term> Process::apply(Term m,
     _this = m;
     m = m.tuple_get_element(1);
     if (!m.is_atom()) {
-      bif_badarg(m);
+      error_badarg(m);
       return nullptr;
     }
   }
@@ -130,12 +124,12 @@ Either<Word*, Term> Process::apply(Term m,
       if (arity < erts::max_regs - 1) {
         tmp.cons_head_tail(regs[arity++], tmp);
       } else {
-        bif_error(atom::SYSTEM_LIMIT);
+        error(atom::SYSTEM_LIMIT);
         return nullptr;
       }
     }
     if (tmp.is_not_nil()) {  // Must be well-formed list
-      bif_badarg();
+      error_badarg();
       return nullptr;
     }
     if (_this != the_non_value) {
@@ -156,7 +150,7 @@ Either<Word*, Term> Process::apply(Term m,
   if (!ep) {
     // if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL)
     // goto error;
-    bif_error(atom::UNDEF);
+    error(atom::UNDEF);
     return nullptr;
   }
   if (ep->is_bif()) {

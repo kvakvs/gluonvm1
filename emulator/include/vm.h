@@ -89,7 +89,7 @@ class VM {
   Term to_existing_atom(const Str& s) const {
     auto presult = atoms_.find_ptr(s);
     if (!presult) {
-      return the_nil;
+      return the_non_value;
     }
     return *presult;
   }

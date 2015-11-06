@@ -418,7 +418,7 @@ Term bif_greater_equal_2(Process* proc, Term a, Term b) {
 
 Term bif_atom_to_list_1(Process* proc, Term a) {
   if (!a.is_atom()) {
-    return proc->bif_error(atom::BADARG);
+    return proc->error(atom::BADARG);
   }
 
   const VM& vm = proc->vm();
@@ -431,7 +431,7 @@ Term bif_atom_to_list_1(Process* proc, Term a) {
 
 Term bif_minus_2(Process* proc, Term a, Term b) {
   if (!a.is_small() || !b.is_small()) {
-    return proc->bif_error(atom::BADARITH);
+    return proc->error(atom::BADARITH);
   }
   SWord a_s = a.small_sword();
   SWord b_s = b.small_sword();
@@ -440,7 +440,7 @@ Term bif_minus_2(Process* proc, Term a, Term b) {
 
 Term bif_plus_2(Process* proc, Term a, Term b) {
   if (!a.is_small() || !b.is_small()) {
-    return proc->bif_error(atom::BADARITH);
+    return proc->error(atom::BADARITH);
   }
   SWord a_s = a.small_sword();
   SWord b_s = b.small_sword();
@@ -461,13 +461,13 @@ Term bif_length_1(Process* proc, Term a) {
     counter++;
   }
   if (!a.is_nil()) {
-    throw proc->bif_badarg();
+    throw proc->error_badarg();
   }
   return Term::make_small(counter);
 }
 Term bif_multiply_2(Process* proc, Term a, Term b) {
   if (!a.is_small() || !b.is_small()) {
-    return proc->bif_error(atom::BADARITH);
+    return proc->error(atom::BADARITH);
   }
   SWord a_s = a.small_sword();
   SWord b_s = b.small_sword();
@@ -476,7 +476,7 @@ Term bif_multiply_2(Process* proc, Term a, Term b) {
 
 Term bif_divide_2(Process* proc, Term a, Term b) {
   if (!a.is_small() || !b.is_small()) {
-    return proc->bif_error(atom::BADARITH);
+    return proc->error(atom::BADARITH);
   }
   SWord a_s = a.small_sword();
   SWord b_s = b.small_sword();
@@ -493,7 +493,7 @@ Term bif_make_fun_3(Process* proc, Term mod, Term f, Term arity_t) {
 
   Export* exp = proc->vm().codeserver().find_mfa(mfa);
   if (!exp) {
-    return proc->bif_error(atom::UNDEF);
+    return proc->error(atom::UNDEF);
   }
   /*
   void *biffn = VM::find_bif(mfa);
@@ -519,7 +519,7 @@ Term bif_make_fun_3(Process* proc, Term mod, Term f, Term arity_t) {
 
 static Term integer_to_list(Process* proc, Term n, SWord base) {
   if (base < 2 || base > 36 || !n.is_small()) {
-    return proc->bif_error(atom::BADARG);
+    return proc->error(atom::BADARG);
   }
 
   if (n.is_small()) {
@@ -565,7 +565,7 @@ static Term integer_to_list(Process* proc, Term n, SWord base) {
   }
 #endif
 
-  return proc->bif_error(atom::BADARG);
+  return proc->error(atom::BADARG);
 }
 
 Term bif_integer_to_list_1(Process* proc, Term n) {
@@ -578,7 +578,7 @@ Term bif_integer_to_list_2(Process* proc, Term n, Term base) {
 
 Term bif_plusplus_2(Process* proc, Term a, Term b) {
   if (!a.is_list()) {
-    return proc->bif_badarg(a);
+    return proc->error_badarg(a);
   }
   if (a.is_nil()) {
     return b;
@@ -589,7 +589,7 @@ Term bif_plusplus_2(Process* proc, Term a, Term b) {
 
   auto lresult = length(a);
   if (lresult.length == false) {
-    return proc->bif_badarg(a);  // a must be proper list
+    return proc->error_badarg(a);  // a must be proper list
   }
 
   Term* htop =
@@ -620,14 +620,14 @@ Term bif_plusplus_2(Process* proc, Term a, Term b) {
 
 Term bif_hd_1(Process* proc, Term a) {
   if (!a.is_cons()) {
-    return proc->bif_badarg(a);
+    return proc->error_badarg(a);
   }
   return a.cons_head();
 }
 
 Term bif_tl_1(Process* prc, Term a) {
   if (!a.is_cons()) {
-    return prc->bif_badarg(a);
+    return prc->error_badarg(a);
   }
   return a.cons_tail();
 }
@@ -664,12 +664,12 @@ Term bif_apply_2(Process* proc, Term funobject, Term args) {
 
   // Arity check
   if (!args.is_list()) {
-    return proc->bif_badarg(args);
+    return proc->error_badarg(args);
   }
   auto lresult = bif::length(args);
   if (lresult.is_proper == false) {
     // improper args list, bam!
-    return proc->bif_badarg(args);
+    return proc->error_badarg(args);
   }
 
   // Set registers and live, and enter the code
@@ -683,21 +683,42 @@ Term bif_apply_2(Process* proc, Term funobject, Term args) {
 // This function will never be called.  (It could be if init did something
 // like this:  apply(erlang, apply, [M, F, A]). Not recommended.)
 Term bif_apply_3(Process* proc, Term m, Term f, Term args) {
-  return proc->bif_badarg(atom::APPLY);
+  return proc->error_badarg(atom::APPLY);
 }
 
 Term bif_element_2(Process* proc, Term n0, Term tup) {
   if (!tup.is_tuple()) {
-    return proc->bif_badarg(tup);
+    return proc->error_badarg(tup);
   }
   if (!n0.is_small()) {
-    return proc->bif_badarg(n0);
+    return proc->error_badarg(n0);
   }
   Word n = n0.small_word();
   if (tup.tuple_get_arity() >= n || n < 1) {
-    return proc->bif_badarg(n0);
+    return proc->error_badarg(n0);
   }
   return tup.tuple_get_element(n - 1);
+}
+
+Term bif_list_to_atom_1(Process* proc, Term a)
+{
+  if (a.is_list() == false) {
+    return proc->error_badarg();
+  }
+  // TODO: error if a is not a good string
+  Str name = a.cons_to_str();
+  return proc->vm().to_atom(name);
+}
+
+Term bif_list_to_existing_atom_1(Process* proc, Term a)
+{
+  if (a.is_list() == false) {
+    return proc->error_badarg();
+  }
+  // TODO: error if a is not a good string
+  Str name = a.cons_to_str();
+  Term found = proc->vm().to_existing_atom(name);
+  return found.is_atom() ? found : proc->error_badarg();
 }
 
 }  // ns bif

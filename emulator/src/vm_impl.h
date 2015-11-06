@@ -84,7 +84,7 @@ inline WantSchedule opcode_call_ext_last(Process* proc,
 
 inline WantSchedule opcode_bif0(Process* proc,
                                 VMRuntimeContext& ctx) {  // opcode: 9
-  // bif0 Fail import_index Dst
+  // bif0 import_index Dst (note no fail label)
   return opcode_bif<0>(proc, ctx);
 }
 

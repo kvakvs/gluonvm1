@@ -35,6 +35,14 @@ enum class Queue {
 };
 
 constexpr Word wait_infinite = ~0UL;
+
+enum class FailType {
+  None,
+  Exit,
+  Error,
+  Throw
+};
+
 }  // ns proc
 
 //------------------------------------------------------------------------------
@@ -47,9 +55,8 @@ class Process {
  public:
   Term stack_trace_ = the_non_value;
   Word catch_level_ = 0;
-  Term bif_err_reason_ = the_non_value;
 
- protected:
+ private:
   VM& vm_;
   erts::RuntimeContext ctx_;
   proc::Heap heap_;
@@ -62,6 +69,9 @@ class Process {
   struct {
     bool trap_exit = false;
   } pflags_;
+
+  Term fail_value_ = the_non_value;
+  proc::FailType fail_type_ = proc::FailType::None;
 
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
@@ -118,14 +128,32 @@ class Process {
   // to scheduler, assigns starting fun and args
   Term spawn(MFArity& mfa, Term* args);
 
+  //
+  // Failures -- ERRORS THROWS EXITS
+  //
+
   // Returns no_val and sets bif error flag in process. Use in bifs to signal
   // error condition: return proc->bif_error(reason);
-  Term bif_error(Term reason);
-  Term bif_error(Term reason, const char* str);  // builds {ErrorTag, "text"}
-  Term bif_error(Term error_tag,
-                 Term reason);   // builds tuple {ErrorTag, Reason}
-  Term bif_badarg(Term reason);  // builds tuple {badarg, Reason}
-  Term bif_badarg();
+  Term fail(proc::FailType ft, Term reason) {
+    fail_type_  = ft;
+    fail_value_ = reason;
+    return the_non_value;
+  }
+  Term error(Term reason) {
+    return fail(proc::FailType::Error, reason);
+  }
+  Term error(Term reason, const char* str);  // builds {ErrorTag, "text"}
+  Term error(Term error_tag, Term reason);   // builds tuple {ErrorTag, Reason}
+  Term error_badarg(Term reason);  // builds tuple {badarg, Reason}
+  Term error_badarg();
+  proc::FailType fail_type() const { return fail_type_; }
+  Term fail_value() const { return fail_value_; }
+  bool is_failed() const { return fail_value_.is_value(); }
+  bool is_not_failed() const { return fail_value_.is_non_value(); }
+  void clear_fail_state() {
+    fail_type_ = proc::FailType::None;
+    fail_value_ = the_non_value;
+  }
 
   //
   // Send/receive thingies

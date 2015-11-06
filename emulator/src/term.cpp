@@ -39,7 +39,7 @@ bool Term::is_cons_printable() const {
   return item.is_nil();
 }
 
-Word Term::cons_to_array(Term* arr, Word limit) {
+Word Term::cons_to_array(Term* arr, Word limit) const {
   if (is_nil()) {
     return 0;
   }
@@ -57,6 +57,25 @@ Word Term::cons_to_array(Term* arr, Word limit) {
     ++n;
   }
   return n;
+}
+
+Str Term::cons_to_str() const {
+  Str result;
+
+  if (is_nil()) {
+    return result;
+  }
+
+  Term i = *this;
+  while (i.is_cons()) {
+    // splits i into head and tail, tail is assigned to i again
+    Term hd;
+    i.cons_head_tail(hd, i);
+    // FIXME: Unicode
+    result += (char)hd.small_word();
+  }
+
+  return result;
 }
 
 bool Term::is_cons_printable_element(Term el) {

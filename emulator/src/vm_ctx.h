@@ -120,8 +120,11 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   void jump_ext(Process* proc, Term mfa_box) {
     G_ASSERT(mfa_box.is_boxed());
     MFArity* mfa = mfa_box.boxed_get_ptr<MFArity>();
-    Std::fmt(tMagenta("ctx.jump_ext") " -> ");
-    mfa->println(vm_);
+
+    if (debug_mode) {
+      Std::fmt(tMagenta("ctx.jump_ext") " -> ");
+      mfa->println(vm_);
+    }
 
     // Quick check if it accidentally is a BIF
     if (mfa->mod == atom::ERLANG) {
@@ -151,10 +154,10 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     swap_in_partial(proc);
 
     if (result.is_non_value()) {
-      if (proc->bif_err_reason_ != atom::UNDEF) {
+      if (proc->is_failed()) {
         // a real error happened
-        Term reason = proc->bif_err_reason_;
-        proc->bif_err_reason_ = the_non_value;
+        Term reason = proc->fail_value();
+        proc->clear_fail_state();
         return raise(proc, atom::ERROR, reason);
       }
       // if it was undef - do nothing, it wasn't a bif - we just continue
@@ -178,7 +181,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   void jump(Process* proc, Term t) {
     G_ASSERT(t.is_boxed() && term_tag::is_cp(t.boxed_get_ptr<Word>()));
     Word* t_ptr = term_tag::untag_cp(t.boxed_get_ptr<Word>());
-    Std::fmt(tMagenta("ctx.jump") " -> " FMT_0xHEX "\n", (Word)t_ptr);
+    //Std::fmt(tMagenta("ctx.jump") " -> " FMT_0xHEX "\n", (Word)t_ptr);
     set_ip(t_ptr);
     // TODO: some meaningful assertion here?
     // G_ASSERT(ip > base);
@@ -247,11 +250,11 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   }
 
   CheckBifError check_bif_error(Process* p) {
-    Term reason = p->bif_err_reason_;
-    if (reason.is_non_value()) {
+    if (p->is_not_failed()) {
       return CheckBifError::None;
     }
-    p->bif_err_reason_ = the_non_value;
+    Term reason = p->fail_value();
+    p->clear_fail_state();
     this->raise(p, atom::ERROR, reason);
     return CheckBifError::ErrorOccured;
   }
@@ -309,15 +312,19 @@ WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   }
   G_ASSERT(fun_ptr);
 
+  // Run the BIF here
   Term result = SelectBifFn<NumArgs>::apply(fun_ptr, proc, arg);
+
+  // If error occured and bif1..3 we jump to fail label OR throw
+  // If error occured for bif0 we throw always
+  if (NumArgs > 0) {  // bif0 cannot fail so we have no fail label
+    Term fail_label(ctx.ip(0));
+    if (fail_label.is_value()) {
+      ctx.jump(proc, fail_label);
+      return WantSchedule::KeepGoing;
+    }
+  } // end if bif1-3
   if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
-    if (NumArgs > 0) {  // bif0 cannot fail so we have no fail label
-      Term fail_label(ctx.ip(0));
-      if (fail_label.is_non_value()) {
-        ctx.jump(proc, fail_label);
-        return WantSchedule::KeepGoing;
-      }
-    }  // end if bif1-3
     return WantSchedule::NextProcess;
   }
   ctx.move(result, result_dst);

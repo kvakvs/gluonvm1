@@ -496,7 +496,8 @@ class Term {
   }
   bool is_cons_printable() const;
   // Unfolds list into linear array using limit as array max size
-  Word cons_to_array(Term* arr, Word limit);
+  Word cons_to_array(Term* arr, Word limit) const;
+  Str cons_to_str() const;
 
  protected:
   static bool is_cons_printable_element(Term el);
@@ -595,24 +596,26 @@ class Term {
   constexpr bool is_short_pid() const {
     return term_tag::ShortPid::check(value_);
   }
-  constexpr bool is_pid() const {
-#if FEATURE_ERL_DIST
-    return is_short_pid() || term_tag::BoxedPid::check(m_val);
-#else
-    return is_short_pid();
-#endif
+  bool is_remote_pid() const {
+    return term_tag::BoxedPid::unbox_and_check(value_);
+  }
+  bool is_pid() const {
+    return is_short_pid() || is_remote_pid();
   }
   constexpr Word short_pid_get_value() const {
     return term_tag::ShortPid::value(value_);
   }
   //
-  // Port id (Outled id, Oid)
+  // Port id (Outlet id, Oid)
   //
   constexpr bool is_short_port() const {
     return term_tag::ShortPort::check(value_);
   }
-  constexpr bool is_port() const {
-    return is_short_port() || term_tag::BoxedPort::unbox_and_check(value_);
+  bool is_remote_port() const {
+    return term_tag::BoxedPort::unbox_and_check(value_);
+  }
+  bool is_port() const {
+    return is_short_port() || is_remote_port();
   }
   constexpr Word short_port_get_value() const {
     return term_tag::ShortPort::value(value_);

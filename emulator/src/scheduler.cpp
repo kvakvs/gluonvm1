@@ -174,7 +174,7 @@ Process* Scheduler::next() {
     }  // select proc from q
 
     if (next_proc) {
-      Std::fmt(cGreen cBold "\n---Scheduler::next() -> " cRst);
+      Std::fmt(cGreen cBold "---Scheduler::next() -> " cRst);
       Std::fmt("(Queue %d) ", (int)next_proc->current_queue_);
       next_proc->get_pid().println(vm_);
 
