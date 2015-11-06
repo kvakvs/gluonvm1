@@ -36,9 +36,17 @@ class RuntimeContextFields {
   Word live = 0;  // saved registers count
 
   // TODO: maybe cache r0 in a local variable in vm loop?
-  Term regs[erts::max_regs];
+  Term regs_[erts::max_regs];
+
 #if FEATURE_FLOAT
-// Float fp_regs[vm::MAX_FP_REGS];
+private:
+  Float fp_regs_[vm::MAX_FP_REGS];
+public:
+  Float fp(Word i) const { return fp_regs[i]; }
+  void set_fp(Word i, Float v) { fp_regs[i] = v; }
+#else
+  Float fp(Word) const { throw err::FeatureMissing("FLOAT"); }
+  void set_fp(Word, Float) { throw err::FeatureMissing("FLOAT"); }
 #endif
 };
 

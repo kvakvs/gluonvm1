@@ -192,8 +192,8 @@ inline WantSchedule opcode_send(Process* proc,
   // @doc  Send argument in x(1) as a message to the destination process in
   // x(0).
   //       The message in x(1) ends up as the result of the send in x(0).
-  Term dest(ctx.regs[0]);
-  Term msg(ctx.regs[1]);
+  Term dest(ctx.regs_[0]);
+  Term msg(ctx.regs_[1]);
 
   Std::fmt("send ");
   msg.print(ctx.vm_);
@@ -201,8 +201,8 @@ inline WantSchedule opcode_send(Process* proc,
   dest.println(ctx.vm_);
 
   proc->msg_send(dest, msg);
-  ctx.regs[0] = ctx.regs[1];
-  ctx.regs[1] = the_nil;
+  ctx.regs_[0] = ctx.regs_[1];
+  ctx.regs_[1] = the_nil;
   return ctx.consume_reduction(proc);
 }
 
@@ -211,7 +211,7 @@ inline void opcode_remove_message(Process* proc,
   // @spec remove_message
   // @doc  Unlink the current message from the message queue and store a
   //       pointer to the message in x(0). Remove any timeout.
-  ctx.regs[0] = proc->mailbox().get_current();
+  ctx.regs_[0] = proc->mailbox().get_current();
   proc->mailbox().remove_current();
 }
 
@@ -232,7 +232,7 @@ inline void opcode_loop_rec(Process* proc,
   Std::fmt("loop_rec msg=");
   msg.println(ctx.vm_);
 
-  ctx.regs[0] = msg;
+  ctx.regs_[0] = msg;
   ctx.step_ip(2);
 }
 
@@ -304,7 +304,7 @@ inline void opcode_is_lt(Process* proc, VMRuntimeContext& ctx) {  // opcode: 39
   ctx.deref(arg1);  // in case they are reg references
   ctx.deref(arg2);
   if (Term::are_both_small(arg1, arg2)) {
-    if (arg1.as_word() >= arg2.as_word()) {
+    if (arg1.value() >= arg2.value()) {
       ctx.jump(proc, Term(ctx.ip(0)));
       return;
     }
@@ -324,7 +324,7 @@ inline void opcode_is_ge(Process* proc, VMRuntimeContext& ctx) {  // opcode: 40
   ctx.deref(arg1);  // in case they are reg references
   ctx.deref(arg2);
   if (Term::are_both_small(arg1, arg2)) {
-    if (arg1.as_word() < arg2.as_word()) {
+    if (arg1.value() < arg2.value()) {
       ctx.jump(proc, Term(ctx.ip(0)));
       return;
     }
@@ -680,7 +680,7 @@ inline WantSchedule opcode_call_fun(Process* proc,
 
   Word arity = t_arity.small_word();
 
-  Term fun(ctx.regs[arity]);
+  Term fun(ctx.regs_[arity]);
   if (fun.is_boxed_fun()) {
     BoxedFun* bf = fun.boxed_get_ptr<BoxedFun>();
     if (bf->get_arity() != arity + bf->get_num_free()) {
@@ -691,7 +691,7 @@ inline WantSchedule opcode_call_fun(Process* proc,
     // TODO: if bf.fe is null - unloaded fun
     Word num_free = bf->get_num_free();
     G_ASSERT(arity + num_free < erts::max_regs);
-    std::copy(bf->frozen, bf->frozen + num_free, ctx.regs + arity);
+    std::copy(bf->frozen, bf->frozen + num_free, ctx.regs_ + arity);
 
     ctx.live = arity;
     ctx.set_cp(ctx.ip() + 1);
@@ -700,11 +700,11 @@ inline WantSchedule opcode_call_fun(Process* proc,
     Export* ex = fun.boxed_get_ptr<Export>();
     G_ASSERT(arity == ex->mfa.arity);
     if (ex->is_bif()) {
-      Term result = ctx.vm_.apply_bif(proc, arity, ex->code(), ctx.regs);
+      Term result = ctx.vm_.apply_bif(proc, arity, ex->code(), ctx.regs_);
       if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
         return WantSchedule::NextProcess;
       }
-      ctx.regs[0] = result;
+      ctx.regs_[0] = result;
       ctx.inc_ip();
     } else {
       ctx.live = arity;
@@ -833,7 +833,7 @@ inline void opcode_make_fun2(Process* proc,
   //    BoxedFun *p = fun::box_fun(fe, p8, proc->get_pid(), ctx.regs);
 
   //    ctx.regs[0] = FunObject::make(p);
-  ctx.regs[0] = fun::box_fun(proc->get_heap(), fe, proc->get_pid(), ctx.regs);
+  ctx.regs_[0] = fun::box_fun(proc->get_heap(), fe, proc->get_pid(), ctx.regs_);
   ctx.step_ip(1);
 }
 inline void opcode_try(Process* proc, VMRuntimeContext& ctx) {  // opcode: 104
@@ -881,7 +881,7 @@ static WantSchedule after_apply(Process* proc,
     return ctx.consume_reduction(proc);
   }
   // Or we already know the result, no call is happening
-  ctx.regs[0] = res.right();
+  ctx.regs_[0] = res.right();
   return ctx.consume_reduction(proc);
 }
 
@@ -890,11 +890,11 @@ inline WantSchedule opcode_apply(Process* proc,
   // @spec apply Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
   Term arity_as_term(ctx.ip(0));
   Word arity = arity_as_term.small_word();
-  Term mod = ctx.regs[arity];
-  Term fun = ctx.regs[arity + 1];
+  Term mod = ctx.regs_[arity];
+  Term fun = ctx.regs_[arity + 1];
 
   ctx.swap_out(proc);
-  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs);
+  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs_);
   ctx.swap_in(proc);
 
   ctx.inc_ip();  // consume Arity arg
@@ -906,10 +906,10 @@ inline WantSchedule opcode_apply_last(Process* proc,
   // @spec apply_last _ Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
   Term arity_as_term(ctx.ip(0));
   Word arity = arity_as_term.small_word();
-  Term mod = ctx.regs[arity];
-  Term fun = ctx.regs[arity + 1];
+  Term mod = ctx.regs_[arity];
+  Term fun = ctx.regs_[arity + 1];
 
-  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs);
+  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs_);
   // Check error
   if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
@@ -1190,7 +1190,7 @@ inline WantSchedule opcode_apply_mfargs_(
   Std::fmt("\n");
 
   ctx.swap_out(proc);
-  Either<Word*, Term> res = proc->apply(mod, fun, args, ctx.regs);
+  Either<Word*, Term> res = proc->apply(mod, fun, args, ctx.regs_);
   ctx.swap_in(proc);
 
   auto arity_result = bif::length(args);

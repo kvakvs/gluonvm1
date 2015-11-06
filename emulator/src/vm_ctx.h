@@ -63,7 +63,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     set_ip(proc_ctx.ip());
     set_cp(proc_ctx.cp());
     live = proc_ctx.live;
-    std::memcpy(regs, proc_ctx.regs, sizeof(Term) * live);
+    std::memcpy(regs_, proc_ctx.regs_, sizeof(Term) * live);
 
     heap_ = proc->get_heap();
     // TODO: fp_regs
@@ -77,7 +77,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     proc_ctx.set_ip(ip());
     proc_ctx.set_cp(cp());
     proc_ctx.live = live;
-    std::memcpy(proc_ctx.regs, regs, sizeof(Term) * live);
+    std::memcpy(proc_ctx.regs_, regs_, sizeof(Term) * live);
     // TODO: fp_regs
     // TODO: update heap top
     heap_ = nullptr;  // can't use once swapped out
@@ -101,13 +101,13 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   void move(Term val, Term dst) {
     if (dst.is_regx()) {
       Word x = dst.regx_get_value();
-      G_ASSERT(x < sizeof(regs));
-      regs[x] = val;
+      G_ASSERT(x < sizeof(regs_));
+      regs_[x] = val;
     } else if (dst.is_regy()) {
-      stack().set_y(dst.regy_get_value(), val.as_word());
+      stack().set_y(dst.regy_get_value(), val.value());
     } else if (feature_float) {
       if (dst.is_regfp()) {
-        regs[dst.regx_get_value()] = val;
+        regs_[dst.regx_get_value()] = val;
       }
     } else {
       throw err::Process("move(_,dst): bad dst");
@@ -150,7 +150,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   void jump_ext_bif(Process* proc, MFArity* mfa, void* fn) {
     // Swap out because BIF may decide to modify ip/cp
     swap_out_partial(proc);
-    Term result = vm_.apply_bif(proc, mfa->arity, fn, regs);
+    Term result = vm_.apply_bif(proc, mfa->arity, fn, regs_);
     swap_in_partial(proc);
 
     if (result.is_non_value()) {
@@ -163,7 +163,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
       // if it was undef - do nothing, it wasn't a bif - we just continue
     } else {
       // simulate real call but return bif result instead
-      regs[0] = result;
+      regs_[0] = result;
       G_ASSERT(cp());
       set_ip(cp());
       set_cp(nullptr);
@@ -190,8 +190,8 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 
   // Throws type:reason (for example error:badmatch)
   void raise(Process* proc, Term type, Term reason) {
-    regs[0] = type;
-    regs[1] = reason;
+    regs_[0] = type;
+    regs_[1] = reason;
     proc->stack_trace_ = the_non_value;
     return this->exception(proc);
   }
@@ -200,17 +200,17 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     // if (proc->catch_level_ == 0) {
     // we're not catching anything here
     Std::fmt(tRed("VM EXCEPTION: "));
-    regs[0].print(vm_);
+    regs_[0].print(vm_);
     Std::fmt(":");
-    regs[1].println(vm_);
+    regs_[1].println(vm_);
 
     throw err::Process(tRed("notimpl exceptions"));
     //}
-    // unwind stack
+    // TODO: unwind stack
   }
 
   void push_cp() {
-    stack().push(Term::make_boxed_cp(cp()).as_word());
+    stack().push(Term::make_boxed_cp(cp()).value());
     set_cp(nullptr);
   }
 
@@ -231,22 +231,22 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   }
 
   void print_args(Word arity) {
-#if G_DEBUG
-    Std::fmt("(");
-    for (Word i = 0; i < arity; ++i) {
-      Term value(ip(i));
-      value.print(vm_);
-      if (value.is_regx() || value.is_regy()) {
-        resolve_immed(value);
-        Std::fmt("=");
+    if (debug_mode) {
+      Std::fmt("(");
+      for (Word i = 0; i < arity; ++i) {
+        Term value(ip(i));
         value.print(vm_);
-      }
-      if (i < arity - 1) {
-        Std::fmt(";");
-      }
-    }
-    Std::fmt(")\n");
-#endif
+        if (value.is_regx() || value.is_regy()) {
+          resolve_immed(value);
+          Std::fmt("=");
+          value.print(vm_);
+        }
+        if (i < arity - 1) {
+          Std::fmt(";");
+        }
+      } // for
+      Std::fmt(")\n");
+    } // if debug
   }
 
   CheckBifError check_bif_error(Process* p) {
@@ -271,15 +271,14 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   // For special immed1 types (register and stack ref) read actual value
   void resolve_immed(Term& i) const {
     if (i.is_regx()) {
-      i = regs[i.regx_get_value()];
+      i = regs_[i.regx_get_value()];
     } else if (i.is_regy()) {
       i = Term(stack().get_y(i.regy_get_value()));
     }
-#if FEATURE_FLOAT
-    else if (i.is_regfp()) {
-      i = fp_regs[i.regfp_get_value()];
+    else if (feature_float && i.is_regfp()) {
+      //i = fp(i.regfp_get_value());
+      throw err::FeatureMissing("FLOAT");
     }
-#endif
   }
 };
 

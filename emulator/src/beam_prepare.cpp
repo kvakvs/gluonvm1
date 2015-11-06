@@ -91,7 +91,7 @@ Vector<Word> BeamLoader::read_code(Module* m,
         postponed_labels.push_back(output.size());
       }
 
-      output.push_back(arg.as_word());
+      output.push_back(arg.value());
     }
 
     post_rewrite_opcode(opcode, args, m, output);
@@ -289,13 +289,13 @@ void BeamLoader::beam_op_func_info(Vector<Word>& code, Term f, Word arity) {
 void BeamLoader::replace_imp_index_with_ptr(Word* p, Module* m) {
   Term i(*p);
   Term j = Term::make_boxed(m->get_import_entry(i.small_word()));
-  *p = j.as_word();
+  *p = j.value();
 }
 
 void BeamLoader::replace_lambda_index_with_ptr(Word* p, Module* m) {
   Term i(*p);
   Term j = Term::make_boxed(&lambdas_[i.small_word()]);
-  *p = j.as_word();
+  *p = j.value();
 }
 
 void BeamLoader::resolve_labels(const Vector<Word>& postponed_labels,
@@ -310,7 +310,7 @@ void BeamLoader::resolve_labels(const Vector<Word>& postponed_labels,
     auto lptr = labels_.find_ptr(label_index);
     G_ASSERT(lptr);
     Term resolved_label = Term::make_boxed_cp(*lptr);
-    code[code_index] = resolved_label.as_word();
+    code[code_index] = resolved_label.value();
   }
   return;
 }

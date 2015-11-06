@@ -49,7 +49,7 @@ class BoxedFun {
 class FunObject : public Term {
  public:
   FunObject(Word x) : Term(x) { G_ASSERT(is_boxed_fun()); }
-  FunObject(Term& other) : Term(other.as_word()) { G_ASSERT(is_boxed_fun()); }
+  FunObject(Term& other) : Term(other.value()) { G_ASSERT(is_boxed_fun()); }
 
   //
   // Boxed callable object (a fun)

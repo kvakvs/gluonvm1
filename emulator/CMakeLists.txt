@@ -76,6 +76,8 @@ set(SRC_LIST
     src/stack.cpp             src/stack.h
     src/term.cpp              include/term.h
     src/term_helpers.cpp      include/term_helpers.h
+    src/term_layout.cpp       src/term_layout.h
+    src/term_tag.h
     src/vm.cpp                include/vm.h
     src/bif_tab.cpp           src/bif_tab.h
     src/vm_loop.cpp

@@ -171,7 +171,7 @@ class BeamLoader {
 
   void emit_opcode(Vector<Word>& output, genop::Opcode op, Term arg1) {
     output.push_back((Word)op);
-    output.push_back(arg1.as_word());
+    output.push_back(arg1.value());
   }
 
   void emit_opcode(Vector<Word>& output,
@@ -179,8 +179,8 @@ class BeamLoader {
                    Term arg1,
                    Term arg2) {
     output.push_back((Word)op);
-    output.push_back(arg1.as_word());
-    output.push_back(arg2.as_word());
+    output.push_back(arg1.value());
+    output.push_back(arg2.value());
   }
   // end code parsing
   //

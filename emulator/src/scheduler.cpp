@@ -62,7 +62,7 @@ void Scheduler::exit_process(Process* p, Term reason) {
   Std::fmt("; reason=");
   reason.print(vm_);
   Std::fmt("; result X[0]=");
-  p->get_runtime_ctx().regs[0].println(vm_);
+  p->get_runtime_ctx().regs_[0].println(vm_);
 
   //  m_inf_wait.erase(p);
   //  m_timed_wait.erase(p);

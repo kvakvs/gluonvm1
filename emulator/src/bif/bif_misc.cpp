@@ -423,9 +423,8 @@ Term bif_atom_to_list_1(Process* proc, Term a) {
 
   const VM& vm = proc->vm();
   const Str& atom_str = vm.find_atom(a);
-  //  return term::build_string(proc->get_heap(), atom_str);
+
   auto x = term::build_string(proc->get_heap(), atom_str);
-  x.println(vm);
   return x;
 }
 
@@ -523,7 +522,7 @@ static Term integer_to_list(Process* proc, Term n, SWord base) {
   }
 
   if (n.is_small()) {
-    Std::fmt("i2l n.val=" FMT_0xHEX "\n", n.as_word());
+    Std::fmt("i2l n.val=" FMT_0xHEX "\n", n.value());
     SWord v = n.small_sword();
 
     char buf[16];

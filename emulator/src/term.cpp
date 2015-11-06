@@ -91,7 +91,7 @@ Str Term::atom_str(const VM& vm) const {
 
 #if G_DEBUG
 void Term::print(const VM& vm) const {
-  if (value_ == 0) {
+  if (value() == 0) {
     Std::fmt("NOT_A_TERM");
     return;
   }
@@ -195,7 +195,7 @@ void Term::print(const VM& vm) const {
   else if (is_regy()) {
     Std::fmt("Y[" FMT_UWORD "]", regy_get_value());
   } else {
-    Std::fmt("UNKNOWN(" FMT_0xHEX ")", value_);
+    Std::fmt("UNKNOWN(" FMT_0xHEX ")", value());
   }
 }
 
@@ -234,14 +234,6 @@ void MFArity::print(const VM& vm) {
   Std::fmt(":");
   fun.print(vm);
   Std::fmt("/" FMT_UWORD, arity);
-}
-
-Word layout::ProcBin::box_size(Word bytes) {
-  return calculate_word_size(bytes) + box_extra_words;
-}
-
-Word layout::HeapBin::box_size(Word bytes) {
-  return calculate_word_size(bytes) + farheap_extra_words;
 }
 
 #endif  // DEBUG
