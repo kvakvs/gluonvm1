@@ -526,9 +526,9 @@ class Term: public term::TermStorage,
   explicit constexpr Term(Word v) : term::TermStorage(v) {}
   constexpr Term() : term::TermStorage(term::non_value_as_word) {}
 
-  // Do not call this; for better looking code use gluon::NIL const instead
+  // Do not call this; for better looking code use gluon::the_nil instead
   constexpr static Term make_nil_() { return Term(term::nil_as_word); }
-  // Do not call this; for better looking code use gluon::NONVALUE const instead
+  // Do not call this; for better looking code use gluon::the_non_value instead
   constexpr static Term make_non_value_() {
     return Term(term::non_value_as_word);
   }
@@ -651,6 +651,7 @@ class MFArity {
     G_ASSERT(m.is_atom());
     G_ASSERT(arity <= erts::max_fun_arity);
   }
+
   MFArity(const MFArity&) = default;
   MFArity(MFArity&&) = delete;
   MFArity& operator=(const MFArity&) = default;

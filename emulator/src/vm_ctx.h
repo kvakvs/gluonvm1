@@ -306,8 +306,10 @@ WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   if (debug_mode) {
     if (!fun_ptr) {
       Std::fmt(tRed("not found bif: "));
-      mfa->println(ctx.vm_);
+    } else {
+      Std::fmt(tMagenta("call bif: "));
     }
+    mfa->println(ctx.vm_);
   }
   G_ASSERT(fun_ptr);
 

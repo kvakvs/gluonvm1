@@ -83,8 +83,7 @@ void Process::set_args(Term args, Word len) {
 
 Either<Word*, Term> Process::apply(Term m,
                                    Term f,
-                                   Term args_or_arity,
-                                   Term* regs) {
+                                   Term args) {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
   if (!f.is_atom()) {
@@ -110,19 +109,20 @@ Either<Word*, Term> Process::apply(Term m,
     }
   }
 
+  ctx_.assert_swapped_out_partial();
   Word arity = 0;
-  if (args_or_arity.is_small()) {
+  if (args.is_small()) {
     // Small unsigned in args means args already are loaded in regs
-    arity = args_or_arity.small_word();
+    arity = args.small_word();
   } else {
     // Walk down the 3rd parameter of apply (the argument list) and copy
     // the parameters to the x registers (regs[]). If the module argument
     // was an abstract module, add 1 to the function arity and put the
     // module argument in the n+1st x register as a THIS reference.
-    Term tmp = args_or_arity;
+    Term tmp = args;
     while (tmp.is_cons()) {
       if (arity < erts::max_regs - 1) {
-        tmp.cons_head_tail(regs[arity++], tmp);
+        tmp.cons_head_tail(ctx_.regs_[arity++], tmp);
       } else {
         error(atom::SYSTEM_LIMIT);
         return nullptr;
@@ -133,9 +133,10 @@ Either<Word*, Term> Process::apply(Term m,
       return nullptr;
     }
     if (_this != the_non_value) {
-      regs[arity++] = _this;
+      ctx_.regs_[arity++] = _this;
     }
   }
+  ctx_.live = arity;
 
   // Get the index into the export table, or failing that the export
   // entry for the error handler.
@@ -143,7 +144,7 @@ Either<Word*, Term> Process::apply(Term m,
 
   auto maybe_bif = vm_.find_bif(mfa);
   if (maybe_bif) {
-    return vm_.apply_bif(this, mfa.arity, maybe_bif, regs);
+    return vm_.apply_bif(this, mfa.arity, maybe_bif, ctx_.regs_);
   }
 
   Export* ep = vm_.codeserver().find_mfa(mfa);
@@ -154,7 +155,7 @@ Either<Word*, Term> Process::apply(Term m,
     return nullptr;
   }
   if (ep->is_bif()) {
-    return vm_.apply_bif(this, ep->mfa.arity, ep->bif_fn(), regs);
+    return vm_.apply_bif(this, ep->mfa.arity, ep->bif_fn(), ctx_.regs_);
   }
   //  else if (ERTS_PROC_GET_SAVED_CALLS_BUF(proc)) {
   //      save_calls(proc, ep);

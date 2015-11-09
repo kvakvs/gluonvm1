@@ -137,7 +137,7 @@ struct LabelIndex : Wrap<Word> {
 namespace erts {
 // How many reds will a process be allowed to run before next proc wakes up
 // Adjust this for slow devices. 2000 is used for regular modern hardware.
-constexpr Word reductions_per_slice = 3;
+constexpr Word reductions_per_slice = 250;
 
 constexpr Word max_fun_arity = 16;
 constexpr Word max_regs = 64;    // (max arity of fun + captured terms)

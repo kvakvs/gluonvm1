@@ -893,9 +893,9 @@ inline WantSchedule opcode_apply(Process* proc,
   Term mod = ctx.regs_[arity];
   Term fun = ctx.regs_[arity + 1];
 
-  ctx.swap_out(proc);
-  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs_);
-  ctx.swap_in(proc);
+  ctx.swap_out_partial(proc);
+  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term);
+  ctx.swap_in_partial(proc);
 
   ctx.inc_ip();  // consume Arity arg
   return after_apply(proc, ctx, arity, res);
@@ -909,7 +909,10 @@ inline WantSchedule opcode_apply_last(Process* proc,
   Term mod = ctx.regs_[arity];
   Term fun = ctx.regs_[arity + 1];
 
-  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term, ctx.regs_);
+  ctx.swap_out_partial(proc);
+  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term);
+  ctx.swap_in_partial(proc);
+
   // Check error
   if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
@@ -1189,9 +1192,9 @@ inline WantSchedule opcode_apply_mfargs_(
   args.print(ctx.vm_);
   Std::fmt("\n");
 
-  ctx.swap_out(proc);
-  Either<Word*, Term> res = proc->apply(mod, fun, args, ctx.regs_);
-  ctx.swap_in(proc);
+  ctx.swap_out_partial(proc);
+  Either<Word*, Term> res = proc->apply(mod, fun, args);
+  ctx.swap_in_partial(proc);
 
   auto arity_result = bif::length(args);
   G_ASSERT(arity_result.is_proper == true);

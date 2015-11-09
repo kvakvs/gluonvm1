@@ -186,7 +186,7 @@ class Process {
   // *  Term if result is known immediately.
   // Pass small integer (arity) in args if regs already contain args in the
   // first 'arity' cells.
-  Either<Word*, Term> apply(Term m, Term f, Term args, Term* regs);
+  Either<Word*, Term> apply(Term m, Term f, Term args);
 };
 
 #if G_TEST
