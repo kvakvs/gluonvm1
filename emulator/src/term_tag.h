@@ -1,6 +1,9 @@
 #pragma once
-// TO BE INCLUDED FROM TERM.H ONLY
+// TO BE INCLUDEDFROM TERM.H ONLY
 
+#include "pointer.h"
+
+namespace gluon {
 namespace term_tag {
 
 template <typename T>
@@ -204,27 +207,34 @@ typedef TaggedBox<BoxedSubtag::HeapBinary> BoxedHeapBin;
 typedef TaggedBox<BoxedSubtag::MatchContext> BoxedMatchCtx;
 typedef TaggedBox<BoxedSubtag::SubBinary> BoxedSubBin;
 
-const Word continuation_tag = 1UL << (gluon::word_bitsize - 1);
+//const Word continuation_tag = 1UL << (gluon::word_bitsize - 1);
 // Check highest bit if it was CP pushed on stack
-constexpr bool is_cp_word(Word x) {
-  return continuation_tag == (x & continuation_tag);
-}
+//constexpr bool is_cp_word(Word x) {
+//  return continuation_tag == (x & continuation_tag);
+//}
 template <typename T>
 constexpr bool is_cp(T* x) {
-  return is_cp_word((Word)x);
+  //return is_cp_word((Word)x);
+  return PointerKnowledge::high_tag(x) == PointerTag::Continuation;
 }
 
 // Set highest bit to mark CP pushed on stack
 template <typename T>
 T* make_cp(T* x) {
   G_ASSERT(!is_cp(x));
-  return (T*)(((Word)x) | continuation_tag);
+//  return (T*)(((Word)x) | continuation_tag);
+  G_ASSERT(PointerKnowledge::is_userspace_pointer(x));
+  return PointerKnowledge::set_high_tag(x, PointerTag::Continuation);
 }
+
 // Check and clear highest bit to mark CP pushed on stack
 template <typename T>
 T* untag_cp(T* x) {
   G_ASSERT(is_cp(x));
-  return (T*)((Word)x & (~continuation_tag));
+  G_ASSERT(PointerKnowledge::is_userspace_pointer(x));
+  //return (T*)((Word)x & (~continuation_tag));
+  return PointerKnowledge::untag(x);
 }
 
 }  // ns term_tag
+} // ns gluon

@@ -2,6 +2,8 @@
 
 #include "defs.h"
 #include "struct/str.h"
+#include "pointer.h"
+#include "term_tag.h"
 
 namespace gluon {
 
@@ -9,8 +11,6 @@ class VM;
 namespace erts { class Heap; }  // in heap.h
 namespace proc { class Heap; }  // in heap.h
 class Export;  // in module.h
-
-#include "term_tag.h"
 
 namespace temporary {
 

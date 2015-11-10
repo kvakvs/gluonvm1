@@ -57,6 +57,7 @@ set(SRC_LIST
     src/beam_loader.cpp       src/beam.h
     src/beam_prepare.cpp
 
+    src/bif_tab.cpp           src/bif_tab.h
     src/binary.cpp            include/binary.h
     src/code.cpp              include/code.h
     src/code_index.cpp        include/code_index.h
@@ -69,6 +70,7 @@ set(SRC_LIST
     src/mailbox.cpp           include/mailbox.h
     src/main.cpp
     src/module.cpp            include/module.h
+    src/pointer.h
     src/predef_atoms.cpp include/predef_atoms.h
     src/process.cpp           include/process.h
     src/reader.h
@@ -80,7 +82,6 @@ set(SRC_LIST
     src/term_layout.cpp       src/term_layout.h
     src/term_tag.h
     src/vm.cpp                include/vm.h
-    src/bif_tab.cpp           src/bif_tab.h
     src/vm_loop.cpp
     src/vm_ctx.h              src/vm_impl.h
 
