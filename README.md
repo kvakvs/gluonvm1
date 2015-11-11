@@ -9,16 +9,21 @@ megabyte would be cool).
 Features used in code can be configured at compile time when you want to squeeze
 VM into a particularly small platform.
 
-## emulator/
+# The emulator
 
-C++ implementation of minimalistic BEAM virtual machine. Has simple configurable
-feature settings in `include/g_FEATURES.h` (like distribution, float, bignum support
-etc).
+C++ implementation of minimalistic BEAM virtual machine. Located in `emulator/`.
+Has simple configurable feature settings in `include/g_FEATURES.h` (like
+distribution, float, bignum support etc). Note that (temporarily) some #define
+are duplicated as constants.
+
+## Building
 
 Requires CMake, Clang (probably will work with GCC too?).
 
-Run `make` in emulator/ directory. `CMakeLists.txt` work with QtCreator as IDE not
-to mention cmake supporting host of other IDEs.
+Run `make` in `emulator/` directory. `CMakeLists.txt` will also work as a project
+with QtCreator IDE not to mention that CMake supports plenty of other IDEs (run
+`cmake` to see list of supported IDE, see `cmake_linux.sh` to get hint how to create
+a project for your IDE).
 
 # Features (Done)
 
@@ -28,7 +33,7 @@ to mention cmake supporting host of other IDEs.
 * Some BIFs (ever growing amount)
 * Many opcodes, BEAM file loading and code path search
 
-# TODO
+*TODO*
 
 * Exceptions
 * Process links, monitors
@@ -36,12 +41,8 @@ to mention cmake supporting host of other IDEs.
 * Binaries
 * Floats maybe?
 
-# Deprecated
-## apps/asm, apps/emuemu and apps/prototype
+# License
 
-Few apps which are currently out of use, but were created to help me learn BEAM universe:
-A simple beam-to-something-else assembler, a high level interpreter for GluonVM 
-intermediate representation (IR), which simulates properties of Erlang VM (memory,
-instruction set, etc) and processes (registers, stack, process execution state).
+Apache v.2
 
-apps/prototype is based on github.com/tonyrog/beam (owe a beer to Tony!).
+Contributions not welcome until the project reaches POC phase (a working prototype).
