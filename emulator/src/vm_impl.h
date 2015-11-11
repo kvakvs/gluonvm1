@@ -178,7 +178,6 @@ inline WantSchedule opcode_return(Process* proc,
   if (ctx.cp().is_not_null()) {
     // nowhere to return: end process
     proc->finished();
-    ctx.swap_out(proc);
     return WantSchedule::NextProcess;
   }
   ctx.set_ip(ctx.cp());
@@ -1192,9 +1191,9 @@ inline WantSchedule opcode_apply_mfargs_(
   args.print(ctx.vm_);
   Std::fmt("\n");
 
-  ctx.swap_out_partial(proc);
+  ctx.swap_out(proc);
   Either<CodePointer, Term> res = proc->apply(mod, fun, args);
-  ctx.swap_in_partial(proc);
+  ctx.swap_in(proc);
 
   auto arity_result = bif::length(args);
   G_ASSERT(arity_result.is_proper == true);

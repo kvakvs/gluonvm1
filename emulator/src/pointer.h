@@ -6,11 +6,11 @@
 namespace gluon {
 
 enum class PointerHTag {
-  None,
-  Continuation
+  None = 0,
+  Continuation = 1
 };
 enum class PointerLTag {
-  None,
+  None = 0,
   Boxed = 2 // same as in term_tag.h for primary tag to look like a boxed
 };
 
@@ -98,6 +98,9 @@ public:
 #endif // linux
 
 #ifdef __linux__
+// Currently 48 bits of address are used on 64-bit linux which allows to
+// address something like 256Tb of RAM. Change this when they switch to using
+// 56 or 64bit.
 using PointerKnowledge = LinuxPointerKnowledge<64, 16>;
 #endif
 
