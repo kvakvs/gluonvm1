@@ -74,7 +74,7 @@ class BeamLoader {
 #if FEATURE_CODE_RANGES
   // Grouped in struct by feature
   struct {
-    Word* fun_begin;
+    CodePointer fun_begin;
     // Maps f/arity to code ranges
     code::Index<FunArity> fun_map;
   } coderanges_;

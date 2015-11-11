@@ -2,6 +2,7 @@
 // TO BE INCLUDED FROM TERM.H ONLY
 
 #include "pointer.h"
+#include "wrap.h"
 
 namespace gluon {
 namespace term_tag {
@@ -209,6 +210,7 @@ typedef TaggedBox<BoxedSubtag::SubBinary> BoxedSubBin;
 
 }  // ns term_tag
 
+
 //
 // Continuation Pointer (CP) is a term-looking value tagged as Boxed in its
 // low bits, and having PointerHTag::Continuation in its high bits.
@@ -225,7 +227,7 @@ public:
   Word value() const { return value_; }
 
   // Is a valid continuation
-  bool check() {
+  bool check() const {
     return (value_ != 0)
         && PointerKnowledge::high_tag(value_) == PointerHTag::Continuation
       #ifdef G_DEBUG
@@ -235,27 +237,23 @@ public:
   }
 
   // Set highest bit to mark CP pushed on stack
-  template <typename T>
-  static ContinuationPointer make_cp(T* x) {
+  static ContinuationPointer make_cp(CodePointer x) {
     // just in case, hope word x is not already tagged
-    G_ASSERT(false == ContinuationPointer((Word)x).check());
-  //  return (T*)(((Word)x) | continuation_tag);
-    G_ASSERT(PointerKnowledge::is_userspace_pointer(x));
+    G_ASSERT(false == ContinuationPointer((Word)x.value()).check());
+    G_ASSERT(PointerKnowledge::is_userspace_pointer(x.value()));
     return ContinuationPointer(
-          PointerKnowledge::set_tags(x,
+          PointerKnowledge::set_tags(x.value(),
                                      PointerHTag::Continuation,
                                      PointerLTag::Boxed)
           );
   }
 
   // Check and clear highest bit to mark CP pushed on stack
-  template <typename T>
-  T* untag() {
+  CodePointer untag() const {
     G_ASSERT(check() == true);
-    auto result = PointerKnowledge::untag<T>(value_);
+    auto result = PointerKnowledge::untag<Word*>(value_);
     G_ASSERT(PointerKnowledge::is_userspace_pointer(result));
-    //return (T*)((Word)x & (~continuation_tag));
-    return result;
+    return CodePointer(result);
   }
 };
 

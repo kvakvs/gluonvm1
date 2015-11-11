@@ -6,6 +6,7 @@
 #include "code.h"
 #include "code_index.h"
 #include "struct/array.h"
+#include "wrap.h" // for CodePointer
 
 namespace gluon {
 
@@ -50,8 +51,8 @@ class Server {
 
   // Find module, function and arity for code location and print it.
   // Returns true if mfa was found and printed, else false
-  bool print_mfa(const Word* ptr) const;
-  bool find_mfa_from_code(const Word* ptr, MFArity& out) const;
+  bool print_mfa(const CodePointer ptr) const;
+  bool find_mfa_from_code(const CodePointer ptr, MFArity& out) const;
   Export* find_mfa(const MFArity& mfa, Module** out_mod = nullptr) const;
 
  protected:

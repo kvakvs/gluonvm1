@@ -137,8 +137,8 @@ bool BeamLoader::rewrite_opcode(genop::Opcode opcode,
     Word l_id = label.small_word();
     G_ASSERT(l_id < code_label_count_);
 
-    Word* opcode_ptr = &output.back();
-    labels_.insert(l_id, opcode_ptr);
+    CodePointer opcode_ptr(&output.back());
+    labels_.insert(LabelIndex(l_id), opcode_ptr);
 
     return true;  // processed and we want to skip writing it
   }
@@ -226,7 +226,7 @@ void BeamLoader::output_exports(Module* m) {
   // we iterate over map_view which is pairs of <fun_arity_t key, Word value>
   for_each(exps, [&](FaLabelindexMap::Iterator fa_lindex) {
     // find out what is label value
-    auto lresult = labels_.find_ptr(fa_lindex->second.value());
+    auto lresult = labels_.find_ptr(fa_lindex->second);
     G_ASSERT(lresult);  // assume it must exist
     MFArity mfa(mod_name_, fa_lindex->first);
     exports.insert(fa_lindex->first, Export(*lresult, mfa));
@@ -236,7 +236,8 @@ void BeamLoader::output_exports(Module* m) {
 
 void BeamLoader::output_lambdas(Module* m) {
   for (auto& la : lambdas_) {
-    auto lptr = labels_.find_ptr(la.uniq[0]);
+    // we stored label id in uniq0 temporarily
+    auto lptr = labels_.find_ptr(LabelIndex(la.uniq[0]));
     G_ASSERT(lptr);
     la.code = *lptr;
   }
@@ -249,8 +250,9 @@ void BeamLoader::output_selectlists(Module* m) {
     Word t_arity = t.tuple_get_arity() / 2;
     for (Word i = 0; i < t_arity; ++i) {
       Word l_index = t.tuple_get_element(i * 2 + 1).small_word();
-      auto lptr = labels_.find_ptr(l_index);
+      auto lptr = labels_.find_ptr(LabelIndex(l_index));
       G_ASSERT(lptr);
+
       t.tuple_set_element(i * 2 + 1,
                           Term(ContinuationPointer::make_cp(*lptr).value()));
     }
@@ -258,10 +260,10 @@ void BeamLoader::output_selectlists(Module* m) {
 }
 
 void BeamLoader::beam_op_func_info(Vector<Word>& code, Term f, Word arity) {
-  Word* last_ptr = nullptr;
+  CodePointer last_ptr;
 
   if (feature_code_ranges) {
-    last_ptr = (&code.back()) + 1;
+    last_ptr = CodePointer(&code.back() + 1);
 
     // Finish previous function if it already started
     if (current_fun_.fun.is_value()) {
@@ -308,7 +310,7 @@ void BeamLoader::resolve_labels(const Vector<Word>& postponed_labels,
     Word label_index = term_tag::Catch::value(code[code_index]);
 
     // New value will be small int
-    auto lptr = labels_.find_ptr(label_index);
+    auto lptr = labels_.find_ptr(LabelIndex(label_index));
     G_ASSERT(lptr);
     auto resolved = ContinuationPointer::make_cp(*lptr);
     code[code_index] = resolved.value();

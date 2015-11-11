@@ -5,12 +5,12 @@
 
 namespace gluon {
 
-Word* Module::resolve_label(LabelIndex label) {
+CodePointer Module::resolve_label(LabelIndex label) {
   if (label.value() >= labels_.size()) {
     throw err::BeamLoad("label index too big");
   }
-  auto lptr = labels_.find_ptr(label.value());
-  return lptr ? *lptr : nullptr;
+  auto lptr = labels_.find_ptr(label);
+  return lptr ? *lptr : CodePointer();
 }
 
 void Module::set_exports(Module::Exports& e) {
@@ -27,14 +27,15 @@ void Module::set_exports(Module::Exports& e) {
 }
 
 #if FEATURE_CODE_RANGES
-bool Module::find_fun_arity(const Word* ptr, FunArity& out) const {
+bool Module::find_fun_arity(CodePointer ptr, FunArity& out) const {
   return fun_index_.find(ptr, out);
 }
 #endif
 
 #if FEATURE_CODE_RANGES
 code::Range Module::get_code_range() {
-  return code::Range(code_.data(), (&code_.back()) + 1);
+  return code::Range(CodePointer(code_.data()),
+                     CodePointer(&code_.back() + 1));
 }
 #endif
 

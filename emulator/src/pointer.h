@@ -59,12 +59,13 @@ public:
   static bool is_userspace_pointer(T* p) {
     // Must be in range for userspace for this platform
     // Must be aligned (no extra 1 in low bits)
-    return ((Word)p <= 0x7fff'ffff'ffffULL) && has_no_tags(p);
+    return ((Word)p <= 0x7fff'ffff'ffffULL)
+        && has_no_tags(p);
   }
 
   template <typename T>
-  static T* untag(Word p) {
-    return (T*)(p & ~mask);
+  static T untag(Word p) {
+    return (T)(p & ~mask);
   }
 
   template <typename T>

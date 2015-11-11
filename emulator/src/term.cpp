@@ -104,7 +104,7 @@ void Term::print(const VM& vm) const {
     ContinuationPointer maybe_cp(value());
     if (maybe_cp.check()) {
       Std::fmt(cSpecialTermColor "#CP<");
-      vm.codeserver().print_mfa(maybe_cp.untag<Word>());
+      vm.codeserver().print_mfa(maybe_cp.untag());
       Std::fmt(">" cRst);
       return;
     }
@@ -131,7 +131,7 @@ void Term::print(const VM& vm) const {
     }
     if (PointerKnowledge::is_userspace_pointer(p)) {
       Std::fmt(cSpecialTermColor "#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
-      vm.codeserver().print_mfa(boxed_get_ptr<Word>());
+      vm.codeserver().print_mfa(boxed_get_codeptr());
       Std::fmt(">" cRst);
     } else {
       Std::fmt(cSpecialTermColor "#Box<%p>" cRst, p);

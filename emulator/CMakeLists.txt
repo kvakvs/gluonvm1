@@ -84,6 +84,7 @@ set(SRC_LIST
     src/vm.cpp                include/vm.h
     src/vm_loop.cpp
     src/vm_ctx.h              src/vm_impl.h
+    src/wrap.h
 
     src/bif/bif_misc.cpp include/bif/bif_misc.h
     src/bif/bif_proc.cpp include/bif/bif_proc.h

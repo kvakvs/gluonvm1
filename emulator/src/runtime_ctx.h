@@ -9,29 +9,28 @@ namespace erts {
 // by loop runner on context switch or loop end
 class RuntimeContextFields {
  private:
-  //  Module *mod = nullptr;
-  const Word* ip_ = nullptr;
+  CodePointer ip_;
   // continuation, works like return address for a single call. If more nested
   // calls are done, cp is saved to stack
-  const Word* cp_ = nullptr;
+  CodePointer cp_;
 
  public:
-  void set_ip(const Word* value) {
-    G_ASSERT((Word)value > 0xffff);  // some sane minimum for a pointer
-    G_ASSERT(value);
-    ip_ = value;
+  void set_ip(CodePointer ip) {
+    G_ASSERT(PointerKnowledge::is_userspace_pointer(ip.value()));
+    G_ASSERT(ip.is_not_null());
+    ip_ = ip;
   }
-  const Word* ip() const { return ip_; }
+  CodePointer ip() const { return ip_; }
   Word ip(Word index) const { return ip_[index]; }
   void step_ip(SWord offset) { ip_ += offset; }
   void inc_ip() { ip_++; }
 
-  void set_cp(const Word* value) {
+  void set_cp(CodePointer cp) {
     // some sane minimum for a pointer or nullptr
-    G_ASSERT(!value || (Word)value > 0xffff);
-    cp_ = value;
+    G_ASSERT(PointerKnowledge::is_userspace_pointer(cp.value()));
+    cp_ = cp;
   }
-  const Word* cp() const { return cp_; }
+  CodePointer cp() const { return cp_; }
 
   Word live = 0;  // saved registers count
 

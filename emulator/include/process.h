@@ -7,6 +7,7 @@
 #include "mailbox.h"
 #include "functional.h"
 #include "runtime_ctx.h"
+#include "wrap.h"
 
 namespace gluon {
 
@@ -169,12 +170,12 @@ class Process {
   void set_args(Term args, Word len);
   // Jumps to code saving current IP in CP. Make sure ctx is swapped out from
   // VM!
-  void call(Word* code) {
+  void call(CodePointer code) {
     ctx_.assert_swapped_out_partial();
     ctx_.set_cp(ctx_.ip());
     jump(code);
   }
-  void jump(Word* code) {
+  void jump(CodePointer code) {
     ctx_.assert_swapped_out_partial();
     ctx_.set_ip(code);
   }
@@ -186,7 +187,7 @@ class Process {
   // *  Term if result is known immediately.
   // Pass small integer (arity) in args if regs already contain args in the
   // first 'arity' cells.
-  Either<Word*, Term> apply(Term m, Term f, Term args);
+  Either<CodePointer, Term> apply(Term m, Term f, Term args);
 };
 
 #if G_TEST

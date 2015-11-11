@@ -145,7 +145,7 @@ void BeamLoader::load_lambda_table(tool::Reader& r0) {
     fe.old_uniq = ouniq;
     fe.old_index = fe.index = index;
     fe.num_free = nfree;
-    fe.code = nullptr;  // resolve later from uniq0
+    fe.code = CodePointer();  // resolve later from uniq0
 
     Std::fmt("read fun table: %s:%s/" FMT_UWORD " offset=" FMT_UWORD "\n",
              fe.mfa.mod.atom_str(vm_).c_str(), fe.mfa.fun.atom_str(vm_).c_str(),

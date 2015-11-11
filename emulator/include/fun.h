@@ -2,6 +2,7 @@
 
 #include "defs.h"
 #include "term.h"
+#include "wrap.h"
 
 namespace gluon {
 
@@ -15,7 +16,7 @@ class FunEntry {
   Word old_uniq = 0;
 
   Word num_free = 0;  // how many extra terms with frozen values
-  Word* code = nullptr;
+  CodePointer code;
 
   FunEntry() = default;
 };

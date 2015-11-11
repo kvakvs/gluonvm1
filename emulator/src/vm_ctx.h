@@ -164,15 +164,15 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     } else {
       // simulate real call but return bif result instead
       regs_[0] = result;
-      G_ASSERT(cp());
+      G_ASSERT(cp().is_not_null());
       set_ip(cp());
-      set_cp(nullptr);
+      set_cp(CodePointer());
       return;
     }
   }
 
   // Jumps between modules updating base and mod fields
-  void jump_far(Process* proc, Module* m, Word* new_ip) {
+  void jump_far(Process* proc, Module* m, CodePointer new_ip) {
     //    mod = m;
     // base = proc->get_code_base();
     set_ip(new_ip);
@@ -180,7 +180,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 
   void jump(Process* proc, ContinuationPointer cp) {
     G_ASSERT(cp.check() == true);
-    set_ip(cp.untag<Word>());
+    set_ip(cp.untag());
   }
 
   // Throws type:reason (for example error:badmatch)
@@ -206,13 +206,13 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 
   void push_cp() {
     stack().push(ContinuationPointer::make_cp(cp()).value());
-    set_cp(nullptr);
+    set_cp(CodePointer());
   }
 
   void pop_cp() {
     ContinuationPointer cp0(stack().pop());
     //auto cp0 = p.boxed_get_ptr_unchecked<Word>();
-    set_cp(cp0.untag<Word>());
+    set_cp(cp0.untag());
   }
 
   void stack_allocate(Word n) {

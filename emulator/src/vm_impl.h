@@ -175,14 +175,14 @@ inline WantSchedule opcode_return(Process* proc,
                                   VMRuntimeContext& ctx) {  // opcode: 19
   // @spec return
   // @doc  Return to the address in the continuation pointer (CP).
-  if (!ctx.cp()) {
+  if (ctx.cp().is_not_null()) {
     // nowhere to return: end process
     proc->finished();
     ctx.swap_out(proc);
     return WantSchedule::NextProcess;
   }
   ctx.set_ip(ctx.cp());
-  ctx.set_cp(nullptr);
+  ctx.set_cp(CodePointer());
   return WantSchedule::KeepGoing;
 }
 
@@ -700,7 +700,7 @@ inline WantSchedule opcode_call_fun(Process* proc,
     Export* ex = fun.boxed_get_ptr<Export>();
     G_ASSERT(arity == ex->mfa.arity);
     if (ex->is_bif()) {
-      Term result = ctx.vm_.apply_bif(proc, arity, ex->code(), ctx.regs_);
+      Term result = ctx.vm_.apply_bif(proc, arity, ex->bif_fn(), ctx.regs_);
       if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
         return WantSchedule::NextProcess;
       }
@@ -867,7 +867,7 @@ inline void opcode_try_case(Process* proc,
 static WantSchedule after_apply(Process* proc,
                                 VMRuntimeContext& ctx,
                                 Word arity,
-                                Either<Word*, Term> res) {
+                                Either<CodePointer, Term> res) {
   // Check error
   if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
@@ -894,7 +894,7 @@ inline WantSchedule opcode_apply(Process* proc,
   Term fun = ctx.regs_[arity + 1];
 
   ctx.swap_out_partial(proc);
-  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term);
+  Either<CodePointer, Term> res = proc->apply(mod, fun, arity_as_term);
   ctx.swap_in_partial(proc);
 
   ctx.inc_ip();  // consume Arity arg
@@ -910,7 +910,7 @@ inline WantSchedule opcode_apply_last(Process* proc,
   Term fun = ctx.regs_[arity + 1];
 
   ctx.swap_out_partial(proc);
-  Either<Word*, Term> res = proc->apply(mod, fun, arity_as_term);
+  Either<CodePointer, Term> res = proc->apply(mod, fun, arity_as_term);
   ctx.swap_in_partial(proc);
 
   // Check error
@@ -1193,7 +1193,7 @@ inline WantSchedule opcode_apply_mfargs_(
   Std::fmt("\n");
 
   ctx.swap_out_partial(proc);
-  Either<Word*, Term> res = proc->apply(mod, fun, args);
+  Either<CodePointer, Term> res = proc->apply(mod, fun, args);
   ctx.swap_in_partial(proc);
 
   auto arity_result = bif::length(args);

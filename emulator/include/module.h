@@ -7,6 +7,7 @@
 #include "fun.h"
 #include "code_index.h"
 #include "struct/array.h"
+#include "wrap.h"
 
 namespace gluon {
 
@@ -19,7 +20,7 @@ class Export {
   Word hdr_;
   // either biffn or code must be not-null
   union {
-    Word* code_;
+    CodePointer code_;
     void* bif_fn_;  // use VM::apply_bif with this and mfa.arity
   };
 
@@ -32,16 +33,16 @@ class Export {
         bif_fn_(biffn) {
     G_ASSERT(biffn != nullptr);  // either biffn or code must be not-null
   }
-  Export(Word* co, const MFArity& _mfa)
+  Export(CodePointer co, const MFArity& _mfa)
       : hdr_(term_tag::BoxedExport::create_subtag((Word) false)),
         code_(co),
         mfa(_mfa) {
-    G_ASSERT(co != nullptr);  // either biffn or code must be not-null
+    G_ASSERT(co.is_not_null());  // either biffn or code must be not-null
   }
 
   static const Word BIF_BIT = (1U << term_tag::boxed_subtag_bits);
   bool is_bif() const { return (hdr_ & BIF_BIT) == BIF_BIT; }
-  Word* code() const {
+  CodePointer code() const {
     G_ASSERT(is_bif() == false);
     return code_;
   }
@@ -57,7 +58,7 @@ class Export {
 //
 class Module {
  public:
-  using Labels = Dict<Word, Word*>;
+  using Labels = Dict<LabelIndex, CodePointer>;
   using Exports = Dict<FunArity, Export>;
   using Imports = Vector<MFArity>;
   using Lambdas = Vector<FunEntry>;
@@ -103,7 +104,7 @@ class Module {
   Export* find_export(const FunArity& fa) { return exports_.find_ptr(fa); }
 
   // Resolves label to a code pointer
-  Word* resolve_label(LabelIndex label);
+  CodePointer resolve_label(LabelIndex label);
 
   void set_code(Vector<Word>& code) {
     code_ = std::move(code);  // take ownership
@@ -114,7 +115,7 @@ class Module {
 #if FEATURE_CODE_RANGES
   code::Range get_code_range();
   void set_fun_ranges(code::Index<FunArity>& ci) { fun_index_ = std::move(ci); }
-  bool find_fun_arity(const Word* ptr, FunArity& out) const;
+  bool find_fun_arity(CodePointer ptr, FunArity& out) const;
 #endif
 
   void set_line_numbers(LineRefs& lr, FileNames& fn) {

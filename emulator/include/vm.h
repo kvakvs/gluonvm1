@@ -64,8 +64,8 @@ class VM {
  public:
   VM();
 
-  const Word* premade_instr(PremadeIndex i) const {
-    return premade_.instr_.mem() + (Word)i;
+  CodePointer premade_instr(PremadeIndex i) const {
+    return CodePointer(premade_.instr_.mem() + (Word)i);
   }
   code::Server& codeserver() { return *codeserver_; }
   const code::Server& codeserver() const { return *codeserver_; }

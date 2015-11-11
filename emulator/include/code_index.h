@@ -2,6 +2,7 @@
 
 #include "defs.h"
 #include "struct/dict.h"
+#include "wrap.h"
 
 #include <algorithm>
 
@@ -14,13 +15,13 @@ namespace code {
 #if FEATURE_CODE_RANGES
 class Range {
  public:
-  const Word* start;
-  const Word* end;  // one word after code end
+  CodePointer start;
+  CodePointer end;  // one word after code end
 
   Range() : start(nullptr), end(nullptr) {}
-  Range(const Word* s, const Word* e) : start(s), end(e) {}
+  Range(CodePointer s, CodePointer e) : start(s), end(e) {}
 
-  bool contains(const Word* p) const {
+  bool contains(CodePointer p) const {
     // we only compare single pointer and store it in start, 'end' should be
     // null
     return p >= start && p < end;
@@ -43,7 +44,7 @@ class Index {
   void add(const Range& r, T value) { ranges_.insert(r, value); }
 
   // Find code location in tree of ranges
-  bool find(const Word* x, T& out) const {
+  bool find(const CodePointer x, T& out) const {
     // I cannot into range search, something with lower_bound/upper_bound which
     // compares ranges using operator < and that is too hard
     // TODO: fix this

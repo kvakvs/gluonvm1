@@ -112,28 +112,6 @@ using Float = Float32;
 // Used to shun debug printfs in release
 inline void dummy_printf(const char*, ...) {}
 
-// Wraps a type into a class to make it separate type
-template <typename T>
-class Wrap {
- private:
-  T value_;
-
- public:
-  Wrap() : value_() {}
-  explicit Wrap(T x) : value_(x) {}
-  T value() const { return value_; }
-  void value(T newvalue) { value_ = newvalue; }
-};
-// Index in label table, wrapped to create a distinct compile-time type
-struct LabelIndex : Wrap<Word> {
-  LabelIndex() = default;
-  LabelIndex(Word x) : Wrap<Word>(x) {}
-  LabelIndex(const LabelIndex& other) = default;
-  LabelIndex(LabelIndex&& other) = default;
-  LabelIndex& operator=(const LabelIndex&) = default;
-  LabelIndex& operator=(LabelIndex&&) = default;
-};
-
 namespace erts {
 // How many reds will a process be allowed to run before next proc wakes up
 // Adjust this for slow devices. 2000 is used for regular modern hardware.

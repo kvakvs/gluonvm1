@@ -89,6 +89,10 @@ public:
     G_ASSERT(self()->is_boxed() || self()->is_tuple() || self()->is_cons());
     return term_tag::Boxed::expand_ptr<T>(self()->value());
   }
+  CodePointer boxed_get_codeptr() const {
+    return CodePointer(term_tag::Boxed::expand_ptr<Word>(self()->value()));
+  }
+
   // Same as boxed_get_ptr but is usable on masked CP boxes which may point to
   // random stuff
   template <typename T>

@@ -29,7 +29,7 @@ Term Process::spawn(MFArity& mfa, Term* args) {
   ctx_.set_cp(vm_.premade_instr(PremadeIndex::Normal_exit_));
   ctx_.set_ip(vm_.premade_instr(PremadeIndex::Apply_mfargs_));
 
-  Std::fmt("Process::jump_to_mfa -> " FMT_0xHEX "\n", (Word)ctx_.ip());
+  Std::fmt("Process::jump_to_mfa -> %p\n", ctx_.ip().value());
 
   vm_.scheduler().add_new_runnable(this);
   return get_pid();
@@ -81,14 +81,12 @@ void Process::set_args(Term args, Word len) {
   }
 }
 
-Either<Word*, Term> Process::apply(Term m,
-                                   Term f,
-                                   Term args) {
+Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
   if (!f.is_atom()) {
     error_badarg(f);  // fail right here
-    return nullptr;
+    return CodePointer();
   }
 
   // The module argument may be either an atom or an abstract module
@@ -97,7 +95,7 @@ Either<Word*, Term> Process::apply(Term m,
   if (!m.is_atom()) {
     if (!m.is_tuple() || m.tuple_get_arity() < 1) {
       error_badarg(m);
-      return nullptr;
+      return CodePointer();
     }
     // TODO: can optimize here by accessing tuple internals via pointer and
     // checking arity and then taking 2nd element
@@ -105,7 +103,7 @@ Either<Word*, Term> Process::apply(Term m,
     m = m.tuple_get_element(1);
     if (!m.is_atom()) {
       error_badarg(m);
-      return nullptr;
+      return CodePointer();
     }
   }
 
@@ -125,12 +123,12 @@ Either<Word*, Term> Process::apply(Term m,
         tmp.cons_head_tail(ctx_.regs_[arity++], tmp);
       } else {
         error(atom::SYSTEM_LIMIT);
-        return nullptr;
+        return CodePointer();
       }
     }
     if (tmp.is_not_nil()) {  // Must be well-formed list
       error_badarg();
-      return nullptr;
+      return CodePointer();
     }
     if (_this != the_non_value) {
       ctx_.regs_[arity++] = _this;
@@ -152,7 +150,7 @@ Either<Word*, Term> Process::apply(Term m,
     // if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL)
     // goto error;
     error(atom::UNDEF);
-    return nullptr;
+    return CodePointer();
   }
   if (ep->is_bif()) {
     return vm_.apply_bif(this, ep->mfa.arity, ep->bif_fn(), ctx_.regs_);

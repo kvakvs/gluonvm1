@@ -81,10 +81,10 @@ void Server::path_prepend(const Str& p) {
   search_path_.push_front(p);
 }
 
-bool Server::print_mfa(const Word* ptr) const {
+bool Server::print_mfa(const CodePointer ptr) const {
   MFArity mfa;
   if (!find_mfa_from_code(ptr, /*out*/ mfa)) {
-    Std::fmt(FMT_0xHEX, (Word)ptr);
+    Std::fmt("%p", ptr.value());
     return false;
   }
   if (!mfa.mod.is_atom() || !mfa.fun.is_atom()) {
@@ -98,7 +98,7 @@ bool Server::print_mfa(const Word* ptr) const {
   return true;
 }
 
-bool Server::find_mfa_from_code(const Word* ptr, MFArity& out) const {
+bool Server::find_mfa_from_code(const CodePointer ptr, MFArity& out) const {
   Module* m = nullptr;
   if (!mod_index_.find(ptr, /*out*/ m) || !m) {
     return false;
