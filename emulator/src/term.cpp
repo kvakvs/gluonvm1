@@ -98,14 +98,17 @@ void Term::print(const VM& vm) const {
     }
     Std::fmt("}");
   } else if (is_boxed()) {
-    auto p = boxed_get_ptr<Word>();
-    if (term_tag::is_cp<Word>(p)) {
-      Word* cp = term_tag::untag_cp<Word>(p);
+    //
+    // ------ BOXED ------
+    //
+    ContinuationPointer maybe_cp(value());
+    if (maybe_cp.check()) {
       Std::fmt(cSpecialTermColor "#CP<");
-      vm.codeserver().print_mfa(cp);
+      vm.codeserver().print_mfa(maybe_cp.untag<Word>());
       Std::fmt(">" cRst);
       return;
     }
+    auto p = boxed_get_ptr<Word>();
     if (is_boxed_fun()) {
       Std::fmt(cSpecialTermColor "#Fun<");
       auto bf = boxed_get_ptr<BoxedFun>();
@@ -126,9 +129,16 @@ void Term::print(const VM& vm) const {
       Std::fmt(">" cRst);
       return;
     }
-    Std::fmt(cSpecialTermColor "#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
-    vm.codeserver().print_mfa(boxed_get_ptr<Word>());
-    Std::fmt(">" cRst);
+    if (PointerKnowledge::is_userspace_pointer(p)) {
+      Std::fmt(cSpecialTermColor "#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
+      vm.codeserver().print_mfa(boxed_get_ptr<Word>());
+      Std::fmt(">" cRst);
+    } else {
+      Std::fmt(cSpecialTermColor "#Box<%p>" cRst, p);
+    }
+    //
+    //
+    // ------ end boxed ------
   } else if (is_nil()) {
     Std::fmt("[]");
   } else if (is_non_value()) {

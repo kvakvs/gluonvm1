@@ -178,14 +178,9 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     set_ip(new_ip);
   }
 
-  void jump(Process* proc, Term t) {
-    G_ASSERT(t.is_boxed() && term_tag::is_cp(t.boxed_get_ptr<Word>()));
-    Word* t_ptr = term_tag::untag_cp(t.boxed_get_ptr<Word>());
-    //Std::fmt(tMagenta("ctx.jump") " -> " FMT_0xHEX "\n", (Word)t_ptr);
-    set_ip(t_ptr);
-    // TODO: some meaningful assertion here?
-    // G_ASSERT(ip > base);
-    // G_ASSERT(ip < proc->m_module->m_code.size() + base);
+  void jump(Process* proc, ContinuationPointer cp) {
+    G_ASSERT(cp.check() == true);
+    set_ip(cp.untag<Word>());
   }
 
   // Throws type:reason (for example error:badmatch)
@@ -210,14 +205,14 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   }
 
   void push_cp() {
-    stack().push(Term::make_boxed_cp(cp()).value());
+    stack().push(ContinuationPointer::make_cp(cp()).value());
     set_cp(nullptr);
   }
 
   void pop_cp() {
-    Term p(stack().pop());
-    auto cp0 = p.boxed_get_ptr_unchecked<Word>();
-    set_cp(term_tag::untag_cp<Word>(cp0));
+    ContinuationPointer cp0(stack().pop());
+    //auto cp0 = p.boxed_get_ptr_unchecked<Word>();
+    set_cp(cp0.untag<Word>());
   }
 
   void stack_allocate(Word n) {
@@ -319,8 +314,8 @@ WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   // If error occured and bif1..3 we jump to fail label OR throw
   // If error occured for bif0 we throw always
   if (NumArgs > 0) {  // bif0 cannot fail so we have no fail label
-    Term fail_label(ctx.ip(0));
-    if (fail_label.is_value()) {
+    ContinuationPointer fail_label(ctx.ip(0));
+    if (fail_label.check()) {
       ctx.jump(proc, fail_label);
       return WantSchedule::KeepGoing;
     }

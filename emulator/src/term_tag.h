@@ -1,5 +1,5 @@
 #pragma once
-// TO BE INCLUDEDFROM TERM.H ONLY
+// TO BE INCLUDED FROM TERM.H ONLY
 
 #include "pointer.h"
 
@@ -207,34 +207,57 @@ typedef TaggedBox<BoxedSubtag::HeapBinary> BoxedHeapBin;
 typedef TaggedBox<BoxedSubtag::MatchContext> BoxedMatchCtx;
 typedef TaggedBox<BoxedSubtag::SubBinary> BoxedSubBin;
 
-//const Word continuation_tag = 1UL << (gluon::word_bitsize - 1);
-// Check highest bit if it was CP pushed on stack
-//constexpr bool is_cp_word(Word x) {
-//  return continuation_tag == (x & continuation_tag);
-//}
-template <typename T>
-constexpr bool is_cp(T* x) {
-  //return is_cp_word((Word)x);
-  return PointerKnowledge::high_tag(x) == PointerTag::Continuation;
-}
-
-// Set highest bit to mark CP pushed on stack
-template <typename T>
-T* make_cp(T* x) {
-  G_ASSERT(!is_cp(x));
-//  return (T*)(((Word)x) | continuation_tag);
-  G_ASSERT(PointerKnowledge::is_userspace_pointer(x));
-  return PointerKnowledge::set_high_tag(x, PointerTag::Continuation);
-}
-
-// Check and clear highest bit to mark CP pushed on stack
-template <typename T>
-T* untag_cp(T* x) {
-  G_ASSERT(is_cp(x));
-  G_ASSERT(PointerKnowledge::is_userspace_pointer(x));
-  //return (T*)((Word)x & (~continuation_tag));
-  return PointerKnowledge::untag(x);
-}
-
 }  // ns term_tag
+
+//
+// Continuation Pointer (CP) is a term-looking value tagged as Boxed in its
+// low bits, and having PointerHTag::Continuation in its high bits.
+// It is used as return address and also marks stack frame
+//
+
+class ContinuationPointer {
+  Word value_;
+
+public:
+  explicit ContinuationPointer(Word x): value_(x) {}
+  ContinuationPointer(): value_(0) {}
+
+  Word value() const { return value_; }
+
+  // Is a valid continuation
+  bool check() {
+    return (value_ != 0)
+        && PointerKnowledge::high_tag(value_) == PointerHTag::Continuation
+      #ifdef G_DEBUG
+        && PointerKnowledge::low_tag(value_) == PointerLTag::Boxed
+      #endif
+        ;
+  }
+
+  // Set highest bit to mark CP pushed on stack
+  template <typename T>
+  static ContinuationPointer make_cp(T* x) {
+    // just in case, hope word x is not already tagged
+    G_ASSERT(false == ContinuationPointer((Word)x).check());
+  //  return (T*)(((Word)x) | continuation_tag);
+    G_ASSERT(PointerKnowledge::is_userspace_pointer(x));
+    return ContinuationPointer(
+          PointerKnowledge::set_tags(x,
+                                     PointerHTag::Continuation,
+                                     PointerLTag::Boxed)
+          );
+  }
+
+  // Check and clear highest bit to mark CP pushed on stack
+  template <typename T>
+  T* untag() {
+    G_ASSERT(check() == true);
+    auto result = PointerKnowledge::untag<T>(value_);
+    G_ASSERT(PointerKnowledge::is_userspace_pointer(result));
+    //return (T*)((Word)x & (~continuation_tag));
+    return result;
+  }
+};
+
+
 } // ns gluon

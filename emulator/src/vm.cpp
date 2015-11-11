@@ -25,6 +25,8 @@ IMPL_EXCEPTION(Process)
 }  // ns err
 
 VM::VM() : sched_(*this) {
+  PointerKnowledge::assert();
+
   this_node_ = new Node;
   codeserver_ = new code::Server(*this);
 

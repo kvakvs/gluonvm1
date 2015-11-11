@@ -251,7 +251,8 @@ void BeamLoader::output_selectlists(Module* m) {
       Word l_index = t.tuple_get_element(i * 2 + 1).small_word();
       auto lptr = labels_.find_ptr(l_index);
       G_ASSERT(lptr);
-      t.tuple_set_element(i * 2 + 1, Term::make_boxed_cp(*lptr));
+      t.tuple_set_element(i * 2 + 1,
+                          Term(ContinuationPointer::make_cp(*lptr).value()));
     }
   }
 }
@@ -309,8 +310,8 @@ void BeamLoader::resolve_labels(const Vector<Word>& postponed_labels,
     // New value will be small int
     auto lptr = labels_.find_ptr(label_index);
     G_ASSERT(lptr);
-    Term resolved_label = Term::make_boxed_cp(*lptr);
-    code[code_index] = resolved_label.value();
+    auto resolved = ContinuationPointer::make_cp(*lptr);
+    code[code_index] = resolved.value();
   }
   return;
 }

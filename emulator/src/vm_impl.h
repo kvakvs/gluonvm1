@@ -26,7 +26,7 @@ inline WantSchedule opcode_call(Process* proc,
   Term arity(ctx.ip(0));
   ctx.live = arity.small_word();
   ctx.set_cp(ctx.ip() + 2);
-  ctx.jump(proc, Term(ctx.ip(1)));
+  ctx.jump(proc, ContinuationPointer(ctx.ip(1)));
   return ctx.consume_reduction(proc);
 }
 inline WantSchedule opcode_call_last(Process* proc,
@@ -40,7 +40,7 @@ inline WantSchedule opcode_call_last(Process* proc,
 
   Term n(ctx.ip(2));
   ctx.stack_deallocate(n.small_word());
-  ctx.jump(proc, Term(ctx.ip(1)));
+  ctx.jump(proc, ContinuationPointer(ctx.ip(1)));
   return ctx.consume_reduction(proc);
 }
 inline WantSchedule opcode_call_only(Process* proc,
@@ -50,7 +50,7 @@ inline WantSchedule opcode_call_only(Process* proc,
   //      Do not update the CP register.
   Term arity(ctx.ip(0));
   ctx.live = arity.small_word();
-  ctx.jump(proc, Term(ctx.ip(1)));
+  ctx.jump(proc, ContinuationPointer(ctx.ip(1)));
   return ctx.consume_reduction(proc);
 }
 inline WantSchedule opcode_call_ext(Process* proc,
@@ -226,7 +226,7 @@ inline void opcode_loop_rec(Process* proc,
   //       jump to a wait or wait_timeout instruction.
   Term msg = proc->mailbox().get_current();
   if (msg.is_non_value()) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   // ctx.move(msg, Term(ctx.ip[1]));
   Std::fmt("loop_rec msg=");
@@ -242,7 +242,7 @@ inline void opcode_loop_rec_end(Process* proc,
   // @doc  Advance the save pointer to the next message (the current
   // message didn't match), then jump to the Label (loop_rec instruction).
   proc->mailbox().step_next();
-  ctx.jump(proc, Term(ctx.ip(0)));
+  ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
 }
 
 inline void opcode_wait(Process* p, VMRuntimeContext& ctx) {  // opcode: 25
@@ -252,7 +252,7 @@ inline void opcode_wait(Process* p, VMRuntimeContext& ctx) {  // opcode: 25
 
   // Schedule out
   p->set_slice_result(proc::SliceResult::Wait);
-  ctx.jump(p, Term(ctx.ip(0)));
+  ctx.jump(p, ContinuationPointer(ctx.ip(0)));
   // ctx.swap_out_partial(p); - done by VM loop
   // we always yield after wait
 }
@@ -305,12 +305,12 @@ inline void opcode_is_lt(Process* proc, VMRuntimeContext& ctx) {  // opcode: 39
   ctx.deref(arg2);
   if (Term::are_both_small(arg1, arg2)) {
     if (arg1.value() >= arg2.value()) {
-      ctx.jump(proc, Term(ctx.ip(0)));
+      ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
       return;
     }
   } else {  // full term compare
     if (!bif::is_term_smaller(ctx.vm_, arg1, arg2)) {
-      ctx.jump(proc, Term(ctx.ip(0)));
+      ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
       return;
     }
   }
@@ -325,12 +325,12 @@ inline void opcode_is_ge(Process* proc, VMRuntimeContext& ctx) {  // opcode: 40
   ctx.deref(arg2);
   if (Term::are_both_small(arg1, arg2)) {
     if (arg1.value() < arg2.value()) {
-      ctx.jump(proc, Term(ctx.ip(0)));
+      ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
       return;
     }
   } else {  // full term compare
     if (bif::is_term_smaller(ctx.vm_, arg1, arg2)) {
-      ctx.jump(proc, Term(ctx.ip(0)));
+      ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
       return;
     }
   }
@@ -347,7 +347,7 @@ inline void opcode_is_eq(Process* proc, VMRuntimeContext& ctx) {  // opcode: 41
   if (bif::are_terms_equal(ctx.vm_, arg1, arg2, false)) {
     ctx.step_ip(3);
   } else {
-    ctx.jump(proc, Term(ctx.ip(0)));
+    ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
 }
 //  inline void opcode_is_ne(Process *proc, VMRuntimeContext &ctx) { // opcode:
@@ -366,7 +366,7 @@ inline void opcode_is_eq_exact(Process* proc,
     // immediate values must be exactly equal or we fail comparison
     if (Term::are_both_immed(arg1, arg2) ||
         !bif::are_terms_equal(ctx.vm_, arg1, arg2, true)) {
-      return ctx.jump(proc, Term(ctx.ip(0)));
+      return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
     }
   }
   ctx.step_ip(3);
@@ -381,7 +381,7 @@ inline void opcode_is_integer(Process* proc,
   Term arg(ctx.ip(1));
   ctx.deref(arg);
   if (!arg.is_integer()) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -390,7 +390,7 @@ inline void opcode_is_float(Process* proc,
 #if FEATURE_FLOAT
   G_TODO("is_float");
 #else
-  return ctx.jump(proc, Term(ctx.ip(0)));
+  return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
 #endif
 }
 //  inline void opcode_is_number(Process *proc, VMRuntimeContext &ctx) { //
@@ -403,7 +403,7 @@ inline void opcode_is_atom(Process* proc,
   Term arg(ctx.ip(1));
   ctx.deref(arg);
   if (!arg.is_atom()) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -413,7 +413,7 @@ inline void opcode_is_pid(Process* proc, VMRuntimeContext& ctx) {  // opcode: 49
   Term arg(ctx.ip(1));
   ctx.deref(arg);
   if (!arg.is_pid()) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -424,7 +424,7 @@ inline void opcode_is_reference(Process* proc,
   Term t(ctx.ip(1));
   ctx.deref(t);
   if (t.is_reference() == false) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -435,7 +435,7 @@ inline void opcode_is_port(Process* proc,
   Term t(ctx.ip(1));
   ctx.deref(t);
   if (t.is_port() == false) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -445,7 +445,7 @@ inline void opcode_is_nil(Process* proc, VMRuntimeContext& ctx) {  // opcode: 52
   Term t(ctx.ip(1));
   ctx.deref(t);
   if (t.is_nil() == false) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -456,7 +456,7 @@ inline void opcode_is_binary(Process* proc,
 #if FEATURE_BINARIES
   G_TODO("is_binary");
 #else
-  return ctx.jump(proc, Term(ctx.ip(0)));
+  return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
 #endif
 }
 //  inline void opcode_is_constant(Process *proc, VMRuntimeContext &ctx) { //
@@ -469,7 +469,7 @@ inline void opcode_is_list(Process* proc,
   Term t(ctx.ip(1));
   ctx.deref(t);
   if (!t.is_cons() && !t.is_nil()) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -480,7 +480,7 @@ inline void opcode_is_nonempty_list(Process* proc,
   Term t(ctx.ip(1));
   ctx.deref(t);
   if (t.is_cons() == false) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -491,7 +491,7 @@ inline void opcode_is_tuple(Process* proc,
   Term t(ctx.ip(1));
   ctx.deref(t);
   if (!t.is_tuple()) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -505,7 +505,7 @@ inline void opcode_test_arity(Process* proc,
   Term t_arity(ctx.ip(2));
   ctx.deref(t_arity);
   if (!t.is_tuple() || t.tuple_get_arity() != t_arity.small_word()) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(3);
 }
@@ -520,14 +520,14 @@ inline void opcode_select_val(Process* proc,
   Term fail_label(ctx.ip(2));
 
   // TODO: binary search
-  Term* elements = fail_label.boxed_get_ptr<Term>();
+  Word* elements = fail_label.boxed_get_ptr<Word>();
   Word dst_arity = ((Word*)elements)[0] / 2;
   for (Word i = 0; i < dst_arity; i++) {
-    if (elements[i * 2 + 1] == arg) {
-      return ctx.jump(proc, elements[i * 2 + 2]);
+    if (elements[i * 2 + 1] == arg.value()) {
+      return ctx.jump(proc, ContinuationPointer(elements[i * 2 + 2]));
     }
   }
-  ctx.jump(proc, Term(ctx.ip(1)));
+  ctx.jump(proc, ContinuationPointer(ctx.ip(1)));
 }
 inline void opcode_select_tuple_arity(Process* proc,
                                       VMRuntimeContext& ctx) {  // opcode: 60
@@ -542,17 +542,17 @@ inline void opcode_select_tuple_arity(Process* proc,
   Term fail_label(ctx.ip(2));
 
   // TODO: binary search
-  Term* elements = fail_label.boxed_get_ptr<Term>();
+  Word* elements = fail_label.boxed_get_ptr<Word>();
   Word dst_arity = ((Word*)elements)[0] / 2;
   for (Word i = 0; i < dst_arity; i++) {
-    if (elements[i * 2 + 1] == arg) {
-      return ctx.jump(proc, elements[i * 2 + 2]);
+    if (elements[i * 2 + 1] == arg.value()) {
+      return ctx.jump(proc, ContinuationPointer(elements[i * 2 + 2]));
     }
   }
-  ctx.jump(proc, Term(ctx.ip(1)));
+  ctx.jump(proc, ContinuationPointer(ctx.ip(1)));
 }
 inline void opcode_jump(Process* proc, VMRuntimeContext& ctx) {  // opcode: 61
-  return ctx.jump(proc, Term(ctx.ip(0)));
+  return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
 }
 
 inline void opcode_catch(Process* proc, VMRuntimeContext& ctx) {  // opcode: 62
@@ -731,7 +731,7 @@ inline void opcode_is_function(Process* proc,
   ctx.deref(arg1);
   // Check if its fun at all
   if (!arg1.is_boxed_fun() && !arg1.is_boxed_export()) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.step_ip(2);
 }
@@ -929,7 +929,7 @@ inline void opcode_is_boolean(Process* proc,
   Term arg1(ctx.ip(1));
   ctx.deref(arg1);
   if (arg1 != atom::TRUE && arg1 != atom::FALSE) {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   ctx.inc_ip();
 }
@@ -948,16 +948,16 @@ inline void opcode_is_function2(Process* proc,
     // check arity
     BoxedFun* bf = arg1.boxed_get_ptr<BoxedFun>();
     if (arity.small_word() + bf->get_num_free() != bf->get_arity()) {
-      return ctx.jump(proc, Term(ctx.ip(0)));
+      return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
     }
   } else if (arg1.is_boxed_export()) {
     // check arity
     Export* ex = arg1.boxed_get_ptr<Export>();
     if (arity.small_word() != ex->mfa.arity) {
-      return ctx.jump(proc, Term(ctx.ip(0)));
+      return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
     }
   } else {
-    return ctx.jump(proc, Term(ctx.ip(0)));
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
 
   ctx.step_ip(3);

@@ -99,10 +99,6 @@ public:
   static TERM make_boxed(T* x) {
     return TERM(term_tag::Boxed::create_from_ptr<T>(x));
   }
-  template <typename T>
-  constexpr static TERM make_boxed_cp(T* x) {
-    return TERM(term_tag::Boxed::create_from_ptr<T>(term_tag::make_cp(x)));
-  }
 
   bool is_boxed() const { return term_tag::Boxed::check(self()->value()); }
 
@@ -524,6 +520,8 @@ class Term: public term::TermStorage,
     public term::BinaryAspect<Term> {
  public:
   explicit constexpr Term(Word v) : term::TermStorage(v) {}
+  //explicit Term(ContinuationPointer cp)
+  //  : term::TermStorage(cp.value()) {}
   constexpr Term() : term::TermStorage(term::non_value_as_word) {}
 
   // Do not call this; for better looking code use gluon::the_nil instead
