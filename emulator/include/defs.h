@@ -82,6 +82,9 @@ using Pair = std::pair<A, B>;
 template <typename A>
 using List = std::list<A>;
 
+template <typename A>
+using SingleList = std::list<A>;
+
 // Single-ended queue with push to end/pop front operations
 template <typename A>
 using Queue = std::queue<A>;

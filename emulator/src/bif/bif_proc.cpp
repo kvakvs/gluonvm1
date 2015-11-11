@@ -46,6 +46,8 @@ static Term spawn_mfargs(Process* proc, Term m, Term f, Term args, bool link) {
 
   if (link) {
     // TODO: Establish link in both directions
+    proc->link(new_proc);
+    new_proc->link(proc);
     // TODO: on error - destroy result
   }
 

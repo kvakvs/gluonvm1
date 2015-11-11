@@ -13,6 +13,14 @@ Process::Process(VM& vm, Term gleader) : vm_(vm), gleader_(gleader) {
   prio_ = atom::NORMAL;
 }
 
+void Process::link(Process *other) {
+  links_.push_back(other->get_pid());
+}
+
+void Process::finished() {
+  slice_result_ = proc::SliceResult::Finished;
+}
+
 Term Process::spawn(MFArity& mfa, Term* args) {
   // Check that we aren't on any scheduler yet
   G_ASSERT(false == pid_.is_pid());

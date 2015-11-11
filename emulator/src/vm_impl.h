@@ -175,11 +175,11 @@ inline WantSchedule opcode_return(Process* proc,
                                   VMRuntimeContext& ctx) {  // opcode: 19
   // @spec return
   // @doc  Return to the address in the continuation pointer (CP).
-  if (ctx.cp().is_not_null()) {
-    // nowhere to return: end process
-    proc->finished();
-    return WantSchedule::NextProcess;
-  }
+//  if (ctx.cp().is_not_null()) {
+//    // nowhere to return: end process
+//    proc->finished();
+//    return WantSchedule::NextProcess;
+//  }
   ctx.set_ip(ctx.cp());
   ctx.set_cp(CodePointer());
   return WantSchedule::KeepGoing;
@@ -1171,7 +1171,9 @@ inline WantSchedule opcode_normal_exit_(Process* proc,
                                         VMRuntimeContext& ctx) {  // opcode: 158
   // This must be implemented for assert_address_makes_sense/2 to know
   // whether a jump address is valid or random garbage. We throw up here
-  throw err::TODO("notimpl exit");
+  //throw err::TODO("notimpl exit");
+  proc->finished();
+  return WantSchedule::NextProcess;
 }
 
 inline WantSchedule opcode_apply_mfargs_(

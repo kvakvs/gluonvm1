@@ -90,6 +90,11 @@ class Process {
   proc::Mailbox mailbox_;
   Term reg_name_ = the_non_value;
 
+  //
+  // Links and monitors
+  //
+  SingleList<Term> links_;
+
  public:
   Process() = delete;
   Process(VM& vm, Term gleader);
@@ -97,11 +102,12 @@ class Process {
   VM& vm() { return vm_; }
   const VM& vm() const { return vm_; }
 
+  void link(Process *other);
   void set_trap_exit(bool te) { pflags_.trap_exit = te; }
 
   Term get_registered_name() const { return reg_name_; }
   void registered_as(Term n) { reg_name_ = n; }
-  void finished() { slice_result_ = proc::SliceResult::Finished; }
+  void finished();
   proc::SliceResult get_slice_result() const { return slice_result_; }
   void set_slice_result(proc::SliceResult sr) { slice_result_ = sr; }
 
