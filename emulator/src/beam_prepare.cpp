@@ -19,7 +19,7 @@ void BeamLoader::beam_prepare_code(Module* m, ArrayView<const Uint8> data) {
   // First pass here
   //
   // save references to labels in code and resolve them in second pass
-  Vector<Word> postponed_labels = read_code(m, data, output);
+  Vector<CodePointer> postponed_labels = read_code(m, data, output);
 
   //
   // Second pass
@@ -48,15 +48,15 @@ void BeamLoader::beam_prepare_code(Module* m, ArrayView<const Uint8> data) {
   }
 }
 
-Vector<Word> BeamLoader::read_code(Module* m,
-                                   ArrayView<const Uint8> data,
-                                   Vector<Word>& output) {
+Vector<CodePointer> BeamLoader::read_code(Module* m,
+                                          ArrayView<const Uint8> data,
+                                          Vector<Word>& output) {
   tool::Reader r(data);
   static_assert(sizeof(void*) == sizeof(Word),
                 "oops word size must be same as void*");
 
   Word arity;
-  Vector<Word> postponed_labels;
+  Vector<CodePointer> postponed_labels;
 
   while (!r.is_end()) {
     // Get opcode info
@@ -85,13 +85,12 @@ Vector<Word> BeamLoader::read_code(Module* m,
 
     for (Word a = 0; a < arity; ++a) {
       Term arg = parse_term(r);
+      output.push_back(arg.value());
 
       // Use runtime value 'Catch' to mark label references
       if (arg.is_catch()) {
-        postponed_labels.push_back(output.size());
+        postponed_labels.push_back(CodePointer(&output.back()));
       }
-
-      output.push_back(arg.value());
     }
 
     post_rewrite_opcode(opcode, args, m, output);
@@ -285,7 +284,7 @@ void BeamLoader::beam_op_func_info(Vector<Word>& code, Term f, Word arity) {
 
   if (feature_line_numbers) {
     // save fun start address
-    linenums_.fun_code_map.push_back(code.data() + code.size());
+    linenums_.fun_code_map.push_back(CodePointer(&code.back() + 1));
   }
 }
 
@@ -301,19 +300,17 @@ void BeamLoader::replace_lambda_index_with_ptr(Word* p, Module* m) {
   *p = j.value();
 }
 
-void BeamLoader::resolve_labels(const Vector<Word>& postponed_labels,
+void BeamLoader::resolve_labels(const Vector<CodePointer>& postponed_labels,
                                 Vector<Word>& code) {
-  for (Word i = 0; i < postponed_labels.size(); ++i) {
-    Word code_index = postponed_labels[i];
-
+  for (auto codep: postponed_labels) {
     // Unwrap catch-marked value
-    Word label_index = term_tag::Catch::value(code[code_index]);
+    Word label_index = term_tag::Catch::value(codep[0]);
 
     // New value will be small int
     auto lptr = labels_.find_ptr(LabelIndex(label_index));
     G_ASSERT(lptr);
     auto resolved = ContinuationPointer::make_cp(*lptr);
-    code[code_index] = resolved.value();
+    codep[0] = resolved.value();
   }
   return;
 }

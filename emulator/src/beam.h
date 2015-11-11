@@ -61,7 +61,7 @@ class BeamLoader {
 
     Vector<line_instr_t> line_instr;
     // Mapping fun# to code start for it
-    Vector<Word*> fun_code_map;
+    Vector<CodePointer> fun_code_map;
     // word_t                m_current_li = 0;
     Word fun_id = 0;
   } linenums_;
@@ -134,7 +134,8 @@ class BeamLoader {
     //    Overflow  = 14,   // overflow/bigint
   };
 
-  void resolve_labels(const Vector<Word>& postponed_labels, Vector<Word>& code);
+  void resolve_labels(const Vector<CodePointer>& postponed_labels,
+                      Vector<Word>& code);
 
   void replace_imp_index_with_ptr(Word* p, Module* m);
   void replace_lambda_index_with_ptr(Word* p, Module* m);
@@ -151,9 +152,9 @@ class BeamLoader {
   // Code parsing functions - run a loop for each opcode, and then output
   // results to target module
   //
-  Vector<Word> read_code(Module* m,
-                         ArrayView<const Uint8>,
-                         Vector<Word>& output);
+  Vector<CodePointer> read_code(Module* m,
+                                ArrayView<const Uint8>,
+                                Vector<Word>& output);
   bool rewrite_opcode(genop::Opcode opcode,
                       Vector<Word>& output,
                       tool::Reader& r);

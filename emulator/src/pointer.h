@@ -36,7 +36,8 @@ public:
                 "bad total_bits in PointerKnowledge");
 
   // how many bits are safe to cut and throw away for user-space pointers
-  constexpr static Word high_mask = (Word)(~0ULL) << (total_bits - high_bits);
+  constexpr static Word high_pos = total_bits - high_bits;
+  constexpr static Word high_mask = (Word)(~0ULL) << high_pos;
   // how many bits will always be zero due to pointer alignment
   constexpr static Word low_bits = (total_bits == 64? 3 : 2);
   constexpr static Word low_mask = (Word)(~0ULL) >> (total_bits - low_bits);
@@ -70,7 +71,10 @@ public:
 
   template <typename T>
   static Word set_tags(T* p, PointerHTag htag, PointerLTag ltag) {
-    return ((Word)p & ~mask) | ((Word)htag << high_bits) | (Word)ltag;
+    Word stripped = (Word)p & ~mask;
+    Word res = stripped | ((Word)htag << high_pos) | (Word)ltag;
+    //Std::fmt("cont set_tags 0x%zx\n", res);
+    return res;
   }
 
   static PointerHTag high_tag(Word p) {

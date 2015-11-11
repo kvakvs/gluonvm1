@@ -50,10 +50,11 @@ struct CodePointer : Wrap<Word*> {
   }
 
   template <typename Index>
-  Word operator[] (Index i) const { return value()[i]; }
-  template <typename Offset>
+  Word &operator[] (Index i) const { return value()[i]; }
 
+  template <typename Offset>
   void operator += (Offset t) { set_value(value() + t); }
+
   void operator ++ (int) { set_value(value() + 1); }
 
   template <typename Offset>

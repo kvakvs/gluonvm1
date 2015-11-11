@@ -178,9 +178,11 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     set_ip(new_ip);
   }
 
-  void jump(Process* proc, ContinuationPointer cp) {
-    G_ASSERT(cp.check() == true);
-    set_ip(cp.untag());
+  void jump(Process*, CodePointer ip) {
+    set_ip(ip);
+  }
+  void jump(Process*, ContinuationPointer ip) {
+    set_ip(ip.untag());
   }
 
   // Throws type:reason (for example error:badmatch)
@@ -316,7 +318,7 @@ WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   if (NumArgs > 0) {  // bif0 cannot fail so we have no fail label
     ContinuationPointer fail_label(ctx.ip(0));
     if (fail_label.check()) {
-      ctx.jump(proc, fail_label);
+      ctx.jump(proc, fail_label.untag());
       return WantSchedule::KeepGoing;
     }
   } // end if bif1-3
