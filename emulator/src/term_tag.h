@@ -61,10 +61,10 @@ struct Level0Tag {
   constexpr static Word value(Word t) { return (t >> Primary_tag_size); }
 };
 
-typedef Level0Tag<PrimaryTag::Cons> Cons;
-typedef Level0Tag<PrimaryTag::Tuple> Tuple;
-typedef Level0Tag<PrimaryTag::Boxed> Boxed;
-typedef Level0Tag<PrimaryTag::Immediate1> Immed;
+using Cons  = Level0Tag<PrimaryTag::Cons>;
+using Tuple = Level0Tag<PrimaryTag::Tuple>;
+using Boxed = Level0Tag<PrimaryTag::Boxed>;
+using Immed = Level0Tag<PrimaryTag::Immediate1>;
 
 //
 // Templatized tag/untag/check functions for level 1 tags (bits 2,3 when
@@ -101,14 +101,14 @@ struct Level1Tag {
   constexpr static Word value(Word t) { return t >> L1_tag_bits; }
 };
 
-typedef Level1Tag<Imm1Tag::Atom> Atom;
-typedef Level1Tag<Imm1Tag::ShortPid> ShortPid;
-typedef Level1Tag<Imm1Tag::ShortPort> ShortPort;
-typedef Level1Tag<Imm1Tag::Catch> Catch;
-typedef Level1Tag<Imm1Tag::FpRegister> FpRegister;
-typedef Level1Tag<Imm1Tag::XRegister> XRegister;
-typedef Level1Tag<Imm1Tag::YRegister> YRegister;
-typedef Level1Tag<Imm1Tag::Special> Special;  // includes nil,noval,rip
+using Atom        = Level1Tag<Imm1Tag::Atom>;
+using ShortPid    = Level1Tag<Imm1Tag::ShortPid>;
+using ShortPort   = Level1Tag<Imm1Tag::ShortPort>;
+using Catch       = Level1Tag<Imm1Tag::Catch>;
+using FpRegister  = Level1Tag<Imm1Tag::FpRegister>;
+using XRegister   = Level1Tag<Imm1Tag::XRegister>;
+using YRegister   = Level1Tag<Imm1Tag::YRegister>;
+using Special     = Level1Tag<Imm1Tag::Special>;  // includes nil,noval,rip
 
 struct Smallint {
   const static Word Tag = 0x1;
@@ -193,69 +193,22 @@ struct TaggedBox {
   }
 };
 
-typedef TaggedBox<BoxedSubtag::PositiveBignum> BoxedPosBignum;
-typedef TaggedBox<BoxedSubtag::NegativeBignum> BoxedNegBignum;
-typedef TaggedBox<BoxedSubtag::Float> BoxedFloat;
-typedef TaggedBox<BoxedSubtag::Map> BoxedMap;
-typedef TaggedBox<BoxedSubtag::FunObject> BoxedFun;
-typedef TaggedBox<BoxedSubtag::Export> BoxedExport;
-typedef TaggedBox<BoxedSubtag::Pid> BoxedPid;
-typedef TaggedBox<BoxedSubtag::Port> BoxedPort;
-typedef TaggedBox<BoxedSubtag::Ref> BoxedRef;
-typedef TaggedBox<BoxedSubtag::DestroyedSomething> BoxedRIP;
-typedef TaggedBox<BoxedSubtag::ProcBinary> BoxedProcBin;
-typedef TaggedBox<BoxedSubtag::HeapBinary> BoxedHeapBin;
-typedef TaggedBox<BoxedSubtag::MatchContext> BoxedMatchCtx;
-typedef TaggedBox<BoxedSubtag::SubBinary> BoxedSubBin;
+using BoxedPosBignum = TaggedBox<BoxedSubtag::PositiveBignum>;
+using BoxedNegBignum = TaggedBox<BoxedSubtag::NegativeBignum>;
+using BoxedFloat    = TaggedBox<BoxedSubtag::Float>;
+using BoxedMap      = TaggedBox<BoxedSubtag::Map>;
+using BoxedFun      = TaggedBox<BoxedSubtag::FunObject>;
+using BoxedExport   = TaggedBox<BoxedSubtag::Export>;
+using BoxedPid      = TaggedBox<BoxedSubtag::Pid>;
+using BoxedPort     = TaggedBox<BoxedSubtag::Port>;
+using BoxedRef      = TaggedBox<BoxedSubtag::Ref>;
+using BoxedRIP      = TaggedBox<BoxedSubtag::DestroyedSomething>;
+using BoxedProcBin  = TaggedBox<BoxedSubtag::ProcBinary>;
+using BoxedHeapBin  = TaggedBox<BoxedSubtag::HeapBinary>;
+using BoxedMatchCtx = TaggedBox<BoxedSubtag::MatchContext>;
+using BoxedSubBin   = TaggedBox<BoxedSubtag::SubBinary>;
 
 }  // ns term_tag
-
-
-//
-// Continuation Pointer (CP) is a term-looking value tagged as Boxed in its
-// low bits, and having PointerHTag::Continuation in its high bits.
-// It is used as return address and also marks stack frame
-//
-
-class ContinuationPointer {
-  Word value_;
-
-public:
-  explicit ContinuationPointer(Word x): value_(x) {}
-  ContinuationPointer(): value_(0) {}
-
-  Word value() const { return value_; }
-
-  // Is a valid continuation
-  bool check() const {
-    return (value_ != 0)
-        && PointerKnowledge::high_tag(value_) == PointerHTag::Continuation
-      #ifdef G_DEBUG
-        && PointerKnowledge::low_tag(value_) == PointerLTag::Boxed
-      #endif
-        ;
-  }
-
-  // Set highest bit to mark CP pushed on stack
-  static ContinuationPointer make_cp(CodePointer x) {
-    // just in case, hope word x is not already tagged
-    G_ASSERT(false == ContinuationPointer((Word)x.value()).check());
-    G_ASSERT(PointerKnowledge::is_userspace_pointer(x.value()));
-    return ContinuationPointer(
-          PointerKnowledge::set_tags(x.value(),
-                                     PointerHTag::Continuation,
-                                     PointerLTag::Boxed)
-          );
-  }
-
-  // Check and clear highest bit to mark CP pushed on stack
-  CodePointer untag() const {
-    G_ASSERT(check() == true);
-    auto result = PointerKnowledge::untag<Word*>(value_);
-    G_ASSERT(PointerKnowledge::is_userspace_pointer(result));
-    return CodePointer(result);
-  }
-};
 
 
 } // ns gluon

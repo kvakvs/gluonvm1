@@ -1,4 +1,5 @@
 #pragma once
+#include "pointer.h"
 
 namespace gluon {
 
@@ -64,6 +65,52 @@ struct CodePointer : Wrap<Word*> {
 
   bool is_null() const { return value() == nullptr; }
   bool is_not_null() const { return value() != nullptr; }
+};
+
+
+//
+// Continuation Pointer (CP) is a term-looking value tagged as Boxed in its
+// low bits, and having PointerHTag::Continuation in its high bits.
+// It is used as return address and also marks stack frame
+//
+class ContinuationPointer {
+  Word value_;
+
+public:
+  explicit ContinuationPointer(Word x): value_(x) {}
+  ContinuationPointer(): value_(0) {}
+
+  Word value() const { return value_; }
+
+  // Is a valid continuation
+  bool check() const {
+    return (value_ != 0)
+        && PointerKnowledge::high_tag(value_) == PointerHTag::Continuation
+      #ifdef G_DEBUG
+        && PointerKnowledge::low_tag(value_) == PointerLTag::Boxed
+      #endif
+        ;
+  }
+
+  // Set highest bit to mark CP pushed on stack
+  static ContinuationPointer make_cp(CodePointer x) {
+    // just in case, hope word x is not already tagged
+    G_ASSERT(false == ContinuationPointer((Word)x.value()).check());
+    G_ASSERT(PointerKnowledge::is_userspace_pointer(x.value()));
+    return ContinuationPointer(
+          PointerKnowledge::set_tags(x.value(),
+                                     PointerHTag::Continuation,
+                                     PointerLTag::Boxed)
+          );
+  }
+
+  // Check and clear highest bit to mark CP pushed on stack
+  CodePointer untag() const {
+    G_ASSERT(check() == true);
+    auto result = PointerKnowledge::untag<Word*>(value_);
+    G_ASSERT(PointerKnowledge::is_userspace_pointer(result));
+    return CodePointer(result);
+  }
 };
 
 } // ns gluon
