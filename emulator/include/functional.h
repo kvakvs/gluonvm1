@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 namespace gluon {
 
 // Strongly typed pair of 2 any types. Only one can be active at any time
@@ -12,6 +14,10 @@ class Either {
     R m_right;
   };
   Either() {}
+
+  // Either must be declared with different types for L and R
+  static_assert(std::is_same<L, R>::value == false,
+                "L must != R");
 
  public:
   Either(const L& l) : m_is_left(true), m_left(l) {}

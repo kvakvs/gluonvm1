@@ -47,6 +47,15 @@ public:
   Float fp(Word) const { throw err::FeatureMissing("FLOAT"); }
   void set_fp(Word, Float) { throw err::FeatureMissing("FLOAT"); }
 #endif
+
+  void print_regs(const VM& vm) const {
+    if (debug_mode) {
+      for (Word r = 0; r < live; ++r) {
+        Std::fmt("x[%zu]=", r);
+        regs_[r].println(vm);
+      }
+    }
+  }
 };
 
 class RuntimeContext : public RuntimeContextFields {

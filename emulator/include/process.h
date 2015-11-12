@@ -174,8 +174,8 @@ class Process {
   //
   // Copies args from proper list with precalculated length to registers
   void set_args(Term args, Word len);
-  // Jumps to code saving current IP in CP. Make sure ctx is swapped out from
-  // VM!
+  // Jumps to code saving current IP in CP. Make sure ctx is swapped out
+  // from VM!
   void call(CodePointer code) {
     ctx_.assert_swapped_out_partial();
     ctx_.set_cp(ctx_.ip());

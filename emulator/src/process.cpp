@@ -102,20 +102,18 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   Term _this = the_non_value;
   if (!m.is_atom()) {
     if (!m.is_tuple() || m.tuple_get_arity() < 1) {
-      error_badarg(m);
-      return CodePointer();
+      return error_badarg(m);
     }
     // TODO: can optimize here by accessing tuple internals via pointer and
     // checking arity and then taking 2nd element
     _this = m;
     m = m.tuple_get_element(1);
     if (!m.is_atom()) {
-      error_badarg(m);
-      return CodePointer();
+      return error_badarg(m);
     }
   }
 
-  ctx_.assert_swapped_out_partial();
+  ctx_.assert_swapped_out();
   Word arity = 0;
   if (args.is_small()) {
     // Small unsigned in args means args already are loaded in regs
@@ -130,37 +128,38 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
       if (arity < erts::max_regs - 1) {
         tmp.cons_head_tail(ctx_.regs_[arity++], tmp);
       } else {
-        error(atom::SYSTEM_LIMIT);
-        return CodePointer();
+        return error(atom::SYSTEM_LIMIT);
       }
     }
     if (tmp.is_not_nil()) {  // Must be well-formed list
-      error_badarg();
-      return CodePointer();
+      return error_badarg();
     }
     if (_this != the_non_value) {
       ctx_.regs_[arity++] = _this;
     }
   }
-  ctx_.live = arity;
 
   // Get the index into the export table, or failing that the export
   // entry for the error handler.
   MFArity mfa(m, f, arity);
 
+  Std::fmt("process->apply (live=%zu) ", arity);
+  mfa.println(vm_);
+
   auto maybe_bif = vm_.find_bif(mfa);
   if (maybe_bif) {
-    return vm_.apply_bif(this, mfa.arity, maybe_bif, ctx_.regs_);
+    ctx_.live = 0;
+    return vm_.apply_bif(this, arity, maybe_bif, ctx_.regs_);
   }
 
   Export* ep = vm_.codeserver().find_mfa(mfa);
   if (!ep) {
     // if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL)
     // goto error;
-    error(atom::UNDEF);
-    return CodePointer();
+    return error(atom::UNDEF);
   }
   if (ep->is_bif()) {
+    ctx_.live = 0;
     return vm_.apply_bif(this, ep->mfa.arity, ep->bif_fn(), ctx_.regs_);
   }
   //  else if (ERTS_PROC_GET_SAVED_CALLS_BUF(proc)) {
@@ -168,6 +167,7 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   //  }
   //  DTRACE_GLOBAL_CALL_FROM_EXPORT(proc, ep);
   //  return ep->addressv[erts_active_code_ix()];
+  ctx_.live = arity;
   return ep->code();
 }
 

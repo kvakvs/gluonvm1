@@ -881,20 +881,23 @@ static WantSchedule after_apply(Process* proc,
   }
   // Or we already know the result, no call is happening
   ctx.regs_[0] = res.right();
+  ctx.live = 1;
   return ctx.consume_reduction(proc);
 }
 
 inline WantSchedule opcode_apply(Process* proc,
                                  VMRuntimeContext& ctx) {  // opcode: 112
-  // @spec apply Arity [x[0..Arity-1]=args, x[arity]=m, x[arity+1]=f]
+  // @spec apply Arity
+  // regs[0..Arity-1]=args, regs[arity]=m, regs[arity+1]=f
   Term arity_as_term(ctx.ip(0));
   Word arity = arity_as_term.small_word();
   Term mod = ctx.regs_[arity];
   Term fun = ctx.regs_[arity + 1];
+  ctx.live = arity; // we do not have to preserve mod and fun in regs on swap
 
-  ctx.swap_out_partial(proc);
+  ctx.swap_out(proc);
   Either<CodePointer, Term> res = proc->apply(mod, fun, arity_as_term);
-  ctx.swap_in_partial(proc);
+  ctx.swap_in(proc);
 
   ctx.inc_ip();  // consume Arity arg
   return after_apply(proc, ctx, arity, res);
@@ -1190,6 +1193,7 @@ inline WantSchedule opcode_apply_mfargs_(
   mod.print(ctx.vm_);
   Std::fmt(":");
   fun.print(ctx.vm_);
+  Std::fmt(" args=");
   args.print(ctx.vm_);
   Std::fmt("\n");
 
