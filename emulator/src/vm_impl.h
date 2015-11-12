@@ -452,11 +452,12 @@ inline void opcode_is_binary(Process* proc,
                              VMRuntimeContext& ctx) {  // opcode: 53
 // @spec is_binary Lbl Arg1
 // @doc Test the type of Arg1 and jump to Lbl if it is not a binary.
-#if FEATURE_BINARIES
-  G_TODO("is_binary");
-#else
-  return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
-#endif
+  Term t(ctx.ip(1));
+  ctx.deref(t);
+  if (!t.is_binary()) {
+    return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
+  }
+  ctx.step_ip(2);
 }
 //  inline void opcode_is_constant(Process *proc, VMRuntimeContext &ctx) { //
 //  opcode: 54
