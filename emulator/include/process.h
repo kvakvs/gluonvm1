@@ -174,6 +174,8 @@ class Process {
   //
   // Copies args from proper list with precalculated length to registers
   void set_args(Term args, Word len);
+  // Same as set_args PLUS copies frozen values from bf closure
+  void set_args(Term args, Word len, BoxedFun* bf);
   // Jumps to code saving current IP in CP. Make sure ctx is swapped out
   // from VM!
   void call(CodePointer code) {

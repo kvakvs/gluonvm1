@@ -658,9 +658,8 @@ Term bif_function_exported_3(Process* proc, Term m, Term f, Term arity) {
 }
 
 Term bif_apply_2(Process* proc, Term funobject, Term args) {
-  auto fbox = funobject.boxed_get_ptr<BoxedFun>();
-  auto fe = fbox->fun_entry;
-  throw err::TODO("recover frozen values!");
+  auto bf = funobject.boxed_get_ptr<BoxedFun>();
+  auto fe = bf->fun_entry;
 
   // Arity check
   if (!args.is_list()) {
@@ -671,13 +670,13 @@ Term bif_apply_2(Process* proc, Term funobject, Term args) {
     // improper args list, bam!
     return proc->error_badarg(args);
   }
-  if (lresult.length != fe->mfa.arity) {
-    Std::fmt(tRed("bif apply/2 bad arguments\n"));
+  if (lresult.length + bf->get_num_free() != fe->mfa.arity) {
+    Std::fmt(tRed("bif apply/2 bad args count\n"));
     return proc->error_badarg(args);
   }
 
   // Set registers and live, and enter the code
-  proc->set_args(args, lresult.length);
+  proc->set_args(args, lresult.length, bf);
   proc->call(fe->code);
   return atom::OK;
 }

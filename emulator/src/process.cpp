@@ -89,6 +89,14 @@ void Process::set_args(Term args, Word len) {
   }
 }
 
+void Process::set_args(Term args, Word len, BoxedFun *bf)
+{
+  set_args(args, len);
+  auto num_frozen = bf->get_num_free();
+  std::copy(bf->frozen, bf->frozen + num_frozen, ctx_.regs_ + len);
+  ctx_.live += num_frozen;
+}
+
 Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
@@ -143,8 +151,8 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   // entry for the error handler.
   MFArity mfa(m, f, arity);
 
-  Std::fmt("process->apply (live=%zu) ", arity);
-  mfa.println(vm_);
+//  Std::fmt("process->apply (live=%zu) ", arity);
+//  mfa.println(vm_);
 
   auto maybe_bif = vm_.find_bif(mfa);
   if (maybe_bif) {
