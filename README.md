@@ -1,6 +1,7 @@
 ## THE NEXT <span style="color:silver">~~BIG~~</span> small THING™
 # Gluon Erlang Abstract Machine
 
+<img src="https://s3.amazonaws.com/uploads.hipchat.com/15025/1251221/uEVuhCHf7Yt4UAB/erl.png" width="30%" align="right">
 A configurable and small virtual machine which runs Erlang BEAM bytecode. Many
 simplifications have been made to keep code small at the cost of speed.
 The goal is to go smaller than several tens of kilobytes (oh well, under
