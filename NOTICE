@@ -1,0 +1,16 @@
+Gluon Virtual Machine for BEAM
+Copyright 2015 Dmytro Lytovchenko <dmytro.lytovchenko@gmail.com>
+
+This product includes LGPL licensed FRUCTOSE test harness developed by:
+    Original author: Andrew Peter Marlow
+    C++ test harness generator by Chris Main.
+    Python test harness generator by Brian Neal<bgneal@gmail.com>.
+
+This product includes "unlicensed" MINIZ library
+    miniz.c v1.15 - public domain deflate/inflate, zlib-subset, ZIP
+    reading/writing/appending, PNG writing
+    Rich Geldreich <richgel99@gmail.com>
+
+This product includes GSL (Guidelines Support Library) for C++ by Microsoft
+    Copyright (c) 2015 Microsoft Corporation. All rights reserved. 
+    This code is licensed under the MIT License (MIT). 
