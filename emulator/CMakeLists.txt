@@ -73,6 +73,7 @@ set(SRC_LIST
     src/pointer.h
     src/predef_atoms.cpp include/predef_atoms.h
     src/process.cpp           include/process.h
+    src/process_fail.cpp      include/process_fail.h
     src/reader.h
     src/runtime_ctx.cpp       src/runtime_ctx.h
     src/scheduler.cpp         include/scheduler.h
@@ -83,7 +84,7 @@ set(SRC_LIST
     src/term_tag.h
     src/vm.cpp                include/vm.h
     src/vm_loop.cpp
-    src/vm_ctx.h              src/vm_impl.h
+    src/vm_ctx.cpp            src/vm_ctx.h              src/vm_impl.h
     src/wrap.h
 
     src/bif/bif_misc.cpp include/bif/bif_misc.h

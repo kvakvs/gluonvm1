@@ -21,7 +21,10 @@ enum class WantSchedule {
   KeepGoing     // decided to continue current process
 };
 
-enum class CheckBifError { None, ErrorOccured };
+enum class CheckBifError {
+  None,
+  ErrorOccured
+};
 
 //
 // VM execution context, inherited from process context
@@ -154,10 +157,10 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     swap_in_partial(proc);
 
     if (result.is_non_value()) {
-      if (proc->is_failed()) {
+      if (proc->fail_.is_failed()) {
         // a real error happened
-        Term reason = proc->fail_value();
-        proc->clear_fail_state();
+        Term reason = proc->fail_.value();
+        proc->fail_.clear();
         return raise(proc, atom::ERROR, reason);
       }
       // if it was undef - do nothing, it wasn't a bif - we just continue
@@ -185,26 +188,24 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     set_ip(ip.untag());
   }
 
-  // Throws type:reason (for example error:badmatch)
+  // Creates an error of type:reason (for example error:badmatch) and processes
+  // actions required to handle it
   void raise(Process* proc, Term type, Term reason) {
-    regs_[0] = type;
-    regs_[1] = reason;
-    proc->stack_trace_ = the_non_value;
-    return this->exception(proc);
+    proc->fail_.clear();
+    proc->fail_.set(type, reason);
+    return handle_error(proc);
   }
 
-  void exception(Process* proc) {
-    // if (proc->catch_level_ == 0) {
-    // we're not catching anything here
-    Std::fmt(tRed("VM EXCEPTION: "));
-    regs_[0].print(vm_);
-    Std::fmt(":");
-    regs_[1].println(vm_);
+//  void exception(Process* proc) {
+//    // if (proc->catch_level_ == 0) {
+//    // we're not catching anything here
+//    Std::fmt(tRed("VM EXCEPTION: "));
+//    regs_[0].print(vm_);
+//    Std::fmt(":");
+//    regs_[1].println(vm_);
 
-    throw err::Process(tRed("notimpl exceptions"));
-    //}
-    // TODO: unwind stack
-  }
+//    return handle_error(proc);
+//  }
 
   void push_cp() {
     stack().push(ContinuationPointer::make_cp(cp()).value());
@@ -246,78 +247,9 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     } // if debug
   }
 
-  CheckBifError check_bif_error(Process* p) {
-    // --- How to do a bif call ---
-    // Following few lines should happen at each bif call
-    // Swapout
-    // Assert is not exiting
-    // ... bif call goes ...
-
-    // TODO: assert !proc is exiting or is non_value returned (error state)
-    // Swapin
-    // --- in handle error do
-    // If arg list? (parse tuple with error value and args)
-    // If save trace flag set? Save stacktrace
-    // If throw and catch level <= 0: convert Value into {nocatch, Value}
-    // call expand_error_value (OTP)
-    // If catches > 0 || traced && !panic in reason
-    //    fill regs: [nonvalue, exception_tag, Value, p->ftrace]
-    //    new_ip=find next catch, cp=0, return new ip
-    //    if still catches>0 return erl_exit catch not found
-    // else terminate proc with Value
-
-    if (p->is_not_failed()) {
-      return CheckBifError::None;
-    }
-    Term reason = p->fail_value();
-    p->clear_fail_state();
-    this->raise(p, atom::ERROR, reason);
-    return CheckBifError::ErrorOccured;
-  }
-
-  CodePointer find_next_catch(CodePointer cp) {
-    /* For stack end to stack start do {
-        if ptr=start return not found
-        if !ptr.is_cp || (*ptr.value() not in return_[trace,to_trace,time_trace])
-          && proc->cp) {
-          cpp = proc->cp
-          if cpp == beam_exc_trace...: ptr += 2
-          elif cpp == beam_return_trace...: ptr += 2
-          ... return_time_trace: ptr++
-          ... return_to_trace: have_return_to_trace=true
-        }
-        while (ptr < stack start) {
-          if ptr.is_catch {
-            if active_catches (that is p->catch_count > 0) { goto found }
-          } else if ptr.is_cp {
-            prev = ptr
-            if prev.cp_val == return_trace {
-              ... magic
-              ptr += 2
-            } else is == return_to_Trace {
-              ... magic
-              ptr += 2
-            } else is == return_time_trace {
-              ... magic
-              ptr++
-            } else {
-              if havereturn_to_trace {
-                set it to false
-                return_to_trace_ptr = ptr
-              } else return_to_trace_ptr = nullptr
-            }
-          } else ptr++
-        }
-        return not found
-        found:
-          assert ptr still in stack
-          proc->stop = prev
-          if is_traced && return_to_trace_ptr {
-            erts trace return to
-          }
-          else return ptr.catch_value
-     }*/
-  }
+  CheckBifError check_bif_error(Process* p);
+  void handle_error(Process *p);
+  CodePointer find_next_catch(CodePointer cp);
 
   // If value stored in var is immediate and is a special value referring
   // register or stack cell, it gets replaced with value stored in that register

@@ -8,6 +8,7 @@
 #include "functional.h"
 #include "runtime_ctx.h"
 #include "wrap.h"
+#include "process_fail.h"
 
 namespace gluon {
 
@@ -37,13 +38,6 @@ enum class Queue {
 
 constexpr Word wait_infinite = ~0UL;
 
-enum class FailType {
-  None,
-  Exit,
-  Error,
-  Throw
-};
-
 }  // ns proc
 
 //------------------------------------------------------------------------------
@@ -71,9 +65,6 @@ class Process {
     bool trap_exit = false;
   } pflags_;
 
-  Term fail_value_ = the_non_value;
-  proc::FailType fail_type_ = proc::FailType::None;
-
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
   // TODO: make this union to save space
@@ -94,6 +85,9 @@ class Process {
   // Links and monitors
   //
   SingleList<Term> links_;
+
+ public:
+  proc::Fail fail_;
 
  public:
   Process() = delete;
@@ -142,8 +136,7 @@ class Process {
   // Returns no_val and sets bif error flag in process. Use in bifs to signal
   // error condition: return proc->bif_error(reason);
   Term fail(proc::FailType ft, Term reason) {
-    fail_type_  = ft;
-    fail_value_ = reason;
+    fail_.set(ft, reason);
     return the_non_value;
   }
   Term error(Term reason) {
@@ -153,14 +146,6 @@ class Process {
   Term error(Term error_tag, Term reason);   // builds tuple {ErrorTag, Reason}
   Term error_badarg(Term reason);  // builds tuple {badarg, Reason}
   Term error_badarg();
-  proc::FailType fail_type() const { return fail_type_; }
-  Term fail_value() const { return fail_value_; }
-  bool is_failed() const { return fail_value_.is_value(); }
-  bool is_not_failed() const { return fail_value_.is_non_value(); }
-  void clear_fail_state() {
-    fail_type_ = proc::FailType::None;
-    fail_value_ = the_non_value;
-  }
 
   //
   // Send/receive thingies
