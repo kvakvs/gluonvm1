@@ -25,7 +25,9 @@ using AtomProcMap = Dict<Term, Process*>;
 
 enum class RegisterResult { Ok, RegistrationExists, ProcessNotFound };
 
-enum class PremadeIndex : Word { Apply_mfargs_, Normal_exit_, Total_count };
+enum class PremadeIndex : Word {
+  Apply_mfargs_, Normal_exit_, Error_exit_, Total_count
+};
 
 // Contains VM code to execute one specific instruction. 'Apply' is
 // used as process entry address and 'Exit' as process exit address

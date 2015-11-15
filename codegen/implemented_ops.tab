@@ -81,3 +81,4 @@ is_port
 #--- Internal self-made opcodes
 normal_exit_
 apply_mfargs_
+error_exit_

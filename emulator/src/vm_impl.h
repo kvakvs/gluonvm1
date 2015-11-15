@@ -199,7 +199,7 @@ inline WantSchedule opcode_send(Process* proc,
   Std::fmt(" -> ");
   dest.println(ctx.vm_);
 
-  proc->msg_send(dest, msg);
+  proc->send_message_to(dest, msg);
   ctx.regs_[0] = ctx.regs_[1];
   ctx.regs_[1] = the_nil;
   return ctx.consume_reduction(proc);
@@ -224,7 +224,7 @@ inline void opcode_loop_rec(Process* proc,
   // @doc  Pick up the next message and place it in x(0). If no message,
   //       jump to a wait or wait_timeout instruction.
   Term msg = proc->mailbox().get_current();
-  if (msg.is_non_value()) {
+  if (msg.is_nonvalue()) {
     return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   // ctx.move(msg, Term(ctx.ip[1]));
@@ -713,10 +713,8 @@ inline WantSchedule opcode_call_fun(Process* proc,
     }
   } else {
     // TODO: make tuple {badfun, f_args} (same as above)
-    term::TupleBuilder tb(ctx.heap_, 2);
-    tb.add(atom::BADFUN);
-    tb.add(fun);
-    ctx.raise(proc, atom::ERROR, tb.make_tuple());
+    ctx.raise(proc, atom::ERROR,
+              term::make_tuple(ctx.heap_, {atom::BADFUN, fun}));
   }
   return ctx.consume_reduction(proc);
 }
@@ -1206,6 +1204,12 @@ inline WantSchedule opcode_apply_mfargs_(
   G_ASSERT(arity_result.is_proper == true);
 
   return after_apply(proc, ctx, arity_result.length, res);
+}
+
+// opcode: N+2
+inline WantSchedule opcode_error_exit_(Process *proc, VMRuntimeContext &ctx) {
+  ctx.handle_error(proc);
+  return WantSchedule::NextProcess;
 }
 
 }  // ns impl

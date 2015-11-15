@@ -14,5 +14,13 @@ Term build_string(proc::Heap* h, const char* cstr) {
   return build_list(h, cstr, cstr_end);
 }
 
+Term make_tuple(proc::Heap *heap, const std::initializer_list<Term> &values) {
+  TupleBuilder tb(heap, values.size());
+  for (auto v: values) {
+    tb.add(v);
+  }
+  return tb.make_tuple();
+}
+
 }  // ns term
 }  // ns gluon

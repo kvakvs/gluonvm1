@@ -20,6 +20,7 @@ class TupleBuilder {
   TupleBuilder(proc::Heap* heap, Word arity) : m_arity(arity), m_index(0) {
     m_elements = (Term*)heap->allocate<Word>(layout::Tuple::box_size(arity));
   }
+
   void add(Term x) {
     G_ASSERT(m_index < m_arity);
     layout::Tuple::element(m_elements, m_index) = x;
@@ -30,6 +31,8 @@ class TupleBuilder {
     return Term::make_tuple(m_elements, m_arity);
   }
 };
+
+Term make_tuple(proc::Heap* heap, const std::initializer_list<Term> &values);
 
 template <typename T>
 Term make_term(const T&);

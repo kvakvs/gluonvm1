@@ -68,7 +68,7 @@ bool copy_terms(VM& vm,
 // Copies one term 't' to 'dstheap' returns new clone term located in new heap
 Term copy_one_term(VM& vm, Heap* dstheap, Term t) {
   // Immediate values go immediately out
-  if (t.is_non_value() || t.is_nil() || t.is_small() || t.is_atom() ||
+  if (t.is_nonvalue() || t.is_nil() || t.is_small() || t.is_atom() ||
       t.is_short_pid() || t.is_short_port()) {
     return t;
   }

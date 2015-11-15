@@ -141,7 +141,7 @@ void Term::print(const VM& vm) const {
     // ------ end boxed ------
   } else if (is_nil()) {
     Std::fmt("[]");
-  } else if (is_non_value()) {
+  } else if (is_nonvalue()) {
     Std::fmt(cSpecialTermColor "NON_VALUE" cRst);
   } else if (is_atom()) {
     Std::fmt("'%s'", atom_str(vm).c_str());

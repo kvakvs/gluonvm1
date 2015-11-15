@@ -179,6 +179,7 @@ Process* Scheduler::next() {
       next_proc->get_pid().println(vm_);
 
       next_proc->current_queue_ = proc::Queue::None;
+      next_proc->new_slice();
       return current_ = next_proc;
     }
 

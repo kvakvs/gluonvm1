@@ -68,7 +68,7 @@ RegisterResult VM::register_name(Term name, Term pid_port) {
 
 Term VM::to_atom(const Str& s) {
   Term a = to_existing_atom(s);
-  return a.is_non_value() ? new_atom(s) : a;
+  return a.is_nonvalue() ? new_atom(s) : a;
 }
 
 Term VM::new_atom(const Str& s) {
@@ -145,12 +145,12 @@ Term VM::apply_bif(Process* proc, MFArity& mfa, Term* args) {
         return ((bif3_fn)b)(proc, args[0], args[1], args[2]);
     }  // switch
   }    // if b
-  return proc->error(atom::UNDEF);
+  return proc->bif_error(atom::UNDEF);
 }
 
 Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
   if (!fn) {
-    return proc->error(atom::BADFUN);
+    return proc->bif_error(atom::BADFUN);
   }
   switch (arity) {
     case 0:
@@ -162,7 +162,7 @@ Term VM::apply_bif(Process* proc, Word arity, void* fn, Term* args) {
     case 3:
       return ((bif3_fn)fn)(proc, args[0], args[1], args[2]);
   }
-  return proc->error(atom::UNDEF);
+  return proc->bif_error(atom::UNDEF);
 }
 
 void VM::assert_valid_vmloop_label(const void* p) const {
@@ -177,6 +177,9 @@ void PremadeBeaminstr::init(const VM& vm) {
 
   p[(Word)PremadeIndex::Normal_exit_] =
       (Word)vm.g_opcode_labels[(Word)genop::Opcode::Normal_exit_];
+
+  p[(Word)PremadeIndex::Error_exit_] =
+      (Word)vm.g_opcode_labels[(Word)genop::Opcode::Error_exit_];
 }
 
 }  // ns gluon

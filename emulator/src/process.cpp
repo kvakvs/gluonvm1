@@ -43,27 +43,78 @@ Term Process::spawn(MFArity& mfa, Term* args) {
   return get_pid();
 }
 
-Term Process::error(Term error_tag, Term reason) {
-  term::TupleBuilder tb(get_heap(), 2);
-  tb.add(error_tag);
-  tb.add(reason);
-  return fail(proc::FailType::Error, tb.make_tuple());
+Term Process::bif_error(Term error_tag, Term reason) {
+  return bif_fail(proc::FailType::Error,
+                  term::make_tuple(get_heap(), {error_tag, reason}));
 }
 
-Term Process::error(Term reason, const char* str) {
+// Exit signal behavior
+//
+// Exit signals are asynchronous. When the signal is received the receiver
+// receives an 'EXIT' message if it is trapping exits; otherwise, it will either
+// ignore the signal if the exit reason is normal, or go into an exiting state
+// psflag_.exiting. When a process has gone into the exiting state it will not
+// execute any more Erlang code, but it might take a while before it actually
+// exits. The exit signal is being received when the 'EXIT' message is put in
+// the message queue, the signal is dropped, or when it changes state into
+// exiting. The time it is in the exiting state before actually exiting is
+// undefined (it might take a really long time under certain conditions). The
+// receiver of the exit signal does not break links or trigger monitors until
+// it actually exits.
+//
+// Exit signals and other signals, e.g. messages, have to be received by a
+// receiver in the same order as sent by a sender.
+Process::ExitSigResult Process::send_exit_signal(
+    Process* from, Term reason, ExitSigFlags flags, Term exit_tuple)
+{
+  // on 'kill', flip reason to 'killed'
+  Term reason1 = (reason == atom::KILL) ? atom::KILLED : reason;
+  G_ASSERT(reason.is_not_nonvalue());
+
+  if ((pflags_.trap_exit && reason != atom::KILL) || flags.ignore_kill) {
+    // TODO: trace update goes here
+    if (exit_tuple.is_not_nonvalue()) {
+      // TODO: special 'EXIT' message handler with locks?
+      enqueue_message(exit_tuple);
+    } else {
+      enqueue_message(
+            term::make_tuple(get_heap(),
+                            {atom::EXIT, from->get_pid(), reason1})
+            );
+    }
+    return ExitSigResult::MessageSent;
+  } else if (reason == atom::NORMAL || flags.no_ignore_normal) {
+    // TODO: SMP handling
+    if (pflags_.exiting == false) {
+      set_exiting(proc::copy_one_term(vm_, &heap_, reason));
+      return ExitSigResult::WillExit;
+    }
+  }
+  return ExitSigResult::NotAffected;
+}
+
+void Process::set_exiting(Term reason)
+{
+  // TODO: SMP locks?
+  pflags_.suspended = false;
+  pflags_.pending_exit = false;
+  pflags_.exiting = true;
+  pflags_.active = true;
+
+  fail_.set(proc::FailType::Exit, reason);
+
+  catch_level_ = 0;
+
+  ctx_.assert_swapped_out_partial();
+  ctx_.set_ip(vm_.premade_instr(PremadeIndex::Error_exit_));
+}
+
+Term Process::bif_error(Term reason, const char* str) {
   Term err = term::build_string(get_heap(), str);
-  return error(reason, err);
+  return bif_error(reason, err);
 }
 
-Term Process::error_badarg(Term reason) {
-  return error(atom::BADARG, reason);
-}
-
-Term Process::error_badarg() {
-  return error(atom::BADARG);
-}
-
-void Process::msg_send(Term pid, Term value) {
+void Process::send_message_to(Term pid, Term value) {
   // TODO: send to tuple {dst,node}, and to registered atom, and to port
   G_ASSERT(pid.is_pid());
 
@@ -73,10 +124,18 @@ void Process::msg_send(Term pid, Term value) {
     pid.println(vm_);
     return;
   }
+  return other->enqueue_message(value);
+}
+
+void Process::enqueue_message(Term value) {
+  if (pflags_.exiting || pflags_.pending_exit) {
+    return;
+  }
+
   // Clone local value to value on remote heap
-  Term dst_value = proc::copy_one_term(vm_, other->get_heap(), value);
-  other->mailbox().on_incoming(dst_value);
-  vm_.scheduler().on_new_message(other);  // wake up receiver
+  Term dst_value = proc::copy_one_term(vm_, get_heap(), value);
+  mailbox_.on_incoming(dst_value);
+  vm_.scheduler().on_new_message(this);  // wake up receiver
 }
 
 void Process::set_args(Term args, Word len) {
@@ -101,7 +160,7 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   // Check the arguments which should be of the form apply(M,F,Args) where
   // F is an atom and Args is an arity long list of terms
   if (!f.is_atom()) {
-    error_badarg(f);  // fail right here
+    bif_error_badarg(f);  // fail right here
     return CodePointer();
   }
 
@@ -110,14 +169,14 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   Term _this = the_non_value;
   if (!m.is_atom()) {
     if (!m.is_tuple() || m.tuple_get_arity() < 1) {
-      return error_badarg(m);
+      return bif_error_badarg(m);
     }
     // TODO: can optimize here by accessing tuple internals via pointer and
     // checking arity and then taking 2nd element
     _this = m;
     m = m.tuple_get_element(1);
     if (!m.is_atom()) {
-      return error_badarg(m);
+      return bif_error_badarg(m);
     }
   }
 
@@ -136,11 +195,11 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
       if (arity < erts::max_regs - 1) {
         tmp.cons_head_tail(ctx_.regs_[arity++], tmp);
       } else {
-        return error(atom::SYSTEM_LIMIT);
+        return bif_error(atom::SYSTEM_LIMIT);
       }
     }
     if (tmp.is_not_nil()) {  // Must be well-formed list
-      return error_badarg();
+      return bif_error_badarg();
     }
     if (_this != the_non_value) {
       ctx_.regs_[arity++] = _this;
@@ -164,7 +223,7 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   if (!ep) {
     // if ((ep = apply_setup_error_handler(proc, m, f, arity, regs)) == NULL)
     // goto error;
-    return error(atom::UNDEF);
+    return bif_error(atom::UNDEF);
   }
   if (ep->is_bif()) {
     ctx_.live = 0;

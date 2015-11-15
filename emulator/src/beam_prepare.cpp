@@ -265,12 +265,12 @@ void BeamLoader::beam_op_func_info(Vector<Word>& code, Term f, Word arity) {
     last_ptr = CodePointer(&code.back() + 1);
 
     // Finish previous function if it already started
-    if (current_fun_.fun.is_value()) {
+    if (current_fun_.fun.is_not_nonvalue()) {
       code::Range range(coderanges_.fun_begin, last_ptr);
       G_ASSERT(current_fun_.fun.is_atom());
       coderanges_.fun_map.add(range, current_fun_);
     }
-    if (f.is_non_value()) {
+    if (f.is_nonvalue()) {
       // we mark end of code by calling this with a non-value
       return;
     }

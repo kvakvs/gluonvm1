@@ -54,6 +54,7 @@ public:
   // Fills fields for some common error reasons
   void set_normal_exit(); // exit
   void set_internal_error(Term v); // error+panic
+  void set_badarg(proc::Heap* heap, Term v);
   void set_badarg();
   void set_badarith();
   void set_badmatch();

@@ -156,11 +156,11 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     Term result = vm_.apply_bif(proc, mfa->arity, fn, regs_);
     swap_in_partial(proc);
 
-    if (result.is_non_value()) {
-      if (proc->fail_.is_failed()) {
+    if (result.is_nonvalue()) {
+      if (proc->is_failed()) {
         // a real error happened
-        Term reason = proc->fail_.value();
-        proc->fail_.clear();
+        Term reason = proc->fail_value();
+        proc->fail_clear();
         return raise(proc, atom::ERROR, reason);
       }
       // if it was undef - do nothing, it wasn't a bif - we just continue
@@ -191,8 +191,8 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   // Creates an error of type:reason (for example error:badmatch) and processes
   // actions required to handle it
   void raise(Process* proc, Term type, Term reason) {
-    proc->fail_.clear();
-    proc->fail_.set(type, reason);
+    proc->fail_clear();
+    proc->fail_set(type, reason);
     return handle_error(proc);
   }
 

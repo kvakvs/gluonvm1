@@ -14,13 +14,13 @@ Term bif_self_0(Process* proc) {
 
 static Term spawn_mfargs(Process* proc, Term m, Term f, Term args, bool link) {
   if (!m.is_atom()) {
-    return proc->error_badarg(m);
+    return proc->bif_error_badarg(m);
   }
   if (!f.is_atom()) {
-    return proc->error_badarg(f);
+    return proc->bif_error_badarg(f);
   }
   if (!args.is_list()) {
-    return proc->error_badarg(args);
+    return proc->bif_error_badarg(args);
   }
 
   // TODO: on process control blocks' heap
@@ -41,7 +41,7 @@ static Term spawn_mfargs(Process* proc, Term m, Term f, Term args, bool link) {
     mfa.println(proc->vm());
     new_proc->spawn(mfa, new_heap_args);
   } catch (std::runtime_error& e) {
-    return proc->error(atom::ERROR, e.what());
+    return proc->bif_error(atom::ERROR, e.what());
   }
 
   if (link) {
@@ -74,7 +74,7 @@ Term bif_group_leader_2(Process* proc, Term pid, Term gl) {
 
 Term bif_is_process_alive_1(Process* proc, Term pid) {
   if (!pid.is_short_pid()) {
-    return proc->error_badarg(pid);
+    return proc->bif_error_badarg(pid);
   }
   if (proc->vm().scheduler().find(pid) == nullptr) {
     return atom::FALSE;
@@ -83,39 +83,39 @@ Term bif_is_process_alive_1(Process* proc, Term pid) {
 }
 
 Term bif_nif_error_1(Process* p, Term what) {
-  return p->error(atom::ERROR, what);
+  return p->bif_error(atom::ERROR, what);
 }
 
 Term bif_register_2(Process* p, Term name, Term pid_port) {
   if (!name.is_atom() || name == atom::UNDEFINED) {
-    return p->error_badarg(name);
+    return p->bif_error_badarg(name);
   }
   if (!pid_port.is_pid() && !pid_port.is_port()) {
-    return p->error_badarg(pid_port);
+    return p->bif_error_badarg(pid_port);
   }
   switch (p->vm().register_name(name, pid_port)) {
     case RegisterResult::Ok:
       return atom::TRUE;
     case RegisterResult::RegistrationExists:  // fall through
     case RegisterResult::ProcessNotFound:
-      return p->error_badarg(pid_port);
+      return p->bif_error_badarg(pid_port);
   }
 }
 
 Term bif_process_flag_2(Process* p, Term flag, Term value) {
   if (flag == atom::TRAP_EXIT) {
     if (!G_IS_BOOLEAN(value)) {
-      return p->error_badarg(value);
+      return p->bif_error_badarg(value);
     }
     p->set_trap_exit(value == atom::TRUE);
     return atom::OK;
   }
-  return p->error_badarg(flag);
+  return p->bif_error_badarg(flag);
 }
 
 Term bif_exit_1(Process *p, Term what)
 {
-  return p->fail(proc::FailType::Exit, what);
+  return p->bif_fail(proc::FailType::Exit, what);
 }
 
 Term bif_exit_2(Process *proc, Term pid, Term what)
@@ -139,14 +139,15 @@ Term bif_exit_2(Process *proc, Term pid, Term what)
     // TODO: prepare distributed signal and send it if possible
     throw err::TODO("exit/2 for remote pid");
   } else if (!pid.is_short_pid()) {
-    return proc->error_badarg();
+    return proc->bif_error_badarg();
   } else {
     // The pid is internal. Verify that it refers to an existing process.
     // TODO: Find process, honour locks (for SMP)
-    Process* p = proc->vm().scheduler().find(pid);
+    Process* other_p = proc->vm().scheduler().find(pid);
 
     // TODO: Send an exit signal
-    if (p) {
+    if (other_p) {
+      //return other_p->bif_fail(proc::FailType::Exit, what);
       throw err::TODO("notimpl exit signals");
     }
 

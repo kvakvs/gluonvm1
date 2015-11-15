@@ -49,7 +49,7 @@ constexpr Word wait_infinite = ~0UL;
 class Process {
  public:
   Term stack_trace_ = the_non_value;
-  Word catch_level_ = 0;
+  SWord catch_level_ = 0;
 
  private:
   VM& vm_;
@@ -62,8 +62,12 @@ class Process {
   Term prio_;  // an atom: 'low', 'high' or 'normal'
 
   struct {
-    bool trap_exit = false;
-  } pflags_;
+    bool trap_exit: 1;  // exits are transformed into messages
+    bool pending_exit: 1; // is waiting for own death
+    bool exiting: 1;      // is on the death bed
+    bool suspended: 1;  // does not get scheduler time-slice
+    bool active: 1;
+  } pflags_ = {false, false, false, false, false, };
 
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
@@ -85,8 +89,6 @@ class Process {
   // Links and monitors
   //
   SingleList<Term> links_;
-
- public:
   proc::Fail fail_;
 
  public:
@@ -106,13 +108,18 @@ class Process {
   void set_slice_result(proc::SliceResult sr) { slice_result_ = sr; }
 
   Term get_pid() const {
-    G_ASSERT(pid_.is_non_value() || pid_.is_pid());
+    G_ASSERT(pid_.is_nonvalue() || pid_.is_pid());
     return pid_;
   }
   Term get_priority() const { return prio_; }
   erts::RuntimeContext& get_runtime_ctx() { return ctx_; }
   Term get_group_leader() const { return gleader_; }
   void set_group_leader(Term pid) { gleader_ = pid; }
+
+  // Called by scheduler to inform proess that its got slice of CPU time
+  // to reset internal variables
+  void new_slice() {
+  }
 
   //
   // Process memory thingies
@@ -135,22 +142,56 @@ class Process {
 
   // Returns no_val and sets bif error flag in process. Use in bifs to signal
   // error condition: return proc->bif_error(reason);
-  Term fail(proc::FailType ft, Term reason) {
+  void fail_set(proc::FailType ft, Term reason) {
     fail_.set(ft, reason);
+  }
+  void fail_set(Term type, Term reason) {
+    fail_.set(type, reason);
+  }
+  Term bif_fail(proc::FailType ft, Term reason) {
+    fail_set(ft, reason);
     return the_non_value;
   }
-  Term error(Term reason) {
-    return fail(proc::FailType::Error, reason);
+  Term bif_error(Term reason) {
+    return bif_fail(proc::FailType::Error, reason);
   }
-  Term error(Term reason, const char* str);  // builds {ErrorTag, "text"}
-  Term error(Term error_tag, Term reason);   // builds tuple {ErrorTag, Reason}
-  Term error_badarg(Term reason);  // builds tuple {badarg, Reason}
-  Term error_badarg();
+  Term bif_error(Term reason, const char* str);  // builds {ErrorTag, "text"}
+  Term bif_error(Term error_tag, Term reason);   // builds tuple {ErrorTag, Reason}
+  Term bif_error_badarg(Term reason) {
+    fail_.set_badarg(get_heap(), reason);
+    return the_non_value;
+  }  // builds tuple {badarg, Reason}
+  Term bif_error_badarg() {
+    fail_.set_badarg();
+    return the_non_value;
+  }
+
+  bool is_failed() const { return fail_.is_failed(); }
+  bool is_not_failed() const { return fail_.is_not_failed(); }
+  void fail_clear() { fail_.clear(); }
+  auto fail_value() const { return fail_.value(); }
+
+  typedef struct {
+    bool ignore_kill: 1;
+    bool no_ignore_normal: 1;
+  } ExitSigFlags;
+  enum class ExitSigResult {
+    MessageSent,
+    WillExit,
+    NotAffected
+  };
+  ExitSigResult send_exit_signal(
+      Process* from, Term reason, ExitSigFlags flags, Term exit_tuple);
+  // Reason must belong to this process heap
+  void set_exiting(Term reason);
 
   //
   // Send/receive thingies
   //
-  void msg_send(Term pid, Term value);
+  // Finds destination pid and informs it about incoming value
+  void send_message_to(Term pid, Term value);
+  // Places message into own msgbox, v is copied on current proc heap
+  void enqueue_message(Term v);
   proc::Mailbox& mailbox() { return mailbox_; }
   const proc::Mailbox& mailbox() const { return mailbox_; }
 

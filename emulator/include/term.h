@@ -547,8 +547,8 @@ class Term: public term::TermStorage,
   bool operator!=(const Word x) const { return value() != x; }
   bool is_nil() const { return value() == term::nil_as_word; }
   bool is_not_nil() const { return value() != term::nil_as_word; }
-  bool is_non_value() const { return value() == term::non_value_as_word; }
-  bool is_value() const { return value() != term::non_value_as_word; }
+  bool is_nonvalue() const { return value() == term::non_value_as_word; }
+  bool is_not_nonvalue() const { return value() != term::non_value_as_word; }
 
   bool is_immed() const { return term_tag::Immed::check(value()); }
   static bool are_both_immed(Term a, Term b) {
