@@ -192,7 +192,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   // actions required to handle it
   void raise(Process* proc, Term type, Term reason) {
     proc->fail_clear();
-    proc->fail_set(type, reason);
+    proc->fail_set(proc::Fail::to_fail_type(type), reason);
     return handle_error(proc);
   }
 

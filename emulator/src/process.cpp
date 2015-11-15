@@ -48,6 +48,10 @@ Term Process::bif_error(Term error_tag, Term reason) {
                   term::make_tuple(get_heap(), {error_tag, reason}));
 }
 
+void Process::on_exception() {
+  slice_result_ = proc::SliceResult::Exception;
+}
+
 // Exit signal behavior
 //
 // Exit signals are asynchronous. When the signal is received the receiver
@@ -101,7 +105,8 @@ void Process::set_exiting(Term reason)
   pflags_.exiting = true;
   pflags_.active = true;
 
-  fail_.set(proc::FailType::Exit, reason);
+  // this also will set slice result to clean up after next/current timeslice
+  fail_set(proc::FailType::Exit, reason);
 
   catch_level_ = 0;
 

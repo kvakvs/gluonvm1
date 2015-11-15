@@ -5,19 +5,15 @@
 namespace gluon {
 namespace proc {
 
-void Fail::set(Term type, Term reason)
-{
-  if (type == atom::THROW) {
-    return set(FailType::Throw, reason);
-  } else if (type == atom::EXIT) {
-    return set(FailType::Exit, reason);
-  }
-  return set(FailType::Error, reason);
-}
-
 void Fail::set(FailType ft, Term reason) {
   type_ = ft;
   value_ = reason;
+}
+
+FailType Fail::to_fail_type(Term type) {
+  return (type == atom::THROW) ? FailType::Throw : (
+                                   (type == atom::EXIT) ? FailType::Exit :
+                                                          FailType::Error);
 }
 
 void Fail::set_normal_exit() {

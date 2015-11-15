@@ -48,8 +48,8 @@ public:
 
   // Sets error state
   // type is atom error|throw|exit, unknown will become error
-  void set(Term type, Term reason);
   void set(FailType ft, Term reason);
+  static FailType to_fail_type(Term type);
 
   // Fills fields for some common error reasons
   void set_normal_exit(); // exit

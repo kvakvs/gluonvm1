@@ -144,9 +144,7 @@ class Process {
   // error condition: return proc->bif_error(reason);
   void fail_set(proc::FailType ft, Term reason) {
     fail_.set(ft, reason);
-  }
-  void fail_set(Term type, Term reason) {
-    fail_.set(type, reason);
+    on_exception();
   }
   Term bif_fail(proc::FailType ft, Term reason) {
     fail_set(ft, reason);
@@ -159,13 +157,20 @@ class Process {
   Term bif_error(Term error_tag, Term reason);   // builds tuple {ErrorTag, Reason}
   Term bif_error_badarg(Term reason) {
     fail_.set_badarg(get_heap(), reason);
+    on_exception();
     return the_non_value;
   }  // builds tuple {badarg, Reason}
   Term bif_error_badarg() {
     fail_.set_badarg();
+    on_exception();
     return the_non_value;
   }
+private:
+  // Called after exception or exit been called
+  void on_exception();
 
+  // Accessors to private fail_ object
+public:
   bool is_failed() const { return fail_.is_failed(); }
   bool is_not_failed() const { return fail_.is_not_failed(); }
   void fail_clear() { fail_.clear(); }
