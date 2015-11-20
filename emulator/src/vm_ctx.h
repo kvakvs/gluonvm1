@@ -193,7 +193,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   void raise(Process* proc, Term type, Term reason) {
     proc->fail_clear();
     proc->fail_set(proc::Fail::to_fail_type(type), reason);
-    return handle_error(proc);
+    return proc->handle_error();
   }
 
 //  void exception(Process* proc) {
@@ -249,7 +249,6 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 
   CheckBifError check_bif_error(Process* p);
   void handle_error(Process *p);
-  CodePointer find_next_catch(CodePointer cp);
 
   // If value stored in var is immediate and is a special value referring
   // register or stack cell, it gets replaced with value stored in that register
@@ -281,8 +280,8 @@ template <Word NumArgs>
 WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   // bif0 import_index Arg1..ArgN Dst
   // bif1..3 Fail import_index Arg1..ArgN Dst
-  // For bif0 there is no Fail label, bif0 cannot fail
-  const Word mfa_offset = NumArgs == 0 ? 0 : 1;
+  // Offset for argument. For bif0 there is no Fail label, bif0 cannot fail
+  const Word mfa_offset = (NumArgs == 0) ? 0 : 1;
 
   Term boxed_mfa(ctx.ip(mfa_offset));
   Term arg[NumArgs > 0 ? NumArgs : 1];
@@ -305,6 +304,16 @@ WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   }
   G_ASSERT(fun_ptr);
 
+  // --- How to do a bif call ---
+  // Following few lines should happen at each bif call
+  // Swapout
+  // Assert is not exiting
+  // ... bif call goes ...
+  // TODO: assert !proc is exiting or is non_value returned (error state)
+  // Swapin
+  // call handle_error
+  //-------------------
+
   // Run the BIF here
   Term result = SelectBifFn<NumArgs>::apply(fun_ptr, proc, arg);
 
@@ -317,6 +326,7 @@ WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
       return WantSchedule::KeepGoing;
     }
   } // end if bif1-3
+
   if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
   }

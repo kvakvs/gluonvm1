@@ -1208,7 +1208,8 @@ inline WantSchedule opcode_apply_mfargs_(
 
 // opcode: N+2
 inline WantSchedule opcode_error_exit_(Process *proc, VMRuntimeContext &ctx) {
-  ctx.handle_error(proc);
+  ctx.swap_out(proc);
+  proc->handle_error();
   return WantSchedule::NextProcess;
 }
 

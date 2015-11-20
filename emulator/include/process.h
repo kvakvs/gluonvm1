@@ -189,7 +189,13 @@ public:
       Process* from, Term reason, ExitSigFlags flags, Term exit_tuple);
   // Reason must belong to this process heap
   void set_exiting(Term reason);
+  // Checks error condition in fail_, checks flag, unrolls stack, exits, throws
+  // or panicks depending on situation
+  void handle_error();
+private:
+  CodePointer find_next_catch();
 
+public:
   //
   // Send/receive thingies
   //

@@ -5,6 +5,17 @@
 namespace gluon {
 namespace proc {
 
+Term Fail::type_as_atom() const
+{
+  switch (type_) {
+  case FailType::Error: return atom::ERROR;
+  case FailType::Exit: return atom::EXIT;
+  case FailType::Throw: return atom::THROW;
+  case FailType::None: ;
+  }
+  return the_non_value;
+}
+
 void Fail::set(FailType ft, Term reason) {
   type_ = ft;
   value_ = reason;

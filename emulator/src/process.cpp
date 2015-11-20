@@ -114,6 +114,89 @@ void Process::set_exiting(Term reason)
   ctx_.set_ip(vm_.premade_instr(PremadeIndex::Error_exit_));
 }
 
+void Process::handle_error()
+{
+  // --- in handle error do
+  // If fail_.arg_list? (parse tuple with error value and args)
+  if (fail_.is_arg_list_set()) {
+    throw err::TODO("fail_.arg_list_");
+  }
+  // If save trace flag set? Save stacktrace
+  if (fail_.is_save_trace_set()) {
+    throw err::TODO("fail_.save_trace_");
+  }
+  // If throw and catch level <= 0: convert Value into error:{nocatch, Value}
+  if (catch_level_ <= 0 && fail_.type() == proc::FailType::Throw) {
+    Term new_value = term::make_tuple(
+          get_heap(), {atom::NOCATCH, fail_.value()}
+          );
+    fail_.set(proc::FailType::Error, new_value);
+  }
+  // TODO: call expand_error_value (for special values in OTP)
+
+  // If catches > 0 || traced && !panic in reason. Panic ignores catches
+  if (catch_level_ > 0 && !fail_.is_panic()) {
+    // fill regs: [nonvalue, exception_tag, Value, p->ftrace]
+    ctx_.regs_[0] = the_non_value;
+    ctx_.regs_[1] = fail_.type_as_atom();
+    ctx_.regs_[2] = fail_.value();
+    ctx_.regs_[3] = fail_.last_trace();
+
+    // new_ip=find next catch, cp=0, return new ip
+    CodePointer new_ip = find_next_catch();
+    // if still catches>0 return erl_exit catch not found
+  } else { // terminate proc with Value
+  }
+  //throw err::TODO("handle error");
+}
+
+CodePointer Process::find_next_catch() {
+  ctx_.assert_swapped_out();
+
+  //For stack end to stack start do {
+  //  if ptr=start return not found
+  //  if !ptr.is_cp || (*ptr.value() not in return_[trace,to_trace,time_trace])
+  //    && proc->cp) {
+  //    cpp = proc->cp
+  //    if cpp == beam_exc_trace...: ptr += 2
+  //    elif cpp == beam_return_trace...: ptr += 2
+  //    ... return_time_trace: ptr++
+  //    ... return_to_trace: have_return_to_trace=true
+  //  }
+  //  while (ptr < stack start) {
+  //    if ptr.is_catch {
+  //      if active_catches (that is p->catch_count > 0) { goto found }
+  //    } else if ptr.is_cp {
+  //      prev = ptr
+  //      if prev.cp_val == return_trace {
+  //        ... magic
+  //        ptr += 2
+  //      } else is == return_to_Trace {
+  //        ... magic
+  //        ptr += 2
+  //      } else is == return_time_trace {
+  //        ... magic
+  //        ptr++
+  //      } else {
+  //        if havereturn_to_trace {
+  //          set it to false
+  //          return_to_trace_ptr = ptr
+  //        } else return_to_trace_ptr = nullptr
+  //      }
+  //    } else ptr++
+  //  }
+  //  return not found
+  //  found:
+  //    assert ptr still in stack
+  //    proc->stop = prev
+  //    if is_traced && return_to_trace_ptr {
+  //      erts trace return to
+  //    }
+  //    else return ptr.catch_value
+  //}
+  //throw err::TODO("find next catch");
+}
+
 Term Process::bif_error(Term reason, const char* str) {
   Term err = term::build_string(get_heap(), str);
   return bif_error(reason, err);
