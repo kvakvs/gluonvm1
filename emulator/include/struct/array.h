@@ -17,6 +17,8 @@ class STLArray {
  public:
   using Iterator = typename ContainerType::iterator;
   using ConstIterator = typename ContainerType::const_iterator;
+  using RevIterator = typename ContainerType::reverse_iterator;
+  using ConstRevIterator = typename ContainerType::const_reverse_iterator;
   using Value = typename ContainerType::value_type;
 
   size_t size() const { return data_.size(); }
@@ -44,6 +46,11 @@ class STLArray {
   Iterator end() { return data_.end(); }
   ConstIterator begin() const { return data_.begin(); }
   ConstIterator end() const { return data_.end(); }
+
+  RevIterator rbegin() { return data_.rbegin(); }
+  RevIterator rend() { return data_.rend(); }
+  ConstRevIterator rbegin() const { return data_.rbegin(); }
+  ConstRevIterator rend() const { return data_.rend(); }
 
   void resize(size_t sz) { data_.resize(sz); }
   void reserve(size_t sz) { data_.reserve(sz); }

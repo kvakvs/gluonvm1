@@ -17,6 +17,11 @@ class OverlayStack {
   Word* bottom_;  // stack bottom, delimits stack growth
 
  public:
+  // TODO: Solve the fact that iter++ must advance towards stack bottom()
+  using Iterator = Word*;
+  using ConstIterator = const Word*;
+
+ public:
   OverlayStack(Word* bottom, Word* top)
       : end_(top), top_(top), bottom_(bottom) {}
 
@@ -62,9 +67,24 @@ class OverlayStack {
 //
 class SelfContainingStack {
  private:
-  Vector<Word> data_;
+  using Container = Vector<Word>;
+  Container data_;
 
  public:
+  // If iterator starts at top(), iter++ must advance towards stack bottom()
+  using Iterator = Container::RevIterator;
+  using ConstIterator = Container::ConstRevIterator;
+
+ public:
+  // Where stack ends (most recent value stored)
+  Iterator top() { return data_.rbegin(); }
+  ConstIterator top() const { return data_.rbegin(); }
+
+  // Special value to compare or pointer to one past oldest stack value (use !=
+  // when iterating using reverse iterators)
+  Iterator bottom() { return data_.rend(); }
+  ConstIterator bottom() const { return data_.rend(); }
+
   void push(Word x) { data_.push_back(x); }
   Word pop() {
     Word t = data_.back();
@@ -85,6 +105,10 @@ class SelfContainingStack {
 
 using Stack = SelfContainingStack;
 
+/*
+// Check attempts to get member function addresses to ensure that interface,
+// supported by a given class, is correct. Bad news is that it probably tries
+// to instantiate unused code, and is in general ugly.
 namespace check {
 
 template <class C>
@@ -112,6 +136,7 @@ class InterfaceCheck {
 struct CheckStack1 : InterfaceCheck<SelfContainingStack> {};
 struct CheckStack2 : InterfaceCheck<OverlayStack> {};
 }  // ns check
+*/
 
 }  // ns proc
 }  // ns gluon

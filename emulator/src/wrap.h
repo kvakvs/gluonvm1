@@ -33,10 +33,12 @@ struct LabelIndex : Wrap<Word> {
 struct CodePointer : Wrap<Word*> {
   CodePointer(): Wrap<Word *>(nullptr) {}
   explicit CodePointer(Word* x) : Wrap<Word*>(x) {}
+
   CodePointer(const CodePointer& other) = default;
   CodePointer(CodePointer&& other) = default;
   CodePointer& operator=(const CodePointer&) = default;
   CodePointer& operator=(CodePointer&&) = default;
+
   bool operator <(const CodePointer& other) const {
     return value() < other.value();
   }
@@ -80,14 +82,19 @@ public:
   explicit ContinuationPointer(Word x): value_(x) {}
   ContinuationPointer(): value_(0) {}
 
+  void set_word(Word x) { value_ = x; }
   Word value() const { return value_; }
 
   // Is a valid continuation
   bool check() const {
-    return (value_ != 0)
-        && PointerKnowledge::high_tag(value_) == PointerHTag::Continuation
+    return check(value_);
+  }
+
+  static check(Word x) {
+    return (x != 0)
+        && PointerKnowledge::high_tag(x) == PointerHTag::Continuation
       #ifdef G_DEBUG
-        && PointerKnowledge::low_tag(value_) == PointerLTag::Boxed
+        && PointerKnowledge::low_tag(x) == PointerLTag::Boxed
       #endif
         ;
   }

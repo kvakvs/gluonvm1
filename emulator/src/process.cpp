@@ -6,6 +6,8 @@
 #include "error.h"
 #include "predef_atoms.h"
 #include "term_helpers.h"
+#include "stack.h"
+#include "pointer.h"
 
 namespace gluon {
 
@@ -150,11 +152,33 @@ void Process::handle_error()
   //throw err::TODO("handle error");
 }
 
+CodePointer Process::catch_jump_to(Word index) {
+
+}
+
 CodePointer Process::find_next_catch() {
   ctx_.assert_swapped_out();
 
-  //For stack end to stack start do {
-  //  if ptr=start return not found
+  const auto ptr = heap_.stack_.top();
+  const auto bottom_ptr = heap_.stack_.bottom();
+  while (ptr != bottom_ptr) {
+    Term term0(*ptr);
+    if (term0.is_catch()) {
+      // Find frame end (step back until CP is found)
+      do {
+        ptr--;
+      } while (ContinuationPointer::check(*ptr)== false);
+      // Trim stack at ptr (stack unrolled)
+      heap_.stack_.trim(ptr);
+      // Find address for catch index
+      ctx_.set_cp(CodePointer());
+      ctx_.regs_[0] = the_non_value;
+      ctx_.live = 1;
+      return catch_jump_to(term0.catch_val());
+    } else {
+      // Not found here, keep going forward
+      ptr++;
+    }
   //  if !ptr.is_cp || (*ptr.value() not in return_[trace,to_trace,time_trace])
   //    && proc->cp) {
   //    cpp = proc->cp
@@ -193,8 +217,8 @@ CodePointer Process::find_next_catch() {
   //      erts trace return to
   //    }
   //    else return ptr.catch_value
-  //}
-  //throw err::TODO("find next catch");
+  }
+  return CodePointer();
 }
 
 Term Process::bif_error(Term reason, const char* str) {

@@ -194,6 +194,7 @@ public:
   void handle_error();
 private:
   CodePointer find_next_catch();
+  CodePointer catch_jump_to(Word index);
 
 public:
   //
