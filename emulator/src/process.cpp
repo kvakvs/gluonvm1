@@ -101,14 +101,21 @@ Process::ExitSigResult Process::send_exit_signal(
 
 void Process::set_exiting(Term reason)
 {
+  // this also will set slice result to clean up after next/current timeslice
+  fail_set(proc::FailType::Exit, reason);
+  return set_exiting();
+}
+
+void Process::set_exiting()
+{
+  // Fail field must be set at this moment
+  G_ASSERT(fail_.is_failed());
+
   // TODO: SMP locks?
   pflags_.suspended = false;
   pflags_.pending_exit = false;
   pflags_.exiting = true;
   pflags_.active = true;
-
-  // this also will set slice result to clean up after next/current timeslice
-  fail_set(proc::FailType::Exit, reason);
 
   catch_level_ = 0;
 
@@ -116,9 +123,12 @@ void Process::set_exiting(Term reason)
   ctx_.set_ip(vm_.premade_instr(PremadeIndex::Error_exit_));
 }
 
+// Assumes the process is swapped out
+// Assumes fail object is set
 void Process::handle_error()
 {
-  // --- in handle error do
+  G_ASSERT(fail_.is_failed());
+
   // If fail_.arg_list? (parse tuple with error value and args)
   if (fail_.is_arg_list_set()) {
     throw err::TODO("fail_.arg_list_");
@@ -146,38 +156,49 @@ void Process::handle_error()
 
     // new_ip=find next catch, cp=0, return new ip
     CodePointer new_ip = find_next_catch();
+    if (!new_ip) {
+      // Proceed to fail with fail reason currently set
+      return set_exiting();
+    }
+    throw err::TODO("handle_er: finish jump");
     // if still catches>0 return erl_exit catch not found
-  } else { // terminate proc with Value
   }
-  //throw err::TODO("handle error");
+  // terminate proc with Value
+
+  throw err::TODO("handle error");
 }
 
+// Find catch label address, set ip to it and zero cp
 CodePointer Process::catch_jump_to(Word index) {
-
+  CodePointer ptr;
+  ctx_.set_ip(ptr);
+  ctx_.set_cp(CodePointer());
+  //return CodePointer();
+  throw err::TODO("catch jump to");
 }
 
 CodePointer Process::find_next_catch() {
   ctx_.assert_swapped_out();
 
-  const auto ptr = heap_.stack_.top();
-  const auto bottom_ptr = heap_.stack_.bottom();
+  auto ptr = heap_.stack_.top();
+  auto bottom_ptr = heap_.stack_.bottom();
+  // Start at the top; dig towards bottom
   while (ptr != bottom_ptr) {
     Term term0(*ptr);
     if (term0.is_catch()) {
       // Find frame end (step back until CP is found)
       do {
-        ptr--;
+        ptr.step_towards_top();
       } while (ContinuationPointer::check(*ptr)== false);
       // Trim stack at ptr (stack unrolled)
       heap_.stack_.trim(ptr);
       // Find address for catch index
-      ctx_.set_cp(CodePointer());
       ctx_.regs_[0] = the_non_value;
       ctx_.live = 1;
       return catch_jump_to(term0.catch_val());
     } else {
       // Not found here, keep going forward
-      ptr++;
+      ptr.step_towards_bottom();
     }
   //  if !ptr.is_cp || (*ptr.value() not in return_[trace,to_trace,time_trace])
   //    && proc->cp) {

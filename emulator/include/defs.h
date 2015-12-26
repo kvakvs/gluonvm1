@@ -163,26 +163,25 @@ void assert_fail(const char* what, const char* file, int line);
 //__LINE__); ::abort();
 
 // TODO: debug macro goes here
-#if G_DEBUG
 #define G_ASSERT(X)                           \
-  if (!(X)) {                                 \
+  if (debug_mode && !(X)) {                                 \
     Std::assert_fail(#X, __FILE__, __LINE__); \
   }
 #define G_TODO(what)                                                    \
-  {                                                                     \
+  if (debug_mode) {                                                                     \
     ::fprintf(stderr, cYellow cBold "TODO:" cRst " %s (%s:%d)\n", what, \
               __FILE__, __LINE__);                                      \
     throw gluon::err::TODO(what);                                       \
   }
+#if G_DEBUG
 // Famous io:format/2 skill on Linkedin!
 #define G_LOG gluon::Std::fmt
 #define G_IF_NODEBUG(X)
 
 #else  // no G_DEBUG
 
-#define G_ASSERT(X)
-#define G_ASSERT_MSG(X, MSG)
-#define G_TODO(X)
+//#define G_ASSERT(X)
+//#define G_TODO(X)
 #define G_LOG dummy_printf
 #define G_IF_NODEBUG(X) X
 #endif

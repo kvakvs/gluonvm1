@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 
 #find_package (Threads)
 
-#SET (CMAKE_C_COMPILER   "clang")
-#SET (CMAKE_CXX_COMPILER "clang++")
+SET (CMAKE_C_COMPILER   "clang")
+SET (CMAKE_CXX_COMPILER "clang++")
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include/

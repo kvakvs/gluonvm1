@@ -189,6 +189,8 @@ public:
       Process* from, Term reason, ExitSigFlags flags, Term exit_tuple);
   // Reason must belong to this process heap
   void set_exiting(Term reason);
+  // Assuming fail field is already set
+  void set_exiting();
   // Checks error condition in fail_, checks flag, unrolls stack, exits, throws
   // or panicks depending on situation
   void handle_error();

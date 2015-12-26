@@ -51,6 +51,8 @@ Module* code::Server::load_module_internal(proc::Heap* heap,
       lstate.load_atom_table(r, expected_name);
     } else if (chunk == "Code") {
       lstate.load_code(r);
+    } else if (chunk == "CatT") {
+      lstate.load_catch_table(r);
     } else if (chunk == "FunT") {
       lstate.load_lambda_table(r);
     } else if (chunk == "ExpT") {
@@ -112,6 +114,27 @@ void BeamLoader::load_atom_table(tool::Reader& r0, Term expected_name) {
 
 void BeamLoader::load_str_table(tool::Reader& r0) {
   auto chunk_size = r0.read_big_u32();
+  r0.advance_align<4>(chunk_size);
+}
+
+void BeamLoader::load_catch_table(tool::Reader &r0)
+{
+  auto chunk_size = r0.read_big_u32();
+  /*
+  tool::Reader r = r0.clone(chunk_size);
+  r.assert_remaining_at_least(4);
+
+  Word count = r.read_big_u32();
+
+  Vector<Word> catches;
+  catches.reserve(count);
+
+  for (Word i = 0; i < count; ++i) {
+    Word offset = r.read_big_u32();
+    catches.push_back(offset);
+  }
+  */
+
   r0.advance_align<4>(chunk_size);
 }
 

@@ -8,6 +8,7 @@ namespace gluon {
 
 namespace containers {
 
+// Wraps STL-compatible vector or fixed size array. Reimplement as appropriate.
 template <class ContainerType>
 class STLArray {
  private:

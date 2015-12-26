@@ -87,6 +87,7 @@ class BeamLoader {
 
   void load_atom_table(tool::Reader& r, Term expected_name);
   void load_str_table(tool::Reader& r);
+  void load_catch_table(tool::Reader& r);
   void load_lambda_table(tool::Reader& r);
   void load_export_table(tool::Reader& r);
   void load_import_table(tool::Reader& r);

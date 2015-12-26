@@ -556,13 +556,19 @@ inline void opcode_jump(Process* proc, VMRuntimeContext& ctx) {  // opcode: 61
 }
 
 inline void opcode_catch(Process* proc, VMRuntimeContext& ctx) {  // opcode: 62
-  // @spec catch DstStackY Label
-  // @doc Stores label address in given stack cell. Label points to catch_end
-  //      section
-  Term dst(ctx.ip(0));
+  // @spec catch y Label
+  // @doc Save a resumption address &CatchEnd in the local frame at position
+  // with index(y) offset. Increment a process catch counter. The instruction is
+  // followed by a CatchEnd instruction. By followed we mean that the CatchEnd
+  // instruction is put after corresponding Erlang Expression the catch protects
+  // from errors
   Term arg(ctx.ip(1));
   ctx.deref(arg);
+
+  Term dst(ctx.ip(0));
+  G_ASSERT(dst.is_regy());
   ctx.move(arg, dst);
+
   proc->catch_level_++;
 
   ctx.step_ip(2);
@@ -571,6 +577,10 @@ inline void opcode_catch(Process* proc, VMRuntimeContext& ctx) {  // opcode: 62
 
 inline void opcode_catch_end(Process* proc,
                              VMRuntimeContext& ctx) {  // opcode: 63
+  // @spec catch_end y
+  // @doc Clear a resumption address stored in the local frame at position with
+  // index offset. Decrement a process catch counter. The instruction is
+  // preceded by a matching Catch instruction (see Catch for further details)
   throw err::TODO("notimpl catch_end");
 }
 

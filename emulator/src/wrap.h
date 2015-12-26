@@ -51,6 +51,7 @@ struct CodePointer : Wrap<Word*> {
   bool operator >=(const CodePointer& other) const {
     return value() >= other.value();
   }
+  operator bool() const { return value() != nullptr; }
 
   template <typename Index>
   Word &operator[] (Index i) const { return value()[i]; }
@@ -90,7 +91,7 @@ public:
     return check(value_);
   }
 
-  static check(Word x) {
+  static bool check(Word x) {
     return (x != 0)
         && PointerKnowledge::high_tag(x) == PointerHTag::Continuation
       #ifdef G_DEBUG

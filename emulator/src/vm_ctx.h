@@ -193,6 +193,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   void raise(Process* proc, Term type, Term reason) {
     proc->fail_clear();
     proc->fail_set(proc::Fail::to_fail_type(type), reason);
+    swap_out(proc);
     return proc->handle_error();
   }
 
@@ -247,7 +248,14 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     } // if debug
   }
 
-  CheckBifError check_bif_error(Process* p);
+  CheckBifError check_bif_error(Process* p) {
+    if (p->is_not_failed()) {
+      return CheckBifError::None;
+    }
+    p->handle_error();
+    return CheckBifError::ErrorOccured;
+  }
+
   void handle_error(Process *p);
 
   // If value stored in var is immediate and is a special value referring
