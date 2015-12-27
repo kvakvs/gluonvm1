@@ -1,0 +1,14 @@
+TARGET=hello.so
+
+LLVM_AS=llvm-as-3.7
+LLC=llc-3.7
+CLANG_PP=clang++-3.7
+
+build: clean
+	$(CLANG_PP) -S -emit-llvm main.cpp
+	$(LLVM_AS) main.ll
+	$(LLC) -relocation-model=pic main.bc
+	gcc -shared -o $(TARGET) main.s
+
+clean:
+	rm -f *.ll *.bc $(TARGET) *.s
