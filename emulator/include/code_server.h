@@ -1,12 +1,12 @@
 #pragma once
 
-#include "defs.h"
-#include "term.h"
-#include "error.h"
 #include "code.h"
 #include "code_index.h"
+#include "defs.h"
+#include "error.h"
 #include "struct/array.h"
-#include "wrap.h" // for CodePointer
+#include "term.h"
+#include "wrap.h"  // for CodePointer
 
 namespace gluon {
 
@@ -58,7 +58,8 @@ class Server {
  protected:
   Module* load_module_internal(proc::Heap* heap,
                                Term expected_name_or_nil,
-                               ArrayView<const Uint8> data);
+                               ArrayView<const Uint8>
+                                   data);
 };
 
 }  // ns code

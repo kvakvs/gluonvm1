@@ -1,7 +1,7 @@
 #include "module.h"
+#include "functional.h"
 #include "reader.h"
 #include "vm.h"
-#include "functional.h"
 
 namespace gluon {
 
@@ -34,8 +34,7 @@ bool Module::find_fun_arity(CodePointer ptr, FunArity& out) const {
 
 #if FEATURE_CODE_RANGES
 code::Range Module::get_code_range() {
-  return code::Range(CodePointer(code_.data()),
-                     CodePointer(&code_.back() + 1));
+  return code::Range(CodePointer(code_.data()), CodePointer(&code_.back() + 1));
 }
 #endif
 

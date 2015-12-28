@@ -1,12 +1,12 @@
-#include "code_server.h"
-#include "platf/gsys_mem.h"
-#include "reader.h"
-#include "ext_term.h"
-#include "heap.h"
-#include "predef_atoms.h"
-#include "term_helpers.h"
 #include "binary.h"
+#include "code_server.h"
+#include "ext_term.h"
 #include "functional.h"
+#include "heap.h"
+#include "platf/gsys_mem.h"
+#include "predef_atoms.h"
+#include "reader.h"
+#include "term_helpers.h"
 
 #include "beam.h"
 
@@ -17,7 +17,8 @@ namespace gluon {
 
 Module* code::Server::load_module_internal(proc::Heap* heap,
                                            Term expected_name,
-                                           ArrayView<const Uint8> data) {
+                                           ArrayView<const Uint8>
+                                               data) {
   G_ASSERT(expected_name.is_atom() || expected_name.is_nil());
   tool::Reader r(data);
 
@@ -117,8 +118,7 @@ void BeamLoader::load_str_table(tool::Reader& r0) {
   r0.advance_align<4>(chunk_size);
 }
 
-void BeamLoader::load_catch_table(tool::Reader &r0)
-{
+void BeamLoader::load_catch_table(tool::Reader& r0) {
   auto chunk_size = r0.read_big_u32();
   /*
   tool::Reader r = r0.clone(chunk_size);

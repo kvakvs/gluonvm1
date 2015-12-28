@@ -1,6 +1,6 @@
 #include "heap.h"
-#include "term.h"
 #include "fun.h"
+#include "term.h"
 
 namespace gluon {
 namespace proc {

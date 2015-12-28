@@ -1,8 +1,8 @@
 #pragma once
 
 #include "defs.h"
-#include "term.h"
 #include "heap.h"
+#include "term.h"
 
 #if G_DEBUG
 #include "bif/bif_misc.h"
@@ -32,7 +32,7 @@ class TupleBuilder {
   }
 };
 
-Term make_tuple(proc::Heap* heap, const std::initializer_list<Term> &values);
+Term make_tuple(proc::Heap* heap, const std::initializer_list<Term>& values);
 
 template <typename T>
 Term make_term(const T&);

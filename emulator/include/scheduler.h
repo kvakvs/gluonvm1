@@ -2,8 +2,8 @@
 
 #include "defs.h"
 #include "error.h"
-#include "term.h"
 #include "struct/dict.h"
+#include "term.h"
 
 #include <algorithm>
 

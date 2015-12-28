@@ -28,22 +28,22 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <fructose/double_compare.h>
 
 #ifdef FRUCTOSE_USING_HAMCREST
-#include <hamcrest/core/hc_matcher.h>
 #include <hamcrest/core/hc_description.h>
+#include <hamcrest/core/hc_matcher.h>
+#include <hamcrest/core/matchers/hc_all_of.h>
+#include <hamcrest/core/matchers/hc_any_of.h>
+#include <hamcrest/core/matchers/hc_equal_to.h>
 #include <hamcrest/core/matchers/hc_is.h>
 #include <hamcrest/core/matchers/hc_is_not.h>
-#include <hamcrest/core/matchers/hc_equal_to.h>
-#include <hamcrest/core/matchers/hc_any_of.h>
-#include <hamcrest/core/matchers/hc_all_of.h>
 #endif
 
-#include <vector>
-#include <string>
+#include <algorithm>
 #include <iostream>
 #include <iterator>
-#include <algorithm>
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #include <cstdlib>
 

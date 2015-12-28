@@ -1,13 +1,13 @@
 #include "process.h"
-#include "code_server.h"
 #include "code.h"
-#include "module.h"
-#include "vm.h"
+#include "code_server.h"
 #include "error.h"
-#include "predef_atoms.h"
-#include "term_helpers.h"
-#include "stack.h"
+#include "module.h"
 #include "pointer.h"
+#include "predef_atoms.h"
+#include "stack.h"
+#include "term_helpers.h"
+#include "vm.h"
 
 namespace gluon {
 
@@ -15,7 +15,7 @@ Process::Process(VM& vm, Term gleader) : vm_(vm), gleader_(gleader) {
   prio_ = atom::NORMAL;
 }
 
-void Process::link(Process *other) {
+void Process::link(Process* other) {
   links_.push_back(other->get_pid());
 }
 
@@ -70,9 +70,10 @@ void Process::on_exception() {
 //
 // Exit signals and other signals, e.g. messages, have to be received by a
 // receiver in the same order as sent by a sender.
-Process::ExitSigResult Process::send_exit_signal(
-    Process* from, Term reason, ExitSigFlags flags, Term exit_tuple)
-{
+Process::ExitSigResult Process::send_exit_signal(Process* from,
+                                                 Term reason,
+                                                 ExitSigFlags flags,
+                                                 Term exit_tuple) {
   // on 'kill', flip reason to 'killed'
   Term reason1 = (reason == atom::KILL) ? atom::KILLED : reason;
   G_ASSERT(reason.is_not_nonvalue());
@@ -84,9 +85,7 @@ Process::ExitSigResult Process::send_exit_signal(
       enqueue_message(exit_tuple);
     } else {
       enqueue_message(
-            term::make_tuple(get_heap(),
-                            {atom::EXIT, from->get_pid(), reason1})
-            );
+          term::make_tuple(get_heap(), {atom::EXIT, from->get_pid(), reason1}));
     }
     return ExitSigResult::MessageSent;
   } else if (reason == atom::NORMAL || flags.no_ignore_normal) {
@@ -99,15 +98,13 @@ Process::ExitSigResult Process::send_exit_signal(
   return ExitSigResult::NotAffected;
 }
 
-void Process::set_exiting(Term reason)
-{
+void Process::set_exiting(Term reason) {
   // this also will set slice result to clean up after next/current timeslice
   fail_set(proc::FailType::Exit, reason);
   return set_exiting();
 }
 
-void Process::set_exiting()
-{
+void Process::set_exiting() {
   // Fail field must be set at this moment
   G_ASSERT(fail_.is_failed());
 
@@ -125,8 +122,7 @@ void Process::set_exiting()
 
 // Assumes the process is swapped out
 // Assumes fail object is set
-void Process::handle_error()
-{
+void Process::handle_error() {
   G_ASSERT(fail_.is_failed());
 
   // If fail_.arg_list? (parse tuple with error value and args)
@@ -139,9 +135,8 @@ void Process::handle_error()
   }
   // If throw and catch level <= 0: convert Value into error:{nocatch, Value}
   if (catch_level_ <= 0 && fail_.type() == proc::FailType::Throw) {
-    Term new_value = term::make_tuple(
-          get_heap(), {atom::NOCATCH, fail_.value()}
-          );
+    Term new_value =
+        term::make_tuple(get_heap(), {atom::NOCATCH, fail_.value()});
     fail_.set(proc::FailType::Error, new_value);
   }
   // TODO: call expand_error_value (for special values in OTP)
@@ -173,7 +168,7 @@ CodePointer Process::catch_jump_to(Word index) {
   CodePointer ptr;
   ctx_.set_ip(ptr);
   ctx_.set_cp(CodePointer());
-  //return CodePointer();
+  // return CodePointer();
   throw err::TODO("catch jump to");
 }
 
@@ -189,7 +184,7 @@ CodePointer Process::find_next_catch() {
       // Find frame end (step back until CP is found)
       do {
         ptr.step_towards_top();
-      } while (ContinuationPointer::check(*ptr)== false);
+      } while (ContinuationPointer::check(*ptr) == false);
       // Trim stack at ptr (stack unrolled)
       heap_.stack_.trim(ptr);
       // Find address for catch index
@@ -200,44 +195,45 @@ CodePointer Process::find_next_catch() {
       // Not found here, keep going forward
       ptr.step_towards_bottom();
     }
-  //  if !ptr.is_cp || (*ptr.value() not in return_[trace,to_trace,time_trace])
-  //    && proc->cp) {
-  //    cpp = proc->cp
-  //    if cpp == beam_exc_trace...: ptr += 2
-  //    elif cpp == beam_return_trace...: ptr += 2
-  //    ... return_time_trace: ptr++
-  //    ... return_to_trace: have_return_to_trace=true
-  //  }
-  //  while (ptr < stack start) {
-  //    if ptr.is_catch {
-  //      if active_catches (that is p->catch_count > 0) { goto found }
-  //    } else if ptr.is_cp {
-  //      prev = ptr
-  //      if prev.cp_val == return_trace {
-  //        ... magic
-  //        ptr += 2
-  //      } else is == return_to_Trace {
-  //        ... magic
-  //        ptr += 2
-  //      } else is == return_time_trace {
-  //        ... magic
-  //        ptr++
-  //      } else {
-  //        if havereturn_to_trace {
-  //          set it to false
-  //          return_to_trace_ptr = ptr
-  //        } else return_to_trace_ptr = nullptr
-  //      }
-  //    } else ptr++
-  //  }
-  //  return not found
-  //  found:
-  //    assert ptr still in stack
-  //    proc->stop = prev
-  //    if is_traced && return_to_trace_ptr {
-  //      erts trace return to
-  //    }
-  //    else return ptr.catch_value
+    //  if !ptr.is_cp || (*ptr.value() not in
+    //  return_[trace,to_trace,time_trace])
+    //    && proc->cp) {
+    //    cpp = proc->cp
+    //    if cpp == beam_exc_trace...: ptr += 2
+    //    elif cpp == beam_return_trace...: ptr += 2
+    //    ... return_time_trace: ptr++
+    //    ... return_to_trace: have_return_to_trace=true
+    //  }
+    //  while (ptr < stack start) {
+    //    if ptr.is_catch {
+    //      if active_catches (that is p->catch_count > 0) { goto found }
+    //    } else if ptr.is_cp {
+    //      prev = ptr
+    //      if prev.cp_val == return_trace {
+    //        ... magic
+    //        ptr += 2
+    //      } else is == return_to_Trace {
+    //        ... magic
+    //        ptr += 2
+    //      } else is == return_time_trace {
+    //        ... magic
+    //        ptr++
+    //      } else {
+    //        if havereturn_to_trace {
+    //          set it to false
+    //          return_to_trace_ptr = ptr
+    //        } else return_to_trace_ptr = nullptr
+    //      }
+    //    } else ptr++
+    //  }
+    //  return not found
+    //  found:
+    //    assert ptr still in stack
+    //    proc->stop = prev
+    //    if is_traced && return_to_trace_ptr {
+    //      erts trace return to
+    //    }
+    //    else return ptr.catch_value
   }
   return CodePointer();
 }
@@ -281,8 +277,7 @@ void Process::set_args(Term args, Word len) {
   }
 }
 
-void Process::set_args(Term args, Word len, BoxedFun *bf)
-{
+void Process::set_args(Term args, Word len, BoxedFun* bf) {
   set_args(args, len);
   auto num_frozen = bf->get_num_free();
   std::copy(bf->frozen, bf->frozen + num_frozen, ctx_.regs_ + len);
@@ -343,8 +338,8 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   // entry for the error handler.
   MFArity mfa(m, f, arity);
 
-//  Std::fmt("process->apply (live=%zu) ", arity);
-//  mfa.println(vm_);
+  //  Std::fmt("process->apply (live=%zu) ", arity);
+  //  mfa.println(vm_);
 
   auto maybe_bif = vm_.find_bif(mfa);
   if (maybe_bif) {
@@ -370,7 +365,5 @@ Either<CodePointer, Term> Process::apply(Term m, Term f, Term args) {
   ctx_.live = arity;
   return ep->code();
 }
-
-
 
 }  // ns

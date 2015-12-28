@@ -1,11 +1,11 @@
 #include "bif/bif_misc.h"
-#include "process.h"
-#include "predef_atoms.h"
-#include "vm.h"
+#include "code_server.h"
 #include "heap.h"
 #include "module.h"
-#include "code_server.h"
+#include "predef_atoms.h"
+#include "process.h"
 #include "term_helpers.h"
+#include "vm.h"
 
 namespace gluon {
 namespace bif {
@@ -703,8 +703,7 @@ Term bif_element_2(Process* proc, Term n0, Term tup) {
   return tup.tuple_get_element(n - 1);
 }
 
-Term bif_list_to_atom_1(Process* proc, Term a)
-{
+Term bif_list_to_atom_1(Process* proc, Term a) {
   if (a.is_list() == false) {
     return proc->bif_error_badarg();
   }
@@ -713,8 +712,7 @@ Term bif_list_to_atom_1(Process* proc, Term a)
   return proc->vm().to_atom(name);
 }
 
-Term bif_list_to_existing_atom_1(Process* proc, Term a)
-{
+Term bif_list_to_existing_atom_1(Process* proc, Term a) {
   if (a.is_list() == false) {
     return proc->bif_error_badarg();
   }

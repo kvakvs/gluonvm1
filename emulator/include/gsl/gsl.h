@@ -19,9 +19,9 @@
 #ifndef GSL_GSL_H
 #define GSL_GSL_H
 
+#include <memory>
 #include "array_view.h"   // array_view, strided_array_view...
 #include "string_view.h"  // zstring, string_view, zstring_builder...
-#include <memory>
 
 #ifdef _MSC_VER
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "defs.h"
 #include <map>
+#include "defs.h"
 
 namespace gluon {
 

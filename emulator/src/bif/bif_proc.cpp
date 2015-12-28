@@ -1,7 +1,7 @@
 #include "bif/bif_proc.h"
 #include "bif/bif_misc.h"
-#include "process.h"
 #include "predef_atoms.h"
+#include "process.h"
 #include "term_helpers.h"
 #include "vm.h"
 
@@ -113,13 +113,11 @@ Term bif_process_flag_2(Process* p, Term flag, Term value) {
   return p->bif_error_badarg(flag);
 }
 
-Term bif_exit_1(Process *p, Term what)
-{
+Term bif_exit_1(Process* p, Term what) {
   return p->bif_fail(proc::FailType::Exit, what);
 }
 
-Term bif_exit_2(Process *proc, Term pid, Term what)
-{
+Term bif_exit_2(Process* proc, Term pid, Term what) {
   // If the first argument is not a pid, or a local port it is an error.
 
   if (pid.is_short_port()) {
@@ -147,7 +145,7 @@ Term bif_exit_2(Process *proc, Term pid, Term what)
 
     // TODO: Send an exit signal
     if (other_p) {
-      //return other_p->bif_fail(proc::FailType::Exit, what);
+      // return other_p->bif_fail(proc::FailType::Exit, what);
       throw err::TODO("notimpl exit signals");
     }
 

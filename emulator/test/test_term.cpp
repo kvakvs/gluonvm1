@@ -1,15 +1,15 @@
 #include "test.h"
+#include "g_heap.h"
 #include "g_term.h"
 #include "g_vm.h"
-#include "g_heap.h"
 
 /*
+#include "g_binary.h"
 #include "g_code_server.h"
 #include "g_fun.h"
+#include "g_heap.h"
 #include "g_module.h" // for export_t class
 #include "g_term_helpers.h"
-#include "g_heap.h"
-#include "g_binary.h"
 */
 
 #include "../test/fructose/fructose.h"

@@ -1,9 +1,9 @@
 #include "code_server.h"
+#include "heap.h"
 #include "module.h"
 #include "platf/gsys_file.h"
-#include "heap.h"
-#include "vm.h"
 #include "process.h"
+#include "vm.h"
 
 namespace gluon {
 namespace code {
@@ -16,7 +16,8 @@ namespace code {
 
 void Server::load_module(Process* proc,
                          Term name_atom,
-                         ArrayView<const Uint8> data) {
+                         ArrayView<const Uint8>
+                             data) {
   // TODO: module versions for hot code loading
   // TODO: free if module already existed, check module usage by processes
   Module* m = load_module_internal(proc->get_heap(), name_atom, data);

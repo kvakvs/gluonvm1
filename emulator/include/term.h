@@ -1,21 +1,25 @@
 #pragma once
 
 #include "defs.h"
-#include "struct/str.h"
 #include "pointer.h"
+#include "struct/str.h"
 #include "term_tag.h"
 
 namespace gluon {
 
 class VM;
-namespace erts { class Heap; }  // in heap.h
-namespace proc { class Heap; }  // in heap.h
+namespace erts {
+class Heap;
+}  // in heap.h
+namespace proc {
+class Heap;
+}  // in heap.h
 class Export;  // in module.h
 
 namespace temporary {
 
 const Word float_data_words = sizeof(Float) / sizeof(Word);
-const Word float_size_object = float_data_words + 1; // TODO: layout namespace
+const Word float_size_object = float_data_words + 1;  // TODO: layout namespace
 
 const Word port_data_size = 28;
 const Word port_num_size = port_data_size;
@@ -65,6 +69,7 @@ namespace term {
 class TermStorage {
  private:
   Word value_;
+
  public:
   explicit constexpr TermStorage(Word v) : value_(v) {}
   constexpr TermStorage() : value_(term::non_value_as_word) {}
@@ -79,11 +84,11 @@ class TermStorage {
 //
 template <typename TERM>
 class BoxedAspect {
-private:
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   template <typename T>
   T* boxed_get_ptr() const {
     G_ASSERT(self()->is_boxed() || self()->is_tuple() || self()->is_cons());
@@ -123,11 +128,11 @@ public:
 //
 template <typename TERM>
 class ConsAspect {
-private:
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   // TODO: make a cool variadic helper to build lists
   static TERM allocate_cons(proc::Heap* heap, TERM head, TERM tail);
   static TERM make_cons(TERM* box) {
@@ -184,7 +189,9 @@ public:
 
  protected:
   static bool is_cons_printable_element(TERM el) {
-    if (!el.is_small()) { return false; }
+    if (!el.is_small()) {
+      return false;
+    }
     Word c = el.small_word();
     return (c >= ' ' && c <= 127);
   }
@@ -203,13 +210,12 @@ public:
 // This is compiled as part of Term class and adds Atom functions to it
 //
 template <typename TERM>
-class AtomAspect
-{
-private:
+class AtomAspect {
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   constexpr static TERM make_atom(Word x) {
     return TERM(term_tag::Atom::create(x));
   }
@@ -228,13 +234,12 @@ public:
 // This is compiled as part of Term class and adds small* functions to it
 //
 template <typename TERM>
-class SmallintAspect
-{
-private:
+class SmallintAspect {
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   //
   // Small Integer
   //
@@ -251,11 +256,11 @@ public:
     return term_tag::Smallint::check(self()->value());
   }
   constexpr bool is_integer() const {
-    // Match either small int or big int if feature is enabled
+// Match either small int or big int if feature is enabled
 #if FEATURE_BIGNUM
-      return self()->is_small() || self()->is_big();
+    return self()->is_small() || self()->is_big();
 #else
-      return self()->is_small();
+    return self()->is_small();
 #endif
   }
   SWord small_sword() const {
@@ -279,13 +284,12 @@ public:
 // This is compiled as part of Term class and adds pid functions to it
 //
 template <typename TERM>
-class PidAspect
-{
-private:
+class PidAspect {
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   static constexpr bool is_valid_pid_id(Word x) {
     return x < (1 << term::pid_id_size) - 1;
   }
@@ -305,9 +309,7 @@ public:
   bool is_remote_pid() const {
     return term_tag::BoxedPid::unbox_and_check(self()->value());
   }
-  bool is_pid() const {
-    return is_short_pid() || is_remote_pid();
-  }
+  bool is_pid() const { return is_short_pid() || is_remote_pid(); }
   constexpr Word short_pid_get_value() const {
     return term_tag::ShortPid::value(self()->value());
   }
@@ -318,22 +320,19 @@ public:
 // This is compiled as part of Term class and adds port functions to it
 //
 template <typename TERM>
-class PortAspect
-{
-private:
+class PortAspect {
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   constexpr bool is_short_port() const {
     return term_tag::ShortPort::check(self()->value());
   }
   bool is_remote_port() const {
     return term_tag::BoxedPort::unbox_and_check(self()->value());
   }
-  bool is_port() const {
-    return is_short_port() || is_remote_port();
-  }
+  bool is_port() const { return is_short_port() || is_remote_port(); }
   constexpr Word short_port_get_value() const {
     return term_tag::ShortPort::value(self()->value());
   }
@@ -344,13 +343,12 @@ public:
 // This is compiled as part of Term class and adds tuple functions to it
 //
 template <typename TERM>
-class TupleAspect
-{
-private:
+class TupleAspect {
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   static TERM make_zero_tuple() {
     return TERM(term_tag::Tuple::create_from_ptr(&term::g_zero_sized_tuple));
   }
@@ -390,13 +388,12 @@ public:
 // This is compiled as part of Term class and adds extra functions to it
 //
 template <typename TERM>
-class SpecialValueAspect
-{
-private:
+class SpecialValueAspect {
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   constexpr bool is_regx() const {
     return term_tag::XRegister::check(self()->value());
   }
@@ -465,13 +462,12 @@ public:
 // This is compiled as part of Term class and adds binary* functions to it
 //
 template <typename TERM>
-class BinaryAspect
-{
-private:
+class BinaryAspect {
+ private:
   constexpr TERM* self() { return static_cast<TERM*>(this); }
   constexpr const TERM* self() const { return static_cast<const TERM*>(this); }
 
-public:
+ public:
   static TERM make_binary(VM& vm, proc::Heap* h, Word bytes);
 
   bool is_proc_binary() const {
@@ -506,25 +502,25 @@ public:
   }
 };
 
-} // ns term
+}  // ns term
 
 //
 // Do some CRTP inheritance here to split functionality into base classes
 // because those chunks of functions rarely intersect
 //
-class Term: public term::TermStorage,
-    public term::BoxedAspect<Term>,
-    public term::ConsAspect<Term>,
-    public term::AtomAspect<Term>,
-    public term::SmallintAspect<Term>,
-    public term::PidAspect<Term>,
-    public term::PortAspect<Term>,
-    public term::TupleAspect<Term>,
-    public term::SpecialValueAspect<Term>,
-    public term::BinaryAspect<Term> {
+class Term : public term::TermStorage,
+             public term::BoxedAspect<Term>,
+             public term::ConsAspect<Term>,
+             public term::AtomAspect<Term>,
+             public term::SmallintAspect<Term>,
+             public term::PidAspect<Term>,
+             public term::PortAspect<Term>,
+             public term::TupleAspect<Term>,
+             public term::SpecialValueAspect<Term>,
+             public term::BinaryAspect<Term> {
  public:
   explicit constexpr Term(Word v) : term::TermStorage(v) {}
-  //explicit Term(ContinuationPointer cp)
+  // explicit Term(ContinuationPointer cp)
   //  : term::TermStorage(cp.value()) {}
   constexpr Term() : term::TermStorage(term::non_value_as_word) {}
 
@@ -604,8 +600,6 @@ class Term: public term::TermStorage,
   void print(const VM& vm) const {}
   void println(const VM& vm) const {}
 #endif
-
-
 
   bool is_reference() const {
     if (!is_boxed()) {

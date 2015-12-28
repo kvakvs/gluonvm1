@@ -1,14 +1,14 @@
 #pragma once
 
 #include "defs.h"
-#include "term.h"
 #include "error.h"
+#include "functional.h"
 #include "heap.h"
 #include "mailbox.h"
-#include "functional.h"
-#include "runtime_ctx.h"
-#include "wrap.h"
 #include "process_fail.h"
+#include "runtime_ctx.h"
+#include "term.h"
+#include "wrap.h"
 
 namespace gluon {
 
@@ -62,12 +62,14 @@ class Process {
   Term prio_;  // an atom: 'low', 'high' or 'normal'
 
   struct {
-    bool trap_exit: 1;  // exits are transformed into messages
-    bool pending_exit: 1; // is waiting for own death
-    bool exiting: 1;      // is on the death bed
-    bool suspended: 1;  // does not get scheduler time-slice
-    bool active: 1;
-  } pflags_ = {false, false, false, false, false, };
+    bool trap_exit : 1;     // exits are transformed into messages
+    bool pending_exit : 1;  // is waiting for own death
+    bool exiting : 1;       // is on the death bed
+    bool suspended : 1;     // does not get scheduler time-slice
+    bool active : 1;
+  } pflags_ = {
+      false, false, false, false, false,
+  };
 
   // result after slice of CPU time is consumed or process yielded
   // (is exiting, reason, put back in sched queue for reason)
@@ -98,7 +100,7 @@ class Process {
   VM& vm() { return vm_; }
   const VM& vm() const { return vm_; }
 
-  void link(Process *other);
+  void link(Process* other);
   void set_trap_exit(bool te) { pflags_.trap_exit = te; }
 
   Term get_registered_name() const { return reg_name_; }
@@ -118,8 +120,7 @@ class Process {
 
   // Called by scheduler to inform proess that its got slice of CPU time
   // to reset internal variables
-  void new_slice() {
-  }
+  void new_slice() {}
 
   //
   // Process memory thingies
@@ -154,7 +155,8 @@ class Process {
     return bif_fail(proc::FailType::Error, reason);
   }
   Term bif_error(Term reason, const char* str);  // builds {ErrorTag, "text"}
-  Term bif_error(Term error_tag, Term reason);   // builds tuple {ErrorTag, Reason}
+  Term bif_error(Term error_tag,
+                 Term reason);  // builds tuple {ErrorTag, Reason}
   Term bif_error_badarg(Term reason) {
     fail_.set_badarg(get_heap(), reason);
     on_exception();
@@ -165,28 +167,27 @@ class Process {
     on_exception();
     return the_non_value;
   }
-private:
+
+ private:
   // Called after exception or exit been called
   void on_exception();
 
   // Accessors to private fail_ object
-public:
+ public:
   bool is_failed() const { return fail_.is_failed(); }
   bool is_not_failed() const { return fail_.is_not_failed(); }
   void fail_clear() { fail_.clear(); }
   auto fail_value() const { return fail_.value(); }
 
   typedef struct {
-    bool ignore_kill: 1;
-    bool no_ignore_normal: 1;
+    bool ignore_kill : 1;
+    bool no_ignore_normal : 1;
   } ExitSigFlags;
-  enum class ExitSigResult {
-    MessageSent,
-    WillExit,
-    NotAffected
-  };
-  ExitSigResult send_exit_signal(
-      Process* from, Term reason, ExitSigFlags flags, Term exit_tuple);
+  enum class ExitSigResult { MessageSent, WillExit, NotAffected };
+  ExitSigResult send_exit_signal(Process* from,
+                                 Term reason,
+                                 ExitSigFlags flags,
+                                 Term exit_tuple);
   // Reason must belong to this process heap
   void set_exiting(Term reason);
   // Assuming fail field is already set
@@ -194,11 +195,12 @@ public:
   // Checks error condition in fail_, checks flag, unrolls stack, exits, throws
   // or panicks depending on situation
   void handle_error();
-private:
+
+ private:
   CodePointer find_next_catch();
   CodePointer catch_jump_to(Word index);
 
-public:
+ public:
   //
   // Send/receive thingies
   //

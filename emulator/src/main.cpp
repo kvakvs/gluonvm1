@@ -1,9 +1,9 @@
-#include "vm.h"
-#include "process.h"
-#include "code_server.h"
 #include "code_index.h"
+#include "code_server.h"
 #include "error.h"
 #include "predef_atoms.h"
+#include "process.h"
+#include "vm.h"
 
 #include <stdio.h>
 

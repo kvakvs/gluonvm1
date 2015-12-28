@@ -19,16 +19,16 @@
 #ifndef GSL_ARRAY_VIEW_H
 #define GSL_ARRAY_VIEW_H
 
-#include <new>
-#include <stdexcept>
+#include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <limits>
+#include <new>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
-#include <array>
-#include <iterator>
-#include <algorithm>
 #include "fail_fast.h"
 
 #ifdef _MSC_VER
@@ -1068,7 +1068,7 @@ class bounds_iterator
     return ret -= n;
   }
   bounds_iterator& operator-=(difference_type n) noexcept {
-    return * this += -n;
+    return *this += -n;
   }
   difference_type operator-(const bounds_iterator& rhs) const noexcept {
     return linearize(curr) - linearize(rhs.curr);
@@ -1194,7 +1194,7 @@ class bounds_iterator<index<1, SizeType>>
     return ret -= n;
   }
   bounds_iterator& operator-=(difference_type n) noexcept {
-    return * this += -n;
+    return *this += -n;
   }
   difference_type operator-(const bounds_iterator& rhs) const noexcept {
     return curr[0] - rhs.curr[0];
@@ -1455,9 +1455,9 @@ class basic_array_view {
       T* data,
       std::enable_if_t<
           std::is_same<value_type, std::remove_all_extents_t<T>>::value,
-          bounds_type> bound) noexcept
-      : m_pdata(reinterpret_cast<pointer>(data)),
-        m_bounds(std::move(bound)) {
+          bounds_type>
+          bound) noexcept : m_pdata(reinterpret_cast<pointer>(data)),
+                            m_bounds(std::move(bound)) {
     fail_fast_assert((m_bounds.size() > 0 && data != nullptr) ||
                      m_bounds.size() == 0);
   }
@@ -1553,7 +1553,8 @@ T static_as_array_view_helper(Sep, Args... args) {
 template <typename T, typename Arg, typename... Args>
 std::enable_if_t<!std::is_same<Arg, dim<dynamic_range>>::value &&
                      !std::is_same<Arg, Sep>::value,
-                 T> static_as_array_view_helper(Arg, Args... args) {
+                 T>
+    static_as_array_view_helper(Arg, Args... args) {
   return static_as_array_view_helper<T>(args...);
 }
 template <typename T, typename... Args>
@@ -2204,7 +2205,7 @@ class contiguous_array_view_iterator
     return ret -= n;
   }
   contiguous_array_view_iterator& operator-=(difference_type n) noexcept {
-    return * this += -n;
+    return *this += -n;
   }
   difference_type operator-(const contiguous_array_view_iterator& rhs) const
       noexcept {
@@ -2304,7 +2305,7 @@ class general_array_view_iterator
     return ret -= n;
   }
   general_array_view_iterator& operator-=(difference_type n) noexcept {
-    return * this += -n;
+    return *this += -n;
   }
   difference_type operator-(const general_array_view_iterator& rhs) const
       noexcept {

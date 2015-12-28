@@ -1,8 +1,8 @@
 #pragma once
 
+#include "functional.h"
 #include "process.h"
 #include "vm_ctx.h"
-#include "functional.h"
 
 namespace gluon {
 
@@ -175,11 +175,11 @@ inline WantSchedule opcode_return(Process* proc,
                                   VMRuntimeContext& ctx) {  // opcode: 19
   // @spec return
   // @doc  Return to the address in the continuation pointer (CP).
-//  if (ctx.cp().is_not_null()) {
-//    // nowhere to return: end process
-//    proc->finished();
-//    return WantSchedule::NextProcess;
-//  }
+  //  if (ctx.cp().is_not_null()) {
+  //    // nowhere to return: end process
+  //    proc->finished();
+  //    return WantSchedule::NextProcess;
+  //  }
   ctx.set_ip(ctx.cp());
   ctx.set_cp(CodePointer());
   return WantSchedule::KeepGoing;
@@ -450,8 +450,8 @@ inline void opcode_is_nil(Process* proc, VMRuntimeContext& ctx) {  // opcode: 52
 }
 inline void opcode_is_binary(Process* proc,
                              VMRuntimeContext& ctx) {  // opcode: 53
-// @spec is_binary Lbl Arg1
-// @doc Test the type of Arg1 and jump to Lbl if it is not a binary.
+  // @spec is_binary Lbl Arg1
+  // @doc Test the type of Arg1 and jump to Lbl if it is not a binary.
   Term t(ctx.ip(1));
   ctx.deref(t);
   if (!t.is_binary()) {
@@ -875,7 +875,8 @@ inline void opcode_try_case(Process* proc,
 static WantSchedule after_apply(Process* proc,
                                 VMRuntimeContext& ctx,
                                 Word arity,
-                                Either<CodePointer, Term> res) {
+                                Either<CodePointer, Term>
+                                    res) {
   // Check error
   if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;
@@ -902,7 +903,7 @@ inline WantSchedule opcode_apply(Process* proc,
   Word arity = arity_as_term.small_word();
   Term mod = ctx.regs_[arity];
   Term fun = ctx.regs_[arity + 1];
-  ctx.live = arity; // we do not have to preserve mod and fun in regs on swap
+  ctx.live = arity;  // we do not have to preserve mod and fun in regs on swap
 
   ctx.swap_out(proc);
   Either<CodePointer, Term> res = proc->apply(mod, fun, arity_as_term);
@@ -1183,7 +1184,7 @@ inline WantSchedule opcode_normal_exit_(Process* proc,
                                         VMRuntimeContext& ctx) {  // opcode: 158
   // This must be implemented for assert_address_makes_sense/2 to know
   // whether a jump address is valid or random garbage. We throw up here
-  //throw err::TODO("notimpl exit");
+  // throw err::TODO("notimpl exit");
   proc->finished();
   return WantSchedule::NextProcess;
 }
@@ -1217,7 +1218,7 @@ inline WantSchedule opcode_apply_mfargs_(
 }
 
 // opcode: N+2
-inline WantSchedule opcode_error_exit_(Process *proc, VMRuntimeContext &ctx) {
+inline WantSchedule opcode_error_exit_(Process* proc, VMRuntimeContext& ctx) {
   ctx.swap_out(proc);
   proc->handle_error();
   return WantSchedule::NextProcess;

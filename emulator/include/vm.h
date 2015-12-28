@@ -1,11 +1,11 @@
 #pragma once
 
 #include "defs.h"
-#include "term.h"
-#include "error.h"
 #include "dist.h"
-#include "scheduler.h"
+#include "error.h"
 #include "platf/gsys_mem.h"
+#include "scheduler.h"
+#include "term.h"
 
 namespace gluon {
 
@@ -26,7 +26,10 @@ using AtomProcMap = Dict<Term, Process*>;
 enum class RegisterResult { Ok, RegistrationExists, ProcessNotFound };
 
 enum class PremadeIndex : Word {
-  Apply_mfargs_, Normal_exit_, Error_exit_, Total_count
+  Apply_mfargs_,
+  Normal_exit_,
+  Error_exit_,
+  Total_count
 };
 
 // Contains VM code to execute one specific instruction. 'Apply' is

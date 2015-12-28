@@ -49,7 +49,8 @@ void BeamLoader::beam_prepare_code(Module* m, ArrayView<const Uint8> data) {
 }
 
 Vector<CodePointer> BeamLoader::read_code(Module* m,
-                                          ArrayView<const Uint8> data,
+                                          ArrayView<const Uint8>
+                                              data,
                                           Vector<Word>& output) {
   tool::Reader r(data);
   static_assert(sizeof(void*) == sizeof(Word),
@@ -302,7 +303,7 @@ void BeamLoader::replace_lambda_index_with_ptr(Word* p, Module* m) {
 
 void BeamLoader::resolve_labels(const Vector<CodePointer>& postponed_labels,
                                 Vector<Word>& code) {
-  for (auto codep: postponed_labels) {
+  for (auto codep : postponed_labels) {
     // Unwrap catch-marked value
     Word label_index = term_tag::Catch::value(codep[0]);
 

@@ -12,5 +12,5 @@ Word HeapBin::box_size(Word bytes) {
   return calculate_word_size(bytes) + farheap_extra_words;
 }
 
-} // ns layout
-} // ns gluon
+}  // ns layout
+}  // ns gluon

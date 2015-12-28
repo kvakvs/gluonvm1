@@ -1,9 +1,9 @@
 #pragma once
 
 //#include "defs.h"
-#include <functional>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 
 namespace gluon {
 

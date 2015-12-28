@@ -1,6 +1,6 @@
 #include "test.h"
-#include "g_code_index.h"
 #include <fructose/fructose.h>
+#include "g_code_index.h"
 
 #pragma clang diagnostic ignored "-Wweak-vtables"
 using namespace gluon;

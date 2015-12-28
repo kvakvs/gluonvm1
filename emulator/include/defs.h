@@ -1,9 +1,9 @@
 #pragma once
 
-#include <set>
 #include <list>
 #include <memory>
 #include <queue>
+#include <set>
 //#include "gsl/array_view.h"
 #include <cstdint>
 
@@ -164,11 +164,11 @@ void assert_fail(const char* what, const char* file, int line);
 
 // TODO: debug macro goes here
 #define G_ASSERT(X)                           \
-  if (debug_mode && !(X)) {                                 \
+  if (debug_mode && !(X)) {                   \
     Std::assert_fail(#X, __FILE__, __LINE__); \
   }
 #define G_TODO(what)                                                    \
-  if (debug_mode) {                                                                     \
+  if (debug_mode) {                                                     \
     ::fprintf(stderr, cYellow cBold "TODO:" cRst " %s (%s:%d)\n", what, \
               __FILE__, __LINE__);                                      \
     throw gluon::err::TODO(what);                                       \

@@ -61,7 +61,7 @@ struct Level0Tag {
   constexpr static Word value(Word t) { return (t >> Primary_tag_size); }
 };
 
-using Cons  = Level0Tag<PrimaryTag::Cons>;
+using Cons = Level0Tag<PrimaryTag::Cons>;
 using Tuple = Level0Tag<PrimaryTag::Tuple>;
 using Boxed = Level0Tag<PrimaryTag::Boxed>;
 using Immed = Level0Tag<PrimaryTag::Immediate1>;
@@ -101,14 +101,14 @@ struct Level1Tag {
   constexpr static Word value(Word t) { return t >> L1_tag_bits; }
 };
 
-using Atom        = Level1Tag<Imm1Tag::Atom>;
-using ShortPid    = Level1Tag<Imm1Tag::ShortPid>;
-using ShortPort   = Level1Tag<Imm1Tag::ShortPort>;
-using Catch       = Level1Tag<Imm1Tag::Catch>;
-using FpRegister  = Level1Tag<Imm1Tag::FpRegister>;
-using XRegister   = Level1Tag<Imm1Tag::XRegister>;
-using YRegister   = Level1Tag<Imm1Tag::YRegister>;
-using Special     = Level1Tag<Imm1Tag::Special>;  // includes nil,noval,rip
+using Atom = Level1Tag<Imm1Tag::Atom>;
+using ShortPid = Level1Tag<Imm1Tag::ShortPid>;
+using ShortPort = Level1Tag<Imm1Tag::ShortPort>;
+using Catch = Level1Tag<Imm1Tag::Catch>;
+using FpRegister = Level1Tag<Imm1Tag::FpRegister>;
+using XRegister = Level1Tag<Imm1Tag::XRegister>;
+using YRegister = Level1Tag<Imm1Tag::YRegister>;
+using Special = Level1Tag<Imm1Tag::Special>;  // includes nil,noval,rip
 
 struct Smallint {
   const static Word Tag = 0x1;
@@ -195,20 +195,19 @@ struct TaggedBox {
 
 using BoxedPosBignum = TaggedBox<BoxedSubtag::PositiveBignum>;
 using BoxedNegBignum = TaggedBox<BoxedSubtag::NegativeBignum>;
-using BoxedFloat    = TaggedBox<BoxedSubtag::Float>;
-using BoxedMap      = TaggedBox<BoxedSubtag::Map>;
-using BoxedFun      = TaggedBox<BoxedSubtag::FunObject>;
-using BoxedExport   = TaggedBox<BoxedSubtag::Export>;
-using BoxedPid      = TaggedBox<BoxedSubtag::Pid>;
-using BoxedPort     = TaggedBox<BoxedSubtag::Port>;
-using BoxedRef      = TaggedBox<BoxedSubtag::Ref>;
-using BoxedRIP      = TaggedBox<BoxedSubtag::DestroyedSomething>;
-using BoxedProcBin  = TaggedBox<BoxedSubtag::ProcBinary>;
-using BoxedHeapBin  = TaggedBox<BoxedSubtag::HeapBinary>;
+using BoxedFloat = TaggedBox<BoxedSubtag::Float>;
+using BoxedMap = TaggedBox<BoxedSubtag::Map>;
+using BoxedFun = TaggedBox<BoxedSubtag::FunObject>;
+using BoxedExport = TaggedBox<BoxedSubtag::Export>;
+using BoxedPid = TaggedBox<BoxedSubtag::Pid>;
+using BoxedPort = TaggedBox<BoxedSubtag::Port>;
+using BoxedRef = TaggedBox<BoxedSubtag::Ref>;
+using BoxedRIP = TaggedBox<BoxedSubtag::DestroyedSomething>;
+using BoxedProcBin = TaggedBox<BoxedSubtag::ProcBinary>;
+using BoxedHeapBin = TaggedBox<BoxedSubtag::HeapBinary>;
 using BoxedMatchCtx = TaggedBox<BoxedSubtag::MatchContext>;
-using BoxedSubBin   = TaggedBox<BoxedSubtag::SubBinary>;
+using BoxedSubBin = TaggedBox<BoxedSubtag::SubBinary>;
 
 }  // ns term_tag
 
-
-} // ns gluon
+}  // ns gluon

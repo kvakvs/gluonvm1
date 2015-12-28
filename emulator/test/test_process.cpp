@@ -2,13 +2,13 @@
 
 #include "g_process.h"
 /*
-#include "g_code_server.h"
 #include "g_code.h"
-#include "g_module.h"
-#include "g_vm.h"
+#include "g_code_server.h"
 #include "g_error.h"
+#include "g_module.h"
 #include "g_predef_atoms.h"
 #include "g_term_helpers.h"
+#include "g_vm.h"
 */
 #include <fructose/fructose.h>
 #include "bif/g_bif_misc.h"

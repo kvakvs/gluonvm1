@@ -19,8 +19,8 @@
 #ifndef GSL_STRING_VIEW_H
 #define GSL_STRING_VIEW_H
 
-#include "array_view.h"
 #include <cstring>
+#include "array_view.h"
 
 namespace gsl {
 //
@@ -152,8 +152,8 @@ ensure_z(Cont& cont) {
 // to_string() allow (explicit) conversions from string_view to string
 //
 template <class CharT, size_t Extent>
-std::basic_string<typename std::remove_const<CharT>::type> to_string(
-    basic_string_view<CharT, Extent> view) {
+std::basic_string<typename std::remove_const<CharT>::type>
+to_string(basic_string_view<CharT, Extent> view) {
   return {view.data(), view.length()};
 }
 

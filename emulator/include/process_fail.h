@@ -5,7 +5,7 @@
 namespace gluon {
 namespace proc {
 
-enum class FailType: Word {
+enum class FailType : Word {
   None,
   Exit,   // Process termination - not an error
   Error,  // Error (adds stacktrace; will be logged)
@@ -17,20 +17,24 @@ enum class FailType: Word {
 // Does not have knowledge about owning process
 //
 class Fail {
-private:
-  bool panic_: 1;  // ignore catches
-  bool thrown_: 1; // nonlocal return
-  bool log_: 1;    // write to logger on termination
-  //bool native: 1; // occurred in native code (not impl)
-  bool save_trace_: 1; // save stack trace in internal form (not impl)
-  bool arg_list_: 1; // has arglist for top of trace
-  FailType type_: 2;
+ private:
+  bool panic_ : 1;   // ignore catches
+  bool thrown_ : 1;  // nonlocal return
+  bool log_ : 1;     // write to logger on termination
+  // bool native: 1; // occurred in native code (not impl)
+  bool save_trace_ : 1;  // save stack trace in internal form (not impl)
+  bool arg_list_ : 1;    // has arglist for top of trace
+  FailType type_ : 2;
   Term value_ = the_non_value;
-  Term last_trace_ = the_nil; // latest stack dump
+  Term last_trace_ = the_nil;  // latest stack dump
 
-public:
-  Fail(): panic_(false), thrown_(false), log_(false), arg_list_(false),
-    type_(FailType::None) {}
+ public:
+  Fail()
+      : panic_(false),
+        thrown_(false),
+        log_(false),
+        arg_list_(false),
+        type_(FailType::None) {}
 
   FailType type() const { return type_; }
   void type(FailType ft) { type_ = ft; }
@@ -60,8 +64,8 @@ public:
   static FailType to_fail_type(Term type);
 
   // Fills fields for some common error reasons
-  void set_normal_exit(); // exit
-  void set_internal_error(Term v); // error+panic
+  void set_normal_exit();           // exit
+  void set_internal_error(Term v);  // error+panic
   void set_badarg(proc::Heap* heap, Term v);
   void set_badarg();
   void set_badarith();
@@ -82,5 +86,5 @@ public:
   void set_badkey();
 };
 
-} // ns proc
-} // ns gluon
+}  // ns proc
+}  // ns gluon

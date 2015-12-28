@@ -1,8 +1,8 @@
 #pragma once
 
 #include "defs.h"
-#include "term.h"
 #include "heap.h"
+#include "term.h"
 
 namespace gluon {
 namespace bin {

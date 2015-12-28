@@ -1,12 +1,12 @@
 #pragma once
 
-#include "defs.h"
-#include "term.h"
-#include "error.h"
-#include "reader.h"
-#include "fun.h"
 #include "code_index.h"
+#include "defs.h"
+#include "error.h"
+#include "fun.h"
+#include "reader.h"
 #include "struct/array.h"
+#include "term.h"
 #include "wrap.h"
 
 namespace gluon {

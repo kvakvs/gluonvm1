@@ -16,8 +16,7 @@ class Either {
   Either() {}
 
   // Either must be declared with different types for L and R
-  static_assert(std::is_same<L, R>::value == false,
-                "L must != R");
+  static_assert(std::is_same<L, R>::value == false, "L must != R");
 
  public:
   Either(const L& l) : m_is_left(true), m_left(l) {}

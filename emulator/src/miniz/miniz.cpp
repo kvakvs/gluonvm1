@@ -1390,8 +1390,8 @@ typedef Uint8 mz_validate_uint16[sizeof(Uint16) == 2 ? 1 : -1];
 typedef Uint8 mz_validate_uint32[sizeof(Uint32) == 4 ? 1 : -1];
 typedef Uint8 mz_validate_uint64[sizeof(Uint64) == 8 ? 1 : -1];
 
-#include <string.h>
 #include <assert.h>
+#include <string.h>
 
 #define MZ_ASSERT(x) assert(x)
 
@@ -3356,22 +3356,22 @@ static bool tdefl_compress_lz_codes(tdefl_compressor* d) {
       num_extra_bits = (match_dist < 512) ? n0 : n1;
 
       MZ_ASSERT(d->m_huff_code_sizes[1][sym]);
-      TDEFL_PUT_BITS_FAST(d->m_huff_codes[1][sym],
-                          d->m_huff_code_sizes[1][sym]);
+      TDEFL_PUT_BITS_FAST(d->m_huff_codes[1][sym], d->m_huff_code_sizes[1]
+                                                                       [sym]);
       TDEFL_PUT_BITS_FAST(match_dist & mz_bitmasks[num_extra_bits],
                           num_extra_bits);
     } else {
       Uint32 lit = *pLZ_codes++;
       MZ_ASSERT(d->m_huff_code_sizes[0][lit]);
-      TDEFL_PUT_BITS_FAST(d->m_huff_codes[0][lit],
-                          d->m_huff_code_sizes[0][lit]);
+      TDEFL_PUT_BITS_FAST(d->m_huff_codes[0][lit], d->m_huff_code_sizes[0]
+                                                                       [lit]);
 
       if (((flags & 2) == 0) && (pLZ_codes < pLZ_code_buf_end)) {
         flags >>= 1;
         lit = *pLZ_codes++;
         MZ_ASSERT(d->m_huff_code_sizes[0][lit]);
-        TDEFL_PUT_BITS_FAST(d->m_huff_codes[0][lit],
-                            d->m_huff_code_sizes[0][lit]);
+        TDEFL_PUT_BITS_FAST(d->m_huff_codes[0][lit], d->m_huff_code_sizes[0]
+                                                                         [lit]);
 
         if (((flags & 2) == 0) && (pLZ_codes < pLZ_code_buf_end)) {
           flags >>= 1;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "vm.h"
 #include "module.h"
+#include "vm.h"
 
 #include "struct/array.h"
 

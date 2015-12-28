@@ -1,8 +1,8 @@
 #pragma once
 
 #include "defs.h"
-#include "struct/array.h"
 #include "platf/gsys_stdlib.h"
+#include "struct/array.h"
 
 namespace gluon {
 namespace proc {
@@ -13,31 +13,31 @@ namespace proc {
 // For classic stack implementation these ops will invert.
 template <typename Value>
 class StackIterator {
-private:
+ private:
   Value* ptr_;
 
-public:
+ public:
   using Self = StackIterator<Value>;
 
-  explicit StackIterator(Value* p): ptr_(p) {}
+  explicit StackIterator(Value* p) : ptr_(p) {}
 
-  const Value *pointer() const { return ptr_; }
+  const Value* pointer() const { return ptr_; }
 
-  bool operator ==(const Self& other) const { return ptr_ == other.ptr_; }
-  bool operator !=(const Self& other) const { return ptr_ != other.ptr_; }
-  bool operator >(const Self& other) const { return ptr_ > other.ptr_; }
-  bool operator <(const Self& other) const { return ptr_ < other.ptr_; }
-  bool operator <=(const Self& other) const { return ptr_ <= other.ptr_; }
-  bool operator >=(const Self& other) const { return ptr_ >= other.ptr_; }
+  bool operator==(const Self& other) const { return ptr_ == other.ptr_; }
+  bool operator!=(const Self& other) const { return ptr_ != other.ptr_; }
+  bool operator>(const Self& other) const { return ptr_ > other.ptr_; }
+  bool operator<(const Self& other) const { return ptr_ < other.ptr_; }
+  bool operator<=(const Self& other) const { return ptr_ <= other.ptr_; }
+  bool operator>=(const Self& other) const { return ptr_ >= other.ptr_; }
 
-  bool operator >(const Value* other) const { return ptr_ > other; }
-  bool operator <(const Value* other) const { return ptr_ < other; }
+  bool operator>(const Value* other) const { return ptr_ > other; }
+  bool operator<(const Value* other) const { return ptr_ < other; }
 
-  Value &operator* () const { return *ptr_; }
+  Value& operator*() const { return *ptr_; }
   void step_towards_top() { ptr_++; }
   void step_towards_bottom() { ptr_--; }
 
-  ssize_t operator -(const Self &other) const { return ptr_ - other.ptr_; }
+  ssize_t operator-(const Self& other) const { return ptr_ - other.ptr_; }
 };
 
 #if 0
@@ -96,8 +96,7 @@ class OverlayStack {
     return (Word)(upper_limit_ - top_);
   }
 };
-#endif //0
-
+#endif  // 0
 
 //
 // Self-containing stack manages own memory using vector
@@ -110,8 +109,8 @@ class SelfContainingStack {
 
  public:
   // If iterator starts at top(), iter++ must advance towards stack bottom()
-  //using Iterator = Container::RevIterator;
-  //using ConstIterator = Container::ConstRevIterator;
+  // using Iterator = Container::RevIterator;
+  // using ConstIterator = Container::ConstRevIterator;
   using Iterator = StackIterator<Word>;
   using ConstIterator = StackIterator<const Word>;
 
@@ -148,15 +147,16 @@ class SelfContainingStack {
 
   // See if iterator belongs to the current stack
   template <typename Iter>
-  bool contains(Iter &i) {
+  bool contains(Iter& i) {
     // Because this vector-stack expands up in memory, top() is the upper end
     return top() >= i && bottom() <= i;
   }
 
   // Trim stack top to Iter position
-  template <typename Iter> void trim(Iter &iter) {
-    Std::fmt("trim top=%p bot=%p iter=%p\n", top().pointer(), bottom().pointer(),
-             iter.pointer());
+  template <typename Iter>
+  void trim(Iter& iter) {
+    Std::fmt("trim top=%p bot=%p iter=%p\n", top().pointer(),
+             bottom().pointer(), iter.pointer());
     G_ASSERT(contains(iter));
     // Can force to size_t because if i belongs to stack, difference with
     // bottom() will always be positive or 0 (this may bite in release build?)

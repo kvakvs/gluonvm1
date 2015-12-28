@@ -22,12 +22,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "fructose/test_root.h"
 
-#include <map>
-#include <string>
-#include <iostream>
 #include <fstream>
-#include <stdexcept>
+#include <iostream>
+#include <map>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 
 /*! \mainpage FRUCTOSE - FRamework for Unit testing C++ for Test driven
  * development Of SoftwarE

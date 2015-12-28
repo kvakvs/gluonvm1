@@ -4,7 +4,7 @@
 namespace gluon {
 namespace proc {
 
-//void OverlayStack::push_n_nils(Word n) {
+// void OverlayStack::push_n_nils(Word n) {
 //  G_ASSERT(get_avail() >= n);
 //  top_ -= n;
 //  std::fill_n(top_, n, term::nil_as_word);

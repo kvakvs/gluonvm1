@@ -38,9 +38,10 @@ class RuntimeContextFields {
   Term regs_[erts::max_regs];
 
 #if FEATURE_FLOAT
-private:
+ private:
   Float fp_regs_[vm::MAX_FP_REGS];
-public:
+
+ public:
   Float fp(Word i) const { return fp_regs[i]; }
   void set_fp(Word i, Float v) { fp_regs[i] = v; }
 #else

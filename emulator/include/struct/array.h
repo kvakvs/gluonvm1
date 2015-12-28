@@ -1,8 +1,8 @@
 #pragma once
 
-#include "defs.h"
 #include <array>
 #include <vector>
+#include "defs.h"
 
 namespace gluon {
 

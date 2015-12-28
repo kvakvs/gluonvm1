@@ -1,7 +1,7 @@
-#include "defs.h"
-#include "vm.h"
 #include "ext_term.h"
+#include "defs.h"
 #include "heap.h"
+#include "vm.h"
 
 namespace gluon {
 

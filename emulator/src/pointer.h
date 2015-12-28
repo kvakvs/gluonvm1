@@ -1,17 +1,14 @@
 #pragma once
 #include "defs.h"
 
-#include "platf/gsys_stdlib.h" // for debug print
+#include "platf/gsys_stdlib.h"  // for debug print
 
 namespace gluon {
 
-enum class PointerHTag {
-  None = 0,
-  Continuation = 1
-};
+enum class PointerHTag { None = 0, Continuation = 1 };
 enum class PointerLTag {
   None = 0,
-  Boxed = 2 // same as in term_tag.h for primary tag to look like a boxed
+  Boxed = 2  // same as in term_tag.h for primary tag to look like a boxed
 };
 
 //
@@ -31,15 +28,15 @@ enum class PointerLTag {
 #ifdef __linux__
 template <Word total_bits, Word high_bits>
 class LinuxPointerKnowledge {
-public:
-  static_assert(total_bits == sizeof(void *) * 8,
+ public:
+  static_assert(total_bits == sizeof(void*) * 8,
                 "bad total_bits in PointerKnowledge");
 
   // how many bits are safe to cut and throw away for user-space pointers
   constexpr static Word high_pos = total_bits - high_bits;
   constexpr static Word high_mask = (Word)(~0ULL) << high_pos;
   // how many bits will always be zero due to pointer alignment
-  constexpr static Word low_bits = (total_bits == 64? 3 : 2);
+  constexpr static Word low_bits = (total_bits == 64 ? 3 : 2);
   constexpr static Word low_mask = (Word)(~0ULL) >> (total_bits - low_bits);
   constexpr static Word mask = high_mask | low_mask;
 
@@ -47,7 +44,7 @@ public:
 
   static void assert() {
     if (debug_mode) {
-      G_ASSERT(is_userspace_pointer((void *)0x7fff'f7f8'd070ULL));
+      G_ASSERT(is_userspace_pointer((void*)0x7fff'f7f8'd070ULL));
     }
   }
 
@@ -60,8 +57,7 @@ public:
   static bool is_userspace_pointer(T* p) {
     // Must be in range for userspace for this platform
     // Must be aligned (no extra 1 in low bits)
-    return ((Word)p <= 0x7fff'ffff'ffffULL)
-        && has_no_tags(p);
+    return ((Word)p <= 0x7fff'ffff'ffffULL) && has_no_tags(p);
   }
 
   template <typename T>
@@ -73,7 +69,7 @@ public:
   static Word set_tags(T* p, PointerHTag htag, PointerLTag ltag) {
     Word stripped = (Word)p & ~mask;
     Word res = stripped | ((Word)htag << high_pos) | (Word)ltag;
-    //Std::fmt("cont set_tags 0x%zx\n", res);
+    // Std::fmt("cont set_tags 0x%zx\n", res);
     return res;
   }
 
@@ -95,7 +91,7 @@ public:
     return ((Word)p & low_mask) | (Word)tag;
   }
 };
-#endif // linux
+#endif  // linux
 
 #ifdef __linux__
 // Currently 48 bits of address are used on 64-bit linux which allows to
@@ -104,4 +100,4 @@ public:
 using PointerKnowledge = LinuxPointerKnowledge<64, 16>;
 #endif
 
-} // ns gluon
+}  // ns gluon

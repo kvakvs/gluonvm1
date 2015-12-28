@@ -1,15 +1,15 @@
 #pragma once
 
-#include "process.h"
-#include "module.h"
-#include "code_server.h"
 #include "bif/bif_misc.h"
-#include "genop.h"
-#include "predef_atoms.h"
+#include "code_server.h"
 #include "fun.h"
+#include "genop.h"
 #include "heap.h"
-#include "vm.h"
+#include "module.h"
+#include "predef_atoms.h"
+#include "process.h"
 #include "term_helpers.h"
+#include "vm.h"
 
 #include <cstring>
 
@@ -21,10 +21,7 @@ enum class WantSchedule {
   KeepGoing     // decided to continue current process
 };
 
-enum class CheckBifError {
-  None,
-  ErrorOccured
-};
+enum class CheckBifError { None, ErrorOccured };
 
 //
 // VM execution context, inherited from process context
@@ -181,12 +178,8 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     set_ip(new_ip);
   }
 
-  void jump(Process*, CodePointer ip) {
-    set_ip(ip);
-  }
-  void jump(Process*, ContinuationPointer ip) {
-    set_ip(ip.untag());
-  }
+  void jump(Process*, CodePointer ip) { set_ip(ip); }
+  void jump(Process*, ContinuationPointer ip) { set_ip(ip.untag()); }
 
   // Creates an error of type:reason (for example error:badmatch) and processes
   // actions required to handle it
@@ -197,16 +190,16 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     return proc->handle_error();
   }
 
-//  void exception(Process* proc) {
-//    // if (proc->catch_level_ == 0) {
-//    // we're not catching anything here
-//    Std::fmt(tRed("VM EXCEPTION: "));
-//    regs_[0].print(vm_);
-//    Std::fmt(":");
-//    regs_[1].println(vm_);
+  //  void exception(Process* proc) {
+  //    // if (proc->catch_level_ == 0) {
+  //    // we're not catching anything here
+  //    Std::fmt(tRed("VM EXCEPTION: "));
+  //    regs_[0].print(vm_);
+  //    Std::fmt(":");
+  //    regs_[1].println(vm_);
 
-//    return handle_error(proc);
-//  }
+  //    return handle_error(proc);
+  //  }
 
   void push_cp() {
     stack().push(ContinuationPointer::make_cp(cp()).value());
@@ -215,7 +208,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 
   void pop_cp() {
     ContinuationPointer cp0(stack().pop());
-    //auto cp0 = p.boxed_get_ptr_unchecked<Word>();
+    // auto cp0 = p.boxed_get_ptr_unchecked<Word>();
     set_cp(cp0.untag());
   }
 
@@ -243,9 +236,9 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
         if (i < arity - 1) {
           Std::fmt(";");
         }
-      } // for
+      }  // for
       Std::fmt(")\n");
-    } // if debug
+    }  // if debug
   }
 
   CheckBifError check_bif_error(Process* p) {
@@ -256,7 +249,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     return CheckBifError::ErrorOccured;
   }
 
-  void handle_error(Process *p);
+  void handle_error(Process* p);
 
   // If value stored in var is immediate and is a special value referring
   // register or stack cell, it gets replaced with value stored in that register
@@ -273,9 +266,8 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
       i = regs_[i.regx_get_value()];
     } else if (i.is_regy()) {
       i = Term(stack().get_y(i.regy_get_value()));
-    }
-    else if (feature_float && i.is_regfp()) {
-      //i = fp(i.regfp_get_value());
+    } else if (feature_float && i.is_regfp()) {
+      // i = fp(i.regfp_get_value());
       throw err::FeatureMissing("FLOAT");
     }
   }
@@ -333,7 +325,7 @@ WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
       ctx.jump(proc, fail_label.untag());
       return WantSchedule::KeepGoing;
     }
-  } // end if bif1-3
+  }  // end if bif1-3
 
   if (ctx.check_bif_error(proc) == CheckBifError::ErrorOccured) {
     return WantSchedule::NextProcess;

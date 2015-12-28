@@ -1,9 +1,9 @@
 #include "vm.h"
 #include "code_server.h"
-#include "platf/gsys_file.h"
-#include "platf/gsys_mem.h"
 #include "dist.h"
 #include "heap.h"
+#include "platf/gsys_file.h"
+#include "platf/gsys_mem.h"
 #include "predef_atoms.h"
 #include "process.h"
 

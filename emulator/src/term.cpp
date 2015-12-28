@@ -1,13 +1,13 @@
 #include "term.h"
-#include "vm.h"
-#include "heap.h"
+#include "binary.h"
 #include "code_server.h"
 #include "fun.h"
-#include "module.h"  // for Export class
-#include "term_helpers.h"
 #include "heap.h"
-#include "binary.h"
+#include "heap.h"
+#include "module.h"  // for Export class
 #include "predef_atoms.h"
+#include "term_helpers.h"
+#include "vm.h"
 
 #include <cstring>
 
@@ -21,7 +21,9 @@ Word term::g_zero_sized_map = term_tag::BoxedMap::create_subtag(0);
 #define cSpecialTermColor cYellow cUnderline
 
 template <>
-Term term::ConsAspect<Term>::allocate_cons(proc::Heap* heap, Term head, Term tail) {
+Term term::ConsAspect<Term>::allocate_cons(proc::Heap* heap,
+                                           Term head,
+                                           Term tail) {
   Term* d = (Term*)heap->allocate<Word>(layout::Cons::box_word_size);
   layout::Cons::head(d) = head;
   layout::Cons::tail(d) = tail;
