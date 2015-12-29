@@ -43,6 +43,7 @@ inline WantSchedule opcode_call_last(Process* proc,
   ctx.jump(proc, ContinuationPointer(ctx.ip(1)));
   return ctx.consume_reduction(proc);
 }
+
 inline WantSchedule opcode_call_only(Process* proc,
                                      VMRuntimeContext& ctx) {  // opcode: 6
   // @spec call_only Arity Label
@@ -53,6 +54,7 @@ inline WantSchedule opcode_call_only(Process* proc,
   ctx.jump(proc, ContinuationPointer(ctx.ip(1)));
   return ctx.consume_reduction(proc);
 }
+
 inline WantSchedule opcode_call_ext(Process* proc,
                                     VMRuntimeContext& ctx) {  // opcode: 7
   // @spec call_ext Arity Destination
@@ -64,9 +66,10 @@ inline WantSchedule opcode_call_ext(Process* proc,
 
   Term a(ctx.ip(0));
   ctx.live = a.small_word();
-  ctx.jump_ext(proc, boxed_mfa);
-  return ctx.consume_reduction(proc);
+  return ctx.jump_ext(proc, boxed_mfa) ? ctx.consume_reduction(proc)
+                                       : WantSchedule::Error;
 }
+
 inline WantSchedule opcode_call_ext_last(Process* proc,
                                          VMRuntimeContext& ctx) {  // opcode: 8
   // @spec call_ext_last Arity Destination Deallocate
@@ -78,8 +81,8 @@ inline WantSchedule opcode_call_ext_last(Process* proc,
   Term dealloc(ctx.ip(2));
   ctx.live = a.small_word();
   ctx.stack_deallocate(dealloc.small_word());
-  ctx.jump_ext(proc, boxed_mfa);
-  return ctx.consume_reduction(proc);
+  return ctx.jump_ext(proc, boxed_mfa) ? ctx.consume_reduction(proc)
+                                       : WantSchedule::Error;
 }
 
 inline WantSchedule opcode_bif0(Process* proc,

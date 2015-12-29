@@ -11,12 +11,15 @@ void VM::vm_loop(bool init) {
   void* jmp_to;
   Process* proc = nullptr;
   Scheduler& sched = VM::scheduler();
+  impl::WantSchedule opcode_result = impl::WantSchedule::KeepGoing;
+
   if (init) {
     goto vm_jump_table_init;
   }
 
 schedule:
-  if (proc) {
+  if (proc && opcode_result != impl::WantSchedule::Error) {
+    // On error process will already be swapped out
     ctx.swap_out(proc);
   }
   proc = sched.next();

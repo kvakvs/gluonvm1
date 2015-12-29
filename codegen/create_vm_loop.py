@@ -37,7 +37,8 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
         # conditional scheduling - false means we yield
         elif op['name'] in OPS_WHICH_MAY_YIELD:
             # special instruction which can interrupt loop
-            print("  if (G_UNLIKELY(impl::opcode_%s(proc, ctx) == impl::WantSchedule::NextProcess)) {" % (op['name']))
+            print("  opcode_result = impl::opcode_%s(proc, ctx);" % (op['name']))
+            print("  if (G_UNLIKELY(opcode_result != impl::WantSchedule::NextProcess)) {")
             print("    goto schedule;")
             print("  }")
         else:

@@ -2,6 +2,7 @@
 
 #include "defs.h"
 #include "struct/array.h"
+#include "struct/str.h"
 
 namespace gluon {
 namespace tool {

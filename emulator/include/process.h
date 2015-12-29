@@ -75,7 +75,7 @@ class Process {
   // (is exiting, reason, put back in sched queue for reason)
   // TODO: make this union to save space
   proc::SliceResult slice_result_ = proc::SliceResult::None;
-  Term slice_result_reason_ = the_non_value;
+  //Term slice_result_reason_ = the_non_value; // moved to fail_ object
   Word slice_result_wait_ = proc::wait_infinite;
 
   // Which queue we belong to
@@ -177,7 +177,7 @@ class Process {
   bool is_failed() const { return fail_.is_failed(); }
   bool is_not_failed() const { return fail_.is_not_failed(); }
   void fail_clear() { fail_.clear(); }
-  auto fail_value() const { return fail_.value(); }
+  Term fail_value() const { return fail_.value(); }
 
   typedef struct {
     bool ignore_kill : 1;

@@ -126,7 +126,8 @@ Process* Scheduler::next() {
       // TODO: WAIT put into infinite or timed wait queue
       // TODO: PURGE_PROCS running on old code
       case proc::SliceResult::Exception: {
-        exit_process(current_, current_->slice_result_reason_);
+        G_ASSERT(current_->is_failed());
+        exit_process(current_, current_->fail_value());
         current_ = nullptr;
       } break;
 

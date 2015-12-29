@@ -113,6 +113,7 @@ void Process::set_exiting() {
   pflags_.pending_exit = false;
   pflags_.exiting = true;
   pflags_.active = true;
+  slice_result_ = proc::SliceResult::Exception;
 
   catch_level_ = 0;
 
@@ -172,6 +173,7 @@ CodePointer Process::catch_jump_to(Word index) {
   throw err::TODO("catch jump to");
 }
 
+// TODO: This possibly belongs to stack class?
 CodePointer Process::find_next_catch() {
   ctx_.assert_swapped_out();
 
@@ -204,6 +206,7 @@ CodePointer Process::find_next_catch() {
     //    ... return_time_trace: ptr++
     //    ... return_to_trace: have_return_to_trace=true
     //  }
+
     //  while (ptr < stack start) {
     //    if ptr.is_catch {
     //      if active_catches (that is p->catch_count > 0) { goto found }

@@ -17,8 +17,12 @@ namespace gluon {
 namespace impl {
 
 enum class WantSchedule {
-  NextProcess,  // we want scheduler to enqueue current process and take next
-  KeepGoing     // decided to continue current process
+  // decided to continue current process
+  KeepGoing,
+  // we want scheduler to enqueue current process and take next
+  NextProcess,
+  // process error happened, proc is already swapped out - schedule next
+  Error
 };
 
 enum class CheckBifError { None, ErrorOccured };
@@ -117,7 +121,8 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   // Jumps to location pointed with {extfunc, Mod, Fun, Arity} in BEAM ASM,
   // depending on encoding decision: now it would be a {M,F,Arity} tuple in
   // literals table - so fetch MFA elements, resolve address and jump
-  void jump_ext(Process* proc, Term mfa_box) {
+  // RETURNS: false if process has to be scheduled out (error occured)
+  bool jump_ext(Process* proc, Term mfa_box) {
     G_ASSERT(mfa_box.is_boxed());
     MFArity* mfa = mfa_box.boxed_get_ptr<MFArity>();
 
@@ -137,7 +142,8 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     Module* mod = nullptr;
     Export* exp = vm_.codeserver().find_mfa(*mfa, &mod);
     if (!exp) {
-      return raise(proc, atom::ERROR, atom::UNDEF);
+      raise(proc, atom::ERROR, atom::UNDEF);
+      return false;
     }
 
     // check for bif, a nonvalue result with error flag set to undef means that
@@ -147,7 +153,8 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
   }
 
   // Finish jump_ext by jumping to a BIF
-  void jump_ext_bif(Process* proc, MFArity* mfa, void* fn) {
+  // RETURNS: false if process has to be scheduled out (error occured)
+  bool jump_ext_bif(Process* proc, MFArity* mfa, void* fn) {
     // Swap out because BIF may decide to modify ip/cp
     swap_out_partial(proc);
     Term result = vm_.apply_bif(proc, mfa->arity, fn, regs_);
@@ -156,9 +163,12 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     if (result.is_nonvalue()) {
       if (proc->is_failed()) {
         // a real error happened
-        Term reason = proc->fail_value();
-        proc->fail_clear();
-        return raise(proc, atom::ERROR, reason);
+        //Term reason = proc->fail_value();
+        //proc->fail_clear();
+        //return raise(proc, atom::ERROR, reason);
+        swap_out(proc);
+        proc->handle_error();
+        return false;
       }
       // if it was undef - do nothing, it wasn't a bif - we just continue
     } else {
@@ -167,15 +177,14 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
       G_ASSERT(cp().is_not_null());
       set_ip(cp());
       set_cp(CodePointer());
-      return;
     }
+    return true;
   }
 
   // Jumps between modules updating base and mod fields
-  void jump_far(Process* proc, Module* m, CodePointer new_ip) {
-    //    mod = m;
-    // base = proc->get_code_base();
+  bool jump_far(Process* /*proc*/, Module* /*m*/, CodePointer new_ip) {
     set_ip(new_ip);
+    return true;
   }
 
   void jump(Process*, CodePointer ip) { set_ip(ip); }
@@ -189,17 +198,6 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     swap_out(proc);
     return proc->handle_error();
   }
-
-  //  void exception(Process* proc) {
-  //    // if (proc->catch_level_ == 0) {
-  //    // we're not catching anything here
-  //    Std::fmt(tRed("VM EXCEPTION: "));
-  //    regs_[0].print(vm_);
-  //    Std::fmt(":");
-  //    regs_[1].println(vm_);
-
-  //    return handle_error(proc);
-  //  }
 
   void push_cp() {
     stack().push(ContinuationPointer::make_cp(cp()).value());
