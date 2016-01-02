@@ -2,7 +2,7 @@
 
 #include "functional.h"
 #include "process.h"
-#include "vm_ctx.h"
+#include "vm_loop_ctx.h"
 
 namespace gluon {
 
@@ -197,9 +197,9 @@ inline WantSchedule opcode_send(Process* proc,
   Term dest(ctx.regs_[0]);
   Term msg(ctx.regs_[1]);
 
-  Std::fmt("send ");
+  libc::fmt("send ");
   msg.print(ctx.vm_);
-  Std::fmt(" -> ");
+  libc::fmt(" -> ");
   dest.println(ctx.vm_);
 
   proc->send_message_to(dest, msg);
@@ -231,7 +231,7 @@ inline void opcode_loop_rec(Process* proc,
     return ctx.jump(proc, ContinuationPointer(ctx.ip(0)));
   }
   // ctx.move(msg, Term(ctx.ip[1]));
-  Std::fmt("loop_rec msg=");
+  libc::fmt("loop_rec msg=");
   msg.println(ctx.vm_);
 
   ctx.regs_[0] = msg;
@@ -661,7 +661,7 @@ inline void opcode_put_tuple(Process* proc,
     Term value(ctx.ip(1));
     ctx.step_ip(2);
     ctx.deref(value);
-    Std::fmt(tMagenta("put element "));
+    libc::fmt(tMagenta("put element "));
     value.println(ctx.vm_);
     layout::Tuple::element(cells, index) = value;
     index++;
@@ -1202,13 +1202,13 @@ inline WantSchedule opcode_apply_mfargs_(
   Term args = arg_regs[2];
   G_ASSERT(args.is_list());
 
-  Std::fmt(tMagenta("apply_mfargs_") ": ");
+  libc::fmt(tMagenta("apply_mfargs_") ": ");
   mod.print(ctx.vm_);
-  Std::fmt(":");
+  libc::fmt(":");
   fun.print(ctx.vm_);
-  Std::fmt(" args=");
+  libc::fmt(" args=");
   args.print(ctx.vm_);
-  Std::fmt("\n");
+  libc::fmt("\n");
 
   ctx.swap_out(proc);
   Either<CodePointer, Term> res = proc->apply(mod, fun, args);

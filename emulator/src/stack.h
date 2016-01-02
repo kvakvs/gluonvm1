@@ -155,7 +155,7 @@ class SelfContainingStack {
   // Trim stack top to Iter position
   template <typename Iter>
   void trim(Iter& iter) {
-    Std::fmt("trim top=%p bot=%p iter=%p\n", top().pointer(),
+    libc::fmt("trim top=%p bot=%p iter=%p\n", top().pointer(),
              bottom().pointer(), iter.pointer());
     G_ASSERT(contains(iter));
     // Can force to size_t because if i belongs to stack, difference with

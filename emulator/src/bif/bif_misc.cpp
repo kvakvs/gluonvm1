@@ -176,9 +176,9 @@ bool is_term_smaller(const VM& vm, Term a, Term b) {
 }
 
 bool are_terms_equal(const VM& vm, Term a, Term b, bool exact) {
-  Std::fmt("are_terms_eq(exact=%d): ", (int)exact);
+  libc::fmt("are_terms_eq(exact=%d): ", (int)exact);
   a.print(vm);
-  Std::fmt(" ? ");
+  libc::fmt(" ? ");
   b.println(vm);
   if (a == b) {
     return true;
@@ -451,7 +451,7 @@ Term bif_length_1(Process* proc, Term a) {
     return Term::make_small(0);
   }
 
-  Std::fmt("length: ");
+  libc::fmt("length: ");
   a.println(proc->vm());
   G_ASSERT(a.is_cons());
   SWord counter = 0;
@@ -522,7 +522,7 @@ static Term integer_to_list(Process* proc, Term n, SWord base) {
   }
 
   if (n.is_small()) {
-    Std::fmt("i2l n.val=" FMT_0xHEX "\n", n.value());
+    libc::fmt("i2l n.val=" FMT_0xHEX "\n", n.value());
     SWord v = n.small_sword();
 
     char buf[16];
@@ -637,7 +637,7 @@ Term bif_function_exported_3(Process* proc, Term m, Term f, Term arity) {
   VM& vm = proc->vm();
   void* maybe_bif = vm.find_bif(mfa);
   if (maybe_bif != nullptr) {
-    Std::fmt("is a bif\n");
+    libc::fmt("is a bif\n");
     return atom::TRUE;
   }
 
@@ -646,14 +646,14 @@ Term bif_function_exported_3(Process* proc, Term m, Term f, Term arity) {
     mod =
         vm.codeserver().find_module(proc, m, code::FindModule::LoadIfNotFound);
   } catch (std::runtime_error&) {
-    Std::fmt("no module\n");
+    libc::fmt("no module\n");
     return atom::FALSE;
   }
 
   if (mod->find_export(FunArity(f, arity.small_word()))) {
     return atom::TRUE;
   }
-  Std::fmt("module but no export\n");
+  libc::fmt("module but no export\n");
   return atom::FALSE;
 }
 
@@ -671,7 +671,7 @@ Term bif_apply_2(Process* proc, Term funobject, Term args) {
     return proc->bif_error_badarg(args);
   }
   if (lresult.length + bf->get_num_free() != fe->mfa.arity) {
-    Std::fmt(tRed("bif apply/2 bad args count\n"));
+    libc::fmt(tRed("bif apply/2 bad args count\n"));
     return proc->bif_error_badarg(args);
   }
 

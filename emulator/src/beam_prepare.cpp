@@ -103,16 +103,16 @@ Vector<CodePointer> BeamLoader::read_code(Module* m,
 void BeamLoader::debug_print_opcode(genop::Opcode opcode,
                                     Word arity,
                                     tool::Reader& r) {
-  Std::fmt("op %s(", genop::opcode_name_map[(Word)opcode]);
+  libc::fmt("op %s(", genop::opcode_name_map[(Word)opcode]);
   tool::Reader r2(r);
   for (Word p = 0; p < arity; ++p) {
     Term arg = parse_term(r2);
     arg.print(vm_);
     if (p + 1 < arity) {
-      Std::fmt("; ");
+      libc::fmt("; ");
     }
   }
-  Std::fmt(")\n");
+  libc::fmt(")\n");
 }
 
 // Here we get chance to preview opcode before its been placed to output,

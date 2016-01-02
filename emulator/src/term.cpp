@@ -51,110 +51,110 @@ Str term::AtomAspect<Term>::atom_str(const VM& vm) const {
 #if G_DEBUG
 void Term::print(const VM& vm) const {
   if (value() == 0) {
-    Std::fmt("NOT_A_TERM");
+    libc::fmt("NOT_A_TERM");
     return;
   }
   if (is_cons()) {
     if (is_cons_printable()) {
       // list is printable - print quotes and every character except tail
-      Std::fmt("\"");
+      libc::fmt("\"");
       Word c = (Uint8)cons_head().small_word();
       if (does_char_require_quoting(c)) {
-        Std::fmt("\\");
+        libc::fmt("\\");
       }
-      Std::fmt("%c", (Uint8)c);
+      libc::fmt("%c", (Uint8)c);
       Term item = cons_tail();
       while (item.is_cons()) {
         c = item.cons_head().small_word();
         if (does_char_require_quoting(c)) {
-          Std::fmt("\\");
+          libc::fmt("\\");
         }
-        Std::fmt("%c", (Uint8)c);
+        libc::fmt("%c", (Uint8)c);
         item = item.cons_tail();
       }
-      Std::fmt("\"");
+      libc::fmt("\"");
     } else {
       // not printable - dump terms and tail
-      Std::fmt("[");
+      libc::fmt("[");
       cons_head().print(vm);
       Term item = cons_tail();
       while (item.is_cons()) {
-        Std::fmt(",");
+        libc::fmt(",");
         item.cons_head().print(vm);
         item = item.cons_tail();
       }
       if (!item.is_nil()) {
-        Std::fmt("|");
+        libc::fmt("|");
         item.print(vm);
       }
-      Std::fmt("]");
+      libc::fmt("]");
     }
   } else if (is_tuple()) {
     auto arity = tuple_get_arity();
-    Std::fmt("{");
+    libc::fmt("{");
     for (Word n = 0; n < arity; ++n) {
       tuple_get_element(n).print(vm);
       if (n < arity - 1) {
-        Std::fmt(",");
+        libc::fmt(",");
       }
     }
-    Std::fmt("}");
+    libc::fmt("}");
   } else if (is_boxed()) {
     //
     // ------ BOXED ------
     //
     ContinuationPointer maybe_cp(value());
     if (maybe_cp.check()) {
-      Std::fmt(cSpecialTermColor "#CP<");
+      libc::fmt(cSpecialTermColor "#CP<");
       vm.codeserver().print_mfa(maybe_cp.untag());
-      Std::fmt(">" cRst);
+      libc::fmt(">" cRst);
       return;
     }
     auto p = boxed_get_ptr<Word>();
     if (is_boxed_fun()) {
-      Std::fmt(cSpecialTermColor "#Fun<");
+      libc::fmt(cSpecialTermColor "#Fun<");
       auto bf = boxed_get_ptr<BoxedFun>();
       vm.codeserver().print_mfa(bf->fun_entry->code);
-      Std::fmt(">" cRst);
+      libc::fmt(">" cRst);
       return;
     }
     if (is_boxed_export()) {
-      Std::fmt(cSpecialTermColor "#ExportedFun<");
+      libc::fmt(cSpecialTermColor "#ExportedFun<");
       auto ex = boxed_get_ptr<Export>();
       ex->mfa.print(vm);
-      Std::fmt(";");
+      libc::fmt(";");
       if (ex->is_bif()) {
-        Std::fmt("bif");
+        libc::fmt("bif");
       } else {
         vm.codeserver().print_mfa(ex->code());
       }
-      Std::fmt(">" cRst);
+      libc::fmt(">" cRst);
       return;
     }
     if (PointerKnowledge::is_userspace_pointer(p)) {
-      Std::fmt(cSpecialTermColor "#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
+      libc::fmt(cSpecialTermColor "#Box<Tag=" FMT_UWORD ";", boxed_get_subtag());
       vm.codeserver().print_mfa(boxed_get_codeptr());
-      Std::fmt(">" cRst);
+      libc::fmt(">" cRst);
     } else {
-      Std::fmt(cSpecialTermColor "#Box<%p>" cRst, p);
+      libc::fmt(cSpecialTermColor "#Box<%p>" cRst, p);
     }
     //
     //
     // ------ end boxed ------
   } else if (is_nil()) {
-    Std::fmt("[]");
+    libc::fmt("[]");
   } else if (is_nonvalue()) {
-    Std::fmt(cSpecialTermColor "NON_VALUE" cRst);
+    libc::fmt(cSpecialTermColor "NON_VALUE" cRst);
   } else if (is_atom()) {
-    Std::fmt("'%s'", atom_str(vm).c_str());
+    libc::fmt("'%s'", atom_str(vm).c_str());
   } else if (is_small()) {
-    Std::fmt(FMT_SWORD, small_sword());
+    libc::fmt(FMT_SWORD, small_sword());
   } else if (is_catch()) {
-    Std::fmt(cSpecialTermColor "#Catch(" FMT_0xHEX ")" cRst, catch_val());
+    libc::fmt(cSpecialTermColor "#Catch(" FMT_0xHEX ")" cRst, catch_val());
   } else if (is_short_pid()) {
-    Std::fmt("#Pid<" FMT_0xHEX ">", short_pid_get_value());
+    libc::fmt("#Pid<" FMT_0xHEX ">", short_pid_get_value());
   } else if (is_regx()) {
-    Std::fmt("X[" FMT_UWORD "]", regx_get_value());
+    libc::fmt("X[" FMT_UWORD "]", regx_get_value());
   }
 #if FEATURE_FLOAT
   else if (is_regfp()) {
@@ -162,15 +162,15 @@ void Term::print(const VM& vm) const {
   }
 #endif
   else if (is_regy()) {
-    Std::fmt("Y[" FMT_UWORD "]", regy_get_value());
+    libc::fmt("Y[" FMT_UWORD "]", regy_get_value());
   } else {
-    Std::fmt("UNKNOWN(" FMT_0xHEX ")", value());
+    libc::fmt("UNKNOWN(" FMT_0xHEX ")", value());
   }
 }
 
 void Term::println(const VM& vm) const {
   print(vm);
-  Std::puts();
+  libc::puts();
 }
 
 template <>
@@ -196,14 +196,14 @@ Term term::BinaryAspect<Term>::make_binary(VM& vm, proc::Heap* h, Word bytes) {
 
 void MFArity::println(const VM& vm) {
   print(vm);
-  Std::puts();
+  libc::puts();
 }
 
 void MFArity::print(const VM& vm) {
   mod.print(vm);
-  Std::fmt(":");
+  libc::fmt(":");
   fun.print(vm);
-  Std::fmt("/" FMT_UWORD, arity);
+  libc::fmt("/" FMT_UWORD, arity);
 }
 
 #endif  // DEBUG

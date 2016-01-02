@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 namespace gluon {
-namespace Std {
+namespace libc {
 
 void abort() {
   ::abort();
@@ -29,8 +29,8 @@ void puts() {
 }
 
 void assert_fail(const char* what, const char* file, int line) {
-  Std::fmt(cRed cBold "FAIL: %s" cRst " (%s:%d)\n", what, file, line);
-  Std::abort();
+  libc::fmt(cRed cBold "FAIL: %s" cRst " (%s:%d)\n", what, file, line);
+  libc::abort();
 }
 
 }  // ns Std

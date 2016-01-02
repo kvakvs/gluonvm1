@@ -6,7 +6,7 @@
 #include "heap.h"
 #include "mailbox.h"
 #include "process_fail.h"
-#include "runtime_ctx.h"
+#include "process_ctx.h"
 #include "term.h"
 #include "wrap.h"
 

@@ -52,7 +52,7 @@ class RuntimeContextFields {
   void print_regs(const VM& vm) const {
     if (debug_mode) {
       for (Word r = 0; r < live; ++r) {
-        Std::fmt("x[%zu]=", r);
+        libc::fmt("x[%zu]=", r);
         regs_[r].println(vm);
       }
     }

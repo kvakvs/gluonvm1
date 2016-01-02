@@ -145,7 +145,7 @@ const static Word invalid_location = make_location(0, 0);
 }  // ns line
 #endif
 
-namespace Std {
+namespace libc {
 // Used by G_ASSERT macro
 void assert_fail(const char* what, const char* file, int line);
 }  // ns Std
@@ -165,7 +165,7 @@ void assert_fail(const char* what, const char* file, int line);
 // TODO: debug macro goes here
 #define G_ASSERT(X)                           \
   if (debug_mode && !(X)) {                   \
-    Std::assert_fail(#X, __FILE__, __LINE__); \
+    libc::assert_fail(#X, __FILE__, __LINE__); \
   }
 #define G_TODO(what)                                                    \
   if (debug_mode) {                                                     \
@@ -175,7 +175,7 @@ void assert_fail(const char* what, const char* file, int line);
   }
 #if G_DEBUG
 // Famous io:format/2 skill on Linkedin!
-#define G_LOG gluon::Std::fmt
+#define G_LOG gluon::libc::fmt
 #define G_IF_NODEBUG(X)
 
 #else  // no G_DEBUG

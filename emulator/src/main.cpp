@@ -43,7 +43,7 @@ int main(int argc, const char* argv[]) {
   vm.vm_loop(false);
 
   // Print x0 as result
-  Std::fmt("Result X[0]=");
+  libc::fmt("Result X[0]=");
   rootp->get_runtime_ctx().regs_[0].println(vm);
 
   return 0;

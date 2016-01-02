@@ -51,7 +51,7 @@ void Server::load_module(Process* proc, Term name) {
       f.seek(0);
       f.read(tmp_buffer, size);
 
-      Std::fmt("Loading BEAM %s\n", path.c_str());
+      libc::fmt("Loading BEAM %s\n", path.c_str());
       load_module(proc, name, ArrayView<const Uint8>(tmp_buffer, size));
       heap->deallocate_many(tmp_buffer, size);
       return;
@@ -85,16 +85,16 @@ void Server::path_prepend(const Str& p) {
 bool Server::print_mfa(const CodePointer ptr) const {
   MFArity mfa;
   if (!find_mfa_from_code(ptr, /*out*/ mfa)) {
-    Std::fmt("%p", ptr.value());
+    libc::fmt("%p", ptr.value());
     return false;
   }
   if (!mfa.mod.is_atom() || !mfa.fun.is_atom()) {
     throw err::CodeServer("mfa is not atom:atom");
   }
   mfa.mod.print(vm_);
-  Std::fmt(":");
+  libc::fmt(":");
   mfa.fun.print(vm_);
-  Std::fmt("/" FMT_UWORD, mfa.arity);
+  libc::fmt("/" FMT_UWORD, mfa.arity);
 
   return true;
 }

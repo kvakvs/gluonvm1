@@ -26,7 +26,7 @@ for opcode in range(libgenop.MIN_OPCODE, libgenop.MAX_OPCODE+1):
 
     # call handler or print TODO error
     if op['name'] in libgenop.implemented_ops:
-        print('  Std::fmt(tGreen("%s") "/%d args=");' % (op['name'], op['arity']))
+        print('  if (debug_mode) { libc::fmt(tGreen("%s") "/%d args="); }' % (op['name'], op['arity']))
         print('  ctx.print_args(%d);' % (op['arity']))
 
         # unconditional scheduling

@@ -170,7 +170,7 @@ void BeamLoader::load_lambda_table(tool::Reader& r0) {
     fe.num_free = nfree;
     fe.code = CodePointer();  // resolve later from uniq0
 
-    Std::fmt("read fun table: %s:%s/" FMT_UWORD " offset=" FMT_UWORD "\n",
+    libc::fmt("read fun table: %s:%s/" FMT_UWORD " offset=" FMT_UWORD "\n",
              fe.mfa.mod.atom_str(vm_).c_str(), fe.mfa.fun.atom_str(vm_).c_str(),
              arity, offset);
     lambdas_.push_back(fe);
@@ -323,7 +323,7 @@ void BeamLoader::load_line_table(tool::Reader& r0) {
         // fname_index);
       } else {
         linenums_.line_refs.push_back(line::invalid_location);
-        Std::fmt("line info: invalid loc\n");
+        libc::fmt("line info: invalid loc\n");
       }
     } else if (val.is_atom()) {
       // reference to another file
@@ -339,7 +339,7 @@ void BeamLoader::load_line_table(tool::Reader& r0) {
   for (Word i = 0; i < linenums_.num_filenames; ++i) {
     Word name_sz = r.read_big_u16();
     Str name = r.read_string(name_sz);
-    Std::fmt("line info: file %s\n", name.c_str());
+    libc::fmt("line info: file %s\n", name.c_str());
     linenums_.filenames.push_back(vm_.to_atom(name));
   }
 

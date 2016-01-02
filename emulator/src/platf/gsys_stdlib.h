@@ -7,7 +7,7 @@
 
 namespace gluon {
 
-namespace Std {
+namespace libc {
 //
 // Console output
 //

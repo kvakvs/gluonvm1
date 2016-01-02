@@ -57,11 +57,11 @@ void Scheduler::exit_process(Process* p, Term reason) {
   // TODO: notify links
   // TODO: unregister name if registered
   // TODO: if pending timers - become zombie and sit in pending timers queue
-  Std::fmt("Scheduler::exit_process ");
+  libc::fmt("Scheduler::exit_process ");
   p->get_pid().print(vm_);
-  Std::fmt("; reason=");
+  libc::fmt("; reason=");
   reason.print(vm_);
-  Std::fmt("; result X[0]=");
+  libc::fmt("; result X[0]=");
   p->get_runtime_ctx().regs_[0].println(vm_);
 
   //  m_inf_wait.erase(p);
@@ -126,6 +126,7 @@ Process* Scheduler::next() {
       // TODO: WAIT put into infinite or timed wait queue
       // TODO: PURGE_PROCS running on old code
       case proc::SliceResult::Exception: {
+        // Assuming here we already tried to find catch and failed
         G_ASSERT(current_->is_failed());
         exit_process(current_, current_->fail_value());
         current_ = nullptr;
@@ -175,8 +176,8 @@ Process* Scheduler::next() {
     }  // select proc from q
 
     if (next_proc) {
-      Std::fmt(cGreen cBold "---Scheduler::next() -> " cRst);
-      Std::fmt("(Queue %d) ", (int)next_proc->current_queue_);
+      libc::fmt(cGreen cBold "---Scheduler::next() -> " cRst);
+      libc::fmt("(Queue %d) ", (int)next_proc->current_queue_);
       next_proc->get_pid().println(vm_);
 
       next_proc->current_queue_ = proc::Queue::None;
@@ -189,7 +190,7 @@ Process* Scheduler::next() {
     // TODO: check wait lists and timeouts
 
     // Let CPU core free if we have nothing to do
-    Std::sleep(1);
+    libc::sleep(1);
   }
 
   throw err::TODO("should not be here");

@@ -39,7 +39,7 @@ Term Process::spawn(MFArity& mfa, Term* args) {
   ctx_.set_cp(vm_.premade_instr(PremadeIndex::Normal_exit_));
   ctx_.set_ip(vm_.premade_instr(PremadeIndex::Apply_mfargs_));
 
-  Std::fmt("Process::jump_to_mfa -> %p\n", ctx_.ip().value());
+  libc::fmt("Process::jump_to_mfa -> %p\n", ctx_.ip().value());
 
   vm_.scheduler().add_new_runnable(this);
   return get_pid();
@@ -125,6 +125,7 @@ void Process::set_exiting() {
 // Assumes fail object is set
 void Process::handle_error() {
   G_ASSERT(fail_.is_failed());
+  ctx_.assert_swapped_out();
 
   // If fail_.arg_list? (parse tuple with error value and args)
   if (fail_.is_arg_list_set()) {
@@ -252,7 +253,7 @@ void Process::send_message_to(Term pid, Term value) {
 
   Process* other = vm_.scheduler().find(pid);
   if (!other) {
-    Std::fmt(tRed("msg_send pid not found: "));
+    libc::fmt(tRed("msg_send pid not found: "));
     pid.println(vm_);
     return;
   }

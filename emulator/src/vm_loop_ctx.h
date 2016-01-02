@@ -55,7 +55,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
       // ip[-4] == fun_info
       // TODO: remove live from all call opcodes and uncomment this
       // live = ip[-1];
-      Std::fmt(tMagenta("out of reductions\n"));
+      libc::fmt(tMagenta("out of reductions\n"));
       return WantSchedule::NextProcess;
     }
     return WantSchedule::KeepGoing;
@@ -127,7 +127,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
     MFArity* mfa = mfa_box.boxed_get_ptr<MFArity>();
 
     if (debug_mode) {
-      Std::fmt(tMagenta("ctx.jump_ext") " -> ");
+      libc::fmt(tMagenta("ctx.jump_ext") " -> ");
       mfa->println(vm_);
     }
 
@@ -222,20 +222,20 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
 
   void print_args(Word arity) {
     if (debug_mode) {
-      Std::fmt("(");
+      libc::fmt("(");
       for (Word i = 0; i < arity; ++i) {
         Term value(ip(i));
         value.print(vm_);
         if (value.is_regx() || value.is_regy()) {
           resolve_immed(value);
-          Std::fmt("=");
+          libc::fmt("=");
           value.print(vm_);
         }
         if (i < arity - 1) {
-          Std::fmt(";");
+          libc::fmt(";");
         }
       }  // for
-      Std::fmt(")\n");
+      libc::fmt(")\n");
     }  // if debug
   }
 
@@ -294,9 +294,9 @@ WantSchedule opcode_bif(Process* proc, VMRuntimeContext& ctx) {
   auto fun_ptr = (BifFn)ctx.vm_.find_bif(*mfa);
   if (debug_mode) {
     if (!fun_ptr) {
-      Std::fmt(tRed("not found bif: "));
+      libc::fmt(tRed("not found bif: "));
     } else {
-      Std::fmt(tMagenta("call bif: "));
+      libc::fmt(tMagenta("call bif: "));
     }
     mfa->println(ctx.vm_);
   }
