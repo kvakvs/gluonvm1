@@ -8,29 +8,29 @@ namespace gluon {
 namespace libc {
 
 void abort() {
-  ::abort();
+    ::abort();
 }
 
 void sleep(size_t micro_sec) {
-  ::usleep((unsigned int)micro_sec);
+    ::usleep((unsigned int)micro_sec);
 }
 
 void exit(int x) {
-  ::exit(x);
+    ::exit(x);
 }
 
 void fmt(const char* s) {
-  while (*s)
-    std::putchar(*s++);
+    while (*s)
+        std::putchar(*s++);
 }
 
 void puts() {
-  std::puts("");
+    std::puts("");
 }
 
 void assert_fail(const char* what, const char* file, int line) {
-  libc::fmt(cRed cBold "FAIL: %s" cRst " (%s:%d)\n", what, file, line);
-  libc::abort();
+    libc::fmt(cRed cBold "FAIL: %s" cRst " (%s:%d)\n", what, file, line);
+    libc::abort();
 }
 
 }  // ns Std

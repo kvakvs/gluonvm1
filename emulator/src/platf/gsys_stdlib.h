@@ -15,7 +15,7 @@ void fmt(const char* s);
 
 template <typename... Args>
 void fmt(const char* format, Args&&... args) {
-  std::printf(format, std::forward<Args>(args)...);
+    std::printf(format, std::forward<Args>(args)...);
 }
 void puts();
 

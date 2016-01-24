@@ -264,109 +264,109 @@ namespace fructose {
  */
 template <typename test_container>
 class test_base : public test_root {
- public:
-  /**
-   * Type of test case functions
-   *
-   * Test cases are implemented as member functions of the test container
-   * class, which must be derived from this template (CRTP).
-   * These methods return void and accept one parameter: the
-   * name of the test case.
-   */
-  typedef void (test_container::*test_case)(const std::string&);
+   public:
+    /**
+     * Type of test case functions
+     *
+     * Test cases are implemented as member functions of the test container
+     * class, which must be derived from this template (CRTP).
+     * These methods return void and accept one parameter: the
+     * name of the test case.
+     */
+    typedef void (test_container::*test_case)(const std::string&);
 
-  // compiler-generated default constructor would be OK
-  // but gives warnings with GCC's -Weffc++.
+    // compiler-generated default constructor would be OK
+    // but gives warnings with GCC's -Weffc++.
 
-  test_base<test_container>()
-      : m_tests(), m_available_tests(suite()), m_exceptionPending("") {}
+    test_base<test_container>()
+        : m_tests(), m_available_tests(suite()), m_exceptionPending("") {}
 
-  /**
-   * Register a test case
-   *
-   * Register a member function implementing a test case against the
-   * name of the test case
-   *
-   * @param name - The name of the test case
-   * @param the_test - The member function implementing the test case
-   */
-  void add_test(const std::string& name, test_case the_test);
+    /**
+     * Register a test case
+     *
+     * Register a member function implementing a test case against the
+     * name of the test case
+     *
+     * @param name - The name of the test case
+     * @param the_test - The member function implementing the test case
+     */
+    void add_test(const std::string& name, test_case the_test);
 
-  /**
-   * Run statically configured tests
-   *
-   * This function runs all the registered tests in the sequence in
-   * which they were registered.
-   *
-   * @return - An integer suitable as main exit status: EXIT_SUCCESS
-   * if the the tests were successful, EXIT_FAILURE otherwise.
-   */
-  int run();
+    /**
+     * Run statically configured tests
+     *
+     * This function runs all the registered tests in the sequence in
+     * which they were registered.
+     *
+     * @return - An integer suitable as main exit status: EXIT_SUCCESS
+     * if the the tests were successful, EXIT_FAILURE otherwise.
+     */
+    int run();
 
-  /**
-   * Run the test specified on the command line
-   * (runs all tests if none specified).
-   * Flags are set for various command line options
-   * such as the verbose flag and first assertion is fatal.
-   */
-  int run(int argc, char* argv[]);
+    /**
+     * Run the test specified on the command line
+     * (runs all tests if none specified).
+     * Flags are set for various command line options
+     * such as the verbose flag and first assertion is fatal.
+     */
+    int run(int argc, char* argv[]);
 
-  /**
-   * Run tests configured in test suite
-   *
-   * This function runs the tests named in the test suite in the sequence
-   * by the suite. If the suite contains a name which is not registered,
-   * a warning message is issued.
-   *
-   * @param suite - The test suite
-   *
-   * @return - An integer suitable as main exit status: EXIT_SUCCESS
-   * if the the tests were successful, EXIT_FAILURE otherwise.
-   */
-  int run(const suite& suite);
+    /**
+     * Run tests configured in test suite
+     *
+     * This function runs the tests named in the test suite in the sequence
+     * by the suite. If the suite contains a name which is not registered,
+     * a warning message is issued.
+     *
+     * @param suite - The test suite
+     *
+     * @return - An integer suitable as main exit status: EXIT_SUCCESS
+     * if the the tests were successful, EXIT_FAILURE otherwise.
+     */
+    int run(const suite& suite);
 
-  /**
-   * Return a list of test names from the command line.
-   *
-   * This function returns a suite containing all the test cases named on
-   * the command line. If none are named, or if the keyword "all" is passed,
-   * all the configured test cases are included.
-   *
-   * Note: This routine is provided for compatibility with older
-   * versions of fructose. New programs should use the function
-   * run(argc, argv).
-   *
-   * @param argc - The argument count passed to main
-   * @param argv - The argument vector passed to main
-   *
-   * @return The configured test suite
-   */
-  suite get_suite(int argc, char* argv[]);
+    /**
+     * Return a list of test names from the command line.
+     *
+     * This function returns a suite containing all the test cases named on
+     * the command line. If none are named, or if the keyword "all" is passed,
+     * all the configured test cases are included.
+     *
+     * Note: This routine is provided for compatibility with older
+     * versions of fructose. New programs should use the function
+     * run(argc, argv).
+     *
+     * @param argc - The argument count passed to main
+     * @param argv - The argument vector passed to main
+     *
+     * @return The configured test suite
+     */
+    suite get_suite(int argc, char* argv[]);
 
- private:
-  /**
-   * Helper routine to provide the main functionality of run but
-   * with added exception handling so the test harness does not have
-   * to do it.
-   */
-  int do_run(const suite& suite);
+   private:
+    /**
+     * Helper routine to provide the main functionality of run but
+     * with added exception handling so the test harness does not have
+     * to do it.
+     */
+    int do_run(const suite& suite);
 
-  /**
-   * Collection of test cases, keyed by their names
-   */
-  std::map<std::string, std::pair<test_case, test_info> > m_tests;
+    /**
+     * Collection of test cases, keyed by their names
+     */
+    std::map<std::string, std::pair<test_case, test_info> > m_tests;
 
-  /*
-   * Defines the sequence in which tests have to be run.
-   */
-  suite m_available_tests;
+    /*
+     * Defines the sequence in which tests have to be run.
+     */
+    suite m_available_tests;
 
-  /*
-   * If the fructose machinery itself has an error, then
-   * it is stored as a pending exception in this string.
-   * This enables the string to be checked when run is called.
-   */
-  std::string m_exceptionPending;
+    /*
+     * If the fructose machinery itself has an error, then
+     * it is stored as a pending exception in this string.
+     * This enables the string to be checked when run is called.
+     */
+    std::string m_exceptionPending;
 };
 
 // ====================
@@ -376,97 +376,98 @@ class test_base : public test_root {
 template <typename test_container>
 inline void test_base<test_container>::add_test(const std::string& name,
                                                 test_case the_test) {
-  if (m_exceptionPending.length() > 0) {
-    return;
-  }
+    if (m_exceptionPending.length() > 0) {
+        return;
+    }
 
-  typename std::map<std::string,
-                    std::pair<test_case, test_info> >::const_iterator it =
-      m_tests.find(name);
-  if (it == m_tests.end()) {
-    m_tests[name] = std::make_pair(the_test, test_info(name));
-    m_available_tests.push_back(name);
-  } else {
-    std::stringstream str;
-    str << "add_test called with test name '" << name
-        << "' which has already been added.";
-    m_exceptionPending = str.str();
-  }
+    typename std::map<std::string,
+                      std::pair<test_case, test_info> >::const_iterator it =
+        m_tests.find(name);
+    if (it == m_tests.end()) {
+        m_tests[name] = std::make_pair(the_test, test_info(name));
+        m_available_tests.push_back(name);
+    } else {
+        std::stringstream str;
+        str << "add_test called with test name '" << name
+            << "' which has already been added.";
+        m_exceptionPending = str.str();
+    }
 }
 
 template <typename test_container>
 inline int test_base<test_container>::run() {
-  return run(m_available_tests);
+    return run(m_available_tests);
 }
 
 template <typename test_container>
 inline int test_base<test_container>::run(int argc, char* argv[]) {
-  int exitStatus = EXIT_SUCCESS;
+    int exitStatus = EXIT_SUCCESS;
 
-  if (m_exceptionPending.length() > 0) {
-    std::cout << "ERROR in use of FRUCTOSE: " << m_exceptionPending
-              << std::endl;
-    exitStatus = EXIT_FAILURE;
-  } else {
-    test_root::suite the_suite = get_suite(argc, argv);
-    exitStatus = run(the_suite);
-  }
+    if (m_exceptionPending.length() > 0) {
+        std::cout << "ERROR in use of FRUCTOSE: " << m_exceptionPending
+                  << std::endl;
+        exitStatus = EXIT_FAILURE;
+    } else {
+        test_root::suite the_suite = get_suite(argc, argv);
+        exitStatus = run(the_suite);
+    }
 
-  return exitStatus;
+    return exitStatus;
 }
 
 template <typename test_container>
 inline int test_base<test_container>::run(const test_root::suite& suite) {
-  try {
-    return do_run(suite);
-  } catch (...) {
-    return fructose::test_root::exception_handler();
-  }
+    try {
+        return do_run(suite);
+    } catch (...) {
+        return fructose::test_root::exception_handler();
+    }
 }
 
 template <typename test_container>
 inline int test_base<test_container>::do_run(const suite& suite) {
-  test_container* runner = dynamic_cast<test_container*>(this);
+    test_container* runner = dynamic_cast<test_container*>(this);
 
-  if (runner == 0) {
-    throw std::runtime_error(
-        "problem in test set-up; probable cause: "
-        "test container class not passed to test_base template");
-  }
-
-  for (typename suite::const_iterator it = suite.begin(); it != suite.end();
-       ++it) {
-    std::pair<test_case, test_info> value = m_tests[it->m_test_name];
-    test_case test_case = value.first;
-    if (test_case) {
-      const std::string title = "Running test case " + it->m_test_name;
-      if (verbose()) {
-        std::cout << std::endl
-                  << title << std::endl
-                  << underline(title) << '\n' << std::endl;
-      }
-      runner->setup();
-      runner->set_test_info(&(*it));
-      try {
-        (runner->*test_case)(it->m_test_name);
-        runner->teardown();
-      } catch (std::exception& ex) {
-        runner->teardown();
-        set_exception_happened();
-        std::cout << ex.what() << std::endl;
-      }
-    } else {
-      std::cerr << "No such test case: " << it->m_test_name << std::endl;
+    if (runner == 0) {
+        throw std::runtime_error(
+            "problem in test set-up; probable cause: "
+            "test container class not passed to test_base template");
     }
-  }
 
-  return return_status();
+    for (typename suite::const_iterator it = suite.begin(); it != suite.end();
+         ++it) {
+        std::pair<test_case, test_info> value = m_tests[it->m_test_name];
+        test_case test_case = value.first;
+        if (test_case) {
+            const std::string title = "Running test case " + it->m_test_name;
+            if (verbose()) {
+                std::cout << std::endl
+                          << title << std::endl
+                          << underline(title) << '\n'
+                          << std::endl;
+            }
+            runner->setup();
+            runner->set_test_info(&(*it));
+            try {
+                (runner->*test_case)(it->m_test_name);
+                runner->teardown();
+            } catch (std::exception& ex) {
+                runner->teardown();
+                set_exception_happened();
+                std::cout << ex.what() << std::endl;
+            }
+        } else {
+            std::cerr << "No such test case: " << it->m_test_name << std::endl;
+        }
+    }
+
+    return return_status();
 }
 
 template <typename test_container>
 inline test_root::suite test_base<test_container>::get_suite(int argc,
                                                              char* argv[]) {
-  return do_get_suite(m_available_tests, argc, argv);
+    return do_get_suite(m_available_tests, argc, argv);
 }
 
 }  // namespace

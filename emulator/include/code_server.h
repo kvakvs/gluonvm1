@@ -27,39 +27,40 @@ using ModuleMap = Dict<Term, Module*>;
 enum class FindModule { FindExisting, LoadIfNotFound };
 
 class Server {
- private:
-  VM& vm_;
-  ModuleMap modules_;
-  List<Str> search_path_;
+   private:
+    VM& vm_;
+    ModuleMap modules_;
+    List<Str> search_path_;
 
 #if FEATURE_CODE_RANGES
-  // Map code range to Module*
-  code::Index<Module*> mod_index_;
+    // Map code range to Module*
+    code::Index<Module*> mod_index_;
 #endif
 
- public:
-  Server(VM& v) : vm_(v) {}
-  //  void init();
-  void load_module(Process* proc, Term name_atom);
+   public:
+    Server(VM& v) : vm_(v) {}
+    //  void init();
+    void load_module(Process* proc, Term name_atom);
 
-  // Pass nil as name to take name automatically from the module
-  void load_module(Process* proc, Term name_atom, ArrayView<const Uint8> data);
+    // Pass nil as name to take name automatically from the module
+    void load_module(Process* proc,
+                     Term name_atom,
+                     ArrayView<const Uint8> data);
 
-  Module* find_module(Process* proc, Term m, FindModule opt);
-  void path_append(const Str& p);
-  void path_prepend(const Str& p);
+    Module* find_module(Process* proc, Term m, FindModule opt);
+    void path_append(const Str& p);
+    void path_prepend(const Str& p);
 
-  // Find module, function and arity for code location and print it.
-  // Returns true if mfa was found and printed, else false
-  bool print_mfa(const CodePointer ptr) const;
-  bool find_mfa_from_code(const CodePointer ptr, MFArity& out) const;
-  Export* find_mfa(const MFArity& mfa, Module** out_mod = nullptr) const;
+    // Find module, function and arity for code location and print it.
+    // Returns true if mfa was found and printed, else false
+    bool print_mfa(const CodePointer ptr) const;
+    bool find_mfa_from_code(const CodePointer ptr, MFArity& out) const;
+    Export* find_mfa(const MFArity& mfa, Module** out_mod = nullptr) const;
 
- protected:
-  Module* load_module_internal(proc::Heap* heap,
-                               Term expected_name_or_nil,
-                               ArrayView<const Uint8>
-                                   data);
+   protected:
+    Module* load_module_internal(proc::Heap* heap,
+                                 Term expected_name_or_nil,
+                                 ArrayView<const Uint8> data);
 };
 
 }  // ns code

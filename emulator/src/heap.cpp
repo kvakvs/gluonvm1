@@ -57,42 +57,42 @@ bool copy_terms(VM& vm,
                 const Term* start,
                 const Term* end,
                 Term* dst) {
-  while (start < end) {
-    *dst = copy_one_term(vm, dstheap, *start);
-    start++;
-    dst++;
-  }
-  return true;
+    while (start < end) {
+        *dst = copy_one_term(vm, dstheap, *start);
+        start++;
+        dst++;
+    }
+    return true;
 }
 
 // Copies one term 't' to 'dstheap' returns new clone term located in new heap
 Term copy_one_term(VM& vm, Heap* dstheap, Term t) {
-  // Immediate values go immediately out
-  if (t.is_nonvalue() || t.is_nil() || t.is_small() || t.is_atom() ||
-      t.is_short_pid() || t.is_short_port()) {
-    return t;
-  }
-  if (t.is_tuple()) {
-    Word arity = t.tuple_get_arity();
-    Term* new_t =
-        (Term*)dstheap->allocate<Word>(layout::Tuple::box_size(arity));
-    Term* this_t = t.boxed_get_ptr<Term>();
-    layout::Tuple::arity(new_t) = layout::Tuple::arity(this_t);
-    // Deep clone
-    for (Word i = 0; i < arity; ++i) {
-      layout::Tuple::element(new_t, i) =
-          copy_one_term(vm, dstheap, layout::Tuple::element(this_t, i));
+    // Immediate values go immediately out
+    if (t.is_nonvalue() || t.is_nil() || t.is_small() || t.is_atom() ||
+        t.is_short_pid() || t.is_short_port()) {
+        return t;
     }
-    return Term::make_tuple_prepared(new_t);
-  }
-  if (t.is_boxed()) {
-    if (t.is_boxed_fun()) {
-      BoxedFun* bf = t.boxed_get_ptr<BoxedFun>();
-      return fun::box_fun(dstheap, bf->fun_entry, bf->pid, bf->frozen);
+    if (t.is_tuple()) {
+        Word arity = t.tuple_get_arity();
+        Term* new_t =
+            (Term*)dstheap->allocate<Word>(layout::Tuple::box_size(arity));
+        Term* this_t = t.boxed_get_ptr<Term>();
+        layout::Tuple::arity(new_t) = layout::Tuple::arity(this_t);
+        // Deep clone
+        for (Word i = 0; i < arity; ++i) {
+            layout::Tuple::element(new_t, i) =
+                copy_one_term(vm, dstheap, layout::Tuple::element(this_t, i));
+        }
+        return Term::make_tuple_prepared(new_t);
     }
-  }
-  t.println(vm);
-  G_TODO("notimpl copy_one_term for some type of term");
+    if (t.is_boxed()) {
+        if (t.is_boxed_fun()) {
+            BoxedFun* bf = t.boxed_get_ptr<BoxedFun>();
+            return fun::box_fun(dstheap, bf->fun_entry, bf->pid, bf->frozen);
+        }
+    }
+    t.println(vm);
+    G_TODO("notimpl copy_one_term for some type of term");
 }
 
 }  // ns proc

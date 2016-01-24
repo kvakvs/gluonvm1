@@ -44,14 +44,16 @@ constexpr bool debug_mode = false;
 #define FMT_SWORD "%zi"
 #define FMT_UWORD "%zu"
 
-#define DECL_EXCEPTION(NAME)                       \
-  class NAME : public std::runtime_error {         \
-   public:                                         \
-    NAME(const char* e) : std::runtime_error(e) {} \
-    virtual const char* what() const noexcept;     \
-  };
-#define IMPL_EXCEPTION(NAME) \
-  const char* NAME::what() const noexcept { return std::runtime_error::what(); }
+#define DECL_EXCEPTION(NAME)                           \
+    class NAME : public std::runtime_error {           \
+       public:                                         \
+        NAME(const char* e) : std::runtime_error(e) {} \
+        virtual const char* what() const noexcept;     \
+    };
+#define IMPL_EXCEPTION(NAME)                  \
+    const char* NAME::what() const noexcept { \
+        return std::runtime_error::what();    \
+    }
 #define DECL_IMPL_EXCEPTION(NAME) DECL_EXCEPTION(NAME) IMPL_EXCEPTION(NAME)
 
 namespace err {
@@ -96,7 +98,7 @@ using Word = std::size_t;
 using SWord = std::ptrdiff_t;
 
 constexpr Word word_size(Word x) {
-  return (x + sizeof(Word) - 1) / sizeof(Word);
+    return (x + sizeof(Word) - 1) / sizeof(Word);
 }
 
 using Uint8 = std::uint8_t;
@@ -129,16 +131,16 @@ constexpr Word max_fp_regs = 2;
 #if FEATURE_LINE_NUMBERS
 namespace line {
 constexpr bool is_valid_loc(Word File, Word Line) {
-  return (File < 255 && Line < ((1 << 24) - 1));
+    return (File < 255 && Line < ((1 << 24) - 1));
 }
 constexpr Word make_location(Word File, Word Line) {
-  return (File << 24) | Line;
+    return (File << 24) | Line;
 }
 constexpr Word get_loc_file(Word Loc) {
-  return Loc >> 24;
+    return Loc >> 24;
 }
 constexpr Word get_loc_line(Word Loc) {
-  return Loc & ((1 << 24) - 1);
+    return Loc & ((1 << 24) - 1);
 }
 
 const static Word invalid_location = make_location(0, 0);
@@ -163,16 +165,16 @@ void assert_fail(const char* what, const char* file, int line);
 //__LINE__); ::abort();
 
 // TODO: debug macro goes here
-#define G_ASSERT(X)                           \
-  if (debug_mode && !(X)) {                   \
-    libc::assert_fail(#X, __FILE__, __LINE__); \
-  }
-#define G_TODO(what)                                                    \
-  if (debug_mode) {                                                     \
-    ::fprintf(stderr, cYellow cBold "TODO:" cRst " %s (%s:%d)\n", what, \
-              __FILE__, __LINE__);                                      \
-    throw gluon::err::TODO(what);                                       \
-  }
+#define G_ASSERT(X)                                \
+    if (debug_mode && !(X)) {                      \
+        libc::assert_fail(#X, __FILE__, __LINE__); \
+    }
+#define G_TODO(what)                                                        \
+    if (debug_mode) {                                                       \
+        ::fprintf(stderr, cYellow cBold "TODO:" cRst " %s (%s:%d)\n", what, \
+                  __FILE__, __LINE__);                                      \
+        throw gluon::err::TODO(what);                                       \
+    }
 #if G_DEBUG
 // Famous io:format/2 skill on Linkedin!
 #define G_LOG gluon::libc::fmt

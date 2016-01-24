@@ -15,10 +15,10 @@ class Term;
 
 template <typename T>
 static constexpr Word calculate_storage_size() {
-  return ((sizeof(T) + sizeof(Word) - 1) / sizeof(Word)) * sizeof(Word);
+    return ((sizeof(T) + sizeof(Word) - 1) / sizeof(Word)) * sizeof(Word);
 }
 static constexpr Word calculate_word_size(Word bytes) {
-  return ((bytes + sizeof(Word) - 1) / sizeof(Word)) * sizeof(Word);
+    return ((bytes + sizeof(Word) - 1) / sizeof(Word)) * sizeof(Word);
 }
 
 namespace mem {
@@ -28,35 +28,35 @@ namespace mem {
 // any additional tricks, segmenting, grouping by size, free-lists and so on
 //
 class SystemMemoryAllocator {
- public:
-  template <typename T>
-  T* allocate() {
-    return SysMemory::allocate<T>();
-  }
+   public:
+    template <typename T>
+    T* allocate() {
+        return SysMemory::allocate<T>();
+    }
 
-  template <typename T>
-  T* allocate(size_t n) {
-    mem::Blk<T> blk = SysMemory::allocate<T>(n);
-    return blk.mem();
-  }
+    template <typename T>
+    T* allocate(size_t n) {
+        mem::Blk<T> blk = SysMemory::allocate<T>(n);
+        return blk.mem();
+    }
 
-  template <typename T, typename... Args>
-  T* alloc_object(Args&&... args) {  // NOTE: calls ctor
-    Word* bytes = allocate<Word>(calculate_storage_size<T>());
-    return new (bytes) T(std::forward<Args>(args)...);
-  }
+    template <typename T, typename... Args>
+    T* alloc_object(Args&&... args) {  // NOTE: calls ctor
+        Word* bytes = allocate<Word>(calculate_storage_size<T>());
+        return new (bytes) T(std::forward<Args>(args)...);
+    }
 
-  template <typename T>
-  void deallocate_one(T* mem) {
-    mem::Blk<T> mem1(mem, 1);
-    SysMemory::deallocate<T>(mem1);
-  }
+    template <typename T>
+    void deallocate_one(T* mem) {
+        mem::Blk<T> mem1(mem, 1);
+        SysMemory::deallocate<T>(mem1);
+    }
 
-  template <typename T>
-  void deallocate_many(T* mem, size_t sz) {
-    mem::Blk<T> mem1(mem, sz);
-    SysMemory::deallocate<T>(mem1);
-  }
+    template <typename T>
+    void deallocate_many(T* mem, size_t sz) {
+        mem::Blk<T> mem1(mem, sz);
+        SysMemory::deallocate<T>(mem1);
+    }
 };
 
 }  // ns mem
@@ -85,30 +85,30 @@ class Heap;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-length-array"
 class Node {
- public:
-  static constexpr Word FIELDS_WORD_SIZE =
-      3;  // how many words this class takes
-  static_assert(DEFAULT_PROC_STACK_WORDS <
-                    DEFAULT_PROC_HEAP_WORDS - FIELDS_WORD_SIZE,
-                "default stack does not fit default heap size");
+   public:
+    static constexpr Word FIELDS_WORD_SIZE =
+        3;  // how many words this class takes
+    static_assert(DEFAULT_PROC_STACK_WORDS <
+                      DEFAULT_PROC_HEAP_WORDS - FIELDS_WORD_SIZE,
+                  "default stack does not fit default heap size");
 
-  Node* next = nullptr;
-  Word* start;         // this points at first free space and grows
-  Word* limit;         // marks end of node
-  Word heap_start[0];  // marks end of headers and beginning of heap
+    Node* next = nullptr;
+    Word* start;         // this points at first free space and grows
+    Word* limit;         // marks end of node
+    Word heap_start[0];  // marks end of headers and beginning of heap
 
-  static Node* create(Word sz_words);
+    static Node* create(Word sz_words);
 
-  Word get_avail() const {
-    G_ASSERT(limit >= start);
-    return (Word)(limit - start);
-  }
-  // Allocated memory is not tagged in any way except regular term bitfields
-  Word* allocate_words(Word n) {
-    auto result = start;
-    start += n;
-    return result;
-  }
+    Word get_avail() const {
+        G_ASSERT(limit >= start);
+        return (Word)(limit - start);
+    }
+    // Allocated memory is not tagged in any way except regular term bitfields
+    Word* allocate_words(Word n) {
+        auto result = start;
+        start += n;
+        return result;
+    }
 };
 #pragma clang diagnostic pop
 
@@ -154,14 +154,14 @@ public:
 
 template <class A>
 class Heap_ : public A {
-  //  constexpr static Word STK_SZ = 1024;
-  //  Word stack_data_[STK_SZ];
+    //  constexpr static Word STK_SZ = 1024;
+    //  Word stack_data_[STK_SZ];
 
- public:
-  Stack stack_;
+   public:
+    Stack stack_;
 
-  // Heap_() : A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {}
-  Heap_() : A(), stack_() {}
+    // Heap_() : A(), stack_(&stack_data_[0], &stack_data_[STK_SZ]) {}
+    Heap_() : A(), stack_() {}
 };
 
 class Heap : public Heap_<mem::SystemMemoryAllocator> {};

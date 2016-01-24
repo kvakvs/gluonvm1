@@ -11,10 +11,10 @@ namespace proc {
 //}
 
 void SelfContainingStack::push_n_nils(Word n) {
-  data_.reserve(data_.size() + n);
-  for (Word i = 0; i < n; ++i) {
-    push(term::nil_as_word);
-  }
+    data_.reserve(data_.size() + n);
+    for (Word i = 0; i < n; ++i) {
+        push(term::nil_as_word);
+    }
 }
 
 }  // ns proc

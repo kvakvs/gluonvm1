@@ -343,7 +343,7 @@ double fabsval(double input);
 // ====================
 
 inline double double_compare::fabsval(double input) {
-  return 0.0 <= input ? input : -input;
+    return 0.0 <= input ? input : -input;
 }
 
 inline int double_compare::fuzzy_compare(double a,
@@ -351,136 +351,136 @@ inline int double_compare::fuzzy_compare(double a,
                                          double relative_tolerance,
                                          double absolute_tolerance) {
 #pragma clang diagnostic ignored "-Wfloat-equal"
-  if (a == b) {
-    // Special case: equality. Done.
-    return 0;
-  }
-
-  if (a == -b) {
-    // Special case: Relative difference
-    if (fabsval(a - b) <= absolute_tolerance) {
-      // is "infinite"
-      // Fuzzy equality (via abs. tol. only)
-      return 0;
-    } else if (a > b) {
-      return 1;  // Fuzzy greater than
-    } else {
-      return -1;  // Fuzzy less than
+    if (a == b) {
+        // Special case: equality. Done.
+        return 0;
     }
-  }
 
-  const double diff = fabsval(a - b);
-  const double average = fabsval((a + b) / 2.0);
+    if (a == -b) {
+        // Special case: Relative difference
+        if (fabsval(a - b) <= absolute_tolerance) {
+            // is "infinite"
+            // Fuzzy equality (via abs. tol. only)
+            return 0;
+        } else if (a > b) {
+            return 1;  // Fuzzy greater than
+        } else {
+            return -1;  // Fuzzy less than
+        }
+    }
 
-  if (diff <= absolute_tolerance || diff / average <= relative_tolerance) {
-    return 0;  // Fuzzy equality.
-  } else if (a > b) {
-    return 1;  // Fuzzy greater than
-  } else {
-    return -1;  // Fuzzy less than
-  }
+    const double diff = fabsval(a - b);
+    const double average = fabsval((a + b) / 2.0);
+
+    if (diff <= absolute_tolerance || diff / average <= relative_tolerance) {
+        return 0;  // Fuzzy equality.
+    } else if (a > b) {
+        return 1;  // Fuzzy greater than
+    } else {
+        return -1;  // Fuzzy less than
+    }
 }
 
 inline bool double_compare::eq(double a, double b) {
-  return fuzzy_compare(a, b, relative_tolerance_default,
-                       absolute_tolerance_default) == 0;
+    return fuzzy_compare(a, b, relative_tolerance_default,
+                         absolute_tolerance_default) == 0;
 }
 
 inline bool double_compare::eq(double a, double b, double relative_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance_default) ==
-         0;
+    return fuzzy_compare(a, b, relative_tolerance,
+                         absolute_tolerance_default) == 0;
 }
 
 inline bool double_compare::eq(double a,
                                double b,
                                double relative_tolerance,
                                double absolute_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) == 0;
+    return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) == 0;
 }
 
 inline bool double_compare::ne(double a, double b) {
-  return fuzzy_compare(a, b, relative_tolerance_default,
-                       absolute_tolerance_default) != 0;
+    return fuzzy_compare(a, b, relative_tolerance_default,
+                         absolute_tolerance_default) != 0;
 }
 
 inline bool double_compare::ne(double a, double b, double relative_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance_default) !=
-         0;
+    return fuzzy_compare(a, b, relative_tolerance,
+                         absolute_tolerance_default) != 0;
 }
 
 inline bool double_compare::ne(double a,
                                double b,
                                double relative_tolerance,
                                double absolute_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) != 0;
+    return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) != 0;
 }
 
 inline bool double_compare::lt(double a, double b) {
-  return fuzzy_compare(a, b, relative_tolerance_default,
-                       absolute_tolerance_default) < 0;
+    return fuzzy_compare(a, b, relative_tolerance_default,
+                         absolute_tolerance_default) < 0;
 }
 
 inline bool double_compare::lt(double a, double b, double relative_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance_default) <
-         0;
+    return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance_default) <
+           0;
 }
 
 inline bool double_compare::lt(double a,
                                double b,
                                double relative_tolerance,
                                double absolute_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) < 0;
+    return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) < 0;
 }
 
 inline bool double_compare::le(double a, double b) {
-  return fuzzy_compare(a, b, relative_tolerance_default,
-                       absolute_tolerance_default) <= 0;
+    return fuzzy_compare(a, b, relative_tolerance_default,
+                         absolute_tolerance_default) <= 0;
 }
 
 inline bool double_compare::le(double a, double b, double relative_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance_default) <=
-         0;
+    return fuzzy_compare(a, b, relative_tolerance,
+                         absolute_tolerance_default) <= 0;
 }
 
 inline bool double_compare::le(double a,
                                double b,
                                double relative_tolerance,
                                double absolute_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) <= 0;
+    return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) <= 0;
 }
 
 inline bool double_compare::ge(double a, double b) {
-  return fuzzy_compare(a, b, relative_tolerance_default,
-                       absolute_tolerance_default) >= 0;
+    return fuzzy_compare(a, b, relative_tolerance_default,
+                         absolute_tolerance_default) >= 0;
 }
 
 inline bool double_compare::ge(double a, double b, double relative_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance_default) >=
-         0;
+    return fuzzy_compare(a, b, relative_tolerance,
+                         absolute_tolerance_default) >= 0;
 }
 
 inline bool double_compare::ge(double a,
                                double b,
                                double relative_tolerance,
                                double absolute_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) >= 0;
+    return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) >= 0;
 }
 
 inline bool double_compare::gt(double a, double b) {
-  return fuzzy_compare(a, b, relative_tolerance_default,
-                       absolute_tolerance_default) > 0;
+    return fuzzy_compare(a, b, relative_tolerance_default,
+                         absolute_tolerance_default) > 0;
 }
 
 inline bool double_compare::gt(double a, double b, double relative_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance_default) >
-         0;
+    return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance_default) >
+           0;
 }
 
 inline bool double_compare::gt(double a,
                                double b,
                                double relative_tolerance,
                                double absolute_tolerance) {
-  return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) > 0;
+    return fuzzy_compare(a, b, relative_tolerance, absolute_tolerance) > 0;
 }
 
 }  //  namespace

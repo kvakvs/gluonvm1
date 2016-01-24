@@ -7,40 +7,40 @@
 namespace gluon {
 
 class FunEntry {
- public:
-  MFArity mfa;
+   public:
+    MFArity mfa;
 
-  Word index = 0;
-  Uint32 uniq[4] = {0, 0, 0, 0};
-  Word old_index = 0;
-  Word old_uniq = 0;
+    Word index = 0;
+    Uint32 uniq[4] = {0, 0, 0, 0};
+    Word old_index = 0;
+    Word old_uniq = 0;
 
-  Word num_free = 0;  // how many extra terms with frozen values
-  CodePointer code;
+    Word num_free = 0;  // how many extra terms with frozen values
+    CodePointer code;
 
-  FunEntry() = default;
+    FunEntry() = default;
 };
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-length-array"
 // TODO: pack this better in memory?
 class BoxedFun {
- public:
-  // This struct will begin boxed memory at fun object location, followed by
-  // 0 or several captured frozen terms (closure). First field includes
-  // boxed subtag in 4 lower bits -- num_free:19,arity:8,subtag:4
-  Word hdr;
-  Term pid;
-  Term module;
-  Word index;
-  Uint32 uniq[4];
-  Word old_index;
-  Word old_uniq;
-  FunEntry* fun_entry;
-  Term frozen[0];  // captured terms (closure)
+   public:
+    // This struct will begin boxed memory at fun object location, followed by
+    // 0 or several captured frozen terms (closure). First field includes
+    // boxed subtag in 4 lower bits -- num_free:19,arity:8,subtag:4
+    Word hdr;
+    Term pid;
+    Term module;
+    Word index;
+    Uint32 uniq[4];
+    Word old_index;
+    Word old_uniq;
+    FunEntry* fun_entry;
+    Term frozen[0];  // captured terms (closure)
 
-  Word get_arity() const { return (Uint8)(hdr >> 4); }
-  Word get_num_free() const { return (hdr >> (4 + 8)) & 0x7ffff; }
+    Word get_arity() const { return (Uint8)(hdr >> 4); }
+    Word get_num_free() const { return (hdr >> (4 + 8)) & 0x7ffff; }
 };
 #pragma clang diagnostic pop
 
@@ -48,17 +48,17 @@ class BoxedFun {
 // Boxed callable functional object
 //
 class FunObject : public Term {
- public:
-  FunObject(Word x) : Term(x) { G_ASSERT(is_boxed_fun()); }
-  FunObject(Term& other) : Term(other.value()) { G_ASSERT(is_boxed_fun()); }
+   public:
+    FunObject(Word x) : Term(x) { G_ASSERT(is_boxed_fun()); }
+    FunObject(Term& other) : Term(other.value()) { G_ASSERT(is_boxed_fun()); }
 
-  //
-  // Boxed callable object (a fun)
-  //
-  static FunObject make(BoxedFun* p) {
-    return FunObject(term_tag::BoxedFun::create_from_ptr(p));
-  }
-  BoxedFun* get_object() const { return boxed_get_ptr<BoxedFun>(); }
+    //
+    // Boxed callable object (a fun)
+    //
+    static FunObject make(BoxedFun* p) {
+        return FunObject(term_tag::BoxedFun::create_from_ptr(p));
+    }
+    BoxedFun* get_object() const { return boxed_get_ptr<BoxedFun>(); }
 };
 
 namespace fun {

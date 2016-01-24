@@ -85,11 +85,11 @@ template <class T, class SizeType, const T Sentinel>
 array_view<T, dynamic_range> ensure_sentinel(
     const T* seq,
     SizeType max = std::numeric_limits<SizeType>::max()) {
-  auto cur = seq;
-  while ((cur - seq) < max && *cur != Sentinel)
-    ++cur;
-  fail_fast_assert(*cur == Sentinel);
-  return {seq, cur - seq};
+    auto cur = seq;
+    while ((cur - seq) < max && *cur != Sentinel)
+        ++cur;
+    fail_fast_assert(*cur == Sentinel);
+    return {seq, cur - seq};
 }
 
 //
@@ -101,89 +101,89 @@ template <class T>
 inline basic_string_view<T, dynamic_range> ensure_z(
     T* const& sz,
     size_t max = std::numeric_limits<size_t>::max()) {
-  return ensure_sentinel<0>(sz, max);
+    return ensure_sentinel<0>(sz, max);
 }
 
 // TODO (neilmac) there is probably a better template-magic way to get the const
 // and non-const overloads to share an implementation
 inline basic_string_view<char, dynamic_range> ensure_z(char* const& sz,
                                                        size_t max) {
-  auto len = strnlen(sz, max);
-  fail_fast_assert(sz[len] == 0);
-  return {sz, len};
+    auto len = strnlen(sz, max);
+    fail_fast_assert(sz[len] == 0);
+    return {sz, len};
 }
 
 inline basic_string_view<const char, dynamic_range> ensure_z(
     const char* const& sz,
     size_t max) {
-  auto len = strnlen(sz, max);
-  fail_fast_assert(sz[len] == 0);
-  return {sz, len};
+    auto len = strnlen(sz, max);
+    fail_fast_assert(sz[len] == 0);
+    return {sz, len};
 }
 
 inline basic_string_view<wchar_t, dynamic_range> ensure_z(wchar_t* const& sz,
                                                           size_t max) {
-  auto len = wcsnlen(sz, max);
-  fail_fast_assert(sz[len] == 0);
-  return {sz, len};
+    auto len = wcsnlen(sz, max);
+    fail_fast_assert(sz[len] == 0);
+    return {sz, len};
 }
 
 inline basic_string_view<const wchar_t, dynamic_range> ensure_z(
     const wchar_t* const& sz,
     size_t max) {
-  auto len = wcsnlen(sz, max);
-  fail_fast_assert(sz[len] == 0);
-  return {sz, len};
+    auto len = wcsnlen(sz, max);
+    fail_fast_assert(sz[len] == 0);
+    return {sz, len};
 }
 
 template <class T, size_t N>
 basic_string_view<T, dynamic_range> ensure_z(T (&sz)[N]) {
-  return ensure_z(&sz[0], N);
+    return ensure_z(&sz[0], N);
 }
 
 template <class Cont>
 basic_string_view<typename std::remove_pointer<typename Cont::pointer>::type,
                   dynamic_range>
 ensure_z(Cont& cont) {
-  return ensure_z(cont.data(), cont.length());
+    return ensure_z(cont.data(), cont.length());
 }
 
 //
 // to_string() allow (explicit) conversions from string_view to string
 //
 template <class CharT, size_t Extent>
-std::basic_string<typename std::remove_const<CharT>::type>
-to_string(basic_string_view<CharT, Extent> view) {
-  return {view.data(), view.length()};
+std::basic_string<typename std::remove_const<CharT>::type> to_string(
+    basic_string_view<CharT, Extent> view) {
+    return {view.data(), view.length()};
 }
 
 template <class CharT, size_t Extent = dynamic_range>
 class basic_zstring_builder {
- public:
-  using string_view_type = basic_string_view<CharT, Extent>;
-  using value_type = CharT;
-  using pointer = CharT*;
-  using size_type = typename string_view_type::size_type;
-  using iterator = typename string_view_type::iterator;
+   public:
+    using string_view_type = basic_string_view<CharT, Extent>;
+    using value_type = CharT;
+    using pointer = CharT*;
+    using size_type = typename string_view_type::size_type;
+    using iterator = typename string_view_type::iterator;
 
-  basic_zstring_builder(CharT* data, size_type length) : sv_(data, length) {}
+    basic_zstring_builder(CharT* data, size_type length) : sv_(data, length) {}
 
-  template <size_t Size>
-  basic_zstring_builder(CharT (&arr)[Size]) : sv_(arr) {}
+    template <size_t Size>
+    basic_zstring_builder(CharT (&arr)[Size]) : sv_(arr) {}
 
-  pointer data() const { return sv_.data(); }
-  string_view_type view() const { return sv_; }
+    pointer data() const { return sv_.data(); }
+    string_view_type view() const { return sv_; }
 
-  size_type length() const { return sv_.length(); }
+    size_type length() const { return sv_.length(); }
 
-  pointer assume0() const { return data(); }
-  string_view_type ensure_z() const { return gsl::ensure_z(sv_); }
+    pointer assume0() const { return data(); }
+    string_view_type ensure_z() const { return gsl::ensure_z(sv_); }
 
-  iterator begin() const { return sv_.begin(); }
-  iterator end() const { return sv_.end(); }
+    iterator begin() const { return sv_.begin(); }
+    iterator end() const { return sv_.end(); }
 
- private:
-  string_view_type sv_;
+   private:
+    string_view_type sv_;
 };
 
 template <size_t Max = dynamic_range>

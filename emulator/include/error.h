@@ -4,11 +4,11 @@
 #include "defs.h"
 #include "platf/gsys_stdlib.h"
 
-#define G_DEBUG_THROW_E                      \
-  if (e) {                                   \
-    gluon::Std::fmt("debug throw: %s\n", e); \
-    gluon::Std::abort();                     \
-  }
+#define G_DEBUG_THROW_E                          \
+    if (e) {                                     \
+        gluon::Std::fmt("debug throw: %s\n", e); \
+        gluon::Std::abort();                     \
+    }
 
 namespace gluon {
 
@@ -133,36 +133,36 @@ static MaybeError success() { return MaybeError(); }
 //
 
 // Returns const char * reason of the error (auto converted to MaybeError)
-#define G_RETURN_IF_ERROR(res) \
-  if (res.is_error()) {        \
-    return res.get_error();    \
-  }
+#define G_RETURN_IF_ERROR(res)  \
+    if (res.is_error()) {       \
+        return res.get_error(); \
+    }
 // Wrapped in unlikely, because we're happy to expect success
 #define G_RETURN_IF_ERROR_UNLIKELY(res) \
-  if (G_UNLIKELY(res.is_error())) {     \
-    return res.get_error();             \
-  }
+    if (G_UNLIKELY(res.is_error())) {   \
+        return res.get_error();         \
+    }
 // Same but error is likely to happen
 #define G_RETURN_IF_ERROR_LIKELY(res) \
-  if (G_LIKELY(res.is_error())) {     \
-    return res.get_error();           \
-  }
+    if (G_LIKELY(res.is_error())) {   \
+        return res.get_error();       \
+    }
 
 // Returns reason of MaybeResult rewrapped into another MaybeResult
 #define G_RETURN_REWRAP_IF_ERROR(res, T) \
-  if (res.is_error()) {                  \
-    return res.rewrap_error<T>();        \
-  }
+    if (res.is_error()) {                \
+        return res.rewrap_error<T>();    \
+    }
 // Wrapped in unlikely, because we're happy to expect success
 #define G_RETURN_REWRAP_IF_ERROR_UNLIKELY(res, T) \
-  if (G_UNLIKELY(res.is_error())) {               \
-    return res.rewrap_error<T>();                 \
-  }
+    if (G_UNLIKELY(res.is_error())) {             \
+        return res.rewrap_error<T>();             \
+    }
 // Same but error is likely to happen
 #define G_RETURN_REWRAP_IF_ERROR_LIKELY(res, T) \
-  if (G_LIKELY(res.is_error())) {               \
-    return res.rewrap_error<T>();               \
-  }
+    if (G_LIKELY(res.is_error())) {             \
+        return res.rewrap_error<T>();           \
+    }
 
 #endif  // 0
 

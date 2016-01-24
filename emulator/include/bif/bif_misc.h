@@ -14,8 +14,8 @@ bool are_terms_equal(const VM& vm, Term a, Term b, bool exact);
 
 // Returns pair of {length, proper=true/improper=false}
 struct LengthResult {
-  Word length : (word_bitsize - 1);
-  bool is_proper : 1;
+    Word length : (word_bitsize - 1);
+    bool is_proper : 1;
 };
 LengthResult length(Term list);
 
