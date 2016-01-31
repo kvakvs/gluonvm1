@@ -250,7 +250,7 @@ class VMRuntimeContext : public erts::RuntimeContextFields {
         return CheckBifError::ErrorOccured;
     }
 
-    void handle_error(Process* p);
+    //void handle_error(Process* p);
 
     // If value stored in var is immediate and is a special value referring
     // register or stack cell, it gets replaced with value stored in that

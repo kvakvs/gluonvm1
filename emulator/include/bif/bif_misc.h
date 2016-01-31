@@ -19,37 +19,48 @@ struct LengthResult {
 };
 LengthResult length(Term list);
 
+// A
 Term bif_apply_2(Process*, Term funobject, Term args);
 Term bif_apply_3(Process*, Term m, Term f, Term args);
 Term bif_atom_to_list_1(Process*, Term a);
 
+// D
 Term bif_divide_2(Process*, Term a, Term b);
 
+// E
 Term bif_element_2(Process*, Term n, Term tup);
 Term bif_equals_2(Process*, Term a, Term b);
 Term bif_equals_exact_2(Process*, Term a, Term b);
 
+// F
 Term bif_function_exported_3(Process* prc, Term m, Term f, Term arity);
 
+// G
 Term bif_greater_equal_2(Process*, Term a, Term b);
 
+// H
 Term bif_hd_1(Process*, Term a);
 
+// I
 Term bif_integer_to_list_1(Process*, Term a);
 Term bif_integer_to_list_2(Process*, Term a, Term base);
 
+// L
 Term bif_length_1(Process*, Term a);
 Term bif_less_equal_2(Process*, Term a, Term b);
 Term bif_list_to_atom_1(Process*, Term a);
 Term bif_list_to_existing_atom_1(Process*, Term a);
 
+// M
 Term bif_make_fun_3(Process*, Term m, Term f, Term arity);
 Term bif_minus_2(Process*, Term a, Term b);
 Term bif_multiply_2(Process*, Term a, Term b);
 
+// P
 Term bif_plus_2(Process*, Term a, Term b);
 Term bif_plusplus_2(Process* proc, Term a, Term b);
 
+// T
 Term bif_tl_1(Process*, Term a);
 
 }  // ns bif
